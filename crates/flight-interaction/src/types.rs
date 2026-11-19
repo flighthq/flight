@@ -223,8 +223,8 @@ pub struct InteractionManager {
     pub spatial_index: Option<Ref<flight_spatial::SpatialIndex2D>>,
     pub signal_subscriber_counts: HashMap<InteractionSignalName, u32>,
     pub suppress_touch_hover: bool,
-    pub tracked_signal_slots:
-        HashMap<usize, HashMap<InteractionSignalName, HashMap<SlotId, SlotId>>>,
+    // Keyed by target address; each entry retains its target, as the TS map key does.
+    pub tracked_signal_slots: HashMap<usize, InteractionTrackedSignalSlots>,
     pub tracked_subscribers_only: bool,
 }
 
@@ -239,6 +239,17 @@ pub struct InteractionManagerOptions {
     pub spatial_index: Option<Ref<flight_spatial::SpatialIndex2D>>,
     pub suppress_touch_hover: Option<bool>,
     pub tracked_subscribers_only: Option<bool>,
+}
+
+// ── InteractionTrackedSignalSlots ──
+
+/// The registrations `connect_interaction_signal` made on one target: by signal name, then by slot
+/// identity (the slot `Arc`'s data address). The entry retains `target`, so the address it is
+/// keyed by cannot be reused while any of its slots is tracked.
+// flight-lint: allow(conform-extra) D5: Rust spelling of one TS trackedSignalSlots map entry
+pub struct InteractionTrackedSignalSlots {
+    pub slots: HashMap<InteractionSignalName, HashMap<usize, SlotId>>,
+    pub target: NodeRef,
 }
 
 // ── InteractionPointerOptions ──

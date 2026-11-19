@@ -1,14 +1,15 @@
 //! flight-compiler: target-native
 
 use std::collections::HashMap;
-use std::sync::{Arc, RwLock};
+use std::sync::{Arc, OnceLock, RwLock};
 
 use flight_entity::{Ref, UnknownValue};
 use flight_input::PointerType;
 
 use flight_node::{NodeRef, get_node_parent};
 use flight_signals::{
-    connect_signal_tracked, create_signal, disconnect_signal_connection, emit_signal,
+    SignalConnectOptions, SignalSlot, SlotId, connect_signal, connect_signal_tracked,
+    create_signal, disconnect_signal, disconnect_signal_connection, emit_signal, is_slot_connected,
 };
 
 use crate::hit_tests::{
@@ -19,8 +20,8 @@ use crate::types::{
     AnyInteractionSignalSlot, CursorBackend, InteractionDispatchLayer,
     InteractionDispatchLayerEntry, InteractionDispatchLayerOptions, InteractionManager,
     InteractionManagerOptions, InteractionPointerOptions, InteractionPointerState,
-    InteractionSignalName, InteractionSignals, KeyboardEventData, PointerEventData,
-    create_interaction_manager_options,
+    InteractionSignalName, InteractionSignals, InteractionTrackedSignalSlots, KeyboardEventData,
+    PointerEventData, create_interaction_manager_options,
 };
 
 const CANCEL_SIGNAL_NAMES: &[InteractionSignalName] = &[
@@ -376,16 +377,90 @@ pub fn connect_interaction_dispatch_layer(
     layers.sort_by(|a, b| a.priority.cmp(&b.priority));
 }
 
-// flight-lint: allow(conform-params) D5: caller-owned signal tracking via manager
+/// Connects `slot` to `target`'s `name` signal and counts it as a manager subscriber (TS
+/// `connectInteractionSignal`). Connecting the same slot `Arc` to the same target and name while
+/// it is still connected returns the existing registration without counting it twice. A `once`
+/// connection stops being tracked and counted after its first call. The signal connection is made
+/// under the manager lock and the signal group's read lock, never the node's, and nothing is
+/// dropped under any of them.
+/// `name` must be a pointer signal, since `slot` takes `PointerEventData`.
+// flight-lint: allow(conform-params) D4: returns the SlotId disconnect_interaction_signal takes, since a C caller cannot reproduce an Arc identity
 pub fn connect_interaction_signal(
-    manager: &mut InteractionManager,
+    manager: &Ref<InteractionManager>,
     target: &NodeRef,
     name: InteractionSignalName,
-    _slot: AnyInteractionSignalSlot,
-) {
-    let count = manager.signal_subscriber_counts.entry(name).or_insert(0);
-    *count += 1;
-    let _ = target;
+    slot: AnyInteractionSignalSlot,
+    options: Option<&SignalConnectOptions>,
+) -> SlotId {
+    assert!(
+        is_pointer_interaction_signal_name(name),
+        "connect_interaction_signal: {name:?} is not a pointer signal"
+    );
+    let signals = enable_interaction_signals(target);
+    let target_key = get_interaction_tracking_key(target);
+    let slot_key = Arc::as_ptr(&slot) as *const () as usize;
+    let once = options.and_then(|o| o.once).unwrap_or(false);
+    let registered: Arc<OnceLock<SlotId>> = Arc::new(OnceLock::new());
+    let connected: SignalSlot<PointerEventData> = if once {
+        let (weak, registered) = (Arc::downgrade(manager), registered.clone());
+        Arc::new(move |data: &PointerEventData| {
+            slot(data);
+            let Some(manager) = weak.upgrade() else {
+                return;
+            };
+            let detached = {
+                let mut guard = manager.write().unwrap();
+                let Some(id) = registered.get() else {
+                    return;
+                };
+                remove_tracked_interaction_signal_slot(&mut guard, target_key, name, slot_key, *id)
+            };
+            drop(detached);
+        })
+    } else {
+        slot
+    };
+
+    let mut guard = manager.write().unwrap();
+    let tracked = guard
+        .tracked_signal_slots
+        .get(&target_key)
+        .and_then(|entry| entry.slots.get(&name))
+        .and_then(|slots| slots.get(&slot_key))
+        .copied();
+    // Connected in place on the group's own signal, never a clone: a clone carries its own emit
+    // cell, so connecting through one could not re-arm a signal whose emitter a clear or a detach
+    // reset. Emission clones the signal and releases the group lock before any slot runs.
+    let group = signals.read().unwrap();
+    let signal = get_signal_by_name_pointer(&group, name);
+    if let Some(id) = tracked
+        && is_slot_connected(signal, id)
+    {
+        drop(group);
+        drop(guard);
+        drop(connected);
+        return id;
+    }
+    let id = connect_signal(signal, connected, options);
+    drop(group);
+    let _ = registered.set(id);
+    guard
+        .tracked_signal_slots
+        .entry(target_key)
+        .or_insert_with(|| InteractionTrackedSignalSlots {
+            slots: HashMap::new(),
+            target: target.clone(),
+        })
+        .slots
+        .entry(name)
+        .or_default()
+        .insert(slot_key, id);
+    // A tracked registration that is no longer connected (its signal was cleared) is replaced in
+    // place and is already counted, so the count stays equal to the tracked registrations.
+    if tracked.is_none() {
+        *guard.signal_subscriber_counts.entry(name).or_insert(0) += 1;
+    }
+    return id;
 }
 
 // Runs a plan's deliveries in order with no manager lock held, so dispatch layers, node signal
@@ -422,17 +497,40 @@ fn deliver_interaction_dispatch_plan(plan: InteractionDispatchPlan) {
     }
 }
 
-// flight-lint: allow(conform-params) D5: caller-owned signal tracking via manager
+/// Disconnects the registration `connect_interaction_signal` returned for `target` and `name`,
+/// and stops counting it (TS `disconnectInteractionSignal`). Only registrations made through
+/// `connect_interaction_signal` are affected; an unknown or already-removed id does nothing. The
+/// slot is dropped after every lock is released, so its teardown may re-enter the manager.
+// flight-lint: allow(conform-params) D4: disconnects by the SlotId connect_interaction_signal returned
+// flight-lint: allow(hashmap-iteration) registration ids are unique, so at most one entry matches
 pub fn disconnect_interaction_signal(
-    manager: &mut InteractionManager,
-    _target: &NodeRef,
+    manager: &Ref<InteractionManager>,
+    target: &NodeRef,
     name: InteractionSignalName,
-    _slot: &AnyInteractionSignalSlot,
+    id: SlotId,
 ) {
-    if let Some(count) = manager.signal_subscriber_counts.get_mut(&name) {
-        if *count > 0 {
-            *count -= 1;
-        }
+    let target_key = get_interaction_tracking_key(target);
+    let detached = {
+        let mut guard = manager.write().unwrap();
+        let slot_key = guard
+            .tracked_signal_slots
+            .get(&target_key)
+            .and_then(|entry| entry.slots.get(&name))
+            .and_then(|slots| {
+                slots
+                    .iter()
+                    .find(|(_, tracked)| tracked.value == id.value)
+                    .map(|(slot_key, _)| *slot_key)
+            });
+        let Some(slot_key) = slot_key else {
+            return;
+        };
+        remove_tracked_interaction_signal_slot(&mut guard, target_key, name, slot_key, id)
+    };
+    drop(detached);
+    if let Some(signals) = get_interaction_signals(target) {
+        let signal = get_signal_by_name_pointer(&signals.read().unwrap(), name).clone();
+        disconnect_signal(&signal, id);
     }
 }
 
@@ -888,6 +986,11 @@ pub fn get_interaction_signals(source: &NodeRef) -> Option<Ref<InteractionSignal
         .cloned();
 }
 
+// The tracking key of a target node: its allocation address.
+fn get_interaction_tracking_key(target: &NodeRef) -> usize {
+    return Arc::as_ptr(target) as *const () as usize;
+}
+
 fn get_signal_by_name_keyboard<'a>(
     signals: &'a InteractionSignals,
     name: InteractionSignalName,
@@ -943,6 +1046,16 @@ pub fn invalidate_interaction_cursor(manager: &Ref<InteractionManager>) {
     if let Some(InteractionDelivery::Cursor { backend, cursor }) = delivery {
         backend.set_cursor(cursor.as_deref());
     }
+}
+
+fn is_pointer_interaction_signal_name(name: InteractionSignalName) -> bool {
+    return !matches!(
+        name,
+        InteractionSignalName::OnFocusIn
+            | InteractionSignalName::OnFocusOut
+            | InteractionSignalName::OnKeyDown
+            | InteractionSignalName::OnKeyUp
+    );
 }
 
 fn is_pointer_signal_needed(manager: &InteractionManager, names: &[InteractionSignalName]) -> bool {
@@ -1071,6 +1184,45 @@ pub fn release_interaction_pointer(manager: &mut InteractionManager, pointer_id:
     if let Some(state) = manager.pointer_states.get_mut(&pointer_id) {
         reset_interaction_click_state(state);
     }
+}
+
+// Removes the tracked registration `id` of `slot_key` and stops counting it; a registration that
+// was already removed or replaced is left alone, so a once slot and a disconnect racing on the
+// same registration uncount it exactly once. Returns the target entry when it empties, for the
+// caller to drop after releasing the manager lock.
+fn remove_tracked_interaction_signal_slot(
+    manager: &mut InteractionManager,
+    target_key: usize,
+    name: InteractionSignalName,
+    slot_key: usize,
+    id: SlotId,
+) -> Option<InteractionTrackedSignalSlots> {
+    let entry = manager.tracked_signal_slots.get_mut(&target_key)?;
+    let slots = entry.slots.get_mut(&name)?;
+    if slots
+        .get(&slot_key)
+        .is_none_or(|tracked| tracked.value != id.value)
+    {
+        return None;
+    }
+    slots.remove(&slot_key);
+    if slots.is_empty() {
+        entry.slots.remove(&name);
+    }
+    let count = manager
+        .signal_subscriber_counts
+        .get(&name)
+        .copied()
+        .unwrap_or(0);
+    if count <= 1 {
+        manager.signal_subscriber_counts.remove(&name);
+    } else {
+        manager.signal_subscriber_counts.insert(name, count - 1);
+    }
+    if entry.slots.is_empty() {
+        return manager.tracked_signal_slots.remove(&target_key);
+    }
+    return None;
 }
 
 // flight-lint: allow(f64) D1: click timestamps are JS millisecond-precision doubles

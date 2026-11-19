@@ -1,8 +1,11 @@
 //! flight-compiler: target-native
 
+use std::sync::atomic::AtomicUsize;
+use std::sync::atomic::Ordering::SeqCst;
 use std::sync::{Arc, RwLock};
 
 use crate::interaction_fixture;
+use flight_interaction::contract::InteractionSignalName::{OnPointerDown, OnPointerUp};
 use flight_interaction::contract::*;
 use flight_interaction::contract::{
     InteractionDispatchLayerOptions, InteractionInputSource, InteractionSignalName,
@@ -155,15 +158,13 @@ mod connect_input_to_interaction {
                 }),
                 None,
             );
-            let mut manager = interaction_fixture::manager_for(&root);
-            manager.enabled = true;
-            capture_interaction_pointer(&mut manager, 0, root.clone());
+            let manager = interaction_fixture::shared_manager_for(&root);
+            capture_interaction_pointer(&mut manager.write().unwrap(), 0, root.clone());
             let slot: flight_interaction::AnyInteractionSignalSlot =
                 Arc::new(|_data: &flight_interaction::PointerEventData| {});
-            connect_interaction_signal(&mut manager, &root, name, slot);
+            connect_interaction_signal(&manager, &root, name, slot, None);
             let input = test_input_source();
-            let _dispose =
-                connect_input_to_interaction(&input, Arc::new(RwLock::new(manager)), 1.0);
+            let _dispose = connect_input_to_interaction(&input, manager.clone(), 1.0);
 
             flight_signals::emit_signal(
                 input_signal(&input.read().unwrap()),
@@ -192,14 +193,14 @@ mod connect_input_to_interaction {
             }),
             None,
         );
-        let mut manager = interaction_fixture::manager_for(&root);
-        manager.enabled = true;
-        capture_interaction_pointer(&mut manager, 0, root.clone());
+        let manager = interaction_fixture::shared_manager_for(&root);
+        capture_interaction_pointer(&mut manager.write().unwrap(), 0, root.clone());
         let slot: flight_interaction::AnyInteractionSignalSlot =
             Arc::new(|_data: &flight_interaction::PointerEventData| {});
-        connect_interaction_signal(&mut manager, &root, InteractionSignalName::OnWheel, slot);
+        let wheel = InteractionSignalName::OnWheel;
+        connect_interaction_signal(&manager, &root, wheel, slot, None);
         let input = test_input_source();
-        let _dispose = connect_input_to_interaction(&input, Arc::new(RwLock::new(manager)), 1.0);
+        let _dispose = connect_input_to_interaction(&input, manager.clone(), 1.0);
 
         flight_signals::emit_signal(
             &input.read().unwrap().on_wheel,
@@ -308,20 +309,182 @@ mod connect_interaction_signal {
     use super::*;
 
     #[test]
-    fn increments_subscriber_count() {
-        let root = interaction_fixture::node();
-        let target = interaction_fixture::node();
-        let mut mgr = interaction_fixture::manager_for(&root);
-        let slot: flight_interaction::contract::AnyInteractionSignalSlot =
-            Arc::new(|_data: &flight_interaction::contract::PointerEventData| {});
-        connect_interaction_signal(&mut mgr, &target, InteractionSignalName::OnClick, slot);
+    fn connects_the_slot_to_the_target_signal_and_counts_it() {
+        let (manager, child) = z_captured_manager();
+        let (calls, slot) = z_counting_slot();
+        let id = connect_interaction_signal(&manager, &child, OnPointerDown, slot, None);
+        assert_eq!(z_count(&manager, OnPointerDown), 1);
+        assert_eq!(z_tracked(&manager, &child, OnPointerDown), vec![id.value]);
+        assert!(flight_signals::is_slot_connected(
+            &interaction_fixture::signals_for(&child)
+                .read()
+                .unwrap()
+                .on_pointer_down,
+            id
+        ));
+        dispatch_interaction_pointer_down(&manager, 1.0, 1.0, 0, None);
+        assert_eq!(calls.load(SeqCst), 1);
+    }
+
+    #[test]
+    fn is_idempotent_for_a_slot_that_is_still_connected() {
+        let (manager, child) = z_captured_manager();
+        let (calls, slot) = z_counting_slot();
+        let first = connect_interaction_signal(&manager, &child, OnPointerDown, slot.clone(), None);
+        let second = connect_interaction_signal(&manager, &child, OnPointerDown, slot, None);
+        assert_eq!(first.value, second.value);
+        assert_eq!(z_count(&manager, OnPointerDown), 1);
+        dispatch_interaction_pointer_down(&manager, 1.0, 1.0, 0, None);
+        assert_eq!(calls.load(SeqCst), 1);
+    }
+
+    #[test]
+    fn counts_distinct_slots_and_targets_separately() {
+        let (manager, child) = z_captured_manager();
+        let root = manager.read().unwrap().root.clone();
+        let (calls, slot) = z_counting_slot();
+        let (other_calls, other) = z_counting_slot();
+        connect_interaction_signal(&manager, &child, OnPointerDown, slot.clone(), None);
+        connect_interaction_signal(&manager, &child, OnPointerDown, other, None);
+        connect_interaction_signal(&manager, &root, OnPointerDown, slot, None);
+        assert_eq!(z_count(&manager, OnPointerDown), 3);
+        assert_eq!(z_tracked(&manager, &child, OnPointerDown).len(), 2);
+        assert_eq!(z_tracked(&manager, &root, OnPointerDown).len(), 1);
+        dispatch_interaction_pointer_down(&manager, 1.0, 1.0, 0, None);
         assert_eq!(
-            mgr.signal_subscriber_counts
-                .get(&InteractionSignalName::OnClick)
-                .copied()
-                .unwrap_or(0),
-            1
+            calls.load(SeqCst),
+            2,
+            "the child delivery bubbles to the root"
         );
+        assert_eq!(other_calls.load(SeqCst), 1);
+    }
+
+    #[test]
+    fn a_once_connection_calls_once_then_stops_counting_and_releases_its_slot() {
+        let (manager, child) = z_captured_manager();
+        let (calls, slot) = z_counting_slot();
+        let (drops, slot) = z_with_drop_count(slot);
+        let once = flight_signals::SignalConnectOptions {
+            priority: None,
+            once: Some(true),
+        };
+        connect_interaction_signal(&manager, &child, OnPointerDown, slot, Some(&once));
+        dispatch_interaction_pointer_down(&manager, 1.0, 1.0, 0, None);
+        dispatch_interaction_pointer_down(&manager, 1.0, 1.0, 0, None);
+        assert_eq!(calls.load(SeqCst), 1);
+        assert_eq!(z_count(&manager, OnPointerDown), 0);
+        assert!(z_tracked(&manager, &child, OnPointerDown).is_empty());
+        assert!(manager.read().unwrap().tracked_signal_slots.is_empty());
+        assert_eq!(drops.load(SeqCst), 1);
+    }
+
+    #[test]
+    fn a_once_call_that_empties_the_signal_leaves_it_rearmable_by_the_next_connect() {
+        let (manager, child) = z_captured_manager();
+        let (calls, slot) = z_counting_slot();
+        let once = flight_signals::SignalConnectOptions {
+            priority: None,
+            once: Some(true),
+        };
+        connect_interaction_signal(&manager, &child, OnPointerDown, slot.clone(), Some(&once));
+        dispatch_interaction_pointer_down(&manager, 1.0, 1.0, 0, None);
+        connect_interaction_signal(&manager, &child, OnPointerDown, slot, None);
+        dispatch_interaction_pointer_down(&manager, 1.0, 1.0, 0, None);
+        assert_eq!(calls.load(SeqCst), 2);
+        assert_eq!(z_count(&manager, OnPointerDown), 1);
+    }
+
+    #[test]
+    fn a_once_slot_may_reconnect_itself_from_its_own_call() {
+        z_run_within_deadline(|| {
+            let (manager, child) = z_captured_manager();
+            let calls = Arc::new(AtomicUsize::new(0));
+            let once = flight_signals::SignalConnectOptions {
+                priority: None,
+                once: Some(true),
+            };
+            let (weak, target, counted) = (Arc::downgrade(&manager), child.clone(), calls.clone());
+            let cell: Arc<std::sync::Mutex<Option<AnyInteractionSignalSlot>>> =
+                Arc::new(std::sync::Mutex::new(None));
+            let own = cell.clone();
+            let slot: AnyInteractionSignalSlot = Arc::new(move |_: &PointerEventData| {
+                counted.fetch_add(1, SeqCst);
+                let manager = weak.upgrade().unwrap();
+                let me = own.lock().unwrap().clone().unwrap();
+                connect_interaction_signal(&manager, &target, OnPointerDown, me, None);
+            });
+            *cell.lock().unwrap() = Some(slot.clone());
+            let first =
+                connect_interaction_signal(&manager, &child, OnPointerDown, slot, Some(&once));
+            dispatch_interaction_pointer_down(&manager, 1.0, 1.0, 0, None);
+            let tracked = z_tracked(&manager, &child, OnPointerDown);
+            assert_eq!(tracked.len(), 1);
+            assert_ne!(
+                tracked[0], first.value,
+                "the once wrapper must not untrack the reconnection"
+            );
+            assert_eq!(z_count(&manager, OnPointerDown), 1);
+            dispatch_interaction_pointer_down(&manager, 1.0, 1.0, 0, None);
+            assert_eq!(
+                calls.load(SeqCst),
+                3,
+                "once call, then the reconnected slot, which reconnects idempotently"
+            );
+            *cell.lock().unwrap() = None;
+        });
+    }
+
+    #[test]
+    fn replaces_a_cleared_registration_without_counting_it_twice() {
+        let (manager, child) = z_captured_manager();
+        let (calls, slot) = z_counting_slot();
+        let first = connect_interaction_signal(&manager, &child, OnPointerDown, slot.clone(), None);
+        flight_signals::clear_signal(
+            &interaction_fixture::signals_for(&child)
+                .read()
+                .unwrap()
+                .on_pointer_down,
+        );
+        let second = connect_interaction_signal(&manager, &child, OnPointerDown, slot, None);
+        assert_ne!(first.value, second.value);
+        assert_eq!(z_count(&manager, OnPointerDown), 1);
+        assert_eq!(
+            z_tracked(&manager, &child, OnPointerDown),
+            vec![second.value]
+        );
+        dispatch_interaction_pointer_down(&manager, 1.0, 1.0, 0, None);
+        assert_eq!(calls.load(SeqCst), 1);
+    }
+
+    #[test]
+    #[should_panic(expected = "is not a pointer signal")]
+    fn rejects_a_signal_whose_payload_is_not_pointer_data() {
+        let (manager, child) = z_captured_manager();
+        let (_, slot) = z_counting_slot();
+        connect_interaction_signal(
+            &manager,
+            &child,
+            InteractionSignalName::OnKeyDown,
+            slot,
+            None,
+        );
+    }
+
+    #[test]
+    fn retains_the_target_while_tracked_and_never_retains_the_manager() {
+        let (manager, child) = z_captured_manager();
+        let (_, slot) = z_counting_slot();
+        let before = Arc::strong_count(&child);
+        let id = connect_interaction_signal(&manager, &child, OnPointerDown, slot, None);
+        assert_eq!(Arc::strong_count(&child), before + 1);
+        assert_eq!(Arc::strong_count(&manager), 1);
+        assert_eq!(
+            Arc::weak_count(&manager),
+            0,
+            "a plain slot holds no manager reference"
+        );
+        disconnect_interaction_signal(&manager, &child, OnPointerDown, id);
+        assert_eq!(Arc::strong_count(&child), before);
     }
 }
 
@@ -366,26 +529,112 @@ mod disconnect_interaction_signal {
     use super::*;
 
     #[test]
-    fn decrements_subscriber_count() {
-        let root = interaction_fixture::node();
-        let target = interaction_fixture::node();
-        let mut mgr = interaction_fixture::manager_for(&root);
-        let slot: flight_interaction::contract::AnyInteractionSignalSlot =
-            Arc::new(|_data: &flight_interaction::contract::PointerEventData| {});
-        connect_interaction_signal(
-            &mut mgr,
-            &target,
-            InteractionSignalName::OnClick,
-            slot.clone(),
-        );
-        disconnect_interaction_signal(&mut mgr, &target, InteractionSignalName::OnClick, &slot);
+    fn disconnects_stops_counting_and_releases_the_slot_exactly_once() {
+        let (manager, child) = z_captured_manager();
+        let (calls, slot) = z_counting_slot();
+        let (drops, slot) = z_with_drop_count(slot);
+        let id = connect_interaction_signal(&manager, &child, OnPointerDown, slot, None);
+        disconnect_interaction_signal(&manager, &child, OnPointerDown, id);
+        assert_eq!(drops.load(SeqCst), 1);
+        assert_eq!(z_count(&manager, OnPointerDown), 0);
+        assert!(manager.read().unwrap().tracked_signal_slots.is_empty());
+        dispatch_interaction_pointer_down(&manager, 1.0, 1.0, 0, None);
+        assert_eq!(calls.load(SeqCst), 0);
+        disconnect_interaction_signal(&manager, &child, OnPointerDown, id);
+        drop(manager);
         assert_eq!(
-            mgr.signal_subscriber_counts
-                .get(&InteractionSignalName::OnClick)
-                .copied()
-                .unwrap_or(0),
-            0
+            drops.load(SeqCst),
+            1,
+            "a second disconnect and the manager drop release nothing"
         );
+    }
+
+    #[test]
+    fn ignores_ids_it_did_not_connect() {
+        let (manager, child) = z_captured_manager();
+        let (calls, slot) = z_counting_slot();
+        let id = connect_interaction_signal(&manager, &child, OnPointerDown, slot.clone(), None);
+        let signals = interaction_fixture::signals_for(&child);
+        let direct =
+            flight_signals::connect_signal(&signals.read().unwrap().on_pointer_down, slot, None);
+        disconnect_interaction_signal(&manager, &child, OnPointerDown, direct);
+        disconnect_interaction_signal(&manager, &child, OnPointerUp, id);
+        assert_eq!(z_count(&manager, OnPointerDown), 1);
+        assert!(flight_signals::is_slot_connected(
+            &signals.read().unwrap().on_pointer_down,
+            direct
+        ));
+        dispatch_interaction_pointer_down(&manager, 1.0, 1.0, 0, None);
+        assert_eq!(
+            calls.load(SeqCst),
+            2,
+            "one tracked and one direct connection"
+        );
+    }
+
+    #[test]
+    fn a_slot_may_disconnect_itself_during_dispatch() {
+        z_run_within_deadline(|| {
+            let (manager, child) = z_captured_manager();
+            let id_cell = Arc::new(std::sync::Mutex::new(None));
+            let calls = Arc::new(AtomicUsize::new(0));
+            let (weak, target, own, counted) = (
+                Arc::downgrade(&manager),
+                child.clone(),
+                id_cell.clone(),
+                calls.clone(),
+            );
+            let slot: AnyInteractionSignalSlot = Arc::new(move |_: &PointerEventData| {
+                counted.fetch_add(1, SeqCst);
+                let manager = weak.upgrade().unwrap();
+                let id = own.lock().unwrap().unwrap();
+                disconnect_interaction_signal(&manager, &target, OnPointerDown, id);
+            });
+            let (drops, slot) = z_with_drop_count(slot);
+            let id = connect_interaction_signal(&manager, &child, OnPointerDown, slot, None);
+            *id_cell.lock().unwrap() = Some(id);
+            dispatch_interaction_pointer_down(&manager, 1.0, 1.0, 0, None);
+            dispatch_interaction_pointer_down(&manager, 1.0, 1.0, 0, None);
+            assert_eq!(calls.load(SeqCst), 1);
+            assert_eq!(drops.load(SeqCst), 1);
+            assert_eq!(z_count(&manager, OnPointerDown), 0);
+        });
+    }
+
+    #[test]
+    fn a_slot_teardown_may_reenter_the_manager() {
+        z_run_within_deadline(|| {
+            let (manager, child) = z_captured_manager();
+            let (_, slot) = z_counting_slot();
+            let reentry = ReenteringDrop {
+                manager: Arc::downgrade(&manager),
+            };
+            let slot: AnyInteractionSignalSlot = Arc::new(move |data: &PointerEventData| {
+                let _ = &reentry;
+                slot(data);
+            });
+            let id = connect_interaction_signal(&manager, &child, OnPointerDown, slot, None);
+            disconnect_interaction_signal(&manager, &child, OnPointerDown, id);
+            assert_eq!(manager.read().unwrap().double_click_delay, 77.0);
+        });
+    }
+
+    #[test]
+    fn after_a_once_call_the_disconnect_uncounts_nothing() {
+        let (manager, child) = z_captured_manager();
+        let (_, slot) = z_counting_slot();
+        let (other_calls, other) = z_counting_slot();
+        let once = flight_signals::SignalConnectOptions {
+            priority: None,
+            once: Some(true),
+        };
+        let id = connect_interaction_signal(&manager, &child, OnPointerDown, slot, Some(&once));
+        connect_interaction_signal(&manager, &child, OnPointerDown, other, None);
+        dispatch_interaction_pointer_down(&manager, 1.0, 1.0, 0, None);
+        disconnect_interaction_signal(&manager, &child, OnPointerDown, id);
+        assert_eq!(z_count(&manager, OnPointerDown), 1);
+        dispatch_interaction_pointer_down(&manager, 1.0, 1.0, 0, None);
+        assert_eq!(other_calls.load(SeqCst), 2);
     }
 }
 
@@ -719,6 +968,29 @@ mod release_interaction_pointer {
     }
 }
 
+// Locks the manager it was made for when dropped, proving a slot is torn down with no manager lock
+// held.
+struct ReenteringDrop {
+    manager: std::sync::Weak<RwLock<InteractionManager>>,
+}
+
+impl Drop for ReenteringDrop {
+    fn drop(&mut self) {
+        if let Some(manager) = self.manager.upgrade() {
+            manager.write().unwrap().double_click_delay = 77.0;
+        }
+    }
+}
+
+// Counts drops of the slot closure that owns it.
+struct DropCount(Arc<AtomicUsize>);
+
+impl Drop for DropCount {
+    fn drop(&mut self) {
+        self.0.fetch_add(1, SeqCst);
+    }
+}
+
 // A cursor backend that re-enters the manager it is installed on.
 struct ReenteringCursor {
     manager: std::sync::Weak<RwLock<InteractionManager>>,
@@ -729,6 +1001,37 @@ impl CursorBackend for ReenteringCursor {
     fn set_cursor(&self, _cursor: Option<&str>) {
         z_reenter_from_cursor(self);
     }
+}
+
+// A shared manager over a root whose one child holds pointer 0's capture, so a pointer-down at
+// any position targets the child.
+fn z_captured_manager() -> (flight_entity::Ref<InteractionManager>, flight_node::NodeRef) {
+    let (root, children) = interaction_fixture::tree_with_children(1);
+    let child = children[0].clone();
+    let manager = interaction_fixture::shared_manager_for(&root);
+    capture_interaction_pointer(&mut manager.write().unwrap(), 0, child.clone());
+    return (manager, child);
+}
+
+fn z_count(manager: &flight_entity::Ref<InteractionManager>, name: InteractionSignalName) -> u32 {
+    return manager
+        .read()
+        .unwrap()
+        .signal_subscriber_counts
+        .get(&name)
+        .copied()
+        .unwrap_or(0);
+}
+
+fn z_counting_slot() -> (Arc<AtomicUsize>, AnyInteractionSignalSlot) {
+    let calls = Arc::new(AtomicUsize::new(0));
+    let counted = calls.clone();
+    return (
+        calls,
+        Arc::new(move |_: &PointerEventData| {
+            counted.fetch_add(1, SeqCst);
+        }),
+    );
 }
 
 fn z_delivery(
@@ -762,6 +1065,24 @@ fn z_reenter_from_cursor(cursor: &ReenteringCursor) {
     *cursor.calls.lock().unwrap() += 1;
 }
 
+// The registration ids tracked for `target` and `name`, sorted.
+fn z_tracked(
+    manager: &flight_entity::Ref<InteractionManager>,
+    target: &flight_node::NodeRef,
+    name: InteractionSignalName,
+) -> Vec<u32> {
+    let key = Arc::as_ptr(target) as *const () as usize;
+    let manager = manager.read().unwrap();
+    let mut ids: Vec<u32> = manager
+        .tracked_signal_slots
+        .get(&key)
+        .and_then(|entry| entry.slots.get(&name))
+        .map(|slots| slots.values().map(|id| id.value).collect())
+        .unwrap_or_default();
+    ids.sort();
+    return ids;
+}
+
 // Runs `test` on its own thread and fails instead of hanging when it deadlocks.
 fn z_run_within_deadline(test: impl FnOnce() + Send + 'static) {
     let (done, finished) = std::sync::mpsc::channel();
@@ -776,4 +1097,19 @@ fn z_run_within_deadline(test: impl FnOnce() + Send + 'static) {
         panic!("interaction dispatch deadlocked or panicked");
     }
     worker.join().unwrap();
+}
+
+// Wraps `slot` so the returned counter records when the last handle to it drops.
+fn z_with_drop_count(
+    slot: AnyInteractionSignalSlot,
+) -> (Arc<AtomicUsize>, AnyInteractionSignalSlot) {
+    let drops = Arc::new(AtomicUsize::new(0));
+    let guard = DropCount(drops.clone());
+    return (
+        drops,
+        Arc::new(move |data: &PointerEventData| {
+            let _ = &guard;
+            slot(data);
+        }),
+    );
 }

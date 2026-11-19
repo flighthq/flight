@@ -8,7 +8,7 @@ carrier|1|*const flight_sdk::AccessibilityNode
 carrier|1|*const flight_sdk::AddNodeChildCommand
 carrier|3|*const flight_sdk::AmbientLightReading
 carrier|6|*const flight_sdk::AnimationStateMachine
-carrier|2|*const flight_sdk::AnyInteractionSignalSlot
+carrier|1|*const flight_sdk::AnyInteractionSignalSlot
 carrier|1|*const flight_sdk::AppLoginItemLike
 carrier|5|*const flight_sdk::AppLoop
 carrier|18|*const flight_sdk::AppWindow
@@ -764,7 +764,7 @@ carrier|1|Box<flight_sdk::Physics2DJointSolverRef>
 carrier|1|Box<flight_sdk::Ref<Vec<Option<flight_sdk::Ref<dyn flight_sdk::Node>>>>>
 carrier|1|Box<flight_sdk::Ref<dyn flight_sdk::Adjustment>>
 carrier|3|Box<flight_sdk::Ref<dyn flight_sdk::Modifier>>
-carrier|135|Box<flight_sdk::Ref<dyn flight_sdk::Node>>
+carrier|136|Box<flight_sdk::Ref<dyn flight_sdk::Node>>
 carrier|2|Box<flight_sdk::Ref<flight_sdk::AnimationBlendTree>>
 carrier|1|Box<flight_sdk::Ref<flight_sdk::AnimationClip>>
 carrier|2|Box<flight_sdk::Ref<flight_sdk::AnimationPlayer>>
@@ -1423,7 +1423,7 @@ unreachable|flight_disable_text_markup_guards|*mut flight_sdk::text_markup::cont
 unreachable|flight_disable_text_shaper_guards|*mut flight_sdk::ShapedRunPool
 unreachable|flight_disable_texture_atlas_guards|*mut flight_sdk::TextureAtlasGuardState
 unreachable|flight_disable_tray_guards|*mut flight_sdk::TrayAnimationState
-unreachable|flight_disconnect_interaction_signal|*const flight_sdk::AnyInteractionSignalSlot
+unreachable|flight_disconnect_interaction_signal|Box<flight_sdk::Ref<dyn flight_sdk::Node>>
 unreachable|flight_dispatch_interaction_context_menu|Box<flight_sdk::Ref<flight_sdk::InteractionManager>>
 unreachable|flight_dispatch_interaction_key_down|Box<flight_sdk::Ref<flight_sdk::InteractionManager>>
 unreachable|flight_dispatch_interaction_key_up|Box<flight_sdk::Ref<flight_sdk::InteractionManager>>
