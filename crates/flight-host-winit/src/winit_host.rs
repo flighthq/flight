@@ -8,7 +8,7 @@ use std::any::Any;
 use std::collections::BTreeMap;
 use std::fmt;
 use std::sync::atomic::{AtomicBool, AtomicI32, AtomicU32, Ordering};
-use std::sync::{Arc, Mutex};
+use std::sync::{Arc, Mutex, RwLock, Weak};
 use std::thread::ThreadId;
 use std::time::{Duration, Instant};
 
@@ -49,16 +49,17 @@ use flight_surface::{
 use futures::executor::block_on;
 use winit::application::ApplicationHandler;
 use winit::dpi::{LogicalPosition, LogicalSize, PhysicalPosition, PhysicalSize};
-use winit::event::{DeviceEvent, DeviceId, Ime, TouchPhase, WindowEvent};
+use winit::event::{DeviceEvent, DeviceId, TouchPhase, WindowEvent};
 use winit::event_loop::{ActiveEventLoop, ControlFlow, EventLoop};
 use winit::keyboard::ModifiersState;
 use winit::platform::pump_events::{EventLoopExtPumpEvents, PumpStatus};
 use winit::window::{Fullscreen, Window, WindowAttributes, WindowId, WindowLevel};
 
 use crate::{
-    build_winit_keyboard_data, build_winit_pointer_data, build_winit_text_data,
-    build_winit_touch_data, is_winit_press, translate_winit_mouse_button,
-    translate_winit_scroll_delta,
+    build_winit_ime_text_data, build_winit_keyboard_data, build_winit_pointer_data,
+    build_winit_text_data, build_winit_touch_data, build_winit_wheel_data, dispatch_winit_text,
+    get_winit_key_event_modifiers, is_winit_committed_key_text, is_winit_press,
+    translate_winit_mouse_button, update_winit_pointer_buttons,
 };
 
 /// Options applied when the host creates its one native window.
@@ -102,15 +103,15 @@ struct Listener<T: ?Sized> {
     callback: Arc<T>,
 }
 
+// The presentation context reaches the surface and window only through the provider's liveness
+// check, so acquisitions held past destroy never touch released native state.
 struct WinitCanvasContext {
-    surface: Arc<wgpu::Surface<'static>>,
-    window: Arc<Window>,
+    state: Weak<ProviderState>,
 }
 
 struct GpuResources {
     _instance: wgpu::Instance,
     _adapter: wgpu::Adapter,
-    surface: Arc<wgpu::Surface<'static>>,
     configuration: Mutex<wgpu::SurfaceConfiguration>,
     native: WgpuNativeDevice,
     device: WgpuDevice,
@@ -120,13 +121,32 @@ struct GpuResources {
 
 struct ProviderIdentity;
 
+struct WindowIdentity;
+
+struct NativeGpu {
+    instance: wgpu::Instance,
+    adapter: wgpu::Adapter,
+    surface: wgpu::Surface<'static>,
+    device: wgpu::Device,
+    queue: wgpu::Queue,
+    configuration: wgpu::SurfaceConfiguration,
+    format: wgpu::TextureFormat,
+}
+
+// The provider state outlives `destroy_winit_host` when capability clones are held, so it owns the
+// native window and surface only through these slots, which `release_native` empties while the event
+// loop can still flush the native destruction. Every capability reaches them through `window()` and
+// `surface()` and fails closed once they are empty.
 struct ProviderState {
     provider: ProviderRef,
-    window: Arc<Window>,
+    window: RwLock<Option<Arc<Window>>>,
+    window_id: WindowId,
+    surface: RwLock<Option<Arc<wgpu::Surface<'static>>>>,
     source_handle: Arc<dyn Any + Send + Sync>,
     gpu: GpuResources,
     start: Instant,
     alive: AtomicBool,
+    ime_allowed: AtomicBool,
     lifecycle: AtomicU32,
     exit_code: AtomicI32,
     physical_width: AtomicU32,
@@ -195,6 +215,9 @@ enum InputAttachmentKind {
     Wheel,
 }
 
+// Receives the events delivered while the released window's destruction is flushed.
+struct NativeReleaseFlush;
+
 fn create_app_loop_capability(state: &Arc<ProviderState>) -> HostAppLoopCapability {
     let request_state = state.clone();
     let cancel_state = state.clone();
@@ -203,6 +226,9 @@ fn create_app_loop_capability(state: &Arc<ProviderState>) -> HostAppLoopCapabili
         provider: state.provider.clone(),
         now: Arc::new(move || now_state.now()),
         request_frame: Arc::new(move |callback| {
+            let Some(window) = request_state.window() else {
+                return FrameRequestHandle(0);
+            };
             let handle = request_state
                 .next_frame_handle
                 .fetch_add(1, Ordering::AcqRel)
@@ -212,7 +238,7 @@ fn create_app_loop_capability(state: &Arc<ProviderState>) -> HostAppLoopCapabili
                 .lock()
                 .unwrap()
                 .insert(handle, callback);
-            request_state.window.request_redraw();
+            window.request_redraw();
             FrameRequestHandle(handle)
         }),
         cancel_frame: Arc::new(move |handle| {
@@ -227,68 +253,32 @@ fn create_app_loop_capability(state: &Arc<ProviderState>) -> HostAppLoopCapabili
 
 fn create_gpu_resources(
     provider: ProviderRef,
-    window: Arc<Window>,
-) -> Result<GpuResources, WinitHostFailure> {
-    let instance = wgpu::Instance::default();
-    let surface = instance
-        .create_surface(window.clone())
-        .map_err(|error| failure(WinitHostFailureKind::Surface, error))?;
-    let adapter = block_on(instance.request_adapter(&wgpu::RequestAdapterOptions {
-        power_preference: wgpu::PowerPreference::None,
-        force_fallback_adapter: false,
-        compatible_surface: Some(&surface),
-        ..wgpu::RequestAdapterOptions::default()
-    }))
-    .map_err(|error| failure(WinitHostFailureKind::Adapter, error))?;
-    let (device, queue) = block_on(adapter.request_device(&wgpu::DeviceDescriptor {
-        label: Some("flight-host-winit-device"),
-        required_features: wgpu::Features::empty(),
-        required_limits: wgpu::Limits::downlevel_defaults().using_resolution(adapter.limits()),
-        ..wgpu::DeviceDescriptor::default()
-    }))
-    .map_err(|error| failure(WinitHostFailureKind::Device, error))?;
-    let size = window.inner_size();
-    let mut configuration = surface
-        .get_default_config(&adapter, size.width.max(1), size.height.max(1))
-        .ok_or_else(|| {
-            failure(
-                WinitHostFailureKind::Surface,
-                "the selected adapter has no presentation configuration",
-            )
-        })?;
-    if configuration.format.is_srgb() {
-        let capabilities = surface.get_capabilities(&adapter);
-        if let Some(format) = capabilities
-            .formats
-            .into_iter()
-            .find(|format| !format.is_srgb())
-        {
-            configuration.format = format;
-        }
-    }
-    surface.configure(&device, &configuration);
-    let format = configuration.format;
-    let surface = Arc::new(surface);
-    let native = create_wgpu_native_device(device, queue, create_host_spawn(provider.clone()));
+    native: NativeGpu,
+    state: Weak<ProviderState>,
+) -> (GpuResources, Arc<wgpu::Surface<'static>>) {
+    let native_device = create_wgpu_native_device(
+        native.device,
+        native.queue,
+        create_host_spawn(provider.clone()),
+    );
     let device = WgpuDevice {
         provider: provider.clone(),
-        handle: Arc::new(native.clone()),
+        handle: Arc::new(native_device.clone()),
     };
-    let canvas: Arc<dyn WgpuCanvasContext> = Arc::new(WinitCanvasContext {
-        surface: surface.clone(),
-        window,
-    });
+    let canvas: Arc<dyn WgpuCanvasContext> = Arc::new(WinitCanvasContext { state });
     let context = create_wgpu_surface_context(provider, canvas);
-    return Ok(GpuResources {
-        _instance: instance,
-        _adapter: adapter,
-        surface,
-        configuration: Mutex::new(configuration),
-        native,
-        device,
-        context,
-        format,
-    });
+    return (
+        GpuResources {
+            _instance: native.instance,
+            _adapter: native.adapter,
+            configuration: Mutex::new(native.configuration),
+            native: native_device,
+            device,
+            context,
+            format: native.format,
+        },
+        Arc::new(native.surface),
+    );
 }
 
 fn create_host_spawn(provider: ProviderRef) -> HostSpawnCapability {
@@ -338,6 +328,57 @@ fn create_lifecycle_capability(state: &Arc<ProviderState>) -> HostLifecycleCapab
     };
 }
 
+fn create_native_gpu(window: Arc<Window>) -> Result<NativeGpu, WinitHostFailure> {
+    let instance = wgpu::Instance::default();
+    let surface = instance
+        .create_surface(window.clone())
+        .map_err(|error| failure(WinitHostFailureKind::Surface, error))?;
+    let adapter = block_on(instance.request_adapter(&wgpu::RequestAdapterOptions {
+        power_preference: wgpu::PowerPreference::None,
+        force_fallback_adapter: false,
+        compatible_surface: Some(&surface),
+        ..wgpu::RequestAdapterOptions::default()
+    }))
+    .map_err(|error| failure(WinitHostFailureKind::Adapter, error))?;
+    let (device, queue) = block_on(adapter.request_device(&wgpu::DeviceDescriptor {
+        label: Some("flight-host-winit-device"),
+        required_features: wgpu::Features::empty(),
+        required_limits: wgpu::Limits::downlevel_defaults().using_resolution(adapter.limits()),
+        ..wgpu::DeviceDescriptor::default()
+    }))
+    .map_err(|error| failure(WinitHostFailureKind::Device, error))?;
+    let size = window.inner_size();
+    let mut configuration = surface
+        .get_default_config(&adapter, size.width.max(1), size.height.max(1))
+        .ok_or_else(|| {
+            failure(
+                WinitHostFailureKind::Surface,
+                "the selected adapter has no presentation configuration",
+            )
+        })?;
+    if configuration.format.is_srgb() {
+        let capabilities = surface.get_capabilities(&adapter);
+        if let Some(format) = capabilities
+            .formats
+            .into_iter()
+            .find(|format| !format.is_srgb())
+        {
+            configuration.format = format;
+        }
+    }
+    surface.configure(&device, &configuration);
+    let format = configuration.format;
+    return Ok(NativeGpu {
+        instance,
+        adapter,
+        surface,
+        device,
+        queue,
+        configuration,
+        format,
+    });
+}
+
 fn create_screen_capabilities(state: &Arc<ProviderState>) -> HostScreenCapabilities {
     let all_state = state.clone();
     let primary_state = state.clone();
@@ -357,10 +398,13 @@ fn create_screen_capabilities(state: &Arc<ProviderState>) -> HostScreenCapabilit
         get_cursor_position: Arc::new(move |out: &mut Vector2| {
             let (x, y) = *cursor_state.pointer_position.lock().unwrap();
             let outer = cursor_state
-                .window
-                .outer_position()
-                .unwrap_or_default()
-                .to_logical::<f64>(cursor_state.window.scale_factor());
+                .window()
+                .map_or(LogicalPosition::new(0.0, 0.0), |window| {
+                    window
+                        .outer_position()
+                        .unwrap_or_default()
+                        .to_logical::<f64>(window.scale_factor())
+                });
             out.x = outer.x + x;
             out.y = outer.y + y;
         }),
@@ -389,7 +433,7 @@ fn create_surface_capabilities(state: &Arc<ProviderState>) -> HostSurfaceCapabil
                 if !display_state.is_our_surface(surface) {
                     return;
                 }
-                let _ = display_state.window.request_inner_size(LogicalSize::new(
+                display_state.request_inner_size(LogicalSize::new(
                     f64::from(width.max(1.0)),
                     f64::from(height.max(1.0)),
                 ));
@@ -406,6 +450,9 @@ fn create_wgpu_capability(state: &Arc<ProviderState>) -> HostWgpuCapability {
     return HostWgpuCapability {
         provider: state.provider.clone(),
         create: Arc::new(move |_window, width, height| {
+            if !create_state.is_live() {
+                return None;
+            }
             create_state.reconfigure_surface(width.max(0.0) as u32, height.max(0.0) as u32);
             Some(NativeSurfaceHandle {
                 provider: create_state.provider.clone(),
@@ -413,7 +460,8 @@ fn create_wgpu_capability(state: &Arc<ProviderState>) -> HostWgpuCapability {
             })
         }),
         acquire: Arc::new(move |surface, options: &WgpuHostAcquisitionOptions| {
-            let result = if !acquire_state.is_our_surface(surface)
+            let result = if !acquire_state.is_live()
+                || !acquire_state.is_our_surface(surface)
                 || options.format.as_ref().is_some_and(|format| {
                     get_wgpu_texture_format(format) != Some(acquire_state.gpu.format)
                 }) {
@@ -436,7 +484,8 @@ fn create_wgpu_capability(state: &Arc<ProviderState>) -> HostWgpuCapability {
             future
         }),
         attach_surface: Arc::new(move |surface, attachment: &WgpuSurfaceAttachment| {
-            if !attach_state.is_our_surface(surface)
+            if !attach_state.is_live()
+                || !attach_state.is_our_surface(surface)
                 || !Arc::ptr_eq(&attachment.device.provider, &attach_state.provider)
                 || !Arc::ptr_eq(&attachment.device.handle, &attach_state.gpu.device.handle)
                 || get_wgpu_texture_format(&attachment.format) != Some(attach_state.gpu.format)
@@ -448,55 +497,77 @@ fn create_wgpu_capability(state: &Arc<ProviderState>) -> HostWgpuCapability {
                 surface: live_presentation_surface(attach_state.clone()),
             })
         }),
-        is_supported: Arc::new(move || support_state.alive.load(Ordering::Acquire)),
+        is_supported: Arc::new(move || {
+            support_state.alive.load(Ordering::Acquire) && support_state.is_live()
+        }),
         release: Arc::new(|_acquisition| {}),
     };
 }
 
+// Every window verb below resolves the live window through the provider and is a no-op once the
+// host is destroyed. The host owns one window, so the `AppWindow` argument does not select a target.
 fn create_window_capabilities(state: &Arc<ProviderState>) -> HostWindowCapabilities {
     let provider = state.provider.clone();
-    let window = state.window.clone();
+    let with_window = |state: &Arc<ProviderState>| {
+        let state = state.clone();
+        move |action: &dyn Fn(&Window)| {
+            if let Some(window) = state.window() {
+                action(&window);
+            }
+        }
+    };
+
+    let title = with_window(state);
     let appearance = HostWindowAppearanceCapability {
         provider: provider.clone(),
         set_icon: None,
         set_opacity: None,
-        set_title: Arc::new(move |_win, title| window.set_title(title)),
+        set_title: Arc::new(move |_win, text| title(&|window| window.set_title(text))),
     };
 
-    let window = state.window.clone();
+    let focus_window = with_window(state);
     let focus = HostWindowFocusCapability {
         provider: provider.clone(),
-        focus: Arc::new(move |_win| window.focus_window()),
+        focus: Arc::new(move |_win| focus_window(&|window| window.focus_window())),
     };
 
-    let window = state.window.clone();
+    let fullscreen_window = with_window(state);
     let fullscreen = HostWindowFullscreenCapability {
         provider: provider.clone(),
         set_fullscreen: Arc::new(move |_win, enabled| {
-            window
-                .set_fullscreen(enabled.then(|| Fullscreen::Borderless(window.current_monitor())));
+            fullscreen_window(&|window| {
+                window.set_fullscreen(
+                    enabled.then(|| Fullscreen::Borderless(window.current_monitor())),
+                );
+            });
         }),
     };
 
-    let window = state.window.clone();
-    let center_window = state.window.clone();
-    let move_state = state.clone();
+    let center_window = with_window(state);
+    let bounds_state = state.clone();
+    let move_window = with_window(state);
     let resize_state = state.clone();
     let geometry = HostWindowGeometryCapability {
         provider: provider.clone(),
         center: Some(Arc::new(move |_win| {
-            let Some(monitor) = center_window.current_monitor() else {
-                return;
-            };
-            let monitor_position = monitor.position();
-            let monitor_size = monitor.size();
-            let size = center_window.outer_size();
-            center_window.set_outer_position(PhysicalPosition::new(
-                monitor_position.x + (monitor_size.width.saturating_sub(size.width) / 2) as i32,
-                monitor_position.y + (monitor_size.height.saturating_sub(size.height) / 2) as i32,
-            ));
+            center_window(&|window| {
+                let Some(monitor) = window.current_monitor() else {
+                    return;
+                };
+                let monitor_position = monitor.position();
+                let monitor_size = monitor.size();
+                let size = window.outer_size();
+                window.set_outer_position(PhysicalPosition::new(
+                    monitor_position.x + (monitor_size.width.saturating_sub(size.width) / 2) as i32,
+                    monitor_position.y
+                        + (monitor_size.height.saturating_sub(size.height) / 2) as i32,
+                ));
+            });
         })),
         get_bounds: Arc::new(move |out: &mut WindowBounds, _win| {
+            let Some(window) = bounds_state.window() else {
+                return;
+            };
             let scale = window.scale_factor();
             let position = window
                 .outer_position()
@@ -509,12 +580,12 @@ fn create_window_capabilities(state: &Arc<ProviderState>) -> HostWindowCapabilit
             out.height = size.height as f32;
         }),
         set_position: Arc::new(move |_win, x, y| {
-            move_state
-                .window
-                .set_outer_position(LogicalPosition::new(f64::from(x), f64::from(y)));
+            move_window(&|window| {
+                window.set_outer_position(LogicalPosition::new(f64::from(x), f64::from(y)));
+            });
         }),
         set_size: Arc::new(move |_win, width, height| {
-            let _ = resize_state.window.request_inner_size(LogicalSize::new(
+            resize_state.request_inner_size(LogicalSize::new(
                 f64::from(width).max(1.0),
                 f64::from(height).max(1.0),
             ));
@@ -537,27 +608,31 @@ fn create_window_capabilities(state: &Arc<ProviderState>) -> HostWindowCapabilit
         })),
     };
 
-    let close_window = state.window.clone();
     let close_state = state.clone();
-    let open_window = state.window.clone();
+    let open_state = state.clone();
     let lifecycle = HostWindowLifecycleCapability {
         provider: provider.clone(),
         close: Arc::new(move |_win| {
             close_state.alive.store(false, Ordering::Release);
-            close_window.set_visible(false);
+            if let Some(window) = close_state.window() {
+                window.set_visible(false);
+            }
         }),
         open: Arc::new(move |win, _options: &WindowOptions| {
+            let Some(window) = open_state.window() else {
+                return false;
+            };
             let win = win.read().unwrap();
-            open_window.set_title(&win.title);
-            open_window.set_resizable(win.resizable);
-            open_window.set_visible(win.visible);
-            open_window.set_minimized(win.minimized);
-            open_window.set_maximized(win.maximized);
-            open_window.set_fullscreen(
+            window.set_title(&win.title);
+            window.set_resizable(win.resizable);
+            window.set_visible(win.visible);
+            window.set_minimized(win.minimized);
+            window.set_maximized(win.maximized);
+            window.set_fullscreen(
                 win.fullscreen
-                    .then(|| Fullscreen::Borderless(open_window.current_monitor())),
+                    .then(|| Fullscreen::Borderless(window.current_monitor())),
             );
-            let _ = open_window.request_inner_size(LogicalSize::new(
+            open_state.request_inner_size(LogicalSize::new(
                 f64::from(win.width.max(1.0)),
                 f64::from(win.height.max(1.0)),
             ));
@@ -581,58 +656,66 @@ fn create_window_capabilities(state: &Arc<ProviderState>) -> HostWindowCapabilit
         })),
     };
 
-    let min_window = state.window.clone();
-    let max_window = state.window.clone();
-    let resizable_window = state.window.clone();
+    let max_window = with_window(state);
+    let min_window = with_window(state);
+    let resizable_window = with_window(state);
     let size_constraints = HostWindowSizeConstraintsCapability {
         provider: provider.clone(),
         set_maximum_size: Arc::new(move |_win, width, height| {
-            max_window.set_max_inner_size(Some(LogicalSize::new(
-                f64::from(width.max(1.0)),
-                f64::from(height.max(1.0)),
-            )));
+            max_window(&|window| {
+                window.set_max_inner_size(Some(LogicalSize::new(
+                    f64::from(width.max(1.0)),
+                    f64::from(height.max(1.0)),
+                )));
+            });
         }),
         set_minimum_size: Arc::new(move |_win, width, height| {
-            min_window.set_min_inner_size(Some(LogicalSize::new(
-                f64::from(width.max(1.0)),
-                f64::from(height.max(1.0)),
-            )));
+            min_window(&|window| {
+                window.set_min_inner_size(Some(LogicalSize::new(
+                    f64::from(width.max(1.0)),
+                    f64::from(height.max(1.0)),
+                )));
+            });
         }),
         set_resizable: Some(Arc::new(move |_win, value| {
-            resizable_window.set_resizable(value);
+            resizable_window(&|window| window.set_resizable(value));
         })),
     };
 
-    let maximize_window = state.window.clone();
-    let minimize_window = state.window.clone();
-    let restore_window = state.window.clone();
+    let maximize_window = with_window(state);
+    let minimize_window = with_window(state);
+    let restore_window = with_window(state);
     let window_state = HostWindowStateCapability {
         provider: provider.clone(),
-        maximize: Arc::new(move |_win| maximize_window.set_maximized(true)),
-        minimize: Arc::new(move |_win| minimize_window.set_minimized(true)),
+        maximize: Arc::new(move |_win| maximize_window(&|window| window.set_maximized(true))),
+        minimize: Arc::new(move |_win| minimize_window(&|window| window.set_minimized(true))),
         restore: Arc::new(move |_win| {
-            restore_window.set_minimized(false);
-            restore_window.set_maximized(false);
+            restore_window(&|window| {
+                window.set_minimized(false);
+                window.set_maximized(false);
+            });
         }),
     };
 
-    let hide_window = state.window.clone();
-    let show_window = state.window.clone();
+    let hide_window = with_window(state);
+    let show_window = with_window(state);
     let visibility = HostWindowVisibilityCapability {
         provider: provider.clone(),
-        hide: Arc::new(move |_win| hide_window.set_visible(false)),
-        show: Arc::new(move |_win| show_window.set_visible(true)),
+        hide: Arc::new(move |_win| hide_window(&|window| window.set_visible(false))),
+        show: Arc::new(move |_win| show_window(&|window| window.set_visible(true))),
         subscribe_visibility: None,
     };
 
-    let level_window = state.window.clone();
+    let level_window = with_window(state);
     let z_order = HostWindowZOrderCapability {
         provider,
         set_always_on_top: Arc::new(move |_win, value| {
-            level_window.set_window_level(if value {
-                WindowLevel::AlwaysOnTop
-            } else {
-                WindowLevel::Normal
+            level_window(&|window| {
+                window.set_window_level(if value {
+                    WindowLevel::AlwaysOnTop
+                } else {
+                    WindowLevel::Normal
+                });
             });
         }),
     };
@@ -670,30 +753,39 @@ pub fn create_winit_host(options: &WinitHostOptions) -> Result<WinitHost, WinitH
             .map_err(|error| failure(WinitHostFailureKind::Window, error))?,
     );
     let provider: ProviderRef = Arc::new(ProviderIdentity);
-    let source_handle: Arc<dyn Any + Send + Sync> = window.clone();
-    let gpu = create_gpu_resources(provider.clone(), window.clone())?;
+    // The source and native-window handles carry an identity token, never the window itself, so a
+    // retained handle cannot keep the native window alive past destroy.
+    let source_handle: Arc<dyn Any + Send + Sync> = Arc::new(WindowIdentity);
+    let native_gpu = create_native_gpu(window.clone())?;
     let size = window.inner_size();
-    let state = Arc::new(ProviderState {
-        provider: provider.clone(),
-        window: window.clone(),
-        source_handle: source_handle.clone(),
-        gpu,
-        start: Instant::now(),
-        alive: AtomicBool::new(true),
-        lifecycle: AtomicU32::new(AppLifecycleState::Active as u32),
-        exit_code: AtomicI32::new(0),
-        physical_width: AtomicU32::new(size.width),
-        physical_height: AtomicU32::new(size.height),
-        next_frame_handle: AtomicI32::new(1),
-        frame_callbacks: Mutex::new(BTreeMap::new()),
-        input: Mutex::new(InputAttachments::default()),
-        modifiers: Mutex::new(ModifiersState::empty()),
-        pointer_position: Mutex::new((0.0, 0.0)),
-        pointer_buttons: AtomicU32::new(0),
-        close_listeners: Mutex::new(Vec::new()),
-        lifecycle_listeners: Mutex::new(Vec::new()),
-        move_listeners: Mutex::new(Vec::new()),
-        resize_listeners: Mutex::new(Vec::new()),
+    let window_id = window.id();
+    let state = Arc::new_cyclic(|weak: &Weak<ProviderState>| {
+        let (gpu, surface) = create_gpu_resources(provider.clone(), native_gpu, weak.clone());
+        return ProviderState {
+            provider: provider.clone(),
+            window: RwLock::new(Some(window)),
+            window_id,
+            surface: RwLock::new(Some(surface)),
+            source_handle: source_handle.clone(),
+            gpu,
+            start: Instant::now(),
+            alive: AtomicBool::new(true),
+            ime_allowed: AtomicBool::new(false),
+            lifecycle: AtomicU32::new(AppLifecycleState::Active as u32),
+            exit_code: AtomicI32::new(0),
+            physical_width: AtomicU32::new(size.width),
+            physical_height: AtomicU32::new(size.height),
+            next_frame_handle: AtomicI32::new(1),
+            frame_callbacks: Mutex::new(BTreeMap::new()),
+            input: Mutex::new(InputAttachments::default()),
+            modifiers: Mutex::new(ModifiersState::empty()),
+            pointer_position: Mutex::new((0.0, 0.0)),
+            pointer_buttons: AtomicU32::new(0),
+            close_listeners: Mutex::new(Vec::new()),
+            lifecycle_listeners: Mutex::new(Vec::new()),
+            move_listeners: Mutex::new(Vec::new()),
+            resize_listeners: Mutex::new(Vec::new()),
+        };
     });
 
     let window_capabilities = create_window_capabilities(&state);
@@ -786,16 +878,24 @@ fn attach_input(state: Arc<ProviderState>, kind: InputAttachmentKind) -> InputIn
             .unwrap()
             .list_mut(kind)
             .push(attachment.clone());
+        if kind == InputAttachmentKind::Text {
+            state.sync_ime_allowed();
+        }
+        let release_state = state.clone();
         return Arc::new(move || {
-            attachment.active.store(false, Ordering::Release);
+            if attachment.active.swap(false, Ordering::AcqRel) && kind == InputAttachmentKind::Text
+            {
+                release_state.sync_ime_allowed();
+            }
         });
     });
 }
 
-/// Ends the host's lifetime. The host is dropped on its creator thread and owns all native state.
+/// Ends the host's lifetime on its creator thread: the wgpu surface and native window are released
+/// and the event loop is pumped so the platform destroys the window before the loop is dropped.
+/// Capability clones held afterwards fail closed.
 pub fn destroy_winit_host(host: WinitHost) -> Result<(), WinitHostFailure> {
     require_creator_thread(&host)?;
-    host.application.state.alive.store(false, Ordering::Release);
     drop(host);
     return Ok(());
 }
@@ -1057,9 +1157,11 @@ pub fn run_winit_host(
 }
 
 fn screens(state: &ProviderState) -> Vec<ScreenInfo> {
-    let current = state.window.current_monitor();
-    return state
-        .window
+    let Some(window) = state.window() else {
+        return Vec::new();
+    };
+    let current = window.current_monitor();
+    return window
         .available_monitors()
         .enumerate()
         .map(|(index, monitor)| {
@@ -1089,6 +1191,13 @@ impl fmt::Display for WinitHostFailure {
 impl std::error::Error for WinitHostFailure {}
 
 impl InputAttachments {
+    fn has_active(&self, kind: InputAttachmentKind) -> bool {
+        return self
+            .list(kind)
+            .iter()
+            .any(|attachment| attachment.active.load(Ordering::Acquire));
+    }
+
     fn list(&self, kind: InputAttachmentKind) -> Vec<Arc<InputAttachment>> {
         return match kind {
             InputAttachmentKind::Keyboard => self.keyboard.clone(),
@@ -1112,19 +1221,33 @@ impl InputAttachments {
 
 impl WgpuCanvasContext for WinitCanvasContext {
     fn configure(&self, configuration: &WgpuCanvasConfiguration) {
-        configure_wgpu_native_surface(&self.surface, configuration);
+        if let Some(surface) = self.state.upgrade().and_then(|state| state.surface()) {
+            configure_wgpu_native_surface(&surface, configuration);
+        }
     }
 
+    // A zero live extent (minimized, or a zero backing size) and a released surface both skip the
+    // frame: it draws into unpresented scratch storage.
     fn get_current_texture(&self) -> Result<WgpuCanvasFrame, WgpuCanvasFrameError> {
-        let size = self.window.inner_size();
-        if size.width == 0 || size.height == 0 {
+        let Some(state) = self.state.upgrade() else {
+            return Err(WgpuCanvasFrameError::Timeout);
+        };
+        if state.physical_width.load(Ordering::Acquire) == 0
+            || state.physical_height.load(Ordering::Acquire) == 0
+        {
             return Err(WgpuCanvasFrameError::Timeout);
         }
-        return acquire_wgpu_native_surface_frame(&self.surface);
+        let Some(surface) = state.surface() else {
+            return Err(WgpuCanvasFrameError::Timeout);
+        };
+        return acquire_wgpu_native_surface_frame(&surface);
     }
 
     fn present(&self, device: &WgpuNativeDevice, frame: WgpuCanvasFrame) {
-        self.window.pre_present_notify();
+        let Some(window) = self.state.upgrade().and_then(|state| state.window()) else {
+            return;
+        };
+        window.pre_present_notify();
         present_wgpu_native_surface_frame(device, frame);
     }
 
@@ -1156,6 +1279,10 @@ impl ProviderState {
             .collect();
     }
 
+    fn is_live(&self) -> bool {
+        return self.window.read().unwrap().is_some();
+    }
+
     fn is_our_source(&self, source: &InputIngressSource) -> bool {
         return Arc::ptr_eq(&self.provider, &source.provider)
             && Arc::ptr_eq(&self.source_handle, &source.handle);
@@ -1178,6 +1305,20 @@ impl ProviderState {
         };
     }
 
+    fn notify_resize(&self, size: PhysicalSize<u32>) {
+        let Some(window) = self.window() else {
+            return;
+        };
+        let scale = window.scale_factor();
+        let logical = size.to_logical::<f64>(scale);
+        let listeners = self.resize_listeners.lock().unwrap().clone();
+        for listener in listeners {
+            if listener.active.load(Ordering::Acquire) {
+                (listener.callback)(logical.width as f32, logical.height as f32, scale);
+            }
+        }
+    }
+
     fn now(&self) -> f64 {
         return self.start.elapsed().as_secs_f64() * 1_000.0;
     }
@@ -1188,12 +1329,38 @@ impl ProviderState {
         if width == 0 || height == 0 {
             return;
         }
+        let Some(surface) = self.surface() else {
+            return;
+        };
         let mut configuration = self.gpu.configuration.lock().unwrap();
         configuration.width = width;
         configuration.height = height;
-        self.gpu
-            .surface
-            .configure(&self.gpu.native.device, &configuration);
+        surface.configure(&self.gpu.native.device, &configuration);
+    }
+
+    // Releases the surface before the window it presents to. Afterwards every capability fails
+    // closed; the caller pumps the event loop so the platform processes the window destruction.
+    fn release_native(&self) {
+        self.alive.store(false, Ordering::Release);
+        self.frame_callbacks.lock().unwrap().clear();
+        drop(self.surface.write().unwrap().take());
+        drop(self.window.write().unwrap().take());
+    }
+
+    // Wayland applies a requested size immediately, returns it, and may never send `Resized`, so the
+    // returned size is applied here; platforms that resize asynchronously deliver `Resized` later.
+    fn request_inner_size(&self, size: LogicalSize<f64>) {
+        let Some(window) = self.window() else {
+            return;
+        };
+        if let Some(applied) = window.request_inner_size(size) {
+            self.resize_to(applied);
+        }
+    }
+
+    fn resize_to(&self, size: PhysicalSize<u32>) {
+        self.reconfigure_surface(size.width, size.height);
+        self.notify_resize(size);
     }
 
     fn set_lifecycle(&self, state: AppLifecycleState) {
@@ -1207,6 +1374,29 @@ impl ProviderState {
                 (listener.callback)();
             }
         }
+    }
+
+    fn surface(&self) -> Option<Arc<wgpu::Surface<'static>>> {
+        return self.surface.read().unwrap().clone();
+    }
+
+    // IME is allowed exactly while at least one text attachment is active.
+    fn sync_ime_allowed(&self) {
+        let wanted = self
+            .input
+            .lock()
+            .unwrap()
+            .has_active(InputAttachmentKind::Text);
+        if self.ime_allowed.swap(wanted, Ordering::AcqRel) == wanted {
+            return;
+        }
+        if let Some(window) = self.window() {
+            window.set_ime_allowed(wanted);
+        }
+    }
+
+    fn window(&self) -> Option<Arc<Window>> {
+        return self.window.read().unwrap().clone();
     }
 }
 
@@ -1229,45 +1419,46 @@ impl WinitApplication {
     }
 
     fn dispatch_keyboard(&self, event: winit::event::KeyEvent) {
+        let pressed = is_winit_press(event.state);
+        let modifiers = get_winit_key_event_modifiers(
+            *self.state.modifiers.lock().unwrap(),
+            event.physical_key,
+            pressed,
+        );
         let data = build_winit_keyboard_data(
             &event.logical_key,
             event.physical_key,
             event.location,
-            *self.state.modifiers.lock().unwrap(),
+            modifiers,
             event.repeat,
             self.state.now(),
         );
         for sink in self.state.input_sinks(InputAttachmentKind::Keyboard) {
-            if is_winit_press(event.state) {
+            if pressed {
                 (sink.key_down)(&data);
             } else {
                 (sink.key_up)(&data);
             }
         }
-        if is_winit_press(event.state)
+        if pressed
             && let Some(text) = event.text
-            && !text.is_empty()
+            && is_winit_committed_key_text(&text, modifiers)
         {
             let text = build_winit_text_data(&text, false);
             for sink in self.state.input_sinks(InputAttachmentKind::Text) {
-                (sink.text_input)(&text);
+                dispatch_winit_text(&sink, &text);
             }
         }
     }
 
     fn dispatch_pointer_button(&self, button: winit::event::MouseButton, pressed: bool) {
         let button = translate_winit_mouse_button(button);
-        let buttons = if pressed {
-            self.state
-                .pointer_buttons
-                .fetch_or(button.mask, Ordering::AcqRel)
-                | button.mask
-        } else {
-            self.state
-                .pointer_buttons
-                .fetch_and(!button.mask, Ordering::AcqRel)
-                & !button.mask
-        };
+        let buttons = update_winit_pointer_buttons(
+            self.state.pointer_buttons.load(Ordering::Acquire),
+            button,
+            pressed,
+        );
+        self.state.pointer_buttons.store(buttons, Ordering::Release);
         let (x, y) = *self.state.pointer_position.lock().unwrap();
         let mut data = build_winit_pointer_data(
             x,
@@ -1288,7 +1479,7 @@ impl WinitApplication {
     }
 
     fn dispatch_pointer_move(&self, position: PhysicalPosition<f64>) {
-        let scale = self.state.window.scale_factor();
+        let scale = self.scale_factor();
         let logical = position.to_logical::<f64>(scale);
         *self.state.pointer_position.lock().unwrap() = (logical.x, logical.y);
         let data = build_winit_pointer_data(
@@ -1309,9 +1500,7 @@ impl WinitApplication {
             *self.state.modifiers.lock().unwrap(),
             self.state.now(),
         );
-        let logical = touch
-            .location
-            .to_logical::<f64>(self.state.window.scale_factor());
+        let logical = touch.location.to_logical::<f64>(self.scale_factor());
         data.x = logical.x;
         data.y = logical.y;
         for sink in self.state.input_sinks(InputAttachmentKind::Pointer) {
@@ -1326,14 +1515,14 @@ impl WinitApplication {
 
     fn dispatch_wheel(&self, delta: winit::event::MouseScrollDelta) {
         let (x, y) = *self.state.pointer_position.lock().unwrap();
-        let mut data = build_winit_pointer_data(
+        let data = build_winit_wheel_data(
             x,
             y,
             self.state.pointer_buttons.load(Ordering::Acquire),
             *self.state.modifiers.lock().unwrap(),
+            &delta,
             self.state.now(),
         );
-        (data.delta_x, data.delta_y, data.wheel_mode) = translate_winit_scroll_delta(&delta);
         for sink in self.state.input_sinks(InputAttachmentKind::Wheel) {
             (sink.wheel)(&data);
         }
@@ -1357,8 +1546,10 @@ impl WinitApplication {
 
 impl ApplicationHandler for WinitApplication {
     fn about_to_wait(&mut self, _event_loop: &ActiveEventLoop) {
-        if self.run_frame.is_some() {
-            self.state.window.request_redraw();
+        if self.run_frame.is_some()
+            && let Some(window) = self.state.window()
+        {
+            window.request_redraw();
         }
     }
 
@@ -1384,6 +1575,14 @@ impl ApplicationHandler for WinitApplication {
         }
     }
 
+    // The blocking loop is consumed when it exits, so the run path releases the window here, where
+    // the loop can still flush its destruction; pump mode releases it in `destroy_winit_host`.
+    fn exiting(&mut self, _event_loop: &ActiveEventLoop) {
+        if self.run_frame.is_some() {
+            self.state.release_native();
+        }
+    }
+
     fn resumed(&mut self, _event_loop: &ActiveEventLoop) {
         self.state.set_lifecycle(AppLifecycleState::Active);
     }
@@ -1398,7 +1597,7 @@ impl ApplicationHandler for WinitApplication {
         window_id: WindowId,
         event: WindowEvent,
     ) {
-        if window_id != self.state.window.id() {
+        if window_id != self.state.window_id {
             return;
         }
         match event {
@@ -1417,21 +1616,16 @@ impl ApplicationHandler for WinitApplication {
                 self.dispatch_pointer_button(button, is_winit_press(state));
             }
             WindowEvent::MouseWheel { delta, .. } => self.dispatch_wheel(delta),
-            WindowEvent::Ime(Ime::Commit(text)) => {
-                let data = build_winit_text_data(&text, false);
-                for sink in self.state.input_sinks(InputAttachmentKind::Text) {
-                    (sink.text_input)(&data);
-                }
-            }
-            WindowEvent::Ime(Ime::Preedit(text, _)) => {
-                let data = build_winit_text_data(&text, true);
-                for sink in self.state.input_sinks(InputAttachmentKind::Text) {
-                    (sink.text_edit)(&data);
+            WindowEvent::Ime(ime) => {
+                if let Some(data) = build_winit_ime_text_data(&ime) {
+                    for sink in self.state.input_sinks(InputAttachmentKind::Text) {
+                        dispatch_winit_text(&sink, &data);
+                    }
                 }
             }
             WindowEvent::Touch(touch) => self.dispatch_touch(touch),
             WindowEvent::Moved(position) => {
-                let logical = position.to_logical::<f64>(self.state.window.scale_factor());
+                let logical = position.to_logical::<f64>(self.scale_factor());
                 let listeners = self.state.move_listeners.lock().unwrap().clone();
                 for listener in listeners {
                     if listener.active.load(Ordering::Acquire) {
@@ -1441,7 +1635,9 @@ impl ApplicationHandler for WinitApplication {
             }
             WindowEvent::Resized(size) => self.dispatch_resize(size),
             WindowEvent::ScaleFactorChanged { .. } => {
-                self.dispatch_resize(self.state.window.inner_size());
+                if let Some(window) = self.state.window() {
+                    self.dispatch_resize(window.inner_size());
+                }
             }
             WindowEvent::RedrawRequested => self.fire_frame_point(Some(event_loop)),
             _ => {}
@@ -1451,17 +1647,43 @@ impl ApplicationHandler for WinitApplication {
 
 impl WinitApplication {
     fn dispatch_resize(&self, size: PhysicalSize<u32>) {
-        self.state.reconfigure_surface(size.width, size.height);
-        let logical = size.to_logical::<f64>(self.state.window.scale_factor());
-        let listeners = self.state.resize_listeners.lock().unwrap().clone();
-        for listener in listeners {
-            if listener.active.load(Ordering::Acquire) {
-                (listener.callback)(
-                    logical.width as f32,
-                    logical.height as f32,
-                    self.state.window.scale_factor(),
-                );
-            }
+        self.state.resize_to(size);
+    }
+
+    fn scale_factor(&self) -> f64 {
+        return self
+            .state
+            .window()
+            .map_or(1.0, |window| window.scale_factor());
+    }
+}
+
+impl Drop for WinitHost {
+    // `WinitHost` is !Send, so this always runs on the creator thread. The window must be released
+    // while the event loop is alive and the loop pumped afterwards: winit queues the native destroy
+    // request and only the loop flushes it to the display server.
+    fn drop(&mut self) {
+        self.application.state.release_native();
+        let Some(mut event_loop) = self.event_loop.take() else {
+            return;
+        };
+        let mut flush = NativeReleaseFlush;
+        for _ in 0..NATIVE_RELEASE_FLUSH_PUMPS {
+            let _ = event_loop.pump_app_events(Some(Duration::ZERO), &mut flush);
         }
     }
 }
+
+impl ApplicationHandler for NativeReleaseFlush {
+    fn resumed(&mut self, _event_loop: &ActiveEventLoop) {}
+
+    fn window_event(
+        &mut self,
+        _event_loop: &ActiveEventLoop,
+        _window_id: WindowId,
+        _event: WindowEvent,
+    ) {
+    }
+}
+
+const NATIVE_RELEASE_FLUSH_PUMPS: usize = 2;
