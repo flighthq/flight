@@ -15,6 +15,8 @@ mod flight_ffi_reachability_census_test;
 mod flight_ffi_reachability_unit_test;
 #[path = "signal_identity_test.rs"]
 mod flight_ffi_signal_identity_test;
+#[path = "signal_ref_connect_test.rs"]
+mod flight_ffi_signal_ref_connect_test;
 #[path = "task_k_opaque_handle_test.rs"]
 mod flight_ffi_task_k_opaque_handle_test;
 #[path = "task_m_residual_skip_test.rs"]

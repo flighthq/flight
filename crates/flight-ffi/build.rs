@@ -3,6 +3,7 @@ mod native_bindings;
 mod public_perimeter;
 mod reachability;
 mod signal_identity;
+mod signal_ref_connect;
 use std::collections::{BTreeMap, BTreeSet};
 use std::env;
 use std::fmt::Write as _;
@@ -4842,15 +4843,11 @@ fn generate_signal_ref_connect(
     let optional = entry.declared.starts_with("Option<");
     let shared = entry.declared.contains("Ref<Signal<");
     let signal_ty = format!("{QUALIFIER}::Signal<{rust_ty}>");
-    let reach = match (optional, shared) {
-        (false, false) => format!("&guard.{field} as *const {signal_ty}"),
-        (true, false) => format!(
-            "match &guard.{field} {{ Some(signal) => signal as *const {signal_ty}, None => return std::ptr::null_mut() }}"
-        ),
-        (false, true) => format!("&*guard.{field}.read().unwrap() as *const {signal_ty}"),
-        (true, true) => format!(
-            "match &guard.{field} {{ Some(signal) => &*signal.read().unwrap() as *const {signal_ty}, None => return std::ptr::null_mut() }}"
-        ),
+    let reach = signal_ref_connect::get_ref_connect_reach(field, optional, shared, &signal_ty);
+    let release = if reach.release.is_empty() {
+        String::new()
+    } else {
+        format!("{}\n    ", reach.release)
     };
     let mut out = String::new();
     writeln!(
@@ -4864,12 +4861,13 @@ fn generate_signal_ref_connect(
              let Some(callback) = callback_fn else {{ return std::ptr::null_mut(); }};\n    \
              let owner = unsafe {{ &*(owner as *const {QUALIFIER}::Ref<{owner_ty}>) }};\n    \
              let guard = owner.read().unwrap();\n    \
-             let signal = {reach};\n    \
+             {bind}\n    \
              let connection = ffi_connect_signal(signal, callback_ctx, release_fn, priority, once, scope, move |ctx, {payload_name}: &{rust_ty}| callback(ctx{call_args}));\n    \
-             drop(guard);\n    \
+             {release}drop(guard);\n    \
              return connection;\n\
          }}",
         absent = if optional { ", an absent signal," } else { "" },
+        bind = reach.bind,
         stem = get_signal_payload_stem(&entry.payload),
     )
     .unwrap();

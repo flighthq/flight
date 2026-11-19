@@ -562,6 +562,73 @@ fn ref_connect_locks_only_to_connect_and_releases_when_the_owner_drops() {
 }
 
 #[test]
+fn ref_connect_rearms_a_signal_a_once_call_emptied() {
+    let owner = z_create_interaction_signals_owner();
+    let first = Probe::default();
+    let once = z_ref_connect_pointer_down(&owner, &first, true);
+    z_emit_owner_pointer_down(&owner, 1.0);
+    assert_eq!(
+        (z_get_probe_calls(&first), z_get_probe_releases(&first)),
+        (1, 1)
+    );
+    assert!(!flight_sdk::has_signal_slots(
+        &owner.read().unwrap().on_pointer_down
+    ));
+    let second = Probe::default();
+    let again = z_ref_connect_pointer_down(&owner, &second, false);
+    z_emit_owner_pointer_down(&owner, 2.0);
+    assert_eq!(
+        *second.values.lock().unwrap(),
+        [2.0],
+        "the emptied signal is re-armed in place"
+    );
+    assert_eq!(*first.values.lock().unwrap(), [1.0]);
+    unsafe { crate::flight_free_signal_connection(once) };
+    unsafe { crate::flight_free_signal_connection(again) };
+    assert_eq!(
+        (z_get_probe_releases(&first), z_get_probe_releases(&second)),
+        (1, 1)
+    );
+}
+
+#[test]
+fn ref_connect_rearms_a_signal_its_last_slot_left() {
+    for teardown in ["disconnect", "free"] {
+        let owner = z_create_interaction_signals_owner();
+        let first = Probe::default();
+        let connection = z_ref_connect_pointer_down(&owner, &first, false);
+        z_emit_owner_pointer_down(&owner, 1.0);
+        if teardown == "disconnect" {
+            unsafe { crate::flight_disconnect_signal_connection(connection) };
+        } else {
+            unsafe { crate::flight_free_signal_connection(connection) };
+        }
+        assert_eq!(z_get_probe_releases(&first), 1, "{teardown}");
+        assert!(!flight_sdk::has_signal_slots(
+            &owner.read().unwrap().on_pointer_down
+        ));
+        let second = Probe::default();
+        let again = z_ref_connect_pointer_down(&owner, &second, false);
+        z_emit_owner_pointer_down(&owner, 2.0);
+        assert_eq!(
+            *second.values.lock().unwrap(),
+            [2.0],
+            "{teardown}: re-armed in place"
+        );
+        assert_eq!(*first.values.lock().unwrap(), [1.0], "{teardown}");
+        if teardown == "disconnect" {
+            unsafe { crate::flight_free_signal_connection(connection) };
+        }
+        unsafe { crate::flight_free_signal_connection(again) };
+        assert_eq!(
+            (z_get_probe_releases(&first), z_get_probe_releases(&second)),
+            (1, 1),
+            "{teardown}"
+        );
+    }
+}
+
+#[test]
 fn release_may_call_back_into_the_signal_on_every_teardown_path() {
     for path in ["free", "disconnect", "clear", "scope", "once", "frame-rate"] {
         z_run_within_deadline(move || {
@@ -719,6 +786,20 @@ fn z_connect_unit(
     return connection;
 }
 
+fn z_create_interaction_signals_owner() -> flight_sdk::Ref<flight_sdk::InteractionSignals> {
+    return Arc::new(RwLock::new(
+        flight_sdk::interaction::contract::create_interaction_signals(),
+    ));
+}
+
+// Emits through the owner's own on_pointer_down field, the one every other emitter reaches.
+// flight-lint: allow(f64) probes record every payload class into one f64 value list
+fn z_emit_owner_pointer_down(owner: &flight_sdk::Ref<flight_sdk::InteractionSignals>, x: f64) {
+    let mut event = flight_sdk::PointerEventData::new();
+    event.x = x as _;
+    flight_sdk::emit_signal(&owner.read().unwrap().on_pointer_down, &event);
+}
+
 fn z_enter(ctx: *mut c_void) -> &'static Probe {
     let probe = unsafe { &*(ctx as *const Probe) };
     if z_get_probe_releases(&probe) > 0 {
@@ -796,6 +877,26 @@ extern "C" fn z_record_unit(ctx: *mut c_void) {
         });
     }
     probe.in_call.store(false, Ordering::SeqCst);
+}
+
+fn z_ref_connect_pointer_down(
+    owner: &flight_sdk::Ref<flight_sdk::InteractionSignals>,
+    probe: &Probe,
+    once: bool,
+) -> *mut flight_sdk::SignalConnection {
+    let connection = unsafe {
+        crate::flight_connect_interaction_signals_on_pointer_down(
+            (owner as *const flight_sdk::Ref<flight_sdk::InteractionSignals>).cast(),
+            Some(z_record_pointer_event),
+            z_get_probe_context(probe),
+            Some(z_release),
+            0,
+            once,
+            std::ptr::null(),
+        )
+    };
+    assert!(!connection.is_null());
+    return connection;
 }
 
 extern "C" fn z_release(ctx: *mut c_void) {
