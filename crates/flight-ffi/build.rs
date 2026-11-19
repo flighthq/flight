@@ -1,6 +1,7 @@
 mod native_bindings;
 mod public_perimeter;
 mod reachability;
+mod signal_identity;
 use std::collections::{BTreeMap, BTreeSet};
 use std::env;
 use std::fmt::Write as _;
@@ -884,11 +885,17 @@ fn main() {
     )
     .unwrap();
 
+    let defined_type_names = collect_crate_defined_type_names(crates_dir);
     let mut signal_inventory = Vec::new();
     for dir_name in SCAN_CRATES {
         let src_dir = crates_dir.join(dir_name).join("src");
         if src_dir.exists() {
-            signal_inventory.extend(collect_signal_inventory(dir_name, &src_dir, crates_dir));
+            signal_inventory.extend(collect_signal_inventory(
+                dir_name,
+                &src_dir,
+                crates_dir,
+                &defined_type_names,
+            ));
         }
     }
     signal_inventory.sort_by(|a, b| {
@@ -1367,6 +1374,8 @@ struct SignalInventoryEntry {
     payload: String,
     // The owning struct reaches the crate root only through `pub use <module>::*`.
     glob_export: bool,
+    // The defining crate of every nominal type the payload names.
+    identities: BTreeSet<signal_identity::PayloadIdentity>,
 }
 
 // These leaves were briefly emitted during Task S. Capability construction is withdrawn from the
@@ -2247,6 +2256,31 @@ fn collect_rust_source_files(dir: &Path) -> Vec<PathBuf> {
     sources
 }
 
+// The type names every Flight crate defines, keyed by crate directory, so a payload's nominal types
+// resolve to their defining crate.
+fn collect_crate_defined_type_names(crates_dir: &Path) -> BTreeMap<String, BTreeSet<String>> {
+    let mut defined = BTreeMap::new();
+    let mut crates: Vec<_> = fs::read_dir(crates_dir)
+        .unwrap()
+        .filter_map(|entry| entry.ok())
+        .map(|entry| entry.file_name().to_string_lossy().to_string())
+        .filter(|name| name.starts_with("flight-"))
+        .collect();
+    crates.sort();
+    for name in crates {
+        let src_dir = crates_dir.join(&name).join("src");
+        if !src_dir.exists() {
+            continue;
+        }
+        let files: Vec<syn::File> = collect_rust_source_files(&src_dir)
+            .iter()
+            .filter_map(|path| syn::parse_file(&fs::read_to_string(path).ok()?).ok())
+            .collect();
+        defined.insert(name, signal_identity::collect_defined_type_names(&files));
+    }
+    defined
+}
+
 // Every `Signal<T>` on the public perimeter of one crate: pub fields of root-exported structs and
 // parameters/returns of TS-public functions. A function's own generic parameter (`Signal<T>` in
 // flight-signals) is the generic API, not a payload, and is not recorded.
@@ -2254,6 +2288,7 @@ fn collect_signal_inventory(
     owner: &str,
     src_dir: &Path,
     crates_dir: &Path,
+    defined: &BTreeMap<String, BTreeSet<String>>,
 ) -> Vec<SignalInventoryEntry> {
     let lib_path = src_dir.join("lib.rs");
     if !lib_path.exists() {
@@ -2270,20 +2305,31 @@ fn collect_signal_inventory(
             .strip_prefix(crates_dir)
             .unwrap_or(&source)
             .to_path_buf();
+        let (imports, glob_crates) = signal_identity::collect_file_imports(&file, owner);
+        let scope = signal_identity::TypeScope {
+            owner,
+            imports: &imports,
+            glob_crates: &glob_crates,
+            defined,
+        };
         let mut record = |item: String,
                           ty: &syn::Type,
                           generics: &BTreeSet<String>,
                           glob_export: bool| {
             for payload in find_signal_payloads(ty) {
-                if generics.contains(&payload) {
+                let (payload_text, identities) =
+                    signal_identity::resolve_payload(&payload, &scope, generics)
+                        .unwrap_or_else(|error| panic!("{}: {item}: {error}", relative.display()));
+                if generics.contains(&payload_text) {
                     continue;
                 }
                 inventory.push(SignalInventoryEntry {
                     owner: owner.to_string(),
                     source: relative.clone(),
                     item: item.clone(),
-                    declared: strip_type_path_qualifiers(&compact_type_text(&rust_type_text(ty))),
-                    payload: strip_type_path_qualifiers(&compact_type_text(&payload)),
+                    declared: signal_identity::display_type_text(ty),
+                    payload: payload_text,
+                    identities,
                     glob_export,
                 });
             }
@@ -2349,6 +2395,19 @@ fn collect_signal_inventory(
 // committed `signal_inventory.txt` must equal the generated report; set
 // `FLIGHT_FFI_UPDATE_SIGNAL_INVENTORY=1` to rewrite the committed copy after reviewing the delta.
 fn check_signal_inventory(inventory: &[SignalInventoryEntry], report: &str) {
+    let mut identities: BTreeMap<String, BTreeSet<signal_identity::PayloadIdentity>> =
+        BTreeMap::new();
+    for entry in inventory {
+        identities
+            .entry(entry.payload.clone())
+            .or_default()
+            .extend(entry.identities.iter().cloned());
+    }
+    if let Err(error) =
+        signal_identity::check_payload_identities(&identities, get_signal_payload_stem)
+    {
+        panic!("signal payload identities are ambiguous: {error}");
+    }
     let payloads: BTreeSet<&str> = inventory
         .iter()
         .map(|entry| entry.payload.as_str())
@@ -2425,30 +2484,6 @@ fn get_signal_payload_class(payload: &str) -> Option<&'static str> {
         return Some("borrowed-struct");
     }
     None
-}
-
-// `Signal<crate::types::KeyboardEventData>` -> `Signal<KeyboardEventData>`: drops every
-// `module::` qualifier so one payload type is one inventory row however its owner spells the path.
-fn strip_type_path_qualifiers(text: &str) -> String {
-    let mut out = String::new();
-    let mut ident = String::new();
-    let mut chars = text.chars().peekable();
-    while let Some(character) = chars.next() {
-        if character.is_alphanumeric() || character == '_' {
-            ident.push(character);
-            continue;
-        }
-        if character == ':' && chars.peek() == Some(&':') {
-            chars.next();
-            ident.clear();
-            continue;
-        }
-        out.push_str(&ident);
-        ident.clear();
-        out.push(character);
-    }
-    out.push_str(&ident);
-    out
 }
 
 // The wrapper stem for a connectable payload: `()` -> `unit`, `Ref<NetProgress>` ->
@@ -2597,33 +2632,11 @@ fn collect_root_exported_item_names(
     (names.into_keys().collect(), glob_only)
 }
 
-// `Ref < Signal < () > >` -> `Ref<Signal<()>>`: token text without the spacing `quote` inserts.
-fn compact_type_text(text: &str) -> String {
-    let mut out = text.split_whitespace().collect::<Vec<_>>().join(" ");
-    for (from, to) in [
-        (" <", "<"),
-        ("< ", "<"),
-        (" >", ">"),
-        (" ,", ","),
-        (" :: ", "::"),
-        (":: ", "::"),
-        (" ::", "::"),
-        ("& ", "&"),
-        ("( ", "("),
-        (" )", ")"),
-    ] {
-        while out.contains(from) {
-            out = out.replace(from, to);
-        }
-    }
-    out
-}
-
 // The payload type text of every `Signal<T>` anywhere inside `ty` (nested generics, references,
 // tuples, callback parameters and returns).
-fn find_signal_payloads(ty: &syn::Type) -> Vec<String> {
+fn find_signal_payloads(ty: &syn::Type) -> Vec<syn::Type> {
     struct SignalFinder {
-        payloads: Vec<String>,
+        payloads: Vec<syn::Type>,
     }
     impl<'ast> syn::visit::Visit<'ast> for SignalFinder {
         fn visit_type_path(&mut self, path: &'ast syn::TypePath) {
@@ -2632,7 +2645,7 @@ fn find_signal_payloads(ty: &syn::Type) -> Vec<String> {
                 && let syn::PathArguments::AngleBracketed(arguments) = &segment.arguments
                 && let Some(syn::GenericArgument::Type(payload)) = arguments.args.first()
             {
-                self.payloads.push(rust_type_text(payload));
+                self.payloads.push(payload.clone());
             }
             syn::visit::visit_type_path(self, path);
         }
