@@ -5,7 +5,7 @@ use flight_meshgeometry::contract::*;
 use flight_node::add_node_child;
 use flight_scene3d::contract::*;
 use std::sync::{Arc, RwLock};
-fn morphed_mesh(delta: [f32; 3], weight: f32) -> flight_entity::Ref<Mesh> {
+fn morphed_mesh(delta: [f64; 3], weight: f64) -> flight_entity::Ref<Mesh> {
     let g = create_mesh_geometry(MeshGeometryOptions {
         vertices: vec![0.0; 12].into_boxed_slice(),
         layout: CANONICAL_MESH_GEOMETRY_LAYOUT.clone(),

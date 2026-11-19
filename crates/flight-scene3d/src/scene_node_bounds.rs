@@ -37,12 +37,12 @@ fn accumulate_world_bounds(out: &mut Aabb, node: &NodeRef) {
 pub fn get_node3d_world_bounds(out: &mut Aabb, node: &NodeRef) {
     set_aabb(
         out,
-        f32::INFINITY,
-        f32::INFINITY,
-        f32::INFINITY,
-        f32::NEG_INFINITY,
-        f32::NEG_INFINITY,
-        f32::NEG_INFINITY,
+        f64::INFINITY,
+        f64::INFINITY,
+        f64::INFINITY,
+        f64::NEG_INFINITY,
+        f64::NEG_INFINITY,
+        f64::NEG_INFINITY,
     );
     accumulate_world_bounds(out, node);
 }

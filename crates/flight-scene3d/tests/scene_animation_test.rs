@@ -5,7 +5,7 @@ use flight_animation::contract::*;
 use flight_entity::Ref;
 use flight_scene3d::contract::*;
 use std::sync::{Arc, RwLock};
-fn track(components: usize, values: Vec<f32>) -> Ref<AnimationTrack> {
+fn track(components: usize, values: Vec<f64>) -> Ref<AnimationTrack> {
     return Arc::new(RwLock::new({
         let mut track = create_animation_track();
         track.components = components;
@@ -18,7 +18,7 @@ fn bound_clip(
     node: Node3DRef,
     path: Scene3DAnimationPath,
     components: usize,
-    values: Vec<f32>,
+    values: Vec<f64>,
 ) -> AnimationClip {
     return create_animation_clip(
         vec![create_animation_channel(
@@ -83,7 +83,7 @@ mod apply_animation_clip_to_scene3d {
         close(p.x, 5.0);
         close(p.y, 10.0);
         close(p.z, 15.0);
-        let s = std::f32::consts::FRAC_1_SQRT_2;
+        let s = std::f64::consts::FRAC_1_SQRT_2;
         let clip = bound_clip(
             node.clone(),
             Scene3DAnimationPath::Rotation,

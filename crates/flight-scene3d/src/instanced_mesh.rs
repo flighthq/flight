@@ -183,12 +183,12 @@ pub fn compute_instanced_mesh_local_bounds_aabb(out: &mut Aabb, source: &Instanc
     let Some(bounds) = bounds.filter(|_| source.instance_count != 0) else {
         set_aabb(
             out,
-            f32::INFINITY,
-            f32::INFINITY,
-            f32::INFINITY,
-            f32::NEG_INFINITY,
-            f32::NEG_INFINITY,
-            f32::NEG_INFINITY,
+            f64::INFINITY,
+            f64::INFINITY,
+            f64::INFINITY,
+            f64::NEG_INFINITY,
+            f64::NEG_INFINITY,
+            f64::NEG_INFINITY,
         );
         return;
     };
@@ -374,6 +374,7 @@ pub fn set_instanced_mesh_instance_matrix(
     t.version = t.version.wrapping_add(1);
 }
 
+// flight-lint: allow(f32) the range input is the f32 typed-array lane; each element widens exactly into the f64 Matrix4
 pub fn set_instanced_mesh_instance_matrix_range(
     target: &Ref<InstancedMesh>,
     start_index: i32,
@@ -393,7 +394,9 @@ pub fn set_instanced_mesh_instance_matrix_range(
             .write()
             .unwrap()
             .m
-            .copy_from_slice(&source[i * 16..i * 16 + 16]);
+            .iter_mut()
+            .zip(&source[i * 16..i * 16 + 16])
+            .for_each(|(out, value)| *out = f64::from(*value));
     }
     t.version = t.version.wrapping_add(1);
 }

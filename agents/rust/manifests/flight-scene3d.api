@@ -192,7 +192,7 @@ src/scene.rs: pub fn initialize_scene3d(out: &mut Scene3D)
 src/scene.rs: pub struct Scene3D { runtime: EntityRuntimeSlot, pub animations: HashMap<String, Ref<AnimationClip>>, pub metadata: Option<Ref<Scene3DMetadata>>, pub resources: Vec<ImageResourceReference>, pub root: Node3DRef, }
 src/scene.rs: pub type Scene3DRuntime = flight_entity::EntityRuntime;
 src/scene_animation.rs: #[derive(Clone)] pub struct Scene3DAnimationTarget { pub node: Node3DRef, pub path: Scene3DAnimationPath, }
-src/scene_animation.rs: pub fn apply_animation_clip_to_scene3d(clip: &AnimationClip, time: f32)
+src/scene_animation.rs: pub fn apply_animation_clip_to_scene3d(clip: &AnimationClip, time: f64)
 src/scene_document.rs: pub fn create_scene3d_from_document(document: &Scene3DDocument, scene_index: Option<i32>,) -> Scene3D
 src/scene_document.rs: pub fn create_scene3ds_from_document(document: &Scene3DDocument) -> Vec<Scene3D>
 src/scene_document_lights.rs: pub fn create_scene3d_lights_from_document(document: &Scene3DDocument) -> Scene3DLights
@@ -278,7 +278,7 @@ src/sugar.rs: impl Node3DMethods for NodeRef :: fn world_alpha(&self, state: &mu
 src/sugar.rs: impl Node3DMethods for NodeRef :: fn world_bounds(&self, out: &mut Aabb, revisions: &mut NodeRevisionState)
 src/sugar.rs: impl Scene3D :: fn new() -> Self
 src/sugar.rs: impl Scene3DAnimationMethods for AnimationClip
-src/sugar.rs: impl Scene3DAnimationMethods for AnimationClip :: fn apply_to_scene3d(&self, time: f32)
+src/sugar.rs: impl Scene3DAnimationMethods for AnimationClip :: fn apply_to_scene3d(&self, time: f64)
 src/sugar.rs: impl Scene3DAnimationPath :: fn parse(value: &str) -> Option<Self>
 src/sugar.rs: impl Scene3DAnimationPath :: fn to_str(self) -> &'static str
 src/sugar.rs: impl Scene3DDocument :: fn build(&self, scene_index: Option<i32>) -> Scene3D
@@ -291,7 +291,7 @@ src/sugar.rs: impl Scene3DGuardMethods for Scene3DGuardStateRef :: fn enable(&se
 src/sugar.rs: impl Scene3DKindUsage :: fn populate(&mut self, scene: &Scene3D)
 src/sugar.rs: pub trait InstancedMeshMethods { fn append_instance(&self, matrix: &Matrix4) -> i32; fn capacity(&self) -> usize; fn clear_instances(&self); fn clone_instances(&self) -> Ref<InstancedMesh>; fn enable_instance_signals(&self) -> Ref<InstancedMeshSignals>; fn instance_color(&self, index: i32) -> f64; fn instance_matrix(&self, out: &mut Matrix4, index: i32) -> bool; fn instance_signals(&self) -> Option<Ref<InstancedMeshSignals>>; fn invalidate_instances(&self); fn is_instanced_mesh(&self) -> bool; fn iterate_instances(&self, visitor: InstancedMeshVisitor); fn local_bounds(&self, out: &mut Aabb); fn remove_instance(&self, index: i32); fn reserve_instances(&self, capacity: i32); fn set_instance_color(&self, index: i32, color: u32); fn set_instance_count(&self, count: i32); fn set_instance_matrix(&self, index: i32, matrix: &Matrix4); fn set_instance_matrix_range(&self, start_index: i32, count: i32, source: &flight_entity::Float32Array,); }
 src/sugar.rs: pub trait Node3DMethods { fn clone_subtree(&self, material_override: Option<Scene3DMaterialOverride>) -> NodeRef; fn cull_by_frustum(&self, out: &mut Vec<NodeRef>, frustum: &Frustum, revisions: &mut NodeRevisionState,); fn dispose_scene3d(&self); fn enable_billboard_signals(&self) -> Ref<NodeSignals>; fn enable_mesh_signals(&self) -> Ref<NodeSignals>; fn enable_scene3d_signals(&self) -> Ref<NodeSignals>; fn find_material_by_name(&self, name: &str) -> Option<Ref<dyn Material3D>>; fn materials(&self, out: &mut Vec<Ref<dyn Material3D>>); fn orient_billboards(&self, camera: &Camera3D, state: &Scene3DGuardStateRef, revisions: &mut NodeRevisionState,) -> bool; fn orient_to_camera(&self, camera: &Camera3D, state: &Scene3DGuardStateRef, revisions: &mut NodeRevisionState,) -> bool; fn prepare_morph(&self); fn set_alpha(&self, alpha: f32); fn set_look_at(&self, eye: &Vector3, target: &Vector3, up: &Vector3); fn world_alpha(&self, state: &mut Scene3DAppearanceState) -> f32; fn world_bounds(&self, out: &mut Aabb, revisions: &mut NodeRevisionState); }
-src/sugar.rs: pub trait Scene3DAnimationMethods { fn apply_to_scene3d(&self, time: f32); }
+src/sugar.rs: pub trait Scene3DAnimationMethods { fn apply_to_scene3d(&self, time: f64); }
 src/sugar.rs: pub trait Scene3DGuardMethods { fn are_enabled(&self) -> bool; fn disable(&self); fn enable(&self, log: &LogStateRef, clock: Scene3DGuardClock); }
 src/types.rs: #[derive(Clone)] pub struct Skin { pub skeleton: Ref<Skeleton3D>, pub skeleton_root: Option<Node3DRef>, }
 src/types.rs: #[derive(Clone, Debug, PartialEq)] pub struct Scene3DMetadata { pub copyright: Option<String>, pub generator: Option<String>, pub version: Option<String>, }

@@ -22,6 +22,7 @@ pub struct Scene3DDocument {
     pub scenes: Vec<Scene3DDocumentScene>,
     pub skins: Vec<Scene3DDocumentSkin>,
 }
+// flight-lint: allow(f32) the document keeps the f32 duration its format decoders produce; scene3d widens it when building the clip
 pub struct Scene3DDocumentAnimation {
     pub channels: Vec<Scene3DDocumentAnimationChannel>,
     pub duration: f32,
@@ -32,6 +33,7 @@ pub struct Scene3DDocumentAnimationChannel {
     pub path: Scene3DAnimationPath,
     pub track: Ref<AnimationTrack>,
 }
+// flight-lint: allow(f32) the document keeps the f32 near/far its format decoders produce
 pub struct Scene3DDocumentCamera {
     pub far: f32,
     pub name: Option<String>,

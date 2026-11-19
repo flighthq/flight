@@ -51,6 +51,20 @@ mod orient_billboard_to_camera {
         }
     }
     #[test]
+    fn points_normal_at_an_eye_three_units_away_at_one_billion() {
+        // f32 spacing at 1e9 is 64: an f32 eye at 1e9 + 3 would sit on the billboard's x.
+        let b = billboard(BillboardMode::Full);
+        b.write().unwrap().position.x = 1.0e9;
+        let n = as_node_ref(&b);
+        invalidate_node_local_transform(&n);
+        let camera = camera_looking_from(1.0e9 + 3.0, 0.0, 10.0);
+        assert!(orient_billboard_to_camera(&n, &camera, &guard_state()));
+        let m = get_node_world_matrix4(&n).m;
+        let length = 3.0_f64.hypot(10.0);
+        close(m[8], 3.0 / length);
+        close(m[10], 10.0 / length);
+    }
+    #[test]
     fn points_normal_at_eye_and_preserves_position_and_scale_across_repeated_orientation() {
         let b = billboard(BillboardMode::Full);
         b.write().unwrap().position.x = 3.0;
@@ -65,7 +79,7 @@ mod orient_billboard_to_camera {
         close(m[12], 3.0);
         close(m[13], 0.0);
         close(m[14], 0.0);
-        let length = (-3.0f32).hypot(10.0);
+        let length = (-3.0f64).hypot(10.0);
         close(m[8] / 2.0, -3.0 / length);
         close(m[9], 0.0);
         close(m[10] / 2.0, 10.0 / length);
@@ -133,7 +147,7 @@ mod orient_scene3d_billboards_to_camera {
         set_quaternion_from_axis_angle(
             &mut q,
             &create_vector3(0.0, 1.0, 0.0),
-            std::f32::consts::FRAC_PI_2,
+            std::f64::consts::FRAC_PI_2,
         );
         parent.write().unwrap().rotation = q;
         let p = as_node_ref(&parent);

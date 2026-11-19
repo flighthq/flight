@@ -48,6 +48,7 @@ pub fn ensure_node3d_world_alpha(source: &NodeRef, state: &mut Scene3DAppearance
         runtime.world_appearance_id = state.world_appearance_revision;
     }
 }
+// flight-lint: allow(f32) alpha is a normalized opacity factor, not spatial data
 pub fn get_node3d_world_alpha(source: &NodeRef, state: &mut Scene3DAppearanceState) -> f32 {
     ensure_node3d_world_alpha(source, state);
     return as_node3d(&*source.read().unwrap())
@@ -58,6 +59,7 @@ pub fn get_node3d_world_alpha(source: &NodeRef, state: &mut Scene3DAppearanceSta
         .world_alpha
         .unwrap_or(1.0);
 }
+// flight-lint: allow(f32) alpha is a normalized opacity factor, not spatial data
 pub fn set_node3d_alpha(source: &NodeRef, alpha: f32) {
     as_node3d_mut(&mut *source.write().unwrap())
         .expect("Node3D source")

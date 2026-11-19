@@ -8,14 +8,14 @@ use std::sync::{Arc, RwLock};
 #[derive(Debug, Default)]
 struct CustomLight {
     runtime: flight_entity::EntityRuntimeSlot,
-    intensity: f32,
+    intensity: f64,
 }
 flight_entity::impl_entity!(CustomLight);
 impl Light for CustomLight {
     fn kind(&self) -> &str {
         return "test.CustomLight";
     }
-    fn colored_intensity(&self) -> Option<(u32, f32)> {
+    fn colored_intensity(&self) -> Option<(u32, f64)> {
         return Some((0xabcdef, self.intensity));
     }
 }
@@ -117,8 +117,8 @@ mod create_scene3d_lights_from_document {
         doc.lights = vec![placed(d.clone()), placed(p.clone()), placed(s.clone())];
         for light in &mut doc.lights {
             light.transform.position = create_vector3(10.0, 20.0, 30.0);
-            light.transform.rotation.y = std::f32::consts::FRAC_1_SQRT_2;
-            light.transform.rotation.w = std::f32::consts::FRAC_1_SQRT_2;
+            light.transform.rotation.y = std::f64::consts::FRAC_1_SQRT_2;
+            light.transform.rotation.w = std::f64::consts::FRAC_1_SQRT_2;
             light.transform.scale = create_vector3(2.0, 3.0, 4.0);
         }
         let lights = create_scene3d_lights_from_document(&doc);

@@ -12,10 +12,10 @@ use std::sync::Arc;
 
 pub type BillboardCameraBasisGuard = Arc<dyn Fn(&Camera3D) + Send + Sync>;
 struct CameraBasis {
-    eye: [f32; 3],
-    right: [f32; 3],
-    up: [f32; 3],
-    back: [f32; 3],
+    eye: [f64; 3],
+    right: [f64; 3],
+    up: [f64; 3],
+    back: [f64; 3],
 }
 
 fn apply_billboard_facing(billboard: &NodeRef, mode: BillboardMode, basis: &CameraBasis) {
@@ -43,11 +43,11 @@ fn apply_billboard_facing(billboard: &NodeRef, mode: BillboardMode, basis: &Came
     set_node_local_matrix4(billboard, &local);
 }
 
-fn length(v: [f32; 3]) -> f32 {
+fn length(v: [f64; 3]) -> f64 {
     return v[0].hypot(v[1]).hypot(v[2]);
 }
 
-fn normalize_camera_axis(v: [f32; 3]) -> [f32; 3] {
+fn normalize_camera_axis(v: [f64; 3]) -> [f64; 3] {
     let len = length(v);
     let len = if len == 0.0 || len.is_nan() { 1.0 } else { len };
     return [v[0] / len, v[1] / len, v[2] / len];

@@ -12,7 +12,7 @@ pub struct Scene3DAnimationTarget {
     pub path: Scene3DAnimationPath,
 }
 
-pub fn apply_animation_clip_to_scene3d(clip: &AnimationClip, time: f32) {
+pub fn apply_animation_clip_to_scene3d(clip: &AnimationClip, time: f64) {
     let mut scratch = [0.0; 4];
     for channel in &clip.channels {
         let Some(target) = channel

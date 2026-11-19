@@ -10,12 +10,12 @@ mod get_node3d_world_bounds {
         let root = as_node_ref(&node3d());
         let mut out = empty_bounds();
         get_node3d_world_bounds(&mut out, &root);
-        assert_eq!(out.min.x, f32::INFINITY);
-        assert_eq!(out.max.x, f32::NEG_INFINITY);
+        assert_eq!(out.min.x, f64::INFINITY);
+        assert_eq!(out.max.x, f64::NEG_INFINITY);
         add_node_child(&root, &as_node_ref(&node3d()));
         add_node_child(&root, &as_node_ref(&node3d()));
         get_node3d_world_bounds(&mut out, &root);
-        assert_eq!(out.min.x, f32::INFINITY);
+        assert_eq!(out.min.x, f64::INFINITY);
     }
     #[test]
     fn transforms_a_single_box_and_reuses_an_existing_out_box() {

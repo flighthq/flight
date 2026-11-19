@@ -65,6 +65,7 @@ pub struct Node3DNarrow {
 }
 
 #[derive(Clone, Default)]
+// flight-lint: allow(f32) alpha is a normalized opacity factor, not spatial data
 pub struct PartialNode3D {
     pub alpha: Option<f32>,
     pub enabled: Option<bool>,
@@ -72,6 +73,7 @@ pub struct PartialNode3D {
     pub visible: Option<bool>,
 }
 
+// flight-lint: allow(f32) alpha is a normalized opacity factor, not spatial data
 pub struct Node3DFields {
     node: NodeFields,
     state: Node3DRuntime,
@@ -113,6 +115,7 @@ pub trait Node3D: Node + Transform3DNode + AppearanceNode {
 }
 
 /// The real skeleton Entity lives with the scene nodes it retains; skeleton3d owns its algorithms.
+// flight-lint: allow(f32) skin palettes are the f32 GPU lane
 pub struct Skeleton3D {
     runtime: EntityRuntimeSlot,
     pub inverse_bind_matrices: Ref<Box<Float32Array>>,

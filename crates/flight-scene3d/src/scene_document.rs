@@ -54,6 +54,7 @@ pub fn create_scene3ds_from_document(document: &Scene3DDocument) -> Vec<Scene3D>
     }
     return scenes;
 }
+// flight-lint: allow(f32) the skin palette is the f32 GPU lane; each f64 inverse-bind element narrows once
 fn apply_document_skins(document: &Scene3DDocument, nodes: &[Node3DRef]) {
     let mut skins = Vec::new();
     for source in &document.skins {
@@ -75,7 +76,13 @@ fn apply_document_skins(document: &Scene3DDocument, nodes: &[Node3DRef]) {
         }
         let mut inverse_bind_matrices = vec![0.0; joints.len() * 16].into_boxed_slice();
         for j in 0..source.inverse_bind.len().min(joints.len()) {
-            inverse_bind_matrices[j * 16..j * 16 + 16].copy_from_slice(&source.inverse_bind[j].m);
+            // The skin palette is the f32 GPU lane; each f64 matrix element narrows once here.
+            for (out, value) in inverse_bind_matrices[j * 16..j * 16 + 16]
+                .iter_mut()
+                .zip(source.inverse_bind[j].m.iter())
+            {
+                *out = *value as f32;
+            }
         }
         let mut skeleton: Skeleton3D = allocate_entity();
         skeleton.inverse_bind_matrices = Arc::new(RwLock::new(inverse_bind_matrices));
@@ -140,7 +147,7 @@ fn attach_document_animations(
                 .unwrap_or_else(|| format!("animation{a}")),
             Arc::new(RwLock::new(create_animation_clip(
                 channels,
-                Some(source.duration),
+                Some(f64::from(source.duration)),
                 &[],
             ))),
         );

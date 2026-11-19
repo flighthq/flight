@@ -44,7 +44,7 @@ mod set_node3d_look_at {
         assert_eq!(&matrix.m[12..], &[3.0, 4.0, 5.0, 1.0]);
         assert_eq!([matrix.m[3], matrix.m[7], matrix.m[11]], [0.0; 3]);
         assert!(is_node_local_matrix4_detached(&node));
-        let length = (3.0f32 * 3.0 + 4.0 * 4.0 + 5.0 * 5.0).sqrt();
+        let length = (3.0f64 * 3.0 + 4.0 * 4.0 + 5.0 * 5.0).sqrt();
         assert_eq!(matrix.m[8], 3.0 / length);
         assert_eq!(matrix.m[9], 4.0 / length);
         assert_eq!(matrix.m[10], 5.0 / length);

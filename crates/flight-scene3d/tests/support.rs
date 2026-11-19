@@ -8,7 +8,7 @@ use std::sync::{Arc, RwLock};
 pub fn as_node_ref<T: Node>(node: &Ref<T>) -> NodeRef {
     return node.clone();
 }
-pub fn close(actual: f32, expected: f32) {
+pub fn close(actual: f64, expected: f64) {
     assert!((actual - expected).abs() < 0.0001, "{actual} != {expected}");
 }
 pub fn empty_bounds() -> Aabb {
@@ -40,7 +40,7 @@ pub fn test_geometry() -> Ref<MeshGeometry> {
 pub fn test_mesh() -> Ref<Mesh> {
     return create_mesh(test_geometry(), empty_materials());
 }
-pub fn translation(x: f32, y: f32, z: f32) -> Matrix4 {
+pub fn translation(x: f64, y: f64, z: f64) -> Matrix4 {
     let mut m = create_matrix4();
     m.m[12] = x;
     m.m[13] = y;
@@ -59,7 +59,7 @@ pub fn test_skin() -> Ref<Skin> {
         skeleton_root: None,
     }));
 }
-pub fn test_morph(weights: Vec<f32>) -> Ref<flight_meshgeometry::MeshMorph> {
+pub fn test_morph(weights: Vec<f64>) -> Ref<flight_meshgeometry::MeshMorph> {
     return Arc::new(RwLock::new(flight_meshgeometry::MeshMorph {
         targets: Arc::new(Vec::new()),
         weights: weights.into_boxed_slice(),
@@ -83,7 +83,7 @@ pub fn test_track() -> Ref<flight_animation::AnimationTrack> {
         track
     }));
 }
-pub fn camera_looking_from(x: f32, y: f32, z: f32) -> flight_camera::Camera3D {
+pub fn camera_looking_from(x: f64, y: f64, z: f64) -> flight_camera::Camera3D {
     use flight_camera::contract::*;
     let mut camera = create_camera_3d();
     camera.far = 100.0;

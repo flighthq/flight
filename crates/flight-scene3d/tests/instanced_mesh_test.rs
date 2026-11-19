@@ -14,7 +14,7 @@ fn bounded_geometry() -> Ref<flight_meshgeometry::MeshGeometry> {
         Some(2.0),
     )));
 }
-fn batch(xs: &[f32]) -> Ref<InstancedMesh> {
+fn batch(xs: &[f64]) -> Ref<InstancedMesh> {
     let b = create_instanced_mesh(
         bounded_geometry(),
         Arc::new(RwLock::new(vec![None])),
@@ -25,7 +25,7 @@ fn batch(xs: &[f32]) -> Ref<InstancedMesh> {
     }
     return b;
 }
-fn translation_x(mesh: &Ref<InstancedMesh>, index: i32) -> f32 {
+fn translation_x(mesh: &Ref<InstancedMesh>, index: i32) -> f64 {
     let mut out = create_matrix4();
     get_instanced_mesh_instance_matrix(&mut out, &mesh.read().unwrap(), index);
     return out.m[12];
@@ -52,7 +52,7 @@ mod append_instanced_mesh_instance {
         assert_eq!(translation_x(&b, 1), 2.0);
         let small = create_instanced_mesh(bounded_geometry(), empty_materials(), Some(2));
         for i in 0..5 {
-            append_instanced_mesh_instance(&small, &translation(i as f32, 0.0, 0.0));
+            append_instanced_mesh_instance(&small, &translation(i as f64, 0.0, 0.0));
         }
         assert_eq!(small.read().unwrap().instance_count, 5);
         assert!(get_instanced_mesh_capacity(&small.read().unwrap()) >= 5);
@@ -530,9 +530,10 @@ mod set_instanced_mesh_instance_matrix_range {
     #[test]
     fn writes_a_contiguous_run_and_invalidates_once() {
         let b = batch(&[0.0, 0.0, 0.0]);
-        let mut source = vec![0.0; 32];
-        source[..16].copy_from_slice(&translation(4.0, 0.0, 0.0).m);
-        source[16..].copy_from_slice(&translation(5.0, 0.0, 0.0).m);
+        // The range input is the f32 typed-array lane.
+        let mut source = vec![0.0_f32; 32];
+        source[..16].copy_from_slice(&translation(4.0, 0.0, 0.0).m.map(|value| value as f32));
+        source[16..].copy_from_slice(&translation(5.0, 0.0, 0.0).m.map(|value| value as f32));
         let before = b.read().unwrap().version;
         set_instanced_mesh_instance_matrix_range(&b, 1, 2, &source);
         assert_eq!(translation_x(&b, 0), 0.0);

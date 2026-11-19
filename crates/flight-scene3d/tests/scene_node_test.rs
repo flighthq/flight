@@ -172,7 +172,7 @@ mod create_node3d {
         assert_eq!(node.kind, "MyKind");
         assert!(!node.enabled);
         assert_eq!(node.name.as_deref(), Some("root"));
-        close(node.alpha, 0.4);
+        close(f64::from(node.alpha), 0.4);
         assert!(!node.visible);
     }
     #[test]

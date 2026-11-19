@@ -57,7 +57,7 @@ fn warn_on_degenerate_billboard_camera_basis(
                 .unwrap()
                 .m
                 .iter()
-                .map(|n| LogValue::Number(*n as f64))
+                .map(|n| LogValue::Number(*n))
                 .collect(),
         ),
     );

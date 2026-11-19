@@ -61,7 +61,7 @@ pub trait Scene3DGuardMethods {
     fn enable(&self, log: &LogStateRef, clock: Scene3DGuardClock);
 }
 pub trait Scene3DAnimationMethods {
-    fn apply_to_scene3d(&self, time: f32);
+    fn apply_to_scene3d(&self, time: f64);
 }
 
 #[cfg(all(test, feature = "object-api"))]
@@ -172,8 +172,9 @@ mod sugar_tests {
         set_instanced_mesh_instance_color(&b, 0, 0x11223344);
         a.set_instance_matrix(1, &m);
         set_instanced_mesh_instance_matrix(&b, 1, &m);
-        a.set_instance_matrix_range(2, 1, &m.m);
-        set_instanced_mesh_instance_matrix_range(&b, 2, 1, &m.m);
+        let range = m.m.map(|value| value as f32);
+        a.set_instance_matrix_range(2, 1, &range);
+        set_instanced_mesh_instance_matrix_range(&b, 2, 1, &range);
         a.invalidate_instances();
         invalidate_instanced_mesh(&b);
         equal_instances(&a, &b);
@@ -573,12 +574,14 @@ impl Node3DMethods for NodeRef {
     fn prepare_morph(&self) {
         prepare_scene3d_morph(self);
     }
+    // flight-lint: allow(f32) alpha is a normalized opacity factor, not spatial data
     fn set_alpha(&self, alpha: f32) {
         set_node3d_alpha(self, alpha);
     }
     fn set_look_at(&self, eye: &Vector3, target: &Vector3, up: &Vector3) {
         set_node3d_look_at(self, eye, target, up);
     }
+    // flight-lint: allow(f32) alpha is a normalized opacity factor, not spatial data
     fn world_alpha(&self, state: &mut Scene3DAppearanceState) -> f32 {
         return get_node3d_world_alpha(self, state);
     }
@@ -639,6 +642,7 @@ impl InstancedMeshMethods for Ref<InstancedMesh> {
     fn set_instance_matrix(&self, index: i32, matrix: &Matrix4) {
         set_instanced_mesh_instance_matrix(self, index, matrix);
     }
+    // flight-lint: allow(f32) the range input is the f32 typed-array lane
     fn set_instance_matrix_range(
         &self,
         start_index: i32,
@@ -660,7 +664,7 @@ impl Scene3DGuardMethods for Scene3DGuardStateRef {
     }
 }
 impl Scene3DAnimationMethods for AnimationClip {
-    fn apply_to_scene3d(&self, time: f32) {
+    fn apply_to_scene3d(&self, time: f64) {
         apply_animation_clip_to_scene3d(self, time);
     }
 }
