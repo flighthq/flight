@@ -35,3 +35,24 @@ mod host_gl_capability {
         assert_eq!(*created.lock().unwrap(), vec![(16_777_217.0, 16_777_219.0)]);
     }
 }
+
+mod host_wgpu_capability {
+    use super::*;
+
+    #[test]
+    fn passes_the_device_pixel_extent_to_the_host_exactly() {
+        // The same device-pixel extent lane as the GL capability: 16777217 and 16777219 reach the
+        // host exactly, where an f32 lane would pass 16777216 and 16777220.
+        type WgpuCreate =
+            dyn Fn(&Ref<AppWindow>, f64, f64) -> Option<NativeSurfaceHandle> + Send + Sync;
+        let created = Arc::new(Mutex::new(Vec::new()));
+        let record = created.clone();
+        let create: Arc<WgpuCreate> = Arc::new(move |_window, width, height| {
+            record.lock().unwrap().push((width, height));
+            return None;
+        });
+        (create)(&create_app_window(), 16_777_217.0, 16_777_219.0);
+        assert_eq!(*created.lock().unwrap(), vec![(16_777_217.0, 16_777_219.0)]);
+        let _: fn(HostWgpuCapability) -> Arc<WgpuCreate> = |capability| capability.create;
+    }
+}

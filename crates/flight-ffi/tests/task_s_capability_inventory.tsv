@@ -918,7 +918,7 @@ struct	flight-surface	crates/flight-surface/src/types.rs	HostWgpuCapability	publ
 field	flight-surface	crates/flight-surface/src/types.rs	HostWgpuCapability	public	0	provider	non-callback	ProviderRef
 callback	flight-surface	crates/flight-surface/src/types.rs	HostWgpuCapability	public	1	acquire	required	fn(& SurfaceRef, & WgpuHostAcquisitionOptions) -> WgpuProviderFuture < WgpuHostAcquisition >	& SurfaceRef, & WgpuHostAcquisitionOptions	WgpuProviderFuture < WgpuHostAcquisition >	yes	shared	unsupported:future
 callback	flight-surface	crates/flight-surface/src/types.rs	HostWgpuCapability	public	2	attach_surface	required	fn(& SurfaceRef, & WgpuSurfaceAttachment) -> Option < WgpuSurfaceAttachResult >	& SurfaceRef, & WgpuSurfaceAttachment	Option < WgpuSurfaceAttachResult >	no	shared	mapped:pointer
-callback	flight-surface	crates/flight-surface/src/types.rs	HostWgpuCapability	public	3	create	required	fn(& Ref < AppWindow >, f32, f32) -> Option < NativeSurfaceHandle >	& Ref < AppWindow >, f32, f32	Option < NativeSurfaceHandle >	no	shared	mapped:pointer
+callback	flight-surface	crates/flight-surface/src/types.rs	HostWgpuCapability	public	3	create	required	fn(& Ref < AppWindow >, f64, f64) -> Option < NativeSurfaceHandle >	& Ref < AppWindow >, f64, f64	Option < NativeSurfaceHandle >	no	shared	mapped:pointer
 callback	flight-surface	crates/flight-surface/src/types.rs	HostWgpuCapability	public	4	is_supported	required	fn() -> bool		bool	no	none	mapped:scalar
 callback	flight-surface	crates/flight-surface/src/types.rs	HostWgpuCapability	public	5	release	required	fn(& WgpuHostAcquisition) -> ()	& WgpuHostAcquisition	()	no	shared	mapped:pointer
 struct	flight-textsegment	crates/flight-textsegment/src/types.rs	HostTextSegmentCapabilities	public				1 fields
@@ -1086,7 +1086,7 @@ family			F045				1 uses	fn(& Ref < AppWindow >, Option < & Ref < AppWindow > >) 
 family			F046				8 uses	fn(& Ref < AppWindow >, bool) -> ()
 family			F047				2 uses	fn(& Ref < AppWindow >, f32) -> ()
 family			F048				4 uses	fn(& Ref < AppWindow >, f32, f32) -> ()
-family			F049				1 uses	fn(& Ref < AppWindow >, f32, f32) -> Option < NativeSurfaceHandle >
+family			F049				1 uses	fn(& Ref < AppWindow >, f64, f64) -> Option < NativeSurfaceHandle >
 family			F050				1 uses	fn(& Ref < AppWindow >, f64, f64, Option < & CanvasRenderingContext2DSettings >) -> Option < NativeSurfaceHandle >
 family			F051				1 uses	fn(& Ref < AppWindow >, f64, f64, Option < & GlContextOptions >) -> Option < NativeSurfaceHandle >
 family			F052				1 uses	fn(& Ref < CanvasSurface >) -> ()

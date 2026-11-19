@@ -280,6 +280,7 @@ pub type WgpuProviderFuture<T> = Pin<Box<dyn Future<Output = Result<T, FlightErr
 /// `HostWgpuCapability`). `create` is the allocating lane (as `HostGlCapability::create`);
 /// `attach_surface` binds a device already in hand to another surface, or returns `None` when the
 /// target cannot present; `release` ends an acquisition.
+// flight-lint: allow(f64) `create` width and height are the TS Number device-pixel extent, carried as f64 for exact transport; the host narrows and validates them once where it writes its device extent (foreman-2c989291 parity, foreman-36006344)
 #[derive(Clone)]
 pub struct HostWgpuCapability {
     pub provider: ProviderRef,
@@ -293,7 +294,7 @@ pub struct HostWgpuCapability {
             + Send
             + Sync,
     >,
-    pub create: Arc<dyn Fn(&Ref<AppWindow>, f32, f32) -> Option<NativeSurfaceHandle> + Send + Sync>,
+    pub create: Arc<dyn Fn(&Ref<AppWindow>, f64, f64) -> Option<NativeSurfaceHandle> + Send + Sync>,
     pub is_supported: Arc<dyn Fn() -> bool + Send + Sync>,
     pub release: Arc<dyn Fn(&WgpuHostAcquisition) + Send + Sync>,
 }
