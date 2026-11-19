@@ -31,8 +31,8 @@ pub struct TilemapData {
     pub columns: i32,
     pub material_data: Option<Vec<Option<Ref<dyn MaterialData>>>>,
     pub rows: i32,
-    pub tile_height: f32,
-    pub tile_width: f32,
+    pub tile_height: f64,
+    pub tile_width: f64,
     pub tiles: Vec<i16>,
 }
 

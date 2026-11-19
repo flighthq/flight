@@ -106,8 +106,8 @@ pub fn compute_tilemap_local_bounds_rectangle(out: &mut Rectangle, source: &dyn 
     out.x = 0.0;
     out.y = 0.0;
     if data.atlas.is_some() {
-        out.width = data.columns as f32 * data.tile_width;
-        out.height = data.rows as f32 * data.tile_height;
+        out.width = data.columns as f64 * data.tile_width;
+        out.height = data.rows as f64 * data.tile_height;
     } else {
         out.width = 0.0;
         out.height = 0.0;
@@ -129,7 +129,7 @@ pub fn fill_tilemap_tiles(tilemap: &mut Tilemap, id: i16) {
 }
 
 /// Returns the column index for a local-space x coordinate, or -1 (TS `getTilemapColumnAtX`).
-pub fn get_tilemap_column_at_x(source: &Tilemap, x: f32) -> i32 {
+pub fn get_tilemap_column_at_x(source: &Tilemap, x: f64) -> i32 {
     let data = &source.data;
     if data.atlas.is_none() || data.tile_width <= 0.0 {
         return -1;
@@ -146,21 +146,21 @@ pub fn get_tilemap_column_at_x(source: &Tilemap, x: f32) -> i32 {
 pub fn get_tilemap_column_row_at_point(
     out: &mut Vector2,
     source: &Tilemap,
-    x: f32,
-    y: f32,
+    x: f64,
+    y: f64,
 ) -> bool {
     let col = get_tilemap_column_at_x(source, x);
     let row = get_tilemap_row_at_y(source, y);
     if col < 0 || row < 0 {
         return false;
     }
-    out.x = col as f32;
-    out.y = row as f32;
+    out.x = col as f64;
+    out.y = row as f64;
     return true;
 }
 
 /// Returns the row index for a local-space y coordinate, or -1 (TS `getTilemapRowAtY`).
-pub fn get_tilemap_row_at_y(source: &Tilemap, y: f32) -> i32 {
+pub fn get_tilemap_row_at_y(source: &Tilemap, y: f64) -> i32 {
     let data = &source.data;
     if data.atlas.is_none() || data.tile_height <= 0.0 {
         return -1;
@@ -197,7 +197,7 @@ pub fn get_tilemap_tile_at_point(source: &Tilemap, point: &Vector2) -> i16 {
 }
 
 /// XY variant of `get_tilemap_tile_at_point` (TS `getTilemapTileAtPointXY`).
-pub fn get_tilemap_tile_at_point_xy(source: &Tilemap, x: f32, y: f32) -> i16 {
+pub fn get_tilemap_tile_at_point_xy(source: &Tilemap, x: f64, y: f64) -> i16 {
     let col = get_tilemap_column_at_x(source, x);
     let row = get_tilemap_row_at_y(source, y);
     if col < 0 || row < 0 {
@@ -213,8 +213,8 @@ pub fn get_tilemap_tile_rect(out: &mut Rectangle, source: &Tilemap, column: i32,
     if data.atlas.is_none() || column < 0 || column >= data.columns || row < 0 || row >= data.rows {
         return false;
     }
-    out.x = column as f32 * data.tile_width;
-    out.y = row as f32 * data.tile_height;
+    out.x = column as f64 * data.tile_width;
+    out.y = row as f64 * data.tile_height;
     out.width = data.tile_width;
     out.height = data.tile_height;
     return true;

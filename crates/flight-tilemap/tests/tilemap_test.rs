@@ -22,8 +22,8 @@ fn tilemap_with_atlas_grid(
     atlas: &Ref<TextureAtlas>,
     columns: i32,
     rows: i32,
-    tile_width: f32,
-    tile_height: f32,
+    tile_width: f64,
+    tile_height: f64,
 ) -> Ref<Tilemap> {
     let tm = create_tilemap();
     {
@@ -462,6 +462,17 @@ mod get_tilemap_tile_at_point_xy {
 
 mod get_tilemap_tile_rect {
     use super::*;
+
+    #[test]
+    fn multiplies_a_fractional_tile_width_in_double_precision() {
+        // 3 * 0.1 is 0.30000000000000004 in f64; an f32 product widened back is 0.30000001192.
+        let a = atlas();
+        let tm = tilemap_with_atlas_grid(&a, 4, 4, 0.1, 0.1);
+        let mut out = create_rectangle(0.0, 0.0, 0.0, 0.0);
+        assert!(get_tilemap_tile_rect(&mut out, &tm.read().unwrap(), 3, 0));
+        assert_ne!(f64::from(3.0_f32 * 0.1_f32), 3.0 * 0.1);
+        assert_eq!(out.x, 3.0 * 0.1);
+    }
 
     #[test]
     fn writes_the_cell_rectangle_for_an_in_bounds_cell() {
