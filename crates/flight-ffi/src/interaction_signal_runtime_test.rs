@@ -93,6 +93,105 @@ fn connect_arms_dispatch_without_seeding_and_disconnect_releases_exactly_once() 
 }
 
 #[test]
+fn rejects_every_non_pointer_and_invalid_name_without_retaining_or_releasing() {
+    z_run_within_deadline(|| {
+        for name in (0..=18).chain([99, u32::MAX]) {
+            let scene = z_create_scene();
+            let probe = z_create_probe(&scene);
+            let had_signals = flight_sdk::get_interaction_signals(&scene.child).is_some();
+            let child_handles = std::sync::Arc::strong_count(&scene.child);
+            let id = unsafe {
+                crate::flight_connect_interaction_signal(
+                    scene.manager,
+                    (&scene.child as *const flight_sdk::NodeRef).cast(),
+                    name,
+                    Some(z_on_pointer_down),
+                    probe as *const Probe as *mut c_void,
+                    Some(z_release_probe),
+                    std::ptr::null(),
+                )
+            };
+            let accepted = z_rust_accepts(name);
+            assert_eq!(
+                !id.is_null(),
+                accepted,
+                "the C wrapper and the SDK disagree on {name}"
+            );
+            if accepted {
+                unsafe { crate::flight_free_slot_id(id) };
+            } else {
+                assert_eq!(
+                    probe.releases.load(Ordering::SeqCst),
+                    0,
+                    "{name} released a context it never took"
+                );
+                assert_eq!(
+                    flight_sdk::get_interaction_signals(&scene.child).is_some(),
+                    had_signals,
+                    "{name} touched the target"
+                );
+                assert_eq!(
+                    std::sync::Arc::strong_count(&scene.child),
+                    child_handles,
+                    "{name}"
+                );
+                let manager = z_get_manager(&scene).read().unwrap();
+                assert!(manager.signal_subscriber_counts.is_empty(), "{name}");
+                assert!(manager.tracked_signal_slots.is_empty(), "{name}");
+            }
+            z_dispatch_pointer_down(&scene);
+            assert_eq!(
+                probe.calls.load(Ordering::SeqCst),
+                usize::from(accepted && name == 9),
+                "{name}"
+            );
+            z_free_scene(scene);
+        }
+    });
+}
+
+#[test]
+fn rejects_null_inputs_without_releasing() {
+    let scene = z_create_scene();
+    let probe = z_create_probe(&scene);
+    let child = (&scene.child as *const flight_sdk::NodeRef).cast::<c_void>();
+    let ctx = probe as *const Probe as *mut c_void;
+    let down = flight_sdk::InteractionSignalName::OnPointerDown as u32;
+    for (manager, target, slot_fn) in [
+        (
+            std::ptr::null(),
+            child,
+            Some(
+                z_on_pointer_down
+                    as extern "C" fn(*mut c_void, *const flight_sdk::PointerEventData),
+            ),
+        ),
+        (
+            scene.manager as *const c_void,
+            std::ptr::null(),
+            Some(z_on_pointer_down),
+        ),
+        (scene.manager as *const c_void, child, None),
+    ] {
+        let id = unsafe {
+            crate::flight_connect_interaction_signal(
+                manager,
+                target,
+                down,
+                slot_fn,
+                ctx,
+                Some(z_release_probe),
+                std::ptr::null(),
+            )
+        };
+        assert!(id.is_null());
+    }
+    assert_eq!(probe.releases.load(Ordering::SeqCst), 0);
+    assert_eq!(z_get_subscriber_count(&scene), 0);
+    z_free_scene(scene);
+}
+
+#[test]
 fn the_connection_lives_with_the_node_not_the_manager() {
     z_run_within_deadline(|| {
         let scene = z_create_scene();
@@ -133,7 +232,7 @@ fn z_connect(
             scene.manager,
             (&scene.child as *const flight_sdk::NodeRef).cast(),
             flight_sdk::InteractionSignalName::OnPointerDown as u32,
-            z_on_pointer_down,
+            Some(z_on_pointer_down),
             probe as *const Probe as *mut c_void,
             Some(z_release_probe),
             options.map_or(std::ptr::null(), |options| options as *const _),
@@ -273,4 +372,45 @@ fn z_run_within_deadline(test: impl FnOnce() + Send + 'static) {
         panic!("interaction signal path deadlocked or panicked");
     }
     worker.join().unwrap();
+}
+
+// Whether the SDK itself accepts `name` (decoded by declaration order), connecting a Rust slot on a
+// scene of its own: the oracle the C wrapper's accepted set is pinned against.
+fn z_rust_accepts(name: u32) -> bool {
+    use flight_sdk::InteractionSignalName::*;
+    let names = [
+        OnClick,
+        OnContextMenu,
+        OnDoubleClick,
+        OnFocusIn,
+        OnFocusOut,
+        OnKeyDown,
+        OnKeyUp,
+        OnPointerCancel,
+        OnPointerDoubleClick,
+        OnPointerDown,
+        OnPointerMove,
+        OnPointerOut,
+        OnPointerOver,
+        OnPointerRollOut,
+        OnPointerRollOver,
+        OnPointerUp,
+        OnReleaseOutside,
+        OnWheel,
+    ];
+    let Some(decoded) = names
+        .into_iter()
+        .find(|candidate| *candidate as u32 == name)
+    else {
+        return false;
+    };
+    let scene = z_create_scene();
+    let manager = z_get_manager(&scene).clone();
+    let slot: flight_sdk::AnyInteractionSignalSlot = std::sync::Arc::new(|_| {});
+    let accepted =
+        flight_sdk::connect_interaction_signal(&manager, &scene.child, decoded, slot, None)
+            .is_some();
+    drop(manager);
+    z_free_scene(scene);
+    return accepted;
 }

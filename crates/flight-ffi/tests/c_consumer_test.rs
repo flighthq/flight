@@ -1,4 +1,4 @@
-//! Builds the flight-ffi static library, compiles `tests/c_consumer/consumer.c` against it and the
+//! Builds the flight-ffi static library, compiles each C program under `tests/c_consumer/` against it and the
 //! `flight_ffi.h` header the build script writes to `OUT_DIR`, warning-free, links the executable,
 //! and runs it. The C program owns the ABI assertions; this harness owns building, linking, and
 //! reporting its output.
@@ -15,69 +15,19 @@ use std::process::Command;
 
 #[test]
 fn c_consumer_links_static_library_and_runs() {
-    if env!("FLIGHT_FFI_TARGET") != env!("FLIGHT_FFI_HOST") {
-        eprintln!(
-            "skipping the flight-ffi C consumer: it is built for {} and cannot run on host {}",
-            env!("FLIGHT_FFI_TARGET"),
-            env!("FLIGHT_FFI_HOST")
-        );
-        return;
+    if let Some(stdout) = z_compile_link_and_run("consumer.c", "consumer") {
+        assert_eq!(stdout.trim(), "flight-ffi C consumer: ok");
     }
+}
 
-    let library = build_static_library();
-    let work_dir = library.parent().unwrap().join("flight-ffi-c-consumer");
-    fs::create_dir_all(&work_dir).unwrap();
-    let source = Path::new(env!("CARGO_MANIFEST_DIR"))
-        .join("tests")
-        .join("c_consumer")
-        .join("consumer.c");
-    let object = work_dir.join("consumer.o");
-    let link_stub = work_dir.join("link.rs");
-    let executable = work_dir.join(format!("consumer{}", env::consts::EXE_SUFFIX));
-    let _ = fs::remove_file(&object);
-    let _ = fs::remove_file(&executable);
-
-    let compiler = cc::Build::new()
-        .cargo_metadata(false)
-        .target(env!("FLIGHT_FFI_TARGET"))
-        .host(env!("FLIGHT_FFI_HOST"))
-        .opt_level(0)
-        .debug(false)
-        .out_dir(&work_dir)
-        .get_compiler();
-    let mut compile = compiler.to_command();
-    compile
-        .args(["-std=c11", "-Wall", "-Wextra", "-Wpedantic", "-Werror"])
-        .arg(format!("-I{}", env!("OUT_DIR")))
-        .arg("-c")
-        .arg(&source)
-        .arg("-o")
-        .arg(&object);
-    let compiled = run(&mut compile, "compile the C consumer");
-    let diagnostics = String::from_utf8_lossy(&compiled.stderr);
-    assert!(
-        !diagnostics.contains("warning"),
-        "C consumer compiled with warnings:\n{diagnostics}"
-    );
-
-    fs::write(&link_stub, "#![no_main]\n").unwrap();
-    let mut link = Command::new(env!("FLIGHT_FFI_RUSTC"));
-    link.args(["--edition=2024", "--crate-type=bin", "--target"])
-        .arg(env!("FLIGHT_FFI_TARGET"))
-        .arg(&link_stub)
-        .arg("-C")
-        .arg(format!("link-arg={}", object.display()))
-        .arg("-C")
-        .arg(format!("link-arg={}", library.display()))
-        .arg("-o")
-        .arg(&executable);
-    run(&mut link, "link the C consumer");
-
-    let ran = run(&mut Command::new(&executable), "run the C consumer");
-    assert_eq!(
-        String::from_utf8_lossy(&ran.stdout).trim(),
-        "flight-ffi C consumer: ok"
-    );
+#[test]
+fn interaction_signal_rejection_links_static_library_and_runs() {
+    if let Some(stdout) = z_compile_link_and_run(
+        "interaction_signal_rejection.c",
+        "interaction_signal_rejection",
+    ) {
+        assert_eq!(stdout.trim(), "flight-ffi interaction rejection: ok");
+    }
 }
 
 // `cargo test` compiles the library only as a test harness, never as its declared `staticlib`, so
@@ -123,4 +73,72 @@ fn run(command: &mut Command, purpose: &str) -> std::process::Output {
         String::from_utf8_lossy(&output.stderr)
     );
     return output;
+}
+
+// Compiles `tests/c_consumer/<source_name>` strictly as C against the generated header, links it
+// with the static library, runs it, and returns its stdout; `None` when the target is not the host.
+fn z_compile_link_and_run(source_name: &str, stem: &str) -> Option<String> {
+    if env!("FLIGHT_FFI_TARGET") != env!("FLIGHT_FFI_HOST") {
+        eprintln!(
+            "skipping the flight-ffi C consumer: it is built for {} and cannot run on host {}",
+            env!("FLIGHT_FFI_TARGET"),
+            env!("FLIGHT_FFI_HOST")
+        );
+        return None;
+    }
+
+    let library = build_static_library();
+    let work_dir = library
+        .parent()
+        .unwrap()
+        .join(format!("flight-ffi-c-{stem}"));
+    fs::create_dir_all(&work_dir).unwrap();
+    let source = Path::new(env!("CARGO_MANIFEST_DIR"))
+        .join("tests")
+        .join("c_consumer")
+        .join(source_name);
+    let object = work_dir.join(format!("{stem}.o"));
+    let link_stub = work_dir.join("link.rs");
+    let executable = work_dir.join(format!("{stem}{}", env::consts::EXE_SUFFIX));
+    let _ = fs::remove_file(&object);
+    let _ = fs::remove_file(&executable);
+
+    let compiler = cc::Build::new()
+        .cargo_metadata(false)
+        .target(env!("FLIGHT_FFI_TARGET"))
+        .host(env!("FLIGHT_FFI_HOST"))
+        .opt_level(0)
+        .debug(false)
+        .out_dir(&work_dir)
+        .get_compiler();
+    let mut compile = compiler.to_command();
+    compile
+        .args(["-std=c11", "-Wall", "-Wextra", "-Wpedantic", "-Werror"])
+        .arg(format!("-I{}", env!("OUT_DIR")))
+        .arg("-c")
+        .arg(&source)
+        .arg("-o")
+        .arg(&object);
+    let compiled = run(&mut compile, "compile the C consumer");
+    let diagnostics = String::from_utf8_lossy(&compiled.stderr);
+    assert!(
+        !diagnostics.contains("warning"),
+        "C consumer compiled with warnings:\n{diagnostics}"
+    );
+
+    fs::write(&link_stub, "#![no_main]\n").unwrap();
+    let mut link = Command::new(env!("FLIGHT_FFI_RUSTC"));
+    link.args(["--edition=2024", "--crate-type=bin", "--target"])
+        .arg(env!("FLIGHT_FFI_TARGET"))
+        .arg(&link_stub)
+        .arg("-C")
+        .arg(format!("link-arg={}", object.display()))
+        .arg("-C")
+        .arg(format!("link-arg={}", library.display()))
+        .arg("-o")
+        .arg(&executable);
+    run(&mut link, "link the C consumer");
+
+    let ran = run(&mut Command::new(&executable), "run the C consumer");
+    return Some(String::from_utf8_lossy(&ran.stdout).into_owned());
 }

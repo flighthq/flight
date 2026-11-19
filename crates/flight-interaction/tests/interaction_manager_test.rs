@@ -162,7 +162,7 @@ mod connect_input_to_interaction {
             capture_interaction_pointer(&mut manager.write().unwrap(), 0, root.clone());
             let slot: flight_interaction::AnyInteractionSignalSlot =
                 Arc::new(|_data: &flight_interaction::PointerEventData| {});
-            connect_interaction_signal(&manager, &root, name, slot, None);
+            assert!(connect_interaction_signal(&manager, &root, name, slot, None).is_some());
             let input = test_input_source();
             let _dispose = connect_input_to_interaction(&input, manager.clone(), 1.0);
 
@@ -198,7 +198,7 @@ mod connect_input_to_interaction {
         let slot: flight_interaction::AnyInteractionSignalSlot =
             Arc::new(|_data: &flight_interaction::PointerEventData| {});
         let wheel = InteractionSignalName::OnWheel;
-        connect_interaction_signal(&manager, &root, wheel, slot, None);
+        assert!(connect_interaction_signal(&manager, &root, wheel, slot, None).is_some());
         let input = test_input_source();
         let _dispose = connect_input_to_interaction(&input, manager.clone(), 1.0);
 
@@ -312,7 +312,7 @@ mod connect_interaction_signal {
     fn connects_the_slot_to_the_target_signal_and_counts_it() {
         let (manager, child) = z_captured_manager();
         let (calls, slot) = z_counting_slot();
-        let id = connect_interaction_signal(&manager, &child, OnPointerDown, slot, None);
+        let id = connect_interaction_signal(&manager, &child, OnPointerDown, slot, None).unwrap();
         assert_eq!(z_count(&manager, OnPointerDown), 1);
         assert_eq!(z_tracked(&manager, &child, OnPointerDown), vec![id.value]);
         assert!(flight_signals::is_slot_connected(
@@ -330,8 +330,10 @@ mod connect_interaction_signal {
     fn is_idempotent_for_a_slot_that_is_still_connected() {
         let (manager, child) = z_captured_manager();
         let (calls, slot) = z_counting_slot();
-        let first = connect_interaction_signal(&manager, &child, OnPointerDown, slot.clone(), None);
-        let second = connect_interaction_signal(&manager, &child, OnPointerDown, slot, None);
+        let first = connect_interaction_signal(&manager, &child, OnPointerDown, slot.clone(), None)
+            .unwrap();
+        let second =
+            connect_interaction_signal(&manager, &child, OnPointerDown, slot, None).unwrap();
         assert_eq!(first.value, second.value);
         assert_eq!(z_count(&manager, OnPointerDown), 1);
         dispatch_interaction_pointer_down(&manager, 1.0, 1.0, 0, None);
@@ -415,7 +417,8 @@ mod connect_interaction_signal {
             });
             *cell.lock().unwrap() = Some(slot.clone());
             let first =
-                connect_interaction_signal(&manager, &child, OnPointerDown, slot, Some(&once));
+                connect_interaction_signal(&manager, &child, OnPointerDown, slot, Some(&once))
+                    .unwrap();
             dispatch_interaction_pointer_down(&manager, 1.0, 1.0, 0, None);
             let tracked = z_tracked(&manager, &child, OnPointerDown);
             assert_eq!(tracked.len(), 1);
@@ -438,14 +441,16 @@ mod connect_interaction_signal {
     fn replaces_a_cleared_registration_without_counting_it_twice() {
         let (manager, child) = z_captured_manager();
         let (calls, slot) = z_counting_slot();
-        let first = connect_interaction_signal(&manager, &child, OnPointerDown, slot.clone(), None);
+        let first = connect_interaction_signal(&manager, &child, OnPointerDown, slot.clone(), None)
+            .unwrap();
         flight_signals::clear_signal(
             &interaction_fixture::signals_for(&child)
                 .read()
                 .unwrap()
                 .on_pointer_down,
         );
-        let second = connect_interaction_signal(&manager, &child, OnPointerDown, slot, None);
+        let second =
+            connect_interaction_signal(&manager, &child, OnPointerDown, slot, None).unwrap();
         assert_ne!(first.value, second.value);
         assert_eq!(z_count(&manager, OnPointerDown), 1);
         assert_eq!(
@@ -457,17 +462,40 @@ mod connect_interaction_signal {
     }
 
     #[test]
-    #[should_panic(expected = "is not a pointer signal")]
-    fn rejects_a_signal_whose_payload_is_not_pointer_data() {
-        let (manager, child) = z_captured_manager();
-        let (_, slot) = z_counting_slot();
-        connect_interaction_signal(
-            &manager,
-            &child,
+    fn rejects_a_non_pointer_signal_with_none_and_no_side_effect() {
+        for name in [
+            InteractionSignalName::OnFocusIn,
+            InteractionSignalName::OnFocusOut,
             InteractionSignalName::OnKeyDown,
-            slot,
-            None,
-        );
+            InteractionSignalName::OnKeyUp,
+        ] {
+            let (manager, child) = z_captured_manager();
+            let had_signals = get_interaction_signals(&child).is_some();
+            let (calls, slot) = z_counting_slot();
+            let kept = slot.clone();
+            let child_handles = Arc::strong_count(&child);
+            assert_eq!(
+                connect_interaction_signal(&manager, &child, name, slot, None),
+                None,
+                "{name:?}"
+            );
+            assert_eq!(
+                get_interaction_signals(&child).is_some(),
+                had_signals,
+                "{name:?} touched the target"
+            );
+            assert_eq!(
+                Arc::strong_count(&child),
+                child_handles,
+                "{name:?} retained the target"
+            );
+            assert_eq!(Arc::strong_count(&kept), 1, "{name:?} retained the slot");
+            let guard = manager.read().unwrap();
+            assert!(guard.signal_subscriber_counts.is_empty(), "{name:?}");
+            assert!(guard.tracked_signal_slots.is_empty(), "{name:?}");
+            drop(guard);
+            assert_eq!(calls.load(SeqCst), 0);
+        }
     }
 
     #[test]
@@ -475,7 +503,7 @@ mod connect_interaction_signal {
         let (manager, child) = z_captured_manager();
         let (_, slot) = z_counting_slot();
         let before = Arc::strong_count(&child);
-        let id = connect_interaction_signal(&manager, &child, OnPointerDown, slot, None);
+        let id = connect_interaction_signal(&manager, &child, OnPointerDown, slot, None).unwrap();
         assert_eq!(Arc::strong_count(&child), before + 1);
         assert_eq!(Arc::strong_count(&manager), 1);
         assert_eq!(
@@ -533,7 +561,7 @@ mod disconnect_interaction_signal {
         let (manager, child) = z_captured_manager();
         let (calls, slot) = z_counting_slot();
         let (drops, slot) = z_with_drop_count(slot);
-        let id = connect_interaction_signal(&manager, &child, OnPointerDown, slot, None);
+        let id = connect_interaction_signal(&manager, &child, OnPointerDown, slot, None).unwrap();
         disconnect_interaction_signal(&manager, &child, OnPointerDown, id);
         assert_eq!(drops.load(SeqCst), 1);
         assert_eq!(z_count(&manager, OnPointerDown), 0);
@@ -553,7 +581,8 @@ mod disconnect_interaction_signal {
     fn ignores_ids_it_did_not_connect() {
         let (manager, child) = z_captured_manager();
         let (calls, slot) = z_counting_slot();
-        let id = connect_interaction_signal(&manager, &child, OnPointerDown, slot.clone(), None);
+        let id = connect_interaction_signal(&manager, &child, OnPointerDown, slot.clone(), None)
+            .unwrap();
         let signals = interaction_fixture::signals_for(&child);
         let direct =
             flight_signals::connect_signal(&signals.read().unwrap().on_pointer_down, slot, None);
@@ -591,7 +620,8 @@ mod disconnect_interaction_signal {
                 disconnect_interaction_signal(&manager, &target, OnPointerDown, id);
             });
             let (drops, slot) = z_with_drop_count(slot);
-            let id = connect_interaction_signal(&manager, &child, OnPointerDown, slot, None);
+            let id =
+                connect_interaction_signal(&manager, &child, OnPointerDown, slot, None).unwrap();
             *id_cell.lock().unwrap() = Some(id);
             dispatch_interaction_pointer_down(&manager, 1.0, 1.0, 0, None);
             dispatch_interaction_pointer_down(&manager, 1.0, 1.0, 0, None);
@@ -613,7 +643,8 @@ mod disconnect_interaction_signal {
                 let _ = &reentry;
                 slot(data);
             });
-            let id = connect_interaction_signal(&manager, &child, OnPointerDown, slot, None);
+            let id =
+                connect_interaction_signal(&manager, &child, OnPointerDown, slot, None).unwrap();
             disconnect_interaction_signal(&manager, &child, OnPointerDown, id);
             assert_eq!(manager.read().unwrap().double_click_delay, 77.0);
         });
@@ -628,7 +659,8 @@ mod disconnect_interaction_signal {
             priority: None,
             once: Some(true),
         };
-        let id = connect_interaction_signal(&manager, &child, OnPointerDown, slot, Some(&once));
+        let id =
+            connect_interaction_signal(&manager, &child, OnPointerDown, slot, Some(&once)).unwrap();
         connect_interaction_signal(&manager, &child, OnPointerDown, other, None);
         dispatch_interaction_pointer_down(&manager, 1.0, 1.0, 0, None);
         disconnect_interaction_signal(&manager, &child, OnPointerDown, id);

@@ -3692,6 +3692,12 @@ fn generate_ffi_wrapper(func: &ParsedFn) -> Option<(String, Option<String>)> {
     if func.name == "connect_signal_at_frame_rate" {
         return Some((generate_signal_at_frame_rate_wrapper(), None));
     }
+    if func.name == "connect_interaction_signal" {
+        return Some((
+            generate_interaction_signal_connect_wrapper(),
+            boxed_value_type("Option<SlotId>"),
+        ));
+    }
     if let Some(wrapper) = generate_task_m_wrapper(func) {
         return Some(wrapper);
     }
@@ -4905,6 +4911,66 @@ fn generate_signal_connect_wrappers() -> String {
 // `connect_signal_at_frame_rate` shares the signal connection teardown contract (one owned
 // `SignalConnection`, context released exactly once) instead of the generic disposer lowering, so
 // its wrapper is written here and counted as that source's generated wrapper.
+// `connect_interaction_signal` decides acceptance before anything is retained: the name is decoded
+// against the pointer signals alone (`slot` takes PointerEventData), so a focus or key name, or a
+// value that is no InteractionSignalName at all, returns NULL before the callback is wrapped, and
+// its context is never released because nothing took ownership of it. The accepted set is pinned
+// against the SDK's own rule by interaction_signal_runtime_test.
+fn generate_interaction_signal_connect_wrapper() -> String {
+    let names = INTERACTION_POINTER_SIGNAL_NAMES
+        .iter()
+        .map(|name| format!("{QUALIFIER}::InteractionSignalName::{name}"))
+        .collect::<Vec<_>>()
+        .join(", ");
+    return format!(
+        r#"#[doc = "flight-ffi contract|{INTERACTION_SIGNAL_CONNECT_CONTRACT}"]
+#[doc = "flight-ffi nullable|options"]
+#[doc = "flight-ffi ownership|owned-return|flight_free_slot_id|flight_sdk::SlotId"]
+#[unsafe(no_mangle)]
+pub unsafe extern "C" fn flight_connect_interaction_signal(manager: *const std::ffi::c_void, target: *const std::ffi::c_void, name: u32, slot_fn: Option<extern "C" fn(*mut std::ffi::c_void, *const {QUALIFIER}::PointerEventData)>, slot_ctx: *mut std::ffi::c_void, slot_release: Option<extern "C" fn(*mut std::ffi::c_void)>, options: *const {QUALIFIER}::SignalConnectOptions) -> *mut {QUALIFIER}::SlotId {{
+    let Some(name) = [{names}].into_iter().find(|pointer| *pointer as u32 == name) else {{
+        return std::ptr::null_mut();
+    }};
+    if manager.is_null() || target.is_null() {{
+        return std::ptr::null_mut();
+    }}
+    let Some(callback) = slot_fn else {{
+        return std::ptr::null_mut();
+    }};
+    let guard = FfiSignalCallbackRelease {{ ctx: slot_ctx as usize, release: slot_release }};
+    let slot: {QUALIFIER}::AnyInteractionSignalSlot = std::sync::Arc::new(move |event: &{QUALIFIER}::PointerEventData| callback(guard.ctx(), event));
+    let manager = unsafe {{ &*(manager as *const {QUALIFIER}::Ref<{QUALIFIER}::InteractionManager>) }};
+    let target = unsafe {{ &*(target as *const {QUALIFIER}::Ref<dyn {QUALIFIER}::Node>) }};
+    let options = if options.is_null() {{ None }} else {{ Some(unsafe {{ &*options }}) }};
+    return match {QUALIFIER}::connect_interaction_signal(manager, target, name, slot, options) {{
+        Some(id) => Box::into_raw(Box::new(id)),
+        None => std::ptr::null_mut(),
+    }};
+}}"#
+    );
+}
+
+// The InteractionSignalName variants whose payload is PointerEventData, in declaration order.
+const INTERACTION_POINTER_SIGNAL_NAMES: &[&str] = &[
+    "OnClick",
+    "OnContextMenu",
+    "OnDoubleClick",
+    "OnPointerCancel",
+    "OnPointerDoubleClick",
+    "OnPointerDown",
+    "OnPointerMove",
+    "OnPointerOut",
+    "OnPointerOver",
+    "OnPointerRollOut",
+    "OnPointerRollOver",
+    "OnPointerUp",
+    "OnReleaseOutside",
+    "OnWheel",
+];
+
+// The header contract `flight_connect_interaction_signal` carries.
+const INTERACTION_SIGNAL_CONNECT_CONTRACT: &str = "Connects slot_fn(slot_ctx, event) to the name pointer signal of target and counts it as a subscriber of manager, returning the registration flight_disconnect_interaction_signal takes. name must be a pointer InteractionSignalName: a focus or key name, or a value that is no InteractionSignalName, returns NULL, as does a NULL manager, target or slot_fn; nothing is then connected, counted or retained, and slot_release is never called. Once connected, slot_release(slot_ctx) runs exactly once, with no manager or signal lock held, when the registration is disconnected, a once connection has been called, or the target's signal is dropped. NULL options connects at default priority, repeating.";
+
 fn generate_signal_at_frame_rate_wrapper() -> String {
     return format!(
         r#"#[doc = "flight-ffi contract|{SIGNAL_AT_FRAME_RATE_CONTRACT}"]

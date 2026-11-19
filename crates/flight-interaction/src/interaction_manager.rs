@@ -383,8 +383,9 @@ pub fn connect_interaction_dispatch_layer(
 /// it is still connected returns the existing registration without counting it twice. A `once`
 /// connection stops being tracked and counted after its first call. The signal connection is made
 /// under the manager lock and the signal group's read lock, never the node's, and nothing is
-/// dropped under any of them.
-/// `name` must be a pointer signal, since `slot` takes `PointerEventData`.
+/// dropped under any of them. A focus or key `name` is rejected with `None` before anything is
+/// touched, since `slot` takes `PointerEventData`: no signal group is created on `target`, nothing
+/// is tracked or counted, and `slot` is dropped without being called.
 // flight-lint: allow(conform-params) D4: returns the SlotId disconnect_interaction_signal takes, since a C caller cannot reproduce an Arc identity
 pub fn connect_interaction_signal(
     manager: &Ref<InteractionManager>,
@@ -392,11 +393,10 @@ pub fn connect_interaction_signal(
     name: InteractionSignalName,
     slot: AnyInteractionSignalSlot,
     options: Option<&SignalConnectOptions>,
-) -> SlotId {
-    assert!(
-        is_pointer_interaction_signal_name(name),
-        "connect_interaction_signal: {name:?} is not a pointer signal"
-    );
+) -> Option<SlotId> {
+    if !is_pointer_interaction_signal_name(name) {
+        return None;
+    }
     let signals = enable_interaction_signals(target);
     let target_key = get_interaction_tracking_key(target);
     let slot_key = Arc::as_ptr(&slot) as *const () as usize;
@@ -440,7 +440,7 @@ pub fn connect_interaction_signal(
         drop(group);
         drop(guard);
         drop(connected);
-        return id;
+        return Some(id);
     }
     let id = connect_signal(signal, connected, options);
     drop(group);
@@ -461,7 +461,7 @@ pub fn connect_interaction_signal(
     if tracked.is_none() {
         *guard.signal_subscriber_counts.entry(name).or_insert(0) += 1;
     }
-    return id;
+    return Some(id);
 }
 
 // Runs a plan's deliveries in order with no manager lock held, so dispatch layers, node signal
