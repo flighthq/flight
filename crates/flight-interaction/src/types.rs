@@ -5,6 +5,7 @@ use std::sync::Arc;
 
 use flight_entity::Ref;
 use flight_geometry::Rectangle;
+use flight_input::PointerType;
 use flight_node::NodeRef;
 use flight_path::Path;
 use flight_signals::{Signal, SlotId};
@@ -27,17 +28,6 @@ pub type Cursor = String;
 
 pub trait CursorBackend: Send + Sync {
     fn set_cursor(&self, cursor: Option<&str>);
-}
-
-// ── PointerType ──
-
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
-#[repr(u32)]
-pub enum PointerType {
-    Mouse,
-    Pen,
-    Touch,
-    Unknown,
 }
 
 // ── PointerEventData ──
@@ -323,18 +313,6 @@ pub fn create_interaction_manager_options() -> InteractionManagerOptions {
 }
 
 // ── Impl blocks ──
-
-// flight-lint: allow(sugar-delegates) D13: enum string projection is self-contained
-impl PointerType {
-    pub fn as_str(&self) -> &'static str {
-        return match self {
-            PointerType::Mouse => "mouse",
-            PointerType::Pen => "pen",
-            PointerType::Touch => "touch",
-            PointerType::Unknown => "unknown",
-        };
-    }
-}
 
 // flight-lint: allow(sugar-delegates) D13: data struct default constructor
 impl PointerEventData {

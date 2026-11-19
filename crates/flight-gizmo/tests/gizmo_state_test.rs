@@ -6,7 +6,7 @@ use flight_camera::{Camera2D, create_camera_2d, project_camera_2d_point};
 use flight_entity::{Ref, allocate_entity, get_entity_uid, set_entity_uid};
 use flight_geometry::{Rectangle, Vector2, create_rectangle};
 use flight_gizmo::*;
-use flight_interaction::contract::{PointerEventData, PointerType, enable_interaction_signals};
+use flight_interaction::contract::{PointerEventData, enable_interaction_signals};
 use flight_node::{NodeRef, get_node_child_by_name, get_node_parent, remove_node_child};
 use flight_scene2d::{Node2DRef, Scene2D, as_node2d_ref, create_display_object, create_scene2d};
 use flight_selection::{SelectionState, create_selection_state, select_all_nodes};
@@ -1168,24 +1168,16 @@ fn node_transform(node: &NodeRef) -> NodeTransform {
 
 fn pointer(x: f32, y: f32, pointer_id: i32, shift_key: bool) -> PointerEventData {
     return PointerEventData {
-        alt_key: false,
-        button: 0,
         buttons: 1,
-        ctrl_key: false,
-        current_target: None,
-        delta_x: 0.0,
-        delta_y: 0.0,
         local_x: x,
         local_y: y,
-        meta_key: false,
         pointer_id,
-        pointer_type: PointerType::Mouse,
         shift_key,
-        target: None,
         world_x: x,
         world_y: y,
         x,
         y,
+        ..PointerEventData::new()
     };
 }
 

@@ -4,6 +4,7 @@ use std::collections::HashMap;
 use std::sync::{Arc, RwLock};
 
 use flight_entity::UnknownValue;
+use flight_input::PointerType;
 
 use flight_node::{NodeRef, get_node_parent};
 use flight_signals::{connect_signal, create_signal, disconnect_signal, emit_signal};
@@ -16,7 +17,7 @@ use crate::types::{
     AnyInteractionSignalSlot, InteractionDispatchLayer, InteractionDispatchLayerEntry,
     InteractionDispatchLayerOptions, InteractionManager, InteractionManagerOptions,
     InteractionPointerOptions, InteractionPointerState, InteractionSignalName, InteractionSignals,
-    KeyboardEventData, PointerEventData, PointerType,
+    KeyboardEventData, PointerEventData,
 };
 
 const CANCEL_SIGNAL_NAMES: &[InteractionSignalName] = &[
@@ -980,12 +981,7 @@ fn input_pointer_to_options(data: &flight_input::InputPointerData) -> Interactio
         ctrl_key: Some(data.ctrl_key),
         meta_key: Some(data.meta_key),
         pointer_id: Some(data.pointer_id),
-        pointer_type: Some(match data.pointer_type {
-            flight_input::PointerType::Mouse => PointerType::Mouse,
-            flight_input::PointerType::Touch => PointerType::Touch,
-            flight_input::PointerType::Pen => PointerType::Pen,
-            flight_input::PointerType::Unknown => PointerType::Unknown,
-        }),
+        pointer_type: Some(data.pointer_type),
         shift_key: Some(data.shift_key),
         time_stamp: Some(data.time_stamp),
     };

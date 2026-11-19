@@ -1,9 +1,9 @@
 //! flight-compiler: target-native
 
 use flight_entity::Ref;
+use flight_input::PointerType;
 use flight_interaction::contract::{
-    InteractionSignalName, KeyboardEventData, PointerEventData, PointerType,
-    get_interaction_signals,
+    InteractionSignalName, KeyboardEventData, PointerEventData, get_interaction_signals,
 };
 use flight_scene2d::{DisplayObject, Node2DRef, create_display_object};
 use std::sync::Arc;
