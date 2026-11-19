@@ -28,11 +28,11 @@ pub type SwfBitmapFillResolver = Arc<dyn Fn(u32, bool, bool) -> Option<Ref<Textu
 
 #[derive(Clone)]
 struct SwfShapeEdge {
-    control_x: f32,
-    control_y: f32,
+    control_x: f64,
+    control_y: f64,
     curved: bool,
-    end_control_x: Option<f32>,
-    end_control_y: Option<f32>,
+    end_control_x: Option<f64>,
+    end_control_y: Option<f64>,
     end_to_x: Option<i32>,
     end_to_y: Option<i32>,
     to_x: i32,
@@ -246,18 +246,18 @@ fn swf_shape_append_morph_edge(
     let from_x = state.x;
     let from_y = state.y;
     let mut edge = SwfShapeEdge {
-        control_x: start_edge.control_x as f32,
-        control_y: start_edge.control_y as f32,
+        control_x: start_edge.control_x as f64,
+        control_y: start_edge.control_y as f64,
         curved: start_edge.curved || end_edge.curved,
         end_control_x: Some(if end_edge.curved {
-            end_edge.control_x as f32
+            end_edge.control_x as f64
         } else {
-            (end_from_x as f32 + end_edge.to_x as f32) / 2.0
+            (end_from_x as f64 + end_edge.to_x as f64) / 2.0
         }),
         end_control_y: Some(if end_edge.curved {
-            end_edge.control_y as f32
+            end_edge.control_y as f64
         } else {
-            (end_from_y as f32 + end_edge.to_y as f32) / 2.0
+            (end_from_y as f64 + end_edge.to_y as f64) / 2.0
         }),
         end_to_x: Some(end_edge.to_x),
         end_to_y: Some(end_edge.to_y),
@@ -265,8 +265,8 @@ fn swf_shape_append_morph_edge(
         to_y: start_edge.to_y,
     };
     if edge.curved && !start_edge.curved {
-        edge.control_x = (from_x as f32 + start_edge.to_x as f32) / 2.0;
-        edge.control_y = (from_y as f32 + start_edge.to_y as f32) / 2.0;
+        edge.control_x = (from_x as f64 + start_edge.to_x as f64) / 2.0;
+        edge.control_y = (from_y as f64 + start_edge.to_y as f64) / 2.0;
     }
     if state.fill_0 != 0 {
         state.fill_0_segment.get_or_insert_with(|| {
@@ -596,8 +596,8 @@ fn swf_shape_read_edge(reader: &mut SwfReader, state: &mut SwfShapeState) -> boo
         None => return false,
     };
     let edge = SwfShapeEdge {
-        control_x: record.control_x as f32,
-        control_y: record.control_y as f32,
+        control_x: record.control_x as f64,
+        control_y: record.control_y as f64,
         curved: record.curved,
         end_control_x: None,
         end_control_y: None,
@@ -753,10 +753,10 @@ fn swf_shape_read_fill_style(
         fill.texture =
             resolve_bitmap_fill.and_then(|resolve| resolve(character_id, repeat, smoothed));
         let texture_matrix = create_matrix(
-            matrix.a / TWIPS_PER_PIXEL as f32,
-            matrix.b / TWIPS_PER_PIXEL as f32,
-            matrix.c / TWIPS_PER_PIXEL as f32,
-            matrix.d / TWIPS_PER_PIXEL as f32,
+            matrix.a / TWIPS_PER_PIXEL as f64,
+            matrix.b / TWIPS_PER_PIXEL as f64,
+            matrix.c / TWIPS_PER_PIXEL as f64,
+            matrix.d / TWIPS_PER_PIXEL as f64,
             matrix.tx,
             matrix.ty,
         );
@@ -840,19 +840,19 @@ fn swf_shape_read_matrix(reader: &mut SwfReader) -> Matrix {
     let mut d = 1.0;
     if reader.read_unsigned_bits(1) != 0.0 {
         let bits = reader.read_unsigned_bits(5) as u8;
-        a = reader.read_signed_bits(bits) as f32 / FIXED_16_ONE;
-        d = reader.read_signed_bits(bits) as f32 / FIXED_16_ONE;
+        a = reader.read_signed_bits(bits) as f64 / FIXED_16_ONE;
+        d = reader.read_signed_bits(bits) as f64 / FIXED_16_ONE;
     }
     let mut b = 0.0;
     let mut c = 0.0;
     if reader.read_unsigned_bits(1) != 0.0 {
         let bits = reader.read_unsigned_bits(5) as u8;
-        b = reader.read_signed_bits(bits) as f32 / FIXED_16_ONE;
-        c = reader.read_signed_bits(bits) as f32 / FIXED_16_ONE;
+        b = reader.read_signed_bits(bits) as f64 / FIXED_16_ONE;
+        c = reader.read_signed_bits(bits) as f64 / FIXED_16_ONE;
     }
     let bits = reader.read_unsigned_bits(5) as u8;
-    let tx = reader.read_signed_bits(bits) as f32 / TWIPS_PER_PIXEL as f32;
-    let ty = reader.read_signed_bits(bits) as f32 / TWIPS_PER_PIXEL as f32;
+    let tx = reader.read_signed_bits(bits) as f64 / TWIPS_PER_PIXEL as f64;
+    let ty = reader.read_signed_bits(bits) as f64 / TWIPS_PER_PIXEL as f64;
     reader.align_to_byte();
     return create_matrix(a, b, c, d, tx, ty);
 }
@@ -1076,7 +1076,7 @@ const FILL_NON_SMOOTHED_REPEATING_BITMAP: u8 = 0x42;
 const FILL_RADIAL_GRADIENT: u8 = 0x12;
 const FILL_REPEATING_BITMAP: u8 = 0x40;
 const FILL_SOLID: u8 = 0x00;
-const FIXED_16_ONE: f32 = 0x10000 as f32;
+const FIXED_16_ONE: f64 = 0x10000 as f64;
 const JOIN_BEVEL: u32 = 1;
 const JOIN_MITER: u32 = 2;
 const MAX_GRADIENT_RECORDS: u32 = 15;

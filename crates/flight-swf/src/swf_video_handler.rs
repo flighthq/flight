@@ -58,6 +58,7 @@ fn acquire_swf_video_texture(
     return texture;
 }
 
+// flight-lint: allow(f64) SWF twips, fixed-point and float fields decode exactly to f64 document numbers (Task Q format rule); only declared color/alpha/text/audio lanes narrow, once
 fn read_swf_video_definition(body: &mut crate::SwfReader, state: &mut SwfTagParseState) -> bool {
     let character_id = u32::from(body.read_uint16());
     let frame_count = body.read_uint16();
@@ -77,8 +78,8 @@ fn read_swf_video_definition(body: &mut crate::SwfReader, state: &mut SwfTagPars
     state.character_bounds.insert(
         character_id,
         crate::SwfTagRectangle {
-            height: f32::from(height),
-            width: f32::from(width),
+            height: f64::from(height),
+            width: f64::from(width),
             x: 0.0,
             y: 0.0,
         },

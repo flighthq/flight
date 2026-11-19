@@ -17,12 +17,14 @@ use flight_math::RAD_TO_DEG;
 
 use crate::{SwfAdjustmentRef, SwfFilterListGuard, SwfGuardStateRef, SwfReader};
 
+// flight-lint: allow(f64) decoded SWF geometry, matrices and rates are f64 document numbers (Task Q format rule)
 struct SwfFilterColor {
-    alpha: f32,
+    alpha: f64,
     rgb: u32,
 }
 
 // flight-lint: allow(conform-params) D5: caller-owned SwfGuardState replaces the source module-level hook
+// flight-lint: allow(f64) SWF twips, fixed-point and float fields decode exactly to f64 document numbers (Task Q format rule); only declared color/alpha/text/audio lanes narrow, once
 pub fn read_swf_filter_list(
     guard_state: &SwfGuardStateRef,
     reader: &mut SwfReader,
@@ -54,28 +56,28 @@ pub fn read_swf_filter_list(
                 let effect = create_inner_shadow_effect();
                 {
                     let mut effect = effect.write().unwrap();
-                    effect.alpha = Some(color.alpha);
+                    effect.alpha = Some(color.alpha as f32);
                     effect.angle = Some(angle);
                     effect.blur_x = Some(blur_x);
                     effect.blur_y = Some(blur_y);
                     effect.color = Some(color.rgb);
                     effect.distance = Some(distance);
                     effect.quality = Some(f32::from(flags & FILTER_PASSES));
-                    effect.strength = Some(strength);
+                    effect.strength = Some(strength as f32);
                 }
                 effect
             } else {
                 let effect = create_drop_shadow_effect();
                 {
                     let mut effect = effect.write().unwrap();
-                    effect.alpha = Some(color.alpha);
+                    effect.alpha = Some(color.alpha as f32);
                     effect.angle = Some(angle);
                     effect.blur_x = Some(blur_x);
                     effect.blur_y = Some(blur_y);
                     effect.color = Some(color.rgb);
                     effect.distance = Some(distance);
                     effect.quality = Some(f32::from(flags & FILTER_PASSES));
-                    effect.strength = Some(strength);
+                    effect.strength = Some(strength as f32);
                 }
                 effect
             };
@@ -114,24 +116,24 @@ pub fn read_swf_filter_list(
                 let effect = create_inner_glow_effect();
                 {
                     let mut effect = effect.write().unwrap();
-                    effect.alpha = Some(color.alpha);
+                    effect.alpha = Some(color.alpha as f32);
                     effect.blur_x = Some(blur_x);
                     effect.blur_y = Some(blur_y);
                     effect.color = Some(color.rgb);
                     effect.quality = Some(f32::from(flags & FILTER_PASSES));
-                    effect.strength = Some(strength);
+                    effect.strength = Some(strength as f32);
                 }
                 effect
             } else {
                 let effect = create_outer_glow_effect();
                 {
                     let mut effect = effect.write().unwrap();
-                    effect.alpha = Some(color.alpha);
+                    effect.alpha = Some(color.alpha as f32);
                     effect.blur_x = Some(blur_x);
                     effect.blur_y = Some(blur_y);
                     effect.color = Some(color.rgb);
                     effect.quality = Some(f32::from(flags & FILTER_PASSES));
-                    effect.strength = Some(strength);
+                    effect.strength = Some(strength as f32);
                 }
                 effect
             };
@@ -158,12 +160,12 @@ pub fn read_swf_filter_list(
                 effect.blur_x = Some(blur_x);
                 effect.blur_y = Some(blur_y);
                 effect.distance = Some(distance);
-                effect.highlight_alpha = Some(highlight.alpha);
+                effect.highlight_alpha = Some(highlight.alpha as f32);
                 effect.highlight_color = Some(highlight.rgb);
                 effect.quality = Some(f32::from(flags & FILTER_BEVEL_PASSES));
-                effect.shadow_alpha = Some(shadow.alpha);
+                effect.shadow_alpha = Some(shadow.alpha as f32);
                 effect.shadow_color = Some(shadow.rgb);
-                effect.strength = Some(strength);
+                effect.strength = Some(strength as f32);
             }
             out_effects.push(effect);
             continue;
@@ -179,7 +181,7 @@ pub fn read_swf_filter_list(
                 alphas.push(color.alpha);
             }
             for _ in 0..stop_count {
-                ratios.push(f32::from(reader.read_uint8()));
+                ratios.push(f64::from(reader.read_uint8()));
             }
             let blur_x = swf_filter_read_fixed(reader);
             let blur_y = swf_filter_read_fixed(reader);
@@ -201,20 +203,20 @@ pub fn read_swf_filter_list(
                 let effect = create_gradient_glow_effect();
                 {
                     let mut effect = effect.write().unwrap();
-                    effect.alphas = alphas;
+                    effect.alphas = alphas.iter().map(|value| *value as f32).collect();
                     effect.blur_x = Some(blur_x);
                     effect.blur_y = Some(blur_y);
                     effect.colors = colors;
                     effect.quality = Some(f32::from(flags & FILTER_BEVEL_PASSES));
-                    effect.ratios = ratios;
-                    effect.strength = Some(strength);
+                    effect.ratios = ratios.iter().map(|value| *value as f32).collect();
+                    effect.strength = Some(strength as f32);
                 }
                 effect
             } else {
                 let effect = create_gradient_bevel_effect();
                 {
                     let mut effect = effect.write().unwrap();
-                    effect.alphas = alphas;
+                    effect.alphas = alphas.iter().map(|value| *value as f32).collect();
                     effect.angle = Some(angle);
                     effect.bevel_type = Some(swf_filter_resolve_bevel_type(flags));
                     effect.blur_x = Some(blur_x);
@@ -222,8 +224,8 @@ pub fn read_swf_filter_list(
                     effect.colors = colors;
                     effect.distance = Some(distance);
                     effect.quality = Some(f32::from(flags & FILTER_BEVEL_PASSES));
-                    effect.ratios = ratios;
-                    effect.strength = Some(strength);
+                    effect.ratios = ratios.iter().map(|value| *value as f32).collect();
+                    effect.strength = Some(strength as f32);
                 }
                 effect
             };
@@ -251,20 +253,20 @@ pub fn read_swf_filter_list(
             let effect = create_convolution_effect();
             {
                 let mut effect = effect.write().unwrap();
-                effect.bias = Some(bias);
+                effect.bias = Some(bias as f32);
                 effect.clamp = Some(flags & CONVOLUTION_CLAMP != 0);
                 effect.color = Some(color.rgb);
-                effect.divisor = Some(divisor);
-                effect.matrix = matrix;
-                effect.matrix_x = f32::from(matrix_x);
-                effect.matrix_y = f32::from(matrix_y);
+                effect.divisor = Some(divisor as f32);
+                effect.matrix = matrix.iter().map(|value| *value as f32).collect();
+                effect.matrix_x = f64::from(matrix_x);
+                effect.matrix_y = f64::from(matrix_y);
                 effect.preserve_alpha = Some(flags & CONVOLUTION_PRESERVE_ALPHA != 0);
             }
             out_effects.push(effect);
             continue;
         }
         if id == FILTER_COLOR_MATRIX {
-            let mut matrix = [0.0_f32; COLOR_MATRIX_LENGTH];
+            let mut matrix = [0.0_f64; COLOR_MATRIX_LENGTH];
             for cell in &mut matrix {
                 if !reader.valid {
                     break;
@@ -277,8 +279,9 @@ pub fn read_swf_filter_list(
             for row in 0..COLOR_MATRIX_ROWS {
                 matrix[row * COLOR_MATRIX_COLUMNS + COLOR_MATRIX_BIAS_COLUMN] /= COLOR_CHANNEL_ONE;
             }
-            let adjustment: SwfAdjustmentRef =
-                Arc::new(RwLock::new(create_color_matrix_adjustment(matrix)));
+            let adjustment: SwfAdjustmentRef = Arc::new(RwLock::new(
+                create_color_matrix_adjustment(matrix.map(|value| value as f32)),
+            ));
             out_adjustments.push(adjustment);
             continue;
         }
@@ -299,24 +302,28 @@ pub fn set_swf_filter_list_guard(
     guard_state.write().unwrap().filter_list_guard = guard;
 }
 
+// flight-lint: allow(f64) SWF twips, fixed-point and float fields decode exactly to f64 document numbers (Task Q format rule); only declared color/alpha/text/audio lanes narrow, once
 fn swf_filter_read_color(reader: &mut SwfReader) -> SwfFilterColor {
     let red = reader.read_uint8();
     let green = reader.read_uint8();
     let blue = reader.read_uint8();
     let alpha = reader.read_uint8();
     return SwfFilterColor {
-        alpha: f32::from(alpha) / COLOR_CHANNEL_ONE,
+        alpha: f64::from(alpha) / COLOR_CHANNEL_ONE,
         rgb: u32::from(red) * 0x10000 + u32::from(green) * 0x100 + u32::from(blue),
     };
 }
 
-fn swf_filter_read_fixed(reader: &mut SwfReader) -> f32 {
+// flight-lint: allow(f64) SWF twips, fixed-point and float fields decode exactly to f64 document numbers (Task Q format rule); only declared color/alpha/text/audio lanes narrow, once
+fn swf_filter_read_fixed(reader: &mut SwfReader) -> f64 {
     let value = reader.read_uint32() as i32;
-    return value as f32 / FIXED_16_ONE;
+    return value as f64 / FIXED_16_ONE;
 }
 
-fn swf_filter_read_float(reader: &mut SwfReader) -> f32 {
-    return f32::from_bits(reader.read_uint32());
+// flight-lint: allow(f64) SWF twips, fixed-point and float fields decode exactly to f64 document numbers (Task Q format rule); only declared color/alpha/text/audio lanes narrow, once
+fn swf_filter_read_float(reader: &mut SwfReader) -> f64 {
+    // SWF FLOAT fields are 32-bit; the value widens exactly into the f64 document.
+    return f64::from(f32::from_bits(reader.read_uint32()));
 }
 
 fn swf_filter_report_field_diagnostic(
@@ -357,7 +364,8 @@ fn swf_filter_resolve_bevel_type(flags: u8) -> BevelType {
     };
 }
 
-const COLOR_CHANNEL_ONE: f32 = 0xff as f32;
+// flight-lint: allow(f64) SWF twips, fixed-point and float fields decode exactly to f64 document numbers (Task Q format rule); only declared color/alpha/text/audio lanes narrow, once
+const COLOR_CHANNEL_ONE: f64 = 0xff as f64;
 const COLOR_MATRIX_BIAS_COLUMN: usize = 4;
 const COLOR_MATRIX_COLUMNS: usize = 5;
 const COLOR_MATRIX_LENGTH: usize = 20;
@@ -376,4 +384,5 @@ const FILTER_GRADIENT_BEVEL: u8 = 7;
 const FILTER_GRADIENT_GLOW: u8 = 4;
 const FILTER_INNER: u8 = 0x80;
 const FILTER_PASSES: u8 = 0x1f;
-const FIXED_16_ONE: f32 = 0x10000 as f32;
+// flight-lint: allow(f64) SWF twips, fixed-point and float fields decode exactly to f64 document numbers (Task Q format rule); only declared color/alpha/text/audio lanes narrow, once
+const FIXED_16_ONE: f64 = 0x10000 as f64;

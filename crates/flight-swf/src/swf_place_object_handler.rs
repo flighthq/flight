@@ -93,6 +93,7 @@ fn read_legacy_remove_object(body: &mut SwfReader, placements: &SwfTagPlacements
     }
 }
 
+// flight-lint: allow(f64) SWF twips, fixed-point and float fields decode exactly to f64 document numbers (Task Q format rule); only declared color/alpha/text/audio lanes narrow, once
 fn read_place_object_2(body: &mut SwfReader, placements: &SwfTagPlacementsRef) {
     let flags = body.read_uint8();
     let depth = u32::from(body.read_uint16());
@@ -121,7 +122,7 @@ fn read_place_object_2(body: &mut SwfReader, placements: &SwfTagPlacementsRef) {
         }
     };
     let ratio = if flags & PLACE_HAS_RATIO != 0 {
-        f32::from(body.read_uint16()) / MORPH_RATIO_ONE
+        f64::from(body.read_uint16()) / MORPH_RATIO_ONE
     } else {
         inherited.map_or(0.0, |placement| placement.ratio)
     };
@@ -194,7 +195,8 @@ pub(crate) fn set_placement(
     }
 }
 
-const MORPH_RATIO_ONE: f32 = 0xffff as f32;
+// flight-lint: allow(f64) SWF twips, fixed-point and float fields decode exactly to f64 document numbers (Task Q format rule); only declared color/alpha/text/audio lanes narrow, once
+const MORPH_RATIO_ONE: f64 = 0xffff as f64;
 const PLACE_HAS_CHARACTER: u8 = 0x02;
 const PLACE_HAS_CLIP_DEPTH: u8 = 0x40;
 const PLACE_HAS_COLOR_TRANSFORM: u8 = 0x08;

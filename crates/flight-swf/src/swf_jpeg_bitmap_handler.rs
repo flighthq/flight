@@ -185,6 +185,7 @@ fn create_swf_jpeg_alpha_payloads(
     return payloads;
 }
 
+// flight-lint: allow(f64) SWF twips, fixed-point and float fields decode exactly to f64 document numbers (Task Q format rule); only declared color/alpha/text/audio lanes narrow, once
 fn read_swf_embedded_image(source: &[u8], start: usize, end: usize) -> Option<SwfEmbeddedImage> {
     if end.saturating_sub(start) >= 24
         && source[start..start + 8] == [0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]
@@ -192,8 +193,8 @@ fn read_swf_embedded_image(source: &[u8], start: usize, end: usize) -> Option<Sw
         && source[start + 12..start + 16] == [0x49, 0x48, 0x44, 0x52]
     {
         let bounds = resolve_swf_dimension_bounds(
-            read_big_endian_uint32(source, start + 16) as f32,
-            read_big_endian_uint32(source, start + 20) as f32,
+            f64::from(read_big_endian_uint32(source, start + 16)),
+            f64::from(read_big_endian_uint32(source, start + 20)),
         )?;
         return Some(SwfEmbeddedImage {
             bounds,
@@ -207,8 +208,8 @@ fn read_swf_embedded_image(source: &[u8], start: usize, end: usize) -> Option<Sw
         && source[start + 5] == 0x61
     {
         let bounds = resolve_swf_dimension_bounds(
-            f32::from(source[start + 6]) + f32::from(source[start + 7]) * 0x100 as f32,
-            f32::from(source[start + 8]) + f32::from(source[start + 9]) * 0x100 as f32,
+            f64::from(source[start + 6]) + f64::from(source[start + 7]) * 256.0,
+            f64::from(source[start + 8]) + f64::from(source[start + 9]) * 256.0,
         )?;
         return Some(SwfEmbeddedImage {
             bounds,
@@ -267,8 +268,8 @@ fn read_swf_embedded_image(source: &[u8], start: usize, end: usize) -> Option<Sw
                 return None;
             }
             let bounds = resolve_swf_dimension_bounds(
-                f32::from(read_big_endian_uint16(source, pos + 5)),
-                f32::from(read_big_endian_uint16(source, pos + 3)),
+                f64::from(read_big_endian_uint16(source, pos + 5)),
+                f64::from(read_big_endian_uint16(source, pos + 3)),
             )?;
             return Some(SwfEmbeddedImage {
                 bounds,

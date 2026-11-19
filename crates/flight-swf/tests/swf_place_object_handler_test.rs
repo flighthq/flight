@@ -109,7 +109,7 @@ mod swf_place_object_handler {
         assert_eq!(placement.matrix.ty, 3.0);
         assert_eq!(placement.name.as_deref(), Some("hero"));
         assert_eq!(placement.clip_depth, 12);
-        assert!((placement.ratio - f32::from(0x8000_u16) / 65535.0).abs() < 0.00001);
+        assert!((placement.ratio - f64::from(f32::from(0x8000_u16) / 65535.0)).abs() < 0.00001);
     }
 
     #[test]

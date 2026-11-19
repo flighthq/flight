@@ -159,6 +159,19 @@ mod read_swf_matrix {
     }
 
     #[test]
+    fn decodes_a_single_twip_of_translation_exactly_in_f64() {
+        // 1 twip is 0.05 px; an f32 decode would give 0.05000000074505806.
+        let mut writer = SwfBitWriter::new();
+        writer.write_unsigned(0, 1);
+        writer.write_unsigned(0, 1);
+        writer.write_unsigned(4, 5);
+        writer.write_signed(1, 4);
+        writer.write_signed(-3, 4);
+        let matrix = read_swf_matrix(&mut reader(writer.to_bytes()));
+        assert_eq!((matrix.tx, matrix.ty), (1.0 / 20.0, -3.0 / 20.0));
+    }
+
+    #[test]
     fn returns_identity_when_no_components_are_declared() {
         let mut writer = SwfBitWriter::new();
         writer.write_unsigned(0, 1);
@@ -183,6 +196,20 @@ mod read_swf_rectangle {
                 width: 0.0,
                 x: 100.0,
                 y: 50.0
+            })
+        );
+    }
+
+    #[test]
+    fn decodes_sub_pixel_twips_exactly_in_f64() {
+        // 1, 3, 7 and 11 twips are not f32-exact as pixels (0.05, 0.1, 0.35, 0.55).
+        assert_eq!(
+            read_swf_rectangle(&mut reader(create_rectangle_record(1, 3, 7, 11))),
+            Some(SwfTagRectangle {
+                height: 4.0 / 20.0,
+                width: 2.0 / 20.0,
+                x: 1.0 / 20.0,
+                y: 7.0 / 20.0
             })
         );
     }

@@ -19,7 +19,7 @@ fn state() -> SwfNodeStateRef {
     }));
 }
 
-fn rect(x: f32, y: f32, width: f32, height: f32) -> SwfTagRectangle {
+fn rect(x: f64, y: f64, width: f64, height: f64) -> SwfTagRectangle {
     return SwfTagRectangle {
         height,
         width,

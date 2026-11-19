@@ -124,7 +124,7 @@ mod read_swf_filter_list {
         let effect = typed_effect::<DropShadowEffect>(&result.effects[0]);
         assert_eq!(effect.color, Some(0x112233));
         assert_close(effect.alpha.unwrap(), 0x80 as f32 / 0xff as f32, 0.0);
-        assert_close(effect.angle.unwrap(), 90.0, 0.0005);
+        assert_close_f64(effect.angle.unwrap(), 90.0, 0.0005);
         assert_eq!(effect.blur_x, Some(4.0));
         assert_eq!(effect.blur_y, Some(6.0));
         assert_eq!(effect.distance, Some(10.0));
@@ -251,7 +251,7 @@ mod read_swf_filter_list {
             None,
         );
         let effect = typed_effect::<InnerShadowEffect>(&result.effects[0]);
-        assert_close(effect.angle.unwrap(), 90.0, 0.0005);
+        assert_close_f64(effect.angle.unwrap(), 90.0, 0.0005);
         assert_eq!(effect.blur_x, Some(2.0));
         assert_eq!(effect.blur_y, Some(2.0));
         assert_eq!(effect.distance, Some(8.0));
@@ -302,6 +302,15 @@ fn assert_close(actual: f32, expected: f32, source_bound: f32) {
     assert!(
         (actual - expected).abs() <= bound,
         "actual={actual}, expected={expected}, bound={bound}"
+    );
+}
+
+fn assert_close_f64(actual: f64, expected: f64, source_bound: f64) {
+    let roundoff = 4.0 * f64::EPSILON * expected.abs().max(1.0);
+    let bound = source_bound.max(roundoff);
+    assert!(
+        (actual - expected).abs() <= bound,
+        "{actual} != {expected} (bound {bound})"
     );
 }
 

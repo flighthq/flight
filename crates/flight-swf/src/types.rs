@@ -21,27 +21,30 @@ use flight_timeline::contract::{FrameScript, TimelineAudioCue, TimelineCue, Time
 use indexmap::IndexMap;
 
 #[derive(Clone, Copy, Debug, PartialEq)]
+// flight-lint: allow(f64) decoded SWF geometry, matrices and rates are f64 document numbers (Task Q format rule)
 pub struct SwfTagMatrix {
-    pub a: f32,
-    pub b: f32,
-    pub c: f32,
-    pub d: f32,
-    pub tx: f32,
-    pub ty: f32,
+    pub a: f64,
+    pub b: f64,
+    pub c: f64,
+    pub d: f64,
+    pub tx: f64,
+    pub ty: f64,
 }
 
 #[derive(Clone, Copy, Debug, PartialEq)]
+// flight-lint: allow(f64) decoded SWF geometry, matrices and rates are f64 document numbers (Task Q format rule)
 pub struct SwfTagRectangle {
-    pub height: f32,
-    pub width: f32,
-    pub x: f32,
-    pub y: f32,
+    pub height: f64,
+    pub width: f64,
+    pub x: f64,
+    pub y: f64,
 }
 
 #[derive(Clone, Debug, PartialEq)]
+// flight-lint: allow(f64) decoded SWF geometry, matrices and rates are f64 document numbers (Task Q format rule)
 pub struct SwfHeader {
     pub file_length: u32,
-    pub frame_rate: f32,
+    pub frame_rate: f64,
     pub stage_bounds: SwfTagRectangle,
     pub version: u8,
 }
@@ -312,6 +315,7 @@ pub type SwfNodeStateRef = Ref<SwfNodeState>;
 pub type SwfMorphShapeDecoder = Arc<dyn Fn() -> Option<Ref<MorphShape>> + Send + Sync>;
 
 #[derive(Clone)]
+// flight-lint: allow(f64) decoded SWF geometry, matrices and rates are f64 document numbers (Task Q format rule)
 pub struct SwfTagPlacement {
     pub advanced_blend_mode: Option<AdvancedBlendMode>,
     pub alpha: f32,
@@ -326,7 +330,7 @@ pub struct SwfTagPlacement {
     pub filter_adjustments: SwfAdjustmentStack,
     pub matrix: SwfTagMatrix,
     pub name: Option<String>,
-    pub ratio: f32,
+    pub ratio: f64,
 }
 
 pub type SwfFrameActions = Vec<(i32, FrameScript)>;

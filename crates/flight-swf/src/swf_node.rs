@@ -122,7 +122,8 @@ pub fn apply_swf_authored_bounds(
 
 /// Interpolates a morph instance's authored rectangle (TS `applySwfMorphBounds`).
 // flight-lint: allow(conform-params) D16: caller-owned SwfNodeState preserves source structural data across Rust's typed node kinds
-pub fn apply_swf_morph_bounds(state: &SwfNodeStateRef, shape: &Ref<MorphShape>, progress: f32) {
+// flight-lint: allow(f64) SWF twips, fixed-point and float fields decode exactly to f64 document numbers (Task Q format rule); only declared color/alpha/text/audio lanes narrow, once
+pub fn apply_swf_morph_bounds(state: &SwfNodeStateRef, shape: &Ref<MorphShape>, progress: f64) {
     let node_id = get_entity_id(&*shape.read().unwrap()).to_string();
     {
         let mut state = state.write().unwrap();

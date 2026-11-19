@@ -14,32 +14,34 @@ pub type SwfFontNameResolver = Arc<dyn Fn(u32) -> String + Send + Sync>;
 pub type SwfEditTextFactory = Arc<dyn Fn(&SwfFontNameResolver) -> Ref<RichText> + Send + Sync>;
 
 #[derive(Clone)]
+// flight-lint: allow(f64) decoded SWF geometry, matrices and rates are f64 document numbers (Task Q format rule)
 struct SwfEditTextField {
     align: TextFormatAlign,
     border: bool,
     color: u32,
-    font_height: f32,
+    font_height: f64,
     font_id: u32,
     has_color: bool,
-    height: f32,
+    height: f64,
     html: bool,
-    indent: f32,
-    leading: f32,
-    left_margin: f32,
+    indent: f64,
+    leading: f64,
+    left_margin: f64,
     max_chars: i32,
     multiline: bool,
     read_only: bool,
-    right_margin: f32,
+    right_margin: f64,
     selectable: bool,
     text: String,
-    width: f32,
+    width: f64,
     word_wrap: bool,
 }
 
+// flight-lint: allow(f64) SWF twips, fixed-point and float fields decode exactly to f64 document numbers (Task Q format rule); only declared color/alpha/text/audio lanes narrow, once
 pub fn read_swf_edit_text_factory(
     reader: &mut SwfReader,
-    width: f32,
-    height: f32,
+    width: f64,
+    height: f64,
 ) -> Option<SwfEditTextFactory> {
     let flags = reader.read_uint8();
     let layout_flags = reader.read_uint8();
@@ -55,7 +57,7 @@ pub fn read_swf_edit_text_factory(
         reader.read_string();
     }
     let font_height = if flags & EDIT_TEXT_HAS_FONT != 0 {
-        f32::from(reader.read_uint16())
+        f64::from(reader.read_uint16())
     } else {
         0.0
     };
@@ -68,10 +70,10 @@ pub fn read_swf_edit_text_factory(
         let blue = reader.read_uint8();
         let alpha = reader.read_uint8();
         color = pack_color(
-            f32::from(red) / 0xff as f32,
-            f32::from(green) / 0xff as f32,
-            f32::from(blue) / 0xff as f32,
-            f32::from(alpha) / 0xff as f32,
+            (f64::from(red) / 0xff as f64) as f32,
+            (f64::from(green) / 0xff as f64) as f32,
+            (f64::from(blue) / 0xff as f64) as f32,
+            (f64::from(alpha) / 0xff as f64) as f32,
         );
         has_color = true;
     }
@@ -88,10 +90,10 @@ pub fn read_swf_edit_text_factory(
     let mut leading = 0.0;
     if layout_flags & EDIT_TEXT_HAS_LAYOUT != 0 {
         align = swf_edit_text_resolve_align(reader.read_uint8());
-        left_margin = f32::from(reader.read_uint16()) / TWIPS_PER_PIXEL;
-        right_margin = f32::from(reader.read_uint16()) / TWIPS_PER_PIXEL;
-        indent = f32::from(reader.read_uint16()) / TWIPS_PER_PIXEL;
-        leading = swf_edit_text_read_signed(reader) as f32 / TWIPS_PER_PIXEL;
+        left_margin = f64::from(reader.read_uint16()) / TWIPS_PER_PIXEL;
+        right_margin = f64::from(reader.read_uint16()) / TWIPS_PER_PIXEL;
+        indent = f64::from(reader.read_uint16()) / TWIPS_PER_PIXEL;
+        leading = swf_edit_text_read_signed(reader) as f64 / TWIPS_PER_PIXEL;
     }
 
     reader.read_string();
@@ -133,11 +135,11 @@ pub fn read_swf_edit_text_factory(
 fn swf_edit_text_create_node(field: &SwfEditTextField, font_name: &str) -> Ref<RichText> {
     let mut format = TextFormat::default();
     format.align = Some(field.align);
-    format.indent = Some(field.indent);
-    format.leading = Some(field.leading);
-    format.left_margin = Some(field.left_margin);
-    format.right_margin = Some(field.right_margin);
-    format.size = Some(field.font_height);
+    format.indent = Some(field.indent as f32);
+    format.leading = Some(field.leading as f32);
+    format.left_margin = Some(field.left_margin as f32);
+    format.right_margin = Some(field.right_margin as f32);
+    format.size = Some(field.font_height as f32);
     if field.has_color {
         format.color = Some(field.color);
     }
@@ -207,4 +209,5 @@ const EDIT_TEXT_MULTILINE: u8 = 0x20;
 const EDIT_TEXT_NO_SELECT: u8 = 0x10;
 const EDIT_TEXT_READ_ONLY: u8 = 0x08;
 const EDIT_TEXT_WORD_WRAP: u8 = 0x40;
-const TWIPS_PER_PIXEL: f32 = 20.0;
+// flight-lint: allow(f64) SWF twips, fixed-point and float fields decode exactly to f64 document numbers (Task Q format rule); only declared color/alpha/text/audio lanes narrow, once
+const TWIPS_PER_PIXEL: f64 = 20.0;

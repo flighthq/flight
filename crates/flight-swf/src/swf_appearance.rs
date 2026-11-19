@@ -35,20 +35,21 @@ pub fn join_swf_color_adjustments(
     return Some(Arc::new(joined));
 }
 
+// flight-lint: allow(f64) SWF twips, fixed-point and float fields decode exactly to f64 document numbers (Task Q format rule); only declared color/alpha/text/audio lanes narrow, once
 pub fn read_swf_color_transform(reader: &mut SwfReader, channel_count: u32) -> SwfColorTransform {
     let has_add = reader.read_unsigned_bits(1) != 0.0;
     let has_multiply = reader.read_unsigned_bits(1) != 0.0;
     let bits = reader.read_unsigned_bits(4) as u8;
-    let mut multiply = [1.0_f32; 4];
-    let mut add = [0.0_f32; 4];
+    let mut multiply = [1.0_f64; 4];
+    let mut add = [0.0_f64; 4];
     if has_multiply {
         for channel in 0..channel_count.min(4) {
-            multiply[channel as usize] = reader.read_signed_bits(bits) as f32 / FIXED_8_8_ONE;
+            multiply[channel as usize] = reader.read_signed_bits(bits) as f64 / FIXED_8_8_ONE;
         }
     }
     if has_add {
         for channel in 0..channel_count.min(4) {
-            add[channel as usize] = reader.read_signed_bits(bits) as f32 / COLOR_CHANNEL_ONE;
+            add[channel as usize] = reader.read_signed_bits(bits) as f64 / COLOR_CHANNEL_ONE;
         }
     }
     reader.align_to_byte();
@@ -71,23 +72,23 @@ pub fn read_swf_color_transform(reader: &mut SwfReader, channel_count: u32) -> S
         || add[2] != 0.0;
     if !tints && alpha_bias == 0.0 {
         return SwfColorTransform {
-            alpha,
+            alpha: alpha as f32,
             color_adjustments: None,
         };
     }
     let mut color_scale_bias = create_color_scale_bias();
-    color_scale_bias.alpha_bias = alpha_bias;
-    color_scale_bias.blue_bias = add[2];
-    color_scale_bias.blue_scale = multiply[2];
-    color_scale_bias.green_bias = add[1];
-    color_scale_bias.green_scale = multiply[1];
-    color_scale_bias.red_bias = add[0];
-    color_scale_bias.red_scale = multiply[0];
+    color_scale_bias.alpha_bias = alpha_bias as f32;
+    color_scale_bias.blue_bias = (add[2]) as f32;
+    color_scale_bias.blue_scale = (multiply[2]) as f32;
+    color_scale_bias.green_bias = (add[1]) as f32;
+    color_scale_bias.green_scale = (multiply[1]) as f32;
+    color_scale_bias.red_bias = (add[0]) as f32;
+    color_scale_bias.red_scale = (multiply[0]) as f32;
     let adjustment: SwfAdjustmentRef = Arc::new(RwLock::new(create_color_scale_bias_adjustment(
         &color_scale_bias,
     )));
     return SwfColorTransform {
-        alpha,
+        alpha: alpha as f32,
         color_adjustments: Some(Arc::new(vec![adjustment])),
     };
 }
@@ -127,8 +128,10 @@ pub fn resolve_swf_blend_mode(value: u32) -> BlendMode {
 }
 
 const ALPHA_CHANNEL: u32 = 3;
-const COLOR_CHANNEL_ONE: f32 = 0xff as f32;
-const FIXED_8_8_ONE: f32 = 0x100 as f32;
+// flight-lint: allow(f64) SWF twips, fixed-point and float fields decode exactly to f64 document numbers (Task Q format rule); only declared color/alpha/text/audio lanes narrow, once
+const COLOR_CHANNEL_ONE: f64 = 0xff as f64;
+// flight-lint: allow(f64) SWF twips, fixed-point and float fields decode exactly to f64 document numbers (Task Q format rule); only declared color/alpha/text/audio lanes narrow, once
+const FIXED_8_8_ONE: f64 = 0x100 as f64;
 const SWF_BLEND_ADD: u32 = 8;
 const SWF_BLEND_DARKEN: u32 = 6;
 const SWF_BLEND_DIFFERENCE: u32 = 7;

@@ -23,6 +23,7 @@ pub static SWF_LOSSLESS_BITMAP_HANDLER: LazyLock<SwfTagHandlerRef> = LazyLock::n
     })
 });
 
+// flight-lint: allow(f64) SWF twips, fixed-point and float fields decode exactly to f64 document numbers (Task Q format rule); only declared color/alpha/text/audio lanes narrow, once
 fn read_swf_lossless_bitmap_definition(
     body: &mut crate::SwfReader,
     state: &mut crate::SwfTagParseState,
@@ -52,8 +53,8 @@ fn read_swf_lossless_bitmap_definition(
     state.character_bounds.insert(
         character_id,
         crate::SwfTagRectangle {
-            height: height as f32,
-            width: width as f32,
+            height: height as f64,
+            width: width as f64,
             x: 0.0,
             y: 0.0,
         },

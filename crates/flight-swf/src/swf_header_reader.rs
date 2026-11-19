@@ -6,6 +6,7 @@ use crate::{SwfHeaderRectangleResult, SwfTagRectangle};
 
 pub const SWF_HEADER_PREFIX_LENGTH: usize = 8;
 
+// flight-lint: allow(f64) SWF twips, fixed-point and float fields decode exactly to f64 document numbers (Task Q format rule); only declared color/alpha/text/audio lanes narrow, once
 pub fn read_swf_header_rectangle(
     data: &Uint8Array,
     offset: usize,
@@ -44,10 +45,10 @@ pub fn read_swf_header_rectangle(
     return Some(SwfHeaderRectangleResult {
         next_pos: offset + total_bytes,
         rect: SwfTagRectangle {
-            height: (y_max - y_min).max(0) as f32 / SWF_TWIPS_PER_PIXEL,
-            width: (x_max - x_min).max(0) as f32 / SWF_TWIPS_PER_PIXEL,
-            x: x_min as f32 / SWF_TWIPS_PER_PIXEL,
-            y: y_min as f32 / SWF_TWIPS_PER_PIXEL,
+            height: (y_max - y_min).max(0) as f64 / SWF_TWIPS_PER_PIXEL,
+            width: (x_max - x_min).max(0) as f64 / SWF_TWIPS_PER_PIXEL,
+            x: x_min as f64 / SWF_TWIPS_PER_PIXEL,
+            y: y_min as f64 / SWF_TWIPS_PER_PIXEL,
         },
     });
 }
@@ -59,4 +60,5 @@ pub fn read_swf_header_uint32(data: &Uint8Array, offset: usize) -> u32 {
         + u32::from(data[offset + 3]) * 0x1000000;
 }
 
-const SWF_TWIPS_PER_PIXEL: f32 = 20.0;
+// flight-lint: allow(f64) SWF twips, fixed-point and float fields decode exactly to f64 document numbers (Task Q format rule); only declared color/alpha/text/audio lanes narrow, once
+const SWF_TWIPS_PER_PIXEL: f64 = 20.0;

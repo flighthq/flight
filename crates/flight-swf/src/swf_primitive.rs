@@ -4,7 +4,8 @@ use flight_entity::Uint8Array;
 
 use crate::{SwfReader, SwfTagMatrix, SwfTagRectangle};
 
-pub const FIXED_8_8_ONE: f32 = 0x100 as f32;
+// flight-lint: allow(f64) SWF twips, fixed-point and float fields decode exactly to f64 document numbers (Task Q format rule); only declared color/alpha/text/audio lanes narrow, once
+pub const FIXED_8_8_ONE: f64 = 0x100 as f64;
 pub const IDENTITY_MATRIX: SwfTagMatrix = SwfTagMatrix {
     a: 1.0,
     b: 0.0,
@@ -38,30 +39,32 @@ pub fn read_big_endian_uint32(source: &Uint8Array, offset: usize) -> u32 {
         + u32::from(source[offset + 3]);
 }
 
+// flight-lint: allow(f64) SWF twips, fixed-point and float fields decode exactly to f64 document numbers (Task Q format rule); only declared color/alpha/text/audio lanes narrow, once
 pub fn read_swf_matrix(reader: &mut SwfReader) -> SwfTagMatrix {
     let mut a = 1.0;
     let mut d = 1.0;
     if reader.read_unsigned_bits(1) != 0.0 {
         let scale_bits = reader.read_unsigned_bits(5) as u8;
-        a = reader.read_signed_bits(scale_bits) as f32 / FIXED_16_ONE;
-        d = reader.read_signed_bits(scale_bits) as f32 / FIXED_16_ONE;
+        a = reader.read_signed_bits(scale_bits) as f64 / FIXED_16_ONE;
+        d = reader.read_signed_bits(scale_bits) as f64 / FIXED_16_ONE;
     }
 
     let mut b = 0.0;
     let mut c = 0.0;
     if reader.read_unsigned_bits(1) != 0.0 {
         let rotate_bits = reader.read_unsigned_bits(5) as u8;
-        b = reader.read_signed_bits(rotate_bits) as f32 / FIXED_16_ONE;
-        c = reader.read_signed_bits(rotate_bits) as f32 / FIXED_16_ONE;
+        b = reader.read_signed_bits(rotate_bits) as f64 / FIXED_16_ONE;
+        c = reader.read_signed_bits(rotate_bits) as f64 / FIXED_16_ONE;
     }
 
     let translate_bits = reader.read_unsigned_bits(5) as u8;
-    let tx = reader.read_signed_bits(translate_bits) as f32 / TWIPS_PER_PIXEL;
-    let ty = reader.read_signed_bits(translate_bits) as f32 / TWIPS_PER_PIXEL;
+    let tx = reader.read_signed_bits(translate_bits) as f64 / TWIPS_PER_PIXEL;
+    let ty = reader.read_signed_bits(translate_bits) as f64 / TWIPS_PER_PIXEL;
     reader.align_to_byte();
     return SwfTagMatrix { a, b, c, d, tx, ty };
 }
 
+// flight-lint: allow(f64) SWF twips, fixed-point and float fields decode exactly to f64 document numbers (Task Q format rule); only declared color/alpha/text/audio lanes narrow, once
 pub fn read_swf_rectangle(reader: &mut SwfReader) -> Option<SwfTagRectangle> {
     let bits = reader.read_unsigned_bits(5) as u8;
     let x_min = reader.read_signed_bits(bits) as i32;
@@ -73,14 +76,15 @@ pub fn read_swf_rectangle(reader: &mut SwfReader) -> Option<SwfTagRectangle> {
         return None;
     }
     return Some(SwfTagRectangle {
-        height: (y_max - y_min).max(0) as f32 / TWIPS_PER_PIXEL,
-        width: (x_max - x_min).max(0) as f32 / TWIPS_PER_PIXEL,
-        x: x_min as f32 / TWIPS_PER_PIXEL,
-        y: y_min as f32 / TWIPS_PER_PIXEL,
+        height: (y_max - y_min).max(0) as f64 / TWIPS_PER_PIXEL,
+        width: (x_max - x_min).max(0) as f64 / TWIPS_PER_PIXEL,
+        x: x_min as f64 / TWIPS_PER_PIXEL,
+        y: y_min as f64 / TWIPS_PER_PIXEL,
     });
 }
 
-pub fn resolve_swf_dimension_bounds(width: f32, height: f32) -> Option<SwfTagRectangle> {
+// flight-lint: allow(f64) SWF twips, fixed-point and float fields decode exactly to f64 document numbers (Task Q format rule); only declared color/alpha/text/audio lanes narrow, once
+pub fn resolve_swf_dimension_bounds(width: f64, height: f64) -> Option<SwfTagRectangle> {
     if width == 0.0 || height == 0.0 {
         return None;
     }
@@ -115,5 +119,7 @@ pub fn transform_swf_rectangle(bounds: &SwfTagRectangle, matrix: &SwfTagMatrix) 
     };
 }
 
-const FIXED_16_ONE: f32 = 0x10000 as f32;
-const TWIPS_PER_PIXEL: f32 = 20.0;
+// flight-lint: allow(f64) SWF twips, fixed-point and float fields decode exactly to f64 document numbers (Task Q format rule); only declared color/alpha/text/audio lanes narrow, once
+const FIXED_16_ONE: f64 = 0x10000 as f64;
+// flight-lint: allow(f64) SWF twips, fixed-point and float fields decode exactly to f64 document numbers (Task Q format rule); only declared color/alpha/text/audio lanes narrow, once
+const TWIPS_PER_PIXEL: f64 = 20.0;

@@ -56,6 +56,7 @@ fn find_placement(placements: &SwfTagPlacementsRef, depth: u32) -> Option<SwfTag
         .map(|(_, placement)| placement.clone());
 }
 
+// flight-lint: allow(f64) SWF twips, fixed-point and float fields decode exactly to f64 document numbers (Task Q format rule); only declared color/alpha/text/audio lanes narrow, once
 fn read_place_object_3(
     body: &mut SwfReader,
     placements: &SwfTagPlacementsRef,
@@ -96,7 +97,7 @@ fn read_place_object_3(
         }
     };
     let ratio = if flags & PLACE_HAS_RATIO != 0 {
-        f32::from(body.read_uint16()) / MORPH_RATIO_ONE
+        f64::from(body.read_uint16()) / MORPH_RATIO_ONE
     } else {
         inherited.map_or(0.0, |placement| placement.ratio)
     };
@@ -213,7 +214,8 @@ fn report_unread_filter_blend_mode(
     );
 }
 
-const MORPH_RATIO_ONE: f32 = 0xffff as f32;
+// flight-lint: allow(f64) SWF twips, fixed-point and float fields decode exactly to f64 document numbers (Task Q format rule); only declared color/alpha/text/audio lanes narrow, once
+const MORPH_RATIO_ONE: f64 = 0xffff as f64;
 const PLACE3_HAS_BLEND_MODE: u8 = 0x02;
 const PLACE3_HAS_CLASS_NAME: u8 = 0x08;
 const PLACE3_HAS_FILTER_LIST: u8 = 0x01;

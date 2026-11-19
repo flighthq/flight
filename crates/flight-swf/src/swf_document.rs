@@ -47,7 +47,7 @@ use crate::{
 };
 
 struct SwfFile {
-    frame_rate: f32,
+    frame_rate: f64,
     parsed: SwfTagParseResult,
     stage_bounds: SwfTagRectangle,
 }
@@ -73,7 +73,7 @@ struct SwfTimelineRuntime {
     applied_clips: HashMap<u64, Option<Ref<ClipRegion>>>,
     applied_color_adjustments: HashMap<u64, Option<crate::SwfAdjustmentStack>>,
     applied_matrices: HashMap<u64, SwfTagMatrix>,
-    applied_ratios: HashMap<u64, f32>,
+    applied_ratios: HashMap<u64, f64>,
     attached: HashSet<u64>,
     depths: NodeOrderList,
 }
@@ -220,8 +220,8 @@ fn create_swf_mask_clip_region(
                 matrix_transform_point_xy(
                     &mut point,
                     &combined,
-                    contour[index] as f32,
-                    contour[index + 1] as f32,
+                    contour[index] as f64,
+                    contour[index + 1] as f64,
                 );
                 transformed.push(point.x as f64);
                 transformed.push(point.y as f64);
@@ -402,7 +402,7 @@ fn create_swf_timeline_source(
                 runtime.applied_matrices.insert(key, entry.placement.matrix);
             }
             if runtime.applied_alphas.get(&key) != Some(&entry.placement.alpha) {
-                node.write().unwrap().node2d_fields_mut().alpha = entry.placement.alpha;
+                node.write().unwrap().node2d_fields_mut().alpha = entry.placement.alpha as f32;
                 invalidate_node_appearance(&node_ref);
                 runtime.applied_alphas.insert(key, entry.placement.alpha);
             }
@@ -558,9 +558,12 @@ fn collect_swf_node_appearances(
     }
 }
 
-fn detail_number(key: &str, value: f32) -> HashMap<String, ImportDiagnosticDetailValue> {
+fn detail_number(key: &str, value: f64) -> HashMap<String, ImportDiagnosticDetailValue> {
     let mut detail = HashMap::new();
-    detail.insert(key.to_string(), ImportDiagnosticDetailValue::Number(value));
+    detail.insert(
+        key.to_string(),
+        ImportDiagnosticDetailValue::Number(value as f32),
+    );
     return detail;
 }
 
@@ -921,7 +924,7 @@ fn read_swf_file(
         );
         return None;
     };
-    let frame_rate = f32::from(body.read_uint16()) / crate::FIXED_8_8_ONE;
+    let frame_rate = f64::from(body.read_uint16()) / crate::FIXED_8_8_ONE;
     body.read_uint16();
     if !body.valid {
         report_shared_diagnostic(
@@ -1137,7 +1140,7 @@ pub fn uncompress_swf_source(
                 ImportDiagnosticSeverity::Reject,
                 "swf.invalid-signature",
                 "uncompressSwfSource",
-                Some(detail_number("length", bytes.len() as f32)),
+                Some(detail_number("length", bytes.len() as f64)),
             );
             return None;
         }
@@ -1178,7 +1181,7 @@ pub fn uncompress_swf_source(
             ImportDiagnosticSeverity::Reject,
             "swf.unknown-container",
             "uncompressSwfSource",
-            Some(detail_number("signature", f32::from(signature))),
+            Some(detail_number("signature", f64::from(signature))),
         );
         return None;
     };
@@ -1189,7 +1192,7 @@ pub fn uncompress_swf_source(
             ImportDiagnosticSeverity::Reject,
             "swf.declared-length-too-small",
             "uncompressSwfSource",
-            Some(detail_number("fileLength", file_length as f32)),
+            Some(detail_number("fileLength", file_length as f64)),
         );
         return None;
     }

@@ -20,12 +20,12 @@ use flight_shape::{
 use crate::{SwfReader, create_swf_glyph_shape};
 
 struct SwfDerivedGlyphData {
-    advances: Vec<f32>,
+    advances: Vec<f64>,
     metrics: GlyphOutlineMetrics,
 }
 
 struct SwfFontMetadata {
-    advances: Option<Vec<f32>>,
+    advances: Option<Vec<f64>>,
     codepoint_to_glyph_index: HashMap<u32, i32>,
     metrics: Option<GlyphOutlineMetrics>,
 }
@@ -225,8 +225,7 @@ pub fn read_swf_font_glyph_outline_source(
             return usize::try_from(glyph_index)
                 .ok()
                 .and_then(|index| advance_source.get(index))
-                .copied()
-                .unwrap_or(0.0);
+                .map_or(0.0, |advance| *advance as f32);
         }),
         Arc::new(move |code_point| {
             return codepoint_source.get(&code_point).copied().unwrap_or(-1);
@@ -261,9 +260,9 @@ pub fn read_swf_font_glyphs(
     return swf_text_read_font_glyph_shapes(reader, &offsets, table_start);
 }
 
-pub fn resolve_swf_font_units_per_em(version: u32) -> f32 {
+pub fn resolve_swf_font_units_per_em(version: u32) -> f64 {
     return if version == 3 {
-        DEFAULT_FONT_UNITS_PER_EM * TWIPS_PER_PIXEL as f32
+        DEFAULT_FONT_UNITS_PER_EM * TWIPS_PER_PIXEL as f64
     } else {
         DEFAULT_FONT_UNITS_PER_EM
     };
@@ -327,11 +326,11 @@ fn swf_text_create_glyph_outline_path(glyph: &Option<Ref<Shape>>) -> Option<Path
 
 fn swf_text_derive_glyph_outline_data(
     outlines: &[Option<Path>],
-    units_per_em: f32,
+    units_per_em: f64,
 ) -> SwfDerivedGlyphData {
     let mut advances = Vec::new();
-    let mut min_y = f32::INFINITY;
-    let mut max_y = f32::NEG_INFINITY;
+    let mut min_y = f64::INFINITY;
+    let mut max_y = f64::NEG_INFINITY;
     for outline in outlines {
         let mut bounds = create_rectangle(0.0, 0.0, 0.0, 0.0);
         let Some(outline) = outline else {
@@ -346,22 +345,22 @@ fn swf_text_derive_glyph_outline_data(
         min_y = min_y.min(bounds.y);
         max_y = max_y.max(bounds.y + bounds.height);
     }
-    let has_vertical_ink = min_y != f32::INFINITY;
+    let has_vertical_ink = min_y != f64::INFINITY;
     return SwfDerivedGlyphData {
         advances,
         metrics: GlyphOutlineMetrics {
             ascent: if has_vertical_ink {
-                (-min_y).max(0.0)
+                ((-min_y).max(0.0)) as f32
             } else {
-                units_per_em * DEFAULT_ASCENT_RATIO
+                (units_per_em * DEFAULT_ASCENT_RATIO) as f32
             },
             descent: if has_vertical_ink {
-                max_y.max(0.0)
+                (max_y.max(0.0)) as f32
             } else {
-                units_per_em * (1.0 - DEFAULT_ASCENT_RATIO)
+                (units_per_em * (1.0 - DEFAULT_ASCENT_RATIO)) as f32
             },
             line_gap: 0.0,
-            units_per_em,
+            units_per_em: units_per_em as f32,
         },
     };
 }
@@ -437,14 +436,14 @@ fn swf_text_read_font_metadata(
         });
     }
     let metrics = GlyphOutlineMetrics {
-        ascent: swf_text_read_signed_uint16(reader) as f32,
-        descent: swf_text_read_signed_uint16(reader) as f32,
-        line_gap: swf_text_read_signed_uint16(reader) as f32,
-        units_per_em: resolve_swf_font_units_per_em(version),
+        ascent: (swf_text_read_signed_uint16(reader) as f64) as f32,
+        descent: (swf_text_read_signed_uint16(reader) as f64) as f32,
+        line_gap: (swf_text_read_signed_uint16(reader) as f64) as f32,
+        units_per_em: (resolve_swf_font_units_per_em(version)) as f32,
     };
     let mut advances = Vec::new();
     for _ in 0..glyph_count {
-        advances.push(swf_text_read_signed_uint16(reader) as f32);
+        advances.push(swf_text_read_signed_uint16(reader) as f64);
     }
     for _ in 0..glyph_count {
         swf_text_skip_rectangle(reader);
@@ -522,8 +521,8 @@ fn swf_text_skip_rectangle(reader: &mut SwfReader) {
     reader.align_to_byte();
 }
 
-const DEFAULT_ASCENT_RATIO: f32 = 0.8;
-const DEFAULT_FONT_UNITS_PER_EM: f32 = 1024.0;
+const DEFAULT_ASCENT_RATIO: f64 = 0.8;
+const DEFAULT_FONT_UNITS_PER_EM: f64 = 1024.0;
 const FONT_FLAG_HAS_LAYOUT: u8 = 0x80;
 const FONT_FLAG_WIDE_CODES: u8 = 0x04;
 const FONT_FLAG_WIDE_OFFSETS: u8 = 0x08;

@@ -8,6 +8,7 @@ use crate::{
     uncompress_swf_source,
 };
 
+// flight-lint: allow(f64) SWF twips, fixed-point and float fields decode exactly to f64 document numbers (Task Q format rule); only declared color/alpha/text/audio lanes narrow, once
 pub fn parse_swf_header(
     source: &Ref<Box<Uint8Array>>,
     deflate: Option<&HostDecompressDeflateCapability>,
@@ -35,11 +36,12 @@ pub fn parse_swf_header(
         u16::from(data[stage_bounds.next_pos]) + u16::from(data[stage_bounds.next_pos + 1]) * 0x100;
     return Some(SwfHeader {
         file_length,
-        frame_rate: f32::from(frame_rate_raw) / SWF_FIXED_8_8_ONE,
+        frame_rate: f64::from(frame_rate_raw) / SWF_FIXED_8_8_ONE,
         stage_bounds: stage_bounds.rect,
         version,
     });
 }
 
-const SWF_FIXED_8_8_ONE: f32 = 0x100 as f32;
+// flight-lint: allow(f64) SWF twips, fixed-point and float fields decode exactly to f64 document numbers (Task Q format rule); only declared color/alpha/text/audio lanes narrow, once
+const SWF_FIXED_8_8_ONE: f64 = 0x100 as f64;
 const SWF_HEADER_MIN_LENGTH: usize = 12;

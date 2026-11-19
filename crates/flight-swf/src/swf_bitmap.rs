@@ -118,6 +118,7 @@ fn align_swf_row(bytes: usize) -> usize {
     return (bytes + 3) & !3;
 }
 
+// flight-lint: allow(f64) SWF twips, fixed-point and float fields decode exactly to f64 document numbers (Task Q format rule); only declared color/alpha/text/audio lanes narrow, once
 fn unpack_swf_15_bit(bitmap: &mut Bitmap, pixels: &[u8], width: usize, height: usize) -> bool {
     let stride = align_swf_row(width * 2);
     if pixels.len() < stride * height {
@@ -129,10 +130,10 @@ fn unpack_swf_15_bit(bitmap: &mut Bitmap, pixels: &[u8], width: usize, height: u
             let value = u32::from(pixels[row + x * 2]) * 0x100 + u32::from(pixels[row + x * 2 + 1]);
             let target = (y * width + x) * 4;
             bitmap.data[target] =
-                ((((value >> 10) & 0x1f) * 0xff) as f32 / 0x1f as f32).round() as u8;
+                ((((value >> 10) & 0x1f) * 0xff) as f64 / 0x1f as f64).round() as u8;
             bitmap.data[target + 1] =
-                ((((value >> 5) & 0x1f) * 0xff) as f32 / 0x1f as f32).round() as u8;
-            bitmap.data[target + 2] = (((value & 0x1f) * 0xff) as f32 / 0x1f as f32).round() as u8;
+                ((((value >> 5) & 0x1f) * 0xff) as f64 / 0x1f as f64).round() as u8;
+            bitmap.data[target + 2] = (((value & 0x1f) * 0xff) as f64 / 0x1f as f64).round() as u8;
             bitmap.data[target + 3] = 0xff;
         }
     }

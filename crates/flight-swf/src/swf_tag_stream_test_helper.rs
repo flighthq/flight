@@ -42,11 +42,12 @@ pub fn create_swf_file_bytes(tags: &[Box<Uint8Array>]) -> Box<Uint8Array> {
     ]);
 }
 
+// flight-lint: allow(f64) SWF twips, fixed-point and float fields decode exactly to f64 document numbers (Task Q format rule); only declared color/alpha/text/audio lanes narrow, once
 pub fn create_swf_matrix_record(
-    a: f32,
-    b: f32,
-    c: f32,
-    d: f32,
+    a: f64,
+    b: f64,
+    c: f64,
+    d: f64,
     tx: i32,
     ty: i32,
 ) -> Box<Uint8Array> {
@@ -184,7 +185,8 @@ pub fn join_swf_bytes(parts: &[Box<Uint8Array>]) -> Box<Uint8Array> {
     return result.into_boxed_slice();
 }
 
-fn round_js_number(value: f32) -> i32 {
+// flight-lint: allow(f64) SWF twips, fixed-point and float fields decode exactly to f64 document numbers (Task Q format rule); only declared color/alpha/text/audio lanes narrow, once
+fn round_js_number(value: f64) -> i32 {
     return (value + 0.5).floor() as i32;
 }
 
@@ -231,5 +233,6 @@ pub fn swf_uint32_bytes(value: u32) -> Box<Uint8Array> {
     .into_boxed_slice();
 }
 
-const FIXED_16_ONE: f32 = 65536.0;
+// flight-lint: allow(f64) SWF twips, fixed-point and float fields decode exactly to f64 document numbers (Task Q format rule); only declared color/alpha/text/audio lanes narrow, once
+const FIXED_16_ONE: f64 = 65536.0;
 const SWF_PREFIX_LENGTH: usize = 8;

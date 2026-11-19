@@ -2351,9 +2351,9 @@ mod create_scene2d_from_swf {
             .iter()
             .map(|node| get_node_local_bounds_rectangle(node).width)
             .collect::<Vec<_>>();
-        assert!((widths[0] - 10.0).abs() < f32::EPSILON);
+        assert!((widths[0] - 10.0).abs() < f64::from(f32::EPSILON));
         assert!((widths[1] - 15.0).abs() < 0.1);
-        assert!((widths[2] - 20.0).abs() < f32::EPSILON);
+        assert!((widths[2] - 20.0).abs() < f64::from(f32::EPSILON));
     }
 
     #[test]
@@ -2417,8 +2417,12 @@ mod create_scene2d_from_swf {
                 .progress,
             1.0
         );
-        assert!((get_node_local_bounds_rectangle(&first).width - 10.0).abs() < f32::EPSILON);
-        assert!((get_node_local_bounds_rectangle(&second).width - 20.0).abs() < f32::EPSILON);
+        assert!(
+            (get_node_local_bounds_rectangle(&first).width - 10.0).abs() < f64::from(f32::EPSILON)
+        );
+        assert!(
+            (get_node_local_bounds_rectangle(&second).width - 20.0).abs() < f64::from(f32::EPSILON)
+        );
     }
 
     #[test]

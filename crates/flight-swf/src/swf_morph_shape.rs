@@ -27,13 +27,13 @@ pub type SwfMorphBitmapFillResolver =
     Arc<dyn Fn(u32, bool, bool) -> Option<Ref<Texture>> + Send + Sync>;
 
 struct SwfMorphFill {
-    end_alpha: f32,
+    end_alpha: f64,
     end_color: u32,
     end_gradient: Option<MorphShapeGradientEndpoint>,
     end_texture_matrix: Matrix,
     gradient_type: Option<GradientType>,
     spread_method: SpreadMethod,
-    start_alpha: f32,
+    start_alpha: f64,
     start_color: u32,
     start_gradient: Option<MorphShapeGradientEndpoint>,
     start_texture_matrix: Matrix,
@@ -42,13 +42,13 @@ struct SwfMorphFill {
 
 struct SwfMorphLine {
     caps: CapsStyle,
-    end_alpha: f32,
+    end_alpha: f64,
     end_color: u32,
     end_width: u32,
     joints: JointStyle,
     miter_limit: f64,
     pixel_hinting: bool,
-    start_alpha: f32,
+    start_alpha: f64,
     start_color: u32,
     start_width: u32,
 }
@@ -115,11 +115,11 @@ fn swf_morph_append_fill_style(shape: &Ref<MorphShape>, fill: &SwfMorphFill) -> 
         append_morph_shape_begin_fill(
             shape,
             &MorphShapeColorEndpoint {
-                alpha: Some(fill.start_alpha),
+                alpha: Some(fill.start_alpha as f32),
                 color: fill.start_color,
             },
             &MorphShapeColorEndpoint {
-                alpha: Some(fill.end_alpha),
+                alpha: Some(fill.end_alpha as f32),
                 color: fill.end_color,
             },
         );
@@ -187,12 +187,12 @@ fn swf_morph_create_node(
         append_morph_shape_line_style(
             &shape,
             &MorphShapeLineEndpoint {
-                alpha: Some(line.start_alpha),
+                alpha: Some(line.start_alpha as f32),
                 color: line.start_color,
                 thickness: f64::from(line.start_width) / TWIPS_PER_PIXEL,
             },
             &MorphShapeLineEndpoint {
-                alpha: Some(line.end_alpha),
+                alpha: Some(line.end_alpha as f32),
                 color: line.end_color,
                 thickness: f64::from(line.end_width) / TWIPS_PER_PIXEL,
             },
@@ -211,10 +211,10 @@ fn swf_morph_create_node(
 
 fn swf_morph_create_texture_matrix(matrix: &Matrix) -> Matrix {
     return create_matrix(
-        matrix.a / TWIPS_PER_PIXEL as f32,
-        matrix.b / TWIPS_PER_PIXEL as f32,
-        matrix.c / TWIPS_PER_PIXEL as f32,
-        matrix.d / TWIPS_PER_PIXEL as f32,
+        matrix.a / TWIPS_PER_PIXEL as f64,
+        matrix.b / TWIPS_PER_PIXEL as f64,
+        matrix.c / TWIPS_PER_PIXEL as f64,
+        matrix.d / TWIPS_PER_PIXEL as f64,
         matrix.tx,
         matrix.ty,
     );
@@ -242,14 +242,14 @@ fn swf_morph_pair_paths(
     return pairs;
 }
 
-fn swf_morph_read_color(reader: &mut SwfReader) -> (u32, f32) {
+fn swf_morph_read_color(reader: &mut SwfReader) -> (u32, f64) {
     let red = reader.read_uint8();
     let green = reader.read_uint8();
     let blue = reader.read_uint8();
     let alpha = reader.read_uint8();
     return (
         u32::from(red) << 24 | u32::from(green) << 16 | u32::from(blue) << 8 | 0xff,
-        f32::from(alpha) / 0xff as f32,
+        f64::from(alpha) / 0xff as f64,
     );
 }
 
@@ -481,19 +481,19 @@ fn swf_morph_read_matrix(reader: &mut SwfReader) -> Matrix {
     let mut d = 1.0;
     if reader.read_unsigned_bits(1) != 0.0 {
         let scale_bits = reader.read_unsigned_bits(5) as u8;
-        a = reader.read_signed_bits(scale_bits) as f32 / FIXED_16_ONE;
-        d = reader.read_signed_bits(scale_bits) as f32 / FIXED_16_ONE;
+        a = reader.read_signed_bits(scale_bits) as f64 / FIXED_16_ONE;
+        d = reader.read_signed_bits(scale_bits) as f64 / FIXED_16_ONE;
     }
     let mut b = 0.0;
     let mut c = 0.0;
     if reader.read_unsigned_bits(1) != 0.0 {
         let rotate_bits = reader.read_unsigned_bits(5) as u8;
-        b = reader.read_signed_bits(rotate_bits) as f32 / FIXED_16_ONE;
-        c = reader.read_signed_bits(rotate_bits) as f32 / FIXED_16_ONE;
+        b = reader.read_signed_bits(rotate_bits) as f64 / FIXED_16_ONE;
+        c = reader.read_signed_bits(rotate_bits) as f64 / FIXED_16_ONE;
     }
     let translate_bits = reader.read_unsigned_bits(5) as u8;
-    let tx = reader.read_signed_bits(translate_bits) as f32 / TWIPS_PER_PIXEL as f32;
-    let ty = reader.read_signed_bits(translate_bits) as f32 / TWIPS_PER_PIXEL as f32;
+    let tx = reader.read_signed_bits(translate_bits) as f64 / TWIPS_PER_PIXEL as f64;
+    let ty = reader.read_signed_bits(translate_bits) as f64 / TWIPS_PER_PIXEL as f64;
     reader.align_to_byte();
     return create_matrix(a, b, c, d, tx, ty);
 }
@@ -551,7 +551,7 @@ const FILL_RADIAL_GRADIENT: u8 = 0x12;
 const FILL_REPEATING_BITMAP: u8 = 0x40;
 const FILL_SOLID: u8 = 0;
 const FIXED_8_8_ONE: f64 = 0x100 as f64;
-const FIXED_16_ONE: f32 = 0x10000 as f32;
+const FIXED_16_ONE: f64 = 0x10000 as f64;
 const JOIN_BEVEL: u32 = 1;
 const JOIN_MITER: u32 = 2;
 const MAX_GRADIENT_STOPS: u8 = 15;

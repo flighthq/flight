@@ -41,9 +41,10 @@ fn read_swf_encoded_uint32(reader: &mut SwfReader) -> u64 {
     return value;
 }
 
-fn read_swf_fixed8(reader: &mut SwfReader) -> f32 {
+// flight-lint: allow(f64) SWF twips, fixed-point and float fields decode exactly to f64 document numbers (Task Q format rule); only declared color/alpha/text/audio lanes narrow, once
+fn read_swf_fixed8(reader: &mut SwfReader) -> f64 {
     let value = read_swf_uint16(reader) as i16;
-    return f32::from(value) / FIXED_8_8_ONE;
+    return f64::from(value) / FIXED_8_8_ONE;
 }
 
 // flight-lint: allow(f64) TypeScript number arithmetic preserves authored text fields up to the full byte-sized bit count
@@ -141,7 +142,8 @@ impl SwfReader {
         return read_swf_encoded_uint32(self);
     }
 
-    pub fn read_fixed8(&mut self) -> f32 {
+    // flight-lint: allow(f64) SWF twips, fixed-point and float fields decode exactly to f64 document numbers (Task Q format rule); only declared color/alpha/text/audio lanes narrow, once
+    pub fn read_fixed8(&mut self) -> f64 {
         return read_swf_fixed8(self);
     }
 
@@ -173,4 +175,5 @@ impl SwfReader {
 }
 
 const ENCODED_UINT32_MAX_BYTES: usize = 5;
-const FIXED_8_8_ONE: f32 = 0x100 as f32;
+// flight-lint: allow(f64) SWF twips, fixed-point and float fields decode exactly to f64 document numbers (Task Q format rule); only declared color/alpha/text/audio lanes narrow, once
+const FIXED_8_8_ONE: f64 = 0x100 as f64;
