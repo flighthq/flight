@@ -12,15 +12,15 @@ use flight_geometry::create_vector3;
 use crate::common::*;
 
 fn options(
-    azimuth: Option<f32>,
-    distance: Option<f32>,
-    max_distance: Option<f32>,
-    max_polar: Option<f32>,
-    min_distance: Option<f32>,
-    min_polar: Option<f32>,
-    polar: Option<f32>,
-    smooth_time: Option<f32>,
-    target: Option<(f32, f32, f32)>,
+    azimuth: Option<f64>,
+    distance: Option<f64>,
+    max_distance: Option<f64>,
+    max_polar: Option<f64>,
+    min_distance: Option<f64>,
+    min_polar: Option<f64>,
+    polar: Option<f64>,
+    smooth_time: Option<f64>,
+    target: Option<(f64, f64, f64)>,
 ) -> OrbitCameraControllerOptions {
     return OrbitCameraControllerOptions {
         azimuth,
@@ -100,8 +100,8 @@ mod create_orbit_camera_controller {
         assert_eq!(controller.azimuth, 0.0);
         assert_eq!(controller.goal_distance, controller.distance);
         assert_eq!(controller.goal_azimuth, controller.azimuth);
-        assert!(controller.max_polar < std::f32::consts::FRAC_PI_2);
-        assert!(controller.min_polar > -std::f32::consts::FRAC_PI_2);
+        assert!(controller.max_polar < std::f64::consts::FRAC_PI_2);
+        assert!(controller.min_polar > -std::f64::consts::FRAC_PI_2);
     }
 
     #[test]
@@ -251,15 +251,15 @@ mod pan_orbit_camera_controller_in_view_plane {
             None,
             None,
             None,
-            Some(std::f32::consts::FRAC_PI_4),
+            Some(std::f64::consts::FRAC_PI_4),
             None,
             None,
         )));
         pan_orbit_camera_controller_in_view_plane(&mut controller, 0.0, 2.0);
         let target = controller.target.read().unwrap();
         assert_close(target.x, 0.0);
-        assert_close(target.y, std::f32::consts::SQRT_2);
-        assert_close(target.z, -std::f32::consts::SQRT_2);
+        assert_close(target.y, std::f64::consts::SQRT_2);
+        assert_close(target.z, -std::f64::consts::SQRT_2);
     }
 }
 
@@ -355,6 +355,31 @@ mod update_orbit_camera_controller {
     use super::*;
 
     #[test]
+    fn keeps_a_two_unit_orbit_distinct_from_its_target_at_one_billion() {
+        // f32 spacing at 1e9 is 64, so a narrowed eye would collapse onto the target.
+        let origin = 1e9;
+        let mut controller = create_orbit_camera_controller(Some(&options(
+            None,
+            Some(2.0),
+            None,
+            None,
+            None,
+            None,
+            None,
+            None,
+            Some((origin, 0.0, -origin)),
+        )));
+        let mut camera = test_camera();
+        update_orbit_camera_controller(&mut controller, &mut camera, 0.016);
+        let mut expected = test_camera();
+        let eye = create_vector3(origin, 0.0, -origin + 2.0);
+        let target = create_vector3(origin, 0.0, -origin);
+        let up = create_vector3(0.0, 1.0, 0.0);
+        set_camera_3d_view_matrix4_from_look_at(&mut expected, &eye, &target, &up);
+        assert_mat4_close(&camera.view.read().unwrap(), &expected.view.read().unwrap());
+    }
+
+    #[test]
     fn snaps_to_the_goal_when_smooth_time_is_zero_and_writes_the_look_at_view() {
         let mut controller = create_orbit_camera_controller(Some(&options(
             None,
@@ -401,7 +426,7 @@ mod update_orbit_camera_controller {
     #[test]
     fn takes_the_shortest_arc_across_the_wrapped_azimuth_seam() {
         let mut controller = create_orbit_camera_controller(Some(&options(
-            Some(std::f32::consts::PI - 0.05),
+            Some(std::f64::consts::PI - 0.05),
             None,
             None,
             None,
@@ -411,10 +436,10 @@ mod update_orbit_camera_controller {
             Some(0.5),
             None,
         )));
-        controller.goal_azimuth = -std::f32::consts::PI + 0.05;
+        controller.goal_azimuth = -std::f64::consts::PI + 0.05;
         let mut camera = test_camera();
         update_orbit_camera_controller(&mut controller, &mut camera, 0.016);
-        assert!(controller.azimuth > std::f32::consts::PI - 0.05);
-        assert!(controller.azimuth < std::f32::consts::PI + 0.05);
+        assert!(controller.azimuth > std::f64::consts::PI - 0.05);
+        assert!(controller.azimuth < std::f64::consts::PI + 0.05);
     }
 }

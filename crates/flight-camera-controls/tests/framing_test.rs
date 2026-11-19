@@ -9,7 +9,7 @@ use flight_geometry::create_bounding_sphere;
 
 use crate::common::*;
 
-fn perspective(aspect: f32, fov_y: f32) -> Projection {
+fn perspective(aspect: f64, fov_y: f64) -> Projection {
     let projection = create_perspective_projection();
     {
         let mut projection = projection.write().unwrap();
@@ -19,7 +19,7 @@ fn perspective(aspect: f32, fov_y: f32) -> Projection {
     return Projection::Perspective(projection);
 }
 
-fn orthographic(half_height: f32, half_width: f32) -> Projection {
+fn orthographic(half_height: f64, half_width: f64) -> Projection {
     let projection = create_orthographic_projection();
     {
         let mut projection = projection.write().unwrap();
@@ -29,7 +29,7 @@ fn orthographic(half_height: f32, half_width: f32) -> Projection {
     return Projection::Orthographic(projection);
 }
 
-fn orthographic_halves(projection: &Projection) -> (f32, f32) {
+fn orthographic_halves(projection: &Projection) -> (f64, f64) {
     return match projection {
         Projection::Orthographic(value) => {
             let borrowed = value.read().unwrap();
@@ -56,7 +56,7 @@ mod frame_orbit_camera_controller_to_sphere {
             target: None,
         };
         let mut controller = create_orbit_camera_controller(Some(&options));
-        let projection = perspective(1.0, std::f32::consts::FRAC_PI_2);
+        let projection = perspective(1.0, std::f64::consts::FRAC_PI_2);
         let sphere = create_bounding_sphere(1.0, 2.0, 3.0, 2.0);
         assert!(frame_orbit_camera_controller_to_sphere(
             &mut controller,
@@ -72,7 +72,7 @@ mod frame_orbit_camera_controller_to_sphere {
         assert_eq!(controller.distance, 10.0);
         assert_close(
             controller.goal_distance,
-            2.0 / (std::f32::consts::FRAC_PI_4).sin(),
+            2.0 / (std::f64::consts::FRAC_PI_4).sin(),
         );
     }
 
@@ -120,7 +120,7 @@ mod frame_orbit_camera_controller_to_sphere {
             target: Some(flight_geometry::create_vector3(1.0, 2.0, 3.0)),
         };
         let mut controller = create_orbit_camera_controller(Some(&options));
-        let projection = perspective(1.0, std::f32::consts::FRAC_PI_2);
+        let projection = perspective(1.0, std::f64::consts::FRAC_PI_2);
         assert!(!frame_orbit_camera_controller_to_sphere(
             &mut controller,
             &projection,
@@ -147,13 +147,13 @@ mod get_perspective_projection_frame_distance_to_sphere {
 
     #[test]
     fn uses_the_limiting_vertical_field_for_a_wide_viewport() {
-        let projection = perspective(2.0, std::f32::consts::FRAC_PI_2);
+        let projection = perspective(2.0, std::f64::consts::FRAC_PI_2);
         match &projection {
             Projection::Perspective(value) => {
                 let borrowed = value.read().unwrap();
                 assert_close(
                     get_perspective_projection_frame_distance_to_sphere(&borrowed, 2.0, 2.0, None),
-                    2.0 / (std::f32::consts::FRAC_PI_4).sin(),
+                    2.0 / (std::f64::consts::FRAC_PI_4).sin(),
                 );
             }
             _ => panic!("expected a perspective projection"),
@@ -162,11 +162,11 @@ mod get_perspective_projection_frame_distance_to_sphere {
 
     #[test]
     fn uses_the_limiting_horizontal_field_for_a_tall_viewport() {
-        let projection = perspective(0.5, std::f32::consts::FRAC_PI_2);
+        let projection = perspective(0.5, std::f64::consts::FRAC_PI_2);
         match &projection {
             Projection::Perspective(value) => {
                 let borrowed = value.read().unwrap();
-                let horizontal_half_fov = 0.5_f32.atan();
+                let horizontal_half_fov = 0.5_f64.atan();
                 assert_close(
                     get_perspective_projection_frame_distance_to_sphere(&borrowed, 2.0, 0.5, None),
                     2.0 / horizontal_half_fov.sin(),

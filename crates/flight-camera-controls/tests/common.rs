@@ -26,14 +26,14 @@ pub(crate) fn test_camera() -> Camera3D {
     return camera;
 }
 
-pub(crate) fn assert_close(actual: f32, expected: f32) {
+pub(crate) fn assert_close(actual: f64, expected: f64) {
     assert!(
         (actual - expected).abs() <= 1e-4,
         "expected {expected}, got {actual}"
     );
 }
 
-pub(crate) fn assert_close_within(actual: f32, expected: f32, tolerance: f32) {
+pub(crate) fn assert_close_within(actual: f64, expected: f64, tolerance: f64) {
     assert!(
         (actual - expected).abs() <= tolerance,
         "expected {expected} +/- {tolerance}, got {actual}"

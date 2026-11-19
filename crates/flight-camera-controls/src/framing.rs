@@ -16,8 +16,8 @@ pub fn frame_orbit_camera_controller_to_sphere(
     controller: &mut OrbitCameraController,
     projection: &Projection,
     sphere: &BoundingSphere,
-    aspect: f32,
-    padding: Option<f32>,
+    aspect: f64,
+    padding: Option<f64>,
 ) -> bool {
     let padding = padding.unwrap_or(1.0);
     if !(sphere.radius >= 0.0) || !(aspect > 0.0) || !(padding > 0.0) {
@@ -60,10 +60,10 @@ pub fn frame_orbit_camera_controller_to_sphere(
 /// `getPerspectiveProjectionFrameDistanceToSphere`). `padding` multiplies the radius; 1 is tangent.
 pub fn get_perspective_projection_frame_distance_to_sphere(
     projection: &PerspectiveProjection,
-    radius: f32,
-    aspect: f32,
-    padding: Option<f32>,
-) -> f32 {
+    radius: f64,
+    aspect: f64,
+    padding: Option<f64>,
+) -> f64 {
     let padding = padding.unwrap_or(1.0);
     let padded_radius = radius * padding;
     let vertical_half_fov = projection.fov_y * 0.5;
@@ -81,9 +81,9 @@ pub fn get_perspective_projection_frame_distance_to_sphere(
 /// sphere; the other expands to preserve aspect.
 pub fn set_orthographic_projection_frame_to_sphere(
     projection: &mut OrthographicProjection,
-    radius: f32,
-    aspect: f32,
-    padding: Option<f32>,
+    radius: f64,
+    aspect: f64,
+    padding: Option<f64>,
 ) {
     let padding = padding.unwrap_or(1.0);
     let padded_radius = radius * padding;

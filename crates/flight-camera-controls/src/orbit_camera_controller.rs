@@ -37,7 +37,7 @@ pub fn initialize_orbit_camera_controller(
     out.goal_polar = polar;
     out.max_distance = options
         .and_then(|values| values.max_distance)
-        .unwrap_or(f32::INFINITY);
+        .unwrap_or(f64::INFINITY);
     out.max_polar = options
         .and_then(|values| values.max_polar)
         .unwrap_or(DEFAULT_MAX_POLAR);
@@ -95,7 +95,7 @@ pub fn copy_orbit_camera_controller(
 
 /// Moves the goal distance by `delta_distance`, clamped to the configured range (TS
 /// `dollyOrbitCameraController`). Negative moves the eye toward the target.
-pub fn dolly_orbit_camera_controller(controller: &mut OrbitCameraController, delta_distance: f32) {
+pub fn dolly_orbit_camera_controller(controller: &mut OrbitCameraController, delta_distance: f64) {
     controller.goal_distance = clamp(
         controller.goal_distance + delta_distance,
         controller.min_distance,
@@ -107,8 +107,8 @@ pub fn dolly_orbit_camera_controller(controller: &mut OrbitCameraController, del
 /// `panOrbitCameraController`). All inputs are read before any write.
 pub fn pan_orbit_camera_controller(
     controller: &mut OrbitCameraController,
-    delta_right: f32,
-    delta_up: f32,
+    delta_right: f64,
+    delta_up: f64,
 ) {
     let cos_azimuth = controller.goal_azimuth.cos();
     let sin_azimuth = controller.goal_azimuth.sin();
@@ -122,8 +122,8 @@ pub fn pan_orbit_camera_controller(
 /// `panOrbitCameraControllerInViewPlane`).
 pub fn pan_orbit_camera_controller_in_view_plane(
     controller: &mut OrbitCameraController,
-    delta_right: f32,
-    delta_up: f32,
+    delta_right: f64,
+    delta_up: f64,
 ) {
     let cos_azimuth = controller.goal_azimuth.cos();
     let sin_azimuth = controller.goal_azimuth.sin();
@@ -152,7 +152,7 @@ pub fn reset_orbit_camera_controller(
     controller.goal_polar = polar;
     controller.max_distance = options
         .and_then(|values| values.max_distance)
-        .unwrap_or(f32::INFINITY);
+        .unwrap_or(f64::INFINITY);
     controller.max_polar = options
         .and_then(|values| values.max_polar)
         .unwrap_or(DEFAULT_MAX_POLAR);
@@ -176,8 +176,8 @@ pub fn reset_orbit_camera_controller(
 /// `rotateOrbitCameraController`).
 pub fn rotate_orbit_camera_controller(
     controller: &mut OrbitCameraController,
-    delta_azimuth: f32,
-    delta_polar: f32,
+    delta_azimuth: f64,
+    delta_polar: f64,
 ) {
     controller.goal_azimuth += delta_azimuth;
     controller.goal_polar = clamp(
@@ -208,7 +208,7 @@ pub fn snap_orbit_camera_controller(controller: &mut OrbitCameraController) {
 pub fn update_orbit_camera_controller(
     controller: &mut OrbitCameraController,
     camera: &mut Camera3D,
-    delta_time: f32,
+    delta_time: f64,
 ) {
     let goal_polar = clamp(
         controller.goal_polar,
@@ -246,6 +246,6 @@ pub fn update_orbit_camera_controller(
     set_camera_3d_view_matrix4_from_look_at(camera, &eye, &target, &world_up);
 }
 
-const DEFAULT_MAX_POLAR: f32 = std::f32::consts::FRAC_PI_2 - 0.01;
-const DEFAULT_MIN_DISTANCE: f32 = 0.01;
-const DEFAULT_MIN_POLAR: f32 = -std::f32::consts::FRAC_PI_2 + 0.01;
+const DEFAULT_MAX_POLAR: f64 = std::f64::consts::FRAC_PI_2 - 0.01;
+const DEFAULT_MIN_DISTANCE: f64 = 0.01;
+const DEFAULT_MIN_POLAR: f64 = -std::f64::consts::FRAC_PI_2 + 0.01;

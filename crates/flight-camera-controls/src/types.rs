@@ -15,22 +15,22 @@ use flight_geometry::{Vector3, create_vector3};
 #[repr(C)]
 pub struct CameraShake {
     runtime: EntityRuntimeSlot,
-    pub trauma: f32,
-    pub decay: f32,
-    pub frequency: f32,
-    pub translation_amplitude: f32,
-    pub rotation_amplitude: f32,
-    pub time: f32,
+    pub trauma: f64,
+    pub decay: f64,
+    pub frequency: f64,
+    pub translation_amplitude: f64,
+    pub rotation_amplitude: f64,
+    pub time: f64,
 }
 
 /// Plain authored shake options (TS `CameraShakeOptions`). Canonical D23 construction takes no
 /// options; callers assign the selected fields after creating the default state.
 #[derive(Clone, Debug, Default, PartialEq)]
 pub struct CameraShakeOptions {
-    pub decay: Option<f32>,
-    pub frequency: Option<f32>,
-    pub rotation_amplitude: Option<f32>,
-    pub translation_amplitude: Option<f32>,
+    pub decay: Option<f64>,
+    pub frequency: Option<f64>,
+    pub rotation_amplitude: Option<f64>,
+    pub translation_amplitude: Option<f64>,
 }
 
 /// The additive offset produced by `update_camera_shake` (TS `CameraShakeOffset`, an Entity), applied
@@ -39,12 +39,12 @@ pub struct CameraShakeOptions {
 #[repr(C)]
 pub struct CameraShakeOffset {
     runtime: EntityRuntimeSlot,
-    pub rotation_x: f32,
-    pub rotation_y: f32,
-    pub rotation_z: f32,
-    pub x: f32,
-    pub y: f32,
-    pub z: f32,
+    pub rotation_x: f64,
+    pub rotation_y: f64,
+    pub rotation_z: f64,
+    pub x: f64,
+    pub y: f64,
+    pub z: f64,
 }
 
 /// A stateful fly / first-person controller (TS `FlyCameraController`, an Entity). `position` retains
@@ -52,25 +52,25 @@ pub struct CameraShakeOffset {
 #[repr(C)]
 pub struct FlyCameraController {
     runtime: EntityRuntimeSlot,
-    pub goal_pitch: f32,
-    pub goal_yaw: f32,
-    pub max_pitch: f32,
-    pub min_pitch: f32,
-    pub pitch: f32,
+    pub goal_pitch: f64,
+    pub goal_yaw: f64,
+    pub max_pitch: f64,
+    pub min_pitch: f64,
+    pub pitch: f64,
     pub position: Ref<Vector3>,
-    pub smooth_time: f32,
-    pub yaw: f32,
+    pub smooth_time: f64,
+    pub yaw: f64,
 }
 
 /// Structural inputs for `create_fly_camera_controller` (TS `FlyCameraControllerOptions`).
 #[derive(Clone, Debug, Default, PartialEq)]
 pub struct FlyCameraControllerOptions {
-    pub max_pitch: Option<f32>,
-    pub min_pitch: Option<f32>,
-    pub pitch: Option<f32>,
+    pub max_pitch: Option<f64>,
+    pub min_pitch: Option<f64>,
+    pub pitch: Option<f64>,
     pub position: Option<Vector3>,
-    pub smooth_time: Option<f32>,
-    pub yaw: Option<f32>,
+    pub smooth_time: Option<f64>,
+    pub yaw: Option<f64>,
 }
 
 /// A stateful orbit / arcball controller (TS `OrbitCameraController`, an Entity). `target` retains the
@@ -78,31 +78,31 @@ pub struct FlyCameraControllerOptions {
 #[repr(C)]
 pub struct OrbitCameraController {
     runtime: EntityRuntimeSlot,
-    pub azimuth: f32,
-    pub distance: f32,
-    pub goal_azimuth: f32,
-    pub goal_distance: f32,
-    pub goal_polar: f32,
-    pub max_distance: f32,
-    pub max_polar: f32,
-    pub min_distance: f32,
-    pub min_polar: f32,
-    pub polar: f32,
-    pub smooth_time: f32,
+    pub azimuth: f64,
+    pub distance: f64,
+    pub goal_azimuth: f64,
+    pub goal_distance: f64,
+    pub goal_polar: f64,
+    pub max_distance: f64,
+    pub max_polar: f64,
+    pub min_distance: f64,
+    pub min_polar: f64,
+    pub polar: f64,
+    pub smooth_time: f64,
     pub target: Ref<Vector3>,
 }
 
 /// Structural inputs for `create_orbit_camera_controller` (TS `OrbitCameraControllerOptions`).
 #[derive(Clone, Debug, Default, PartialEq)]
 pub struct OrbitCameraControllerOptions {
-    pub azimuth: Option<f32>,
-    pub distance: Option<f32>,
-    pub max_distance: Option<f32>,
-    pub max_polar: Option<f32>,
-    pub min_distance: Option<f32>,
-    pub min_polar: Option<f32>,
-    pub polar: Option<f32>,
-    pub smooth_time: Option<f32>,
+    pub azimuth: Option<f64>,
+    pub distance: Option<f64>,
+    pub max_distance: Option<f64>,
+    pub max_polar: Option<f64>,
+    pub min_distance: Option<f64>,
+    pub min_polar: Option<f64>,
+    pub polar: Option<f64>,
+    pub smooth_time: Option<f64>,
     pub target: Option<Vector3>,
 }
 

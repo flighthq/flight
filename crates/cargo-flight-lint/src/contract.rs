@@ -113,6 +113,7 @@ pub fn check_contract(
         crate_name,
         "flight-animation"
             | "flight-camera"
+            | "flight-camera-controls"
             | "flight-collision"
             | "flight-geometry"
             | "flight-math"
@@ -1215,12 +1216,17 @@ mod tests {
     fn f64_spatial_default_is_limited_to_core_geometry_and_math() {
         let double_source = "pub fn spatial_value(x: f64) -> f64 { return x; }";
         assert!(rules_for_crate(double_source, "flight-camera").is_empty());
+        assert!(rules_for_crate(double_source, "flight-camera-controls").is_empty());
         assert!(rules_for_crate(double_source, "flight-geometry").is_empty());
         assert!(rules_for_crate(double_source, "flight-math").is_empty());
         assert!(rules_for_crate(double_source, "flight-path").is_empty());
         assert_eq!(rules_for_crate(double_source, "flight-render"), vec!["f64"]);
         let single_source = "pub fn spatial_value(x: f32) -> f32 { return x; }";
         assert_eq!(rules_for_crate(single_source, "flight-camera"), vec!["f32"]);
+        assert_eq!(
+            rules_for_crate(single_source, "flight-camera-controls"),
+            vec!["f32"]
+        );
         assert_eq!(
             rules_for_crate(single_source, "flight-geometry"),
             vec!["f32"]

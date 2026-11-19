@@ -16,11 +16,11 @@ use flight_math::{clamp, damp};
 pub fn update_camera_2d_follow(
     guard_state: &CameraGuardStateRef,
     camera: &mut Camera2D,
-    viewport_width: f32,
-    viewport_height: f32,
-    target_x: f32,
-    target_y: f32,
-    delta_time: f32,
+    viewport_width: f64,
+    viewport_height: f64,
+    target_x: f64,
+    target_y: f64,
+    delta_time: f64,
     options: Option<&Camera2DFollowOptions>,
 ) {
     let camera_x = camera.x;

@@ -16,9 +16,9 @@ fn camera() -> Camera2D {
 }
 
 fn options(
-    deadzone_half_width: Option<f32>,
-    deadzone_half_height: Option<f32>,
-    smooth_time: Option<f32>,
+    deadzone_half_width: Option<f64>,
+    deadzone_half_height: Option<f64>,
+    smooth_time: Option<f64>,
     world_bounds: Option<Rectangle>,
 ) -> Camera2DFollowOptions {
     return Camera2DFollowOptions {

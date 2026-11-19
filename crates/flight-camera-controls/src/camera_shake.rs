@@ -45,7 +45,7 @@ pub fn initialize_camera_shake_offset(out: &mut CameraShakeOffset) {
 }
 
 /// Accumulates trauma, clamped to [0, 1] (TS `addCameraShakeTrauma`).
-pub fn add_camera_shake_trauma(shake: &mut CameraShake, amount: f32) {
+pub fn add_camera_shake_trauma(shake: &mut CameraShake, amount: f64) {
     shake.trauma = clamp(shake.trauma + amount, 0.0, 1.0);
 }
 
@@ -57,13 +57,13 @@ pub fn reset_camera_shake(shake: &mut CameraShake) {
 
 /// Three-frequency sine composite in [-1, 1]; the frequencies are incommensurate so the combined
 /// signal has no visible loop period (TS `sampleNoise`).
-fn sample_noise(t: f32, seed_a: f32, seed_b: f32, seed_c: f32) -> f32 {
+fn sample_noise(t: f64, seed_a: f64, seed_b: f64, seed_c: f64) -> f64 {
     return ((t * seed_a).sin() + (t * seed_b).sin() + (t * seed_c).sin()) / 3.0;
 }
 
 /// Advances the shake clock by `dt`, decays trauma and writes the additive offset into `out` (TS
 /// `updateCameraShake`). A zero trauma zeroes the output; the noise is deterministic.
-pub fn update_camera_shake(shake: &mut CameraShake, dt: f32, out: &mut CameraShakeOffset) {
+pub fn update_camera_shake(shake: &mut CameraShake, dt: f64, out: &mut CameraShakeOffset) {
     shake.time += dt;
     let decayed = shake.trauma - shake.decay * dt;
     shake.trauma = if decayed < 0.0 { 0.0 } else { decayed };
@@ -92,21 +92,21 @@ pub fn update_camera_shake(shake: &mut CameraShake, dt: f32, out: &mut CameraSha
     out.rotation_z = rz * intensity * shake.rotation_amplitude;
 }
 
-const SEED_TX_A: f32 = 1.0;
-const SEED_TX_B: f32 = 2.31;
-const SEED_TX_C: f32 = 3.53;
-const SEED_TY_A: f32 = 1.17;
-const SEED_TY_B: f32 = 2.63;
-const SEED_TY_C: f32 = 3.89;
-const SEED_TZ_A: f32 = 1.37;
-const SEED_TZ_B: f32 = 2.41;
-const SEED_TZ_C: f32 = 3.71;
-const SEED_RX_A: f32 = 1.53;
-const SEED_RX_B: f32 = 2.79;
-const SEED_RX_C: f32 = 3.47;
-const SEED_RY_A: f32 = 1.71;
-const SEED_RY_B: f32 = 2.17;
-const SEED_RY_C: f32 = 3.91;
-const SEED_RZ_A: f32 = 1.89;
-const SEED_RZ_B: f32 = 2.53;
-const SEED_RZ_C: f32 = 3.29;
+const SEED_TX_A: f64 = 1.0;
+const SEED_TX_B: f64 = 2.31;
+const SEED_TX_C: f64 = 3.53;
+const SEED_TY_A: f64 = 1.17;
+const SEED_TY_B: f64 = 2.63;
+const SEED_TY_C: f64 = 3.89;
+const SEED_TZ_A: f64 = 1.37;
+const SEED_TZ_B: f64 = 2.41;
+const SEED_TZ_C: f64 = 3.71;
+const SEED_RX_A: f64 = 1.53;
+const SEED_RX_B: f64 = 2.79;
+const SEED_RX_C: f64 = 3.47;
+const SEED_RY_A: f64 = 1.71;
+const SEED_RY_B: f64 = 2.17;
+const SEED_RY_C: f64 = 3.91;
+const SEED_RZ_A: f64 = 1.89;
+const SEED_RZ_B: f64 = 2.53;
+const SEED_RZ_C: f64 = 3.29;

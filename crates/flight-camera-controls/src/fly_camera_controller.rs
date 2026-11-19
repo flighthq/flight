@@ -81,8 +81,8 @@ pub fn copy_fly_camera_controller(out: &mut FlyCameraController, source: &FlyCam
 /// `lookFlyCameraController`).
 pub fn look_fly_camera_controller(
     controller: &mut FlyCameraController,
-    delta_yaw: f32,
-    delta_pitch: f32,
+    delta_yaw: f64,
+    delta_pitch: f64,
 ) {
     controller.goal_yaw += delta_yaw;
     controller.goal_pitch = clamp(
@@ -96,9 +96,9 @@ pub fn look_fly_camera_controller(
 /// `moveFlyCameraController`). All inputs are read before any write.
 pub fn move_fly_camera_controller(
     controller: &mut FlyCameraController,
-    forward: f32,
-    right: f32,
-    up: f32,
+    forward: f64,
+    right: f64,
+    up: f64,
 ) {
     let sin_yaw = controller.yaw.sin();
     let cos_yaw = controller.yaw.cos();
@@ -152,7 +152,7 @@ pub fn snap_fly_camera_controller(controller: &mut FlyCameraController) {
 pub fn update_fly_camera_controller(
     controller: &mut FlyCameraController,
     camera: &mut Camera3D,
-    delta_time: f32,
+    delta_time: f64,
 ) {
     let goal_pitch = clamp(
         controller.goal_pitch,
@@ -182,5 +182,5 @@ pub fn update_fly_camera_controller(
     set_camera_3d_view_matrix4_from_look_at(camera, &position, &target, &world_up);
 }
 
-const DEFAULT_MAX_PITCH: f32 = std::f32::consts::FRAC_PI_2 - 0.01;
-const DEFAULT_MIN_PITCH: f32 = -std::f32::consts::FRAC_PI_2 + 0.01;
+const DEFAULT_MAX_PITCH: f64 = std::f64::consts::FRAC_PI_2 - 0.01;
+const DEFAULT_MIN_PITCH: f64 = -std::f64::consts::FRAC_PI_2 + 0.01;

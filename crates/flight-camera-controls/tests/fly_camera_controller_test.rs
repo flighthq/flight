@@ -12,12 +12,12 @@ use flight_geometry::create_vector3;
 use crate::common::*;
 
 fn options(
-    max_pitch: Option<f32>,
-    min_pitch: Option<f32>,
-    pitch: Option<f32>,
-    position: Option<(f32, f32, f32)>,
-    smooth_time: Option<f32>,
-    yaw: Option<f32>,
+    max_pitch: Option<f64>,
+    min_pitch: Option<f64>,
+    pitch: Option<f64>,
+    position: Option<(f64, f64, f64)>,
+    smooth_time: Option<f64>,
+    yaw: Option<f64>,
 ) -> FlyCameraControllerOptions {
     return FlyCameraControllerOptions {
         max_pitch,
@@ -87,8 +87,8 @@ mod create_fly_camera_controller {
         assert_eq!(controller.yaw, 0.0);
         assert_eq!(controller.pitch, 0.0);
         assert_eq!(controller.goal_yaw, controller.yaw);
-        assert!(controller.max_pitch < std::f32::consts::FRAC_PI_2);
-        assert!(controller.min_pitch > -std::f32::consts::FRAC_PI_2);
+        assert!(controller.max_pitch < std::f64::consts::FRAC_PI_2);
+        assert!(controller.min_pitch > -std::f64::consts::FRAC_PI_2);
     }
 
     #[test]
@@ -301,12 +301,12 @@ mod update_fly_camera_controller {
             None,
             None,
             Some(0.5),
-            Some(std::f32::consts::PI - 0.05),
+            Some(std::f64::consts::PI - 0.05),
         )));
-        controller.goal_yaw = -std::f32::consts::PI + 0.05;
+        controller.goal_yaw = -std::f64::consts::PI + 0.05;
         let mut camera = test_camera();
         update_fly_camera_controller(&mut controller, &mut camera, 0.016);
-        assert!(controller.yaw > std::f32::consts::PI - 0.05);
-        assert!(controller.yaw < std::f32::consts::PI + 0.05);
+        assert!(controller.yaw > std::f64::consts::PI - 0.05);
+        assert!(controller.yaw < std::f64::consts::PI + 0.05);
     }
 }

@@ -325,7 +325,7 @@ impl CameraShake {
         return create_camera_shake();
     }
 
-    pub fn add_trauma(&mut self, amount: f32) {
+    pub fn add_trauma(&mut self, amount: f64) {
         return add_camera_shake_trauma(self, amount);
     }
 
@@ -333,7 +333,7 @@ impl CameraShake {
         return reset_camera_shake(self);
     }
 
-    pub fn update(&mut self, dt: f32, out: &mut CameraShakeOffset) {
+    pub fn update(&mut self, dt: f64, out: &mut CameraShakeOffset) {
         return update_camera_shake(self, dt, out);
     }
 }
@@ -359,11 +359,11 @@ impl FlyCameraController {
         return copy_fly_camera_controller(self, source);
     }
 
-    pub fn look(&mut self, delta_yaw: f32, delta_pitch: f32) {
+    pub fn look(&mut self, delta_yaw: f64, delta_pitch: f64) {
         return look_fly_camera_controller(self, delta_yaw, delta_pitch);
     }
 
-    pub fn move_by(&mut self, forward: f32, right: f32, up: f32) {
+    pub fn move_by(&mut self, forward: f64, right: f64, up: f64) {
         return move_fly_camera_controller(self, forward, right, up);
     }
 
@@ -375,7 +375,7 @@ impl FlyCameraController {
         return snap_fly_camera_controller(self);
     }
 
-    pub fn update(&mut self, camera: &mut Camera3D, delta_time: f32) {
+    pub fn update(&mut self, camera: &mut Camera3D, delta_time: f64) {
         return update_fly_camera_controller(self, camera, delta_time);
     }
 }
@@ -394,15 +394,15 @@ impl OrbitCameraController {
         return copy_orbit_camera_controller(self, source);
     }
 
-    pub fn dolly(&mut self, delta_distance: f32) {
+    pub fn dolly(&mut self, delta_distance: f64) {
         return dolly_orbit_camera_controller(self, delta_distance);
     }
 
-    pub fn pan(&mut self, delta_right: f32, delta_up: f32) {
+    pub fn pan(&mut self, delta_right: f64, delta_up: f64) {
         return pan_orbit_camera_controller(self, delta_right, delta_up);
     }
 
-    pub fn pan_in_view_plane(&mut self, delta_right: f32, delta_up: f32) {
+    pub fn pan_in_view_plane(&mut self, delta_right: f64, delta_up: f64) {
         return pan_orbit_camera_controller_in_view_plane(self, delta_right, delta_up);
     }
 
@@ -410,7 +410,7 @@ impl OrbitCameraController {
         return reset_orbit_camera_controller(self, options);
     }
 
-    pub fn rotate(&mut self, delta_azimuth: f32, delta_polar: f32) {
+    pub fn rotate(&mut self, delta_azimuth: f64, delta_polar: f64) {
         return rotate_orbit_camera_controller(self, delta_azimuth, delta_polar);
     }
 
@@ -418,7 +418,7 @@ impl OrbitCameraController {
         return snap_orbit_camera_controller(self);
     }
 
-    pub fn update(&mut self, camera: &mut Camera3D, delta_time: f32) {
+    pub fn update(&mut self, camera: &mut Camera3D, delta_time: f64) {
         return update_orbit_camera_controller(self, camera, delta_time);
     }
 }
