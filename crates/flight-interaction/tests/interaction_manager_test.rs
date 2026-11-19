@@ -109,12 +109,13 @@ mod connect_input_to_interaction {
     #[test]
     fn delivers_exact_double_coordinates_through_every_pointer_bridge() {
         // Each input closure must carry x = 1e9 + 0.25 (f32 spacing 64) and y = 0.1 (no exact f32).
-        type InputSignal =
-            fn(&flight_input::InputManager) -> &flight_signals::Signal<flight_input::InputPointerData>;
-        type NodeSignal =
-            fn(
-                &flight_interaction::InteractionSignals,
-            ) -> &flight_signals::Signal<flight_interaction::PointerEventData>;
+        type InputSignal = fn(
+            &flight_input::InputManager,
+        ) -> &flight_signals::Signal<flight_input::InputPointerData>;
+        type NodeSignal = fn(
+            &flight_interaction::InteractionSignals,
+        )
+            -> &flight_signals::Signal<flight_interaction::PointerEventData>;
         let cases: [(InteractionSignalName, InputSignal, NodeSignal); 5] = [
             (
                 InteractionSignalName::OnPointerCancel,
