@@ -141,6 +141,9 @@ pub fn byte_result_return(
     if optional {
         return format!("return {subclass}.wrapOptional({call});");
     }
+    if package == "flight._cpp" {
+        return format!("return new {subclass}(cpp.Pointer.fromStar({call}));");
+    }
     return format!("return new {subclass}({call});");
 }
 
@@ -167,27 +170,36 @@ pub fn byte_result_subclass_source(
     let len_name = to_camel_case(&format!("{}_result_len", func.name));
     let get_name = to_camel_case(&format!("{}_result_get", func.name));
     let free_name = to_camel_case(&format!("{}_result_free", func.name));
-    let (package, handle, is_null, read) = match target {
-        NativeByteTarget::Hl => (
-            "flight._hl",
-            "hl.Bytes",
-            "handle == null".to_string(),
-            format!("{module}.{get_name}(handle, index).getUI8(0)"),
-        ),
-        // A raw pointer has no Haxe null; compare and dereference it in C++.
-        NativeByteTarget::Cpp => (
-            "flight._cpp",
-            "cpp.Star<cpp.Void>",
-            "untyped __cpp__(\"{0} == NULL\", handle)".to_string(),
-            format!(
-                "untyped __cpp__(\"(int)*(const unsigned char *)({{0}})\", {module}.{get_name}(handle, index))"
+    let (package, constructor_handle, optional_handle, native_handle, optional_new, is_null, read) =
+        match target {
+            NativeByteTarget::Hl => (
+                "flight._hl",
+                "hl.Bytes",
+                "hl.Bytes",
+                "handle",
+                "handle",
+                "handle == null".to_string(),
+                format!("{module}.{get_name}(handle, index).getUI8(0)"),
             ),
-        ),
-    };
+            // A raw pointer has no Haxe null; compare and dereference it in C++. Keep the owned
+            // handle in hxcpp's boxed Pointer so the generated reflective constructor never has to
+            // convert Dynamic directly to void *, which is ambiguous in hxcpp.
+            NativeByteTarget::Cpp => (
+                "flight._cpp",
+                "cpp.Pointer<cpp.Void>",
+                "cpp.Star<cpp.Void>",
+                "handle.ptr",
+                "cpp.Pointer.fromStar(handle)",
+                "untyped __cpp__(\"{0} == NULL\", handle)".to_string(),
+                format!(
+                    "untyped __cpp__(\"(int)*(const unsigned char *)({{0}})\", {module}.{get_name}(handle.ptr, index))"
+                ),
+            ),
+        };
     let wrap = if optional {
         format!(
-            "\tpublic static function wrapOptional(handle:{handle}):Null<{package}.{BYTE_RESULT_TYPE}> {{\n\
-             \t\treturn {is_null} ? null : new {name}(handle);\n\
+            "\tpublic static function wrapOptional(handle:{optional_handle}):Null<{package}.{BYTE_RESULT_TYPE}> {{\n\
+             \t\treturn {is_null} ? null : new {name}({optional_new});\n\
              \t}}\n\n"
         )
     } else {
@@ -195,14 +207,14 @@ pub fn byte_result_subclass_source(
     };
     return format!(
         "final class {name} extends {package}.{BYTE_RESULT_TYPE} {{\n\
-         \tvar handle:{handle};\n\n\
-         \tpublic function new(handle:{handle}) {{\n\
-         \t\tsuper({module}.{len_name}(handle));\n\
+         \tvar handle:{constructor_handle};\n\n\
+         \tpublic function new(handle:{constructor_handle}) {{\n\
+         \t\tsuper({module}.{len_name}({native_handle}));\n\
          \t\tthis.handle = handle;\n\
          \t}}\n\n\
          {wrap}\
          \toverride function freeNative():Void {{\n\
-         \t\t{module}.{free_name}(handle);\n\
+         \t\t{module}.{free_name}({native_handle});\n\
          \t}}\n\n\
          \toverride function readNative(index:Int):Int {{\n\
          \t\treturn {read};\n\

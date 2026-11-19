@@ -154,6 +154,16 @@ mod byte_result_return {
             byte_result_return(
                 "flight._cpp",
                 "Compression",
+                &compress_deflate(),
+                "raw()",
+                false
+            ),
+            "return new flight._cpp._fn.Compression.CompressDeflateByteResult(cpp.Pointer.fromStar(raw()));"
+        );
+        assert_eq!(
+            byte_result_return(
+                "flight._cpp",
+                "Compression",
                 &decompress_deflate(),
                 "raw()",
                 true
@@ -209,8 +219,14 @@ mod byte_result_subclass_source {
             cpp.contains("untyped __cpp__(\"{0} == NULL\", handle) ? null"),
             "{cpp}"
         );
+        assert!(cpp.contains("var handle:cpp.Pointer<cpp.Void>;"), "{cpp}");
         assert!(cpp.contains(
-            "untyped __cpp__(\"(int)*(const unsigned char *)({0})\", Compression.decompressDeflateResultGet(handle, index))"
+            "return untyped __cpp__(\"{0} == NULL\", handle) ? null : new DecompressDeflateByteResult(cpp.Pointer.fromStar(handle));"
+        ));
+        assert!(cpp.contains("super(Compression.decompressDeflateResultLen(handle.ptr));"));
+        assert!(cpp.contains("Compression.decompressDeflateResultFree(handle.ptr);"));
+        assert!(cpp.contains(
+            "untyped __cpp__(\"(int)*(const unsigned char *)({0})\", Compression.decompressDeflateResultGet(handle.ptr, index))"
         ));
     }
 }

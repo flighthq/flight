@@ -885,7 +885,7 @@ extern inline function getLastPoint(randomFn:Dynamic, randomCtx:Dynamic, mean:Fl
             "extern inline function compressDeflate(bytes:Dynamic, bytesLen:Int):ByteResult {\n#if hl\n\
              \treturn new flight._hl._fn.Compression.CompressDeflateByteResult(flight._hl._fn.Compression.compressDeflate(bytes, bytesLen));\n\
              #elseif cpp\n\
-             \treturn new flight._cpp._fn.Compression.CompressDeflateByteResult(flight._cpp._fn.Compression.compressDeflate(bytes, bytesLen));"
+             \treturn new flight._cpp._fn.Compression.CompressDeflateByteResult(cpp.Pointer.fromStar(flight._cpp._fn.Compression.compressDeflate(bytes, bytesLen)));"
         ), "{facade}");
         assert!(
             facade.contains(
