@@ -142,8 +142,9 @@ fn carrier_graph_preserves_thin_fat_raw_and_policy_distinctions() {
             .collect(),
         "an opaque handle slice consumes its element carrier"
     );
+    // The slice is an `Option`, so its carrier is optional coverage rather than a blocker.
     assert_eq!(
-        edge_rows("consume", "flight_resolve_color_adjustments_color_matrix"),
+        edge_rows("optional", "flight_resolve_color_adjustments_color_matrix"),
         ["Box<flight_sdk::Ref<dyn flight_sdk::Adjustment>>"]
             .into_iter()
             .collect(),
