@@ -3,6 +3,10 @@ use std::fmt::Write as _;
 use std::fs;
 use std::path::Path;
 
+use crate::byte_result::{
+    BYTE_RESULT_TYPE, NativeByteTarget, byte_result_accessor_externs, byte_result_base_source,
+    byte_result_return, byte_result_subclass_source, get_byte_result_optional, has_byte_results,
+};
 use crate::ffi_surface::{FfiSurface, FieldAccess};
 use crate::haxe_common::{
     TypeMethod, build_struct_map, build_type_methods, collect_opaque_types, crate_dir_to_module,
@@ -22,6 +26,12 @@ pub fn generate(crate_exports: &[CrateExports], out_dir: &Path, ffi_surface: Opt
     let fn_dir = cpp_dir.join("_fn");
     fs::create_dir_all(&cpp_dir).unwrap();
     fs::create_dir_all(&fn_dir).unwrap();
+    if has_byte_results(crate_exports) {
+        write_if_changed(
+            &cpp_dir.join(format!("{BYTE_RESULT_TYPE}.hx")),
+            &byte_result_base_source(PKG),
+        );
+    }
 
     let mut all_opaque_types: BTreeSet<String> = BTreeSet::new();
     for crate_export in crate_exports {
@@ -262,14 +272,24 @@ fn emit_one_method(ty: &str, tm: &TypeMethod<'_>) -> Option<String> {
     if matches!(ret_kind, ReturnKind::Tuple(_) | ReturnKind::OptionTuple(_)) {
         return None;
     }
-    let haxe_ret = return_kind_to_haxe(&ret_kind);
+    let byte_result = get_byte_result_optional(func);
+    let haxe_ret = match byte_result {
+        Some(true) => format!("Null<{PKG}.{BYTE_RESULT_TYPE}>"),
+        Some(false) => format!("{PKG}.{BYTE_RESULT_TYPE}"),
+        None => return_kind_to_haxe(&ret_kind),
+    };
 
     let params_str = method_params.join(", ");
     let args_str = call_args.join(", ");
     let module = &tm.module;
 
     let call = format!("{PKG}._fn.{module}.{haxe_fn_name}({args_str})");
-    let body = if matches!(ret_kind, ReturnKind::Void) {
+    let body = if let Some(optional) = byte_result {
+        // The statement carries its own `;`; the method template appends another.
+        byte_result_return(PKG, module, func, &call, optional)
+            .trim_end_matches(';')
+            .to_string()
+    } else if matches!(ret_kind, ReturnKind::Void) {
         call
     } else {
         format!("return {call}")
@@ -288,12 +308,22 @@ fn emit_module_file(
     ffi_surface: Option<&FfiSurface>,
 ) -> String {
     let mut emitted: Vec<String> = Vec::new();
+    let mut byte_results: Vec<String> = Vec::new();
     for func in fns {
         if !has_native_ffi_function(&func.name, ffi_surface) {
             continue;
         }
         if let Some(decl) = emit_function(func) {
             emitted.push(decl);
+            if let Some(optional) = get_byte_result_optional(func) {
+                emitted.push(byte_result_accessor_externs(func, NativeByteTarget::Cpp));
+                byte_results.push(byte_result_subclass_source(
+                    func,
+                    module_name,
+                    NativeByteTarget::Cpp,
+                    optional,
+                ));
+            }
         }
     }
     if emitted.is_empty() {
@@ -308,6 +338,10 @@ fn emit_module_file(
         writeln!(output, "{decl}").unwrap();
     }
     writeln!(output, "}}").unwrap();
+    for byte_result in &byte_results {
+        writeln!(output).unwrap();
+        write!(output, "{byte_result}").unwrap();
+    }
     output
 }
 

@@ -3,6 +3,7 @@ use std::fmt::Write as _;
 use std::fs;
 use std::path::Path;
 
+use crate::byte_result::{BYTE_RESULT_TYPE, byte_result_base_source, has_byte_results};
 use crate::ffi_surface::FfiSurface;
 use crate::haxe_common::{
     TypeMethod, build_struct_map, build_type_methods, collect_opaque_types, crate_dir_to_module,
@@ -63,6 +64,10 @@ fn return_type(ty: Option<&str>, prefix: &str) -> Option<String> {
         ReturnKind::Scalar(t) => scalar_to_haxe(&t).into(),
         ReturnKind::Struct(t) => format!("{prefix}{t}"),
         ReturnKind::StringReturn => "String".into(),
+        // The TypeScript SDK returns owned bytes as a `Uint8Array`, which `ByteResult` is at runtime.
+        ReturnKind::BoxSliceReturn(element) | ReturnKind::VecReturn(element) if element == "u8" => {
+            format!("{prefix}{BYTE_RESULT_TYPE}")
+        }
         ReturnKind::Tuple(elements) => {
             for element in &elements {
                 crate::haxe_common::tuple_element_storage(element)?;
@@ -110,6 +115,12 @@ pub fn generate(exports: &[CrateExports], out_dir: &Path, ffi_surface: Option<&F
     let js_dir = out_dir.join("flight").join("_js");
     let fn_dir = js_dir.join("_fn");
     fs::create_dir_all(&fn_dir).unwrap();
+    if has_byte_results(exports) {
+        write_if_changed(
+            &js_dir.join(format!("{BYTE_RESULT_TYPE}.hx")),
+            &byte_result_base_source(PKG),
+        );
+    }
     let mut types = BTreeSet::new();
     for package in exports {
         for func in &package.fns {

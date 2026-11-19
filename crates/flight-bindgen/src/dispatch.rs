@@ -3,6 +3,9 @@ use std::fmt::Write as _;
 use std::fs;
 use std::path::Path;
 
+use crate::byte_result::{
+    BYTE_RESULT_TYPE, byte_result_return, get_byte_result_optional, has_byte_results,
+};
 use crate::ffi_surface::FfiSurface;
 use crate::haxe_common::{
     crate_dir_to_module, has_ffi_function, has_native_ffi_function, tuple_element_storage,
@@ -35,6 +38,14 @@ pub fn generate(crate_exports: &[CrateExports], out_dir: &Path, ffi_surface: Opt
     }
 
     let mut total_files = 0usize;
+
+    if has_byte_results(crate_exports) {
+        write_if_changed(
+            &flight_dir.join(format!("{BYTE_RESULT_TYPE}.hx")),
+            &emit_type_dispatch(BYTE_RESULT_TYPE),
+        );
+        total_files += 1;
+    }
 
     let types_that_are_modules: BTreeSet<&String> = all_opaque_types
         .iter()
@@ -264,6 +275,7 @@ fn emit_dispatch_function(
         _ => None,
     };
     let tuple_optional = matches!(ret_kind, ReturnKind::OptionTuple(_));
+    let byte_result = get_byte_result_optional(func);
     let haxe_ret = return_kind_to_haxe(&ret_kind, emitted_enums);
     let has_return = !matches!(ret_kind, ReturnKind::Void);
     let needs_ret_cast = matches!(
@@ -335,7 +347,12 @@ fn emit_dispatch_function(
     let cpp_call = format!("flight._cpp._fn.{module_name}.{haxe_name}({native_args_str}");
     let inner_js_call = format!("flight._js._fn.{module_name}.{haxe_name}({js_args_str})");
     writeln!(sig, "#if hl").unwrap();
-    if let Some(elements) = &tuple_elements {
+    if let Some(optional) = byte_result {
+        let hl_byte_call = format!("{hl_call})");
+        let statement =
+            byte_result_return("flight._hl", module_name, func, &hl_byte_call, optional);
+        writeln!(sig, "\t{statement}").unwrap();
+    } else if let Some(elements) = &tuple_elements {
         write!(
             sig,
             "{}",
@@ -346,7 +363,12 @@ fn emit_dispatch_function(
         writeln!(sig, "\t{ret_prefix}{hl_call});").unwrap();
     }
     writeln!(sig, "#elseif cpp").unwrap();
-    if let Some(elements) = &tuple_elements {
+    if let Some(optional) = byte_result {
+        let cpp_byte_call = format!("{cpp_call})");
+        let statement =
+            byte_result_return("flight._cpp", module_name, func, &cpp_byte_call, optional);
+        writeln!(sig, "\t{statement}").unwrap();
+    } else if let Some(elements) = &tuple_elements {
         write!(
             sig,
             "{}",
@@ -492,6 +514,14 @@ fn return_kind_to_haxe(kind: &ReturnKind, emitted_enums: &BTreeSet<String>) -> S
             } else {
                 "Int".to_string()
             }
+        }
+        ReturnKind::BoxSliceReturn(element) | ReturnKind::VecReturn(element) if element == "u8" => {
+            BYTE_RESULT_TYPE.to_string()
+        }
+        ReturnKind::OptionBoxSliceReturn(element) | ReturnKind::OptionVecReturn(element)
+            if element == "u8" =>
+        {
+            format!("Null<{BYTE_RESULT_TYPE}>")
         }
         ReturnKind::VecReturn(_) | ReturnKind::OptionVecReturn(_) => "Dynamic".to_string(),
         ReturnKind::BoxSliceReturn(_) | ReturnKind::OptionBoxSliceReturn(_) => {
@@ -799,5 +829,145 @@ extern inline function getLastPoint(randomFn:Dynamic, randomCtx:Dynamic, mean:Fl
         assert!(!js_only.contains("flight._hl"), "{js_only}");
         assert!(!js_only.contains("flight._cpp"), "{js_only}");
         assert!(js_only.ends_with("}\n#end"), "{js_only}");
+    }
+    #[test]
+    fn byte_results_generate_typed_and_verified_on_every_backend() {
+        let (directory, bound) = generate_byte_result_fixture("typed");
+        assert_eq!(
+            crate::byte_result::verify_byte_result_modules(&directory, &bound),
+            Vec::<String>::new()
+        );
+        let externs =
+            crate::ffi_surface::verify_generated_externs(&directory, &byte_result_surface());
+        assert!(externs.mismatches.is_empty(), "{:?}", externs.mismatches);
+        let facade = fs::read_to_string(directory.join("flight/Compression.hx")).unwrap();
+        assert!(facade.contains(
+            "extern inline function compressDeflate(bytes:Dynamic, bytesLen:Int):ByteResult {\n#if hl\n\
+             \treturn new flight._hl._fn.Compression.CompressDeflateByteResult(flight._hl._fn.Compression.compressDeflate(bytes, bytesLen));\n\
+             #elseif cpp\n\
+             \treturn new flight._cpp._fn.Compression.CompressDeflateByteResult(flight._cpp._fn.Compression.compressDeflate(bytes, bytesLen));"
+        ), "{facade}");
+        assert!(
+            facade.contains(
+                "extern inline function decompressDeflate(compressed:Dynamic):Null<ByteResult> {\n\
+             \treturn flight._js._fn.Compression.decompressDeflate(compressed);"
+            ),
+            "{facade}"
+        );
+        let js = fs::read_to_string(directory.join("flight/_js/_fn/Compression.hx")).unwrap();
+        assert!(
+            js.contains(
+                "public static function compressDeflate(bytes:Dynamic):flight._js.ByteResult;"
+            ),
+            "{js}"
+        );
+        assert!(js.contains(
+            "public static function decompressDeflate(compressed:Dynamic):Null<flight._js.ByteResult>;"
+        ), "{js}");
+        for backend in ["_hl", "_cpp", "_js"] {
+            assert!(
+                directory
+                    .join(format!("flight/{backend}/ByteResult.hx"))
+                    .is_file()
+            );
+        }
+        assert!(
+            fs::read_to_string(directory.join("flight/ByteResult.hx"))
+                .unwrap()
+                .contains("typedef ByteResult = flight._hl.ByteResult;")
+        );
+        fs::remove_dir_all(directory).unwrap();
+    }
+    #[test]
+    fn byte_result_generation_is_byte_identical() {
+        let (first, _) = generate_byte_result_fixture("first");
+        let (second, _) = generate_byte_result_fixture("second");
+        assert_eq!(read_generated_tree(&first), read_generated_tree(&second));
+        fs::remove_dir_all(first).unwrap();
+        fs::remove_dir_all(second).unwrap();
+    }
+
+    // A required and an optional owned-byte producer with the exact triples flight-ffi emits.
+    fn byte_result_surface() -> FfiSurface {
+        let mut header = String::new();
+        let mut hl = String::new();
+        for name in ["compress_deflate", "decompress_deflate"] {
+            header.push_str(&format!(
+                "void * flight_{name}(void * arg0, size_t arg1);\n\
+                 size_t flight_{name}_result_len(void * arg0);\n\
+                 void * flight_{name}_result_get(void * arg0, size_t arg1);\n\
+                 void flight_{name}_result_free(void * arg0);\n"
+            ));
+            hl.push_str(&format!(
+                "DEFINE_PRIM(_BYTES, flight_{name}, _BYTES _I32);\n\
+                 DEFINE_PRIM(_I32, flight_{name}_result_len, _BYTES);\n\
+                 DEFINE_PRIM(_BYTES, flight_{name}_result_get, _BYTES _I32);\n\
+                 DEFINE_PRIM(_VOID, flight_{name}_result_free, _BYTES);\n"
+            ));
+        }
+        return FfiSurface {
+            c: crate::ffi_surface::parse_ffi_header(&header),
+            hl: crate::ffi_surface::parse_hl_primitives(&hl),
+            native_skips: BTreeSet::new(),
+        };
+    }
+
+    // Generates the fixture through every backend exactly as `main` does.
+    fn generate_byte_result_fixture(name: &str) -> (std::path::PathBuf, Vec<String>) {
+        let directory = std::env::temp_dir().join(format!(
+            "flight-dispatch-byte-result-{name}-{}",
+            std::process::id()
+        ));
+        if directory.exists() {
+            fs::remove_dir_all(&directory).unwrap();
+        }
+        let function = |name: &str, ret: &str| ParsedFn {
+            name: name.into(),
+            source_name: Some(name.into()),
+            params: vec![crate::parse::Param {
+                name: if name == "compress_deflate" {
+                    "bytes"
+                } else {
+                    "compressed"
+                }
+                .into(),
+                ty: "&Uint8Array".into(),
+            }],
+            ret: Some(ret.into()),
+        };
+        let exports = vec![CrateExports {
+            dir_name: "flight-compression".into(),
+            fns: vec![
+                function("compress_deflate", "Box<Uint8Array>"),
+                function("decompress_deflate", "Option<Box<Uint8Array>>"),
+            ],
+            structs: vec![],
+            enums: vec![],
+        }];
+        let surface = byte_result_surface();
+        let triples = crate::byte_result::enforce_byte_result_triples(&exports, &surface);
+        assert!(triples.errors.is_empty(), "{triples:?}");
+        crate::haxe_hl::generate(&exports, &directory, &BTreeMap::new(), Some(&surface));
+        crate::haxe_cpp::generate(&exports, &directory, Some(&surface));
+        crate::haxe_js::generate(&exports, &directory, Some(&surface));
+        generate(&exports, &directory, Some(&surface));
+        return (directory, triples.bound);
+    }
+
+    fn read_generated_tree(directory: &Path) -> BTreeMap<String, String> {
+        let mut out = BTreeMap::new();
+        let mut pending = vec![directory.to_path_buf()];
+        while let Some(dir) = pending.pop() {
+            for entry in fs::read_dir(&dir).unwrap() {
+                let path = entry.unwrap().path();
+                if path.is_dir() {
+                    pending.push(path);
+                } else {
+                    let relative = path.strip_prefix(directory).unwrap().display().to_string();
+                    out.insert(relative, fs::read_to_string(&path).unwrap());
+                }
+            }
+        }
+        return out;
     }
 }
