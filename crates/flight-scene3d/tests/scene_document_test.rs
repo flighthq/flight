@@ -73,6 +73,24 @@ mod create_scene3d_from_document {
         );
     }
     #[test]
+    fn carries_a_document_duration_to_the_live_animation_as_an_exact_double() {
+        // 0.1 has no exact f32: an f32 document duration would reach the clip as 0.10000000149.
+        let mut doc = empty_document();
+        doc.nodes.push(document_node(None));
+        doc.animations = vec![Scene3DDocumentAnimation {
+            channels: vec![Scene3DDocumentAnimationChannel {
+                node: 0,
+                path: Scene3DAnimationPath::Translation,
+                track: test_track(),
+            }],
+            duration: 0.1,
+            name: Some("short".to_string()),
+        }];
+        let scene = create_scene3d_from_document(&doc, Some(-1));
+        let clip = scene.animations.get("short").unwrap().read().unwrap();
+        assert_eq!(clip.duration, 0.1);
+    }
+    #[test]
     fn skips_invalid_animation_nodes_and_retains_fallback_names_and_declared_duration() {
         let mut doc = empty_document();
         doc.nodes.push(document_node(None));

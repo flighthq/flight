@@ -147,7 +147,7 @@ fn attach_document_animations(
                 .unwrap_or_else(|| format!("animation{a}")),
             Arc::new(RwLock::new(create_animation_clip(
                 channels,
-                Some(f64::from(source.duration)),
+                Some(source.duration),
                 &[],
             ))),
         );

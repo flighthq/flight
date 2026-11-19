@@ -50,9 +50,9 @@ src/contract.rs: pub use crate::types::*;
 src/contract.rs: pub use crate::update_mesh_morph::*;
 src/document_types.rs: pub enum Scene3DDocumentMaterial { Entity(Scene3DDocumentMaterialEntity), Fields(Scene3DDocumentMaterialFields), }
 src/document_types.rs: pub struct Scene3DDocument { pub animations: Vec<Scene3DDocumentAnimation>, pub cameras: Vec<Scene3DDocumentCamera>, pub lights: Vec<Scene3DDocumentLight>, pub materials: Vec<Scene3DDocumentMaterial>, pub meshes: Vec<Scene3DDocumentMesh>, pub metadata: Option<Ref<Scene3DMetadata>>, pub nodes: Vec<Scene3DDocumentNode>, pub resources: Vec<ImageResourceReference>, pub scenes: Vec<Scene3DDocumentScene>, pub skins: Vec<Scene3DDocumentSkin>, }
-src/document_types.rs: pub struct Scene3DDocumentAnimation { pub channels: Vec<Scene3DDocumentAnimationChannel>, pub duration: f32, pub name: Option<String>, }
+src/document_types.rs: pub struct Scene3DDocumentAnimation { pub channels: Vec<Scene3DDocumentAnimationChannel>, pub duration: f64, pub name: Option<String>, }
 src/document_types.rs: pub struct Scene3DDocumentAnimationChannel { pub node: i32, pub path: Scene3DAnimationPath, pub track: Ref<AnimationTrack>, }
-src/document_types.rs: pub struct Scene3DDocumentCamera { pub far: f32, pub name: Option<String>, pub near: f32, pub node: Option<i32>, pub projection: Projection, pub transform: Transform3D, }
+src/document_types.rs: pub struct Scene3DDocumentCamera { pub far: f64, pub name: Option<String>, pub near: f64, pub node: Option<i32>, pub projection: Projection, pub transform: Transform3D, }
 src/document_types.rs: pub struct Scene3DDocumentLight { pub descriptor: LightRef, pub name: Option<String>, pub node: Option<i32>, pub transform: Transform3D, }
 src/document_types.rs: pub struct Scene3DDocumentMaterialEntity { pub material: Ref<dyn Material3D>, }
 src/document_types.rs: pub struct Scene3DDocumentMaterialFields { pub kind: Kind, pub name: Option<String>, }
