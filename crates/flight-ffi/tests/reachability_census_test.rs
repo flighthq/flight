@@ -135,6 +135,20 @@ fn carrier_graph_preserves_thin_fat_raw_and_policy_distinctions() {
         functions["flight_add_node_child"].blocker,
         "Box<flight_sdk::Ref<dyn flight_sdk::Node>>"
     );
+    assert_eq!(
+        edge_rows("consume", "flight_add_node_children"),
+        ["Box<flight_sdk::Ref<dyn flight_sdk::Node>>"]
+            .into_iter()
+            .collect(),
+        "an opaque handle slice consumes its element carrier"
+    );
+    assert_eq!(
+        edge_rows("consume", "flight_resolve_color_adjustments_color_matrix"),
+        ["Box<flight_sdk::Ref<dyn flight_sdk::Adjustment>>"]
+            .into_iter()
+            .collect(),
+        "a c_void handle slice retains the exact dynamic trait carrier"
+    );
 
     let node2d_accessors: Vec<_> = functions
         .iter()
