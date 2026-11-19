@@ -183,6 +183,32 @@ fn carrier_graph_preserves_thin_fat_raw_and_policy_distinctions() {
 }
 
 #[test]
+fn nested_alias_carriers_join_the_real_fixed_point() {
+    let functions = function_rows();
+    assert_eq!(
+        edge_rows("produce", "flight_get_effect_kinds"),
+        ["Box<Vec<String>>"].into_iter().collect()
+    );
+    assert_eq!(
+        edge_rows(
+            "consume",
+            "flight_get_skeleton_2d_animation_target_binder_kinds"
+        ),
+        [
+            "*const flight_sdk::Skeleton2DAnimationTargetBinderRegistry",
+            "Box<Vec<String>>",
+        ]
+        .into_iter()
+        .collect()
+    );
+    assert_eq!(
+        functions["flight_get_skeleton_2d_animation_target_binder_kinds"].blocker,
+        "*const flight_sdk::Skeleton2DAnimationTargetBinderRegistry"
+    );
+    assert!(!GENERATED_GRAPH.contains("Box<Vec<flight_sdk::Kind>>"));
+}
+
+#[test]
 fn graph_and_baseline_have_one_stable_classification_per_surface_wrapper() {
     let functions = function_rows();
     let surface: BTreeSet<_> = functions

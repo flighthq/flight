@@ -2,7 +2,7 @@ format|ffi-reachability-baseline|1
 policy|host_capability|feature-gated native host crates supply borrowed Host*Capability carriers
 summary|policy-exempt|235|unreachable|3436|blocking-carriers|917
 carrier|1|*const Option<String>
-carrier|1|*const Option<flight_sdk::Node2DRef>
+carrier|1|*const Option<flight_sdk::Ref<dyn flight_sdk::Node2D>>
 carrier|2|*const flight_sdk::AbcInstruction
 carrier|18|*const flight_sdk::AbortSignal
 carrier|1|*const flight_sdk::AccessibilityNode
@@ -772,8 +772,8 @@ carrier|1|Box<Vec<flight_sdk::ColorKeyframe>>
 carrier|1|Box<Vec<flight_sdk::CommandRef>>
 carrier|1|Box<Vec<flight_sdk::CurveKeyframe>>
 carrier|1|Box<Vec<flight_sdk::ModifierKind>>
-carrier|5|Box<Vec<flight_sdk::NodeRef>>
 carrier|1|Box<Vec<flight_sdk::ParticleConfigIssue>>
+carrier|5|Box<Vec<flight_sdk::Ref<dyn flight_sdk::Node>>>
 carrier|2|Box<Vec<flight_sdk::RequirementCatalogEntryRef>>
 carrier|1|Box<Vec<flight_sdk::ScreenInfo>>
 carrier|1|Box<Vec<flight_sdk::ShortcutModifier>>
@@ -840,7 +840,7 @@ carrier|30|Box<flight_sdk::OrbitCameraController>
 carrier|5|Box<flight_sdk::PackResult>
 carrier|1|Box<flight_sdk::PathMorph>
 carrier|1|Box<flight_sdk::Physics2DJointSolverRef>
-carrier|1|Box<flight_sdk::Ref<Vec<Option<flight_sdk::NodeRef>>>>
+carrier|1|Box<flight_sdk::Ref<Vec<Option<flight_sdk::Ref<dyn flight_sdk::Node>>>>>
 carrier|1|Box<flight_sdk::Ref<Vec<flight_sdk::node::contract::AdjustmentRef>>>
 carrier|2|Box<flight_sdk::Ref<dyn flight_sdk::Adjustment>>
 carrier|3|Box<flight_sdk::Ref<dyn flight_sdk::Modifier>>
@@ -1438,7 +1438,7 @@ unreachable|flight_create_requirement_catalog|*const flight_sdk::RequirementCata
 unreachable|flight_create_requirement_codegen_plan|Box<flight_sdk::RequirementCatalog>
 unreachable|flight_create_requirement_set|*const flight_sdk::Requirement
 unreachable|flight_create_rich_text|Box<flight_sdk::Ref<flight_sdk::text::contract::TextLayoutContext>>
-unreachable|flight_create_rive_animation_clips|*const Option<flight_sdk::Node2DRef>
+unreachable|flight_create_rive_animation_clips|*const Option<flight_sdk::Ref<dyn flight_sdk::Node2D>>
 unreachable|flight_create_rive_import_registry_from_options|*const flight_sdk::RiveImportOptions
 unreachable|flight_create_rive_object_graph|Box<flight_sdk::RiveDocument>
 unreachable|flight_create_rive_path|*const flight_sdk::RiveArtboardGraph
@@ -1453,7 +1453,7 @@ unreachable|flight_create_scene2d_from_svg_document|*const flight_sdk::SvgDocume
 unreachable|flight_create_scene2d_from_svg_document_with_registry|*const flight_sdk::SvgDocumentImportOptions
 unreachable|flight_create_scene3d_resource_resolver|*const flight_sdk::Scene3DResourceResolverContext
 unreachable|flight_create_sepia_adjustment|*const flight_sdk::SepiaAdjustmentOptions
-unreachable|flight_create_skeleton_2d_draw_order_animation_target|Box<flight_sdk::Ref<Vec<Option<flight_sdk::NodeRef>>>>
+unreachable|flight_create_skeleton_2d_draw_order_animation_target|Box<flight_sdk::Ref<Vec<Option<flight_sdk::Ref<dyn flight_sdk::Node>>>>>
 unreachable|flight_create_skeleton_2d_draw_order_channel|*const flight_sdk::Skeleton2DDrawOrderTimeline
 unreachable|flight_create_socket|*const flight_sdk::SocketOptions
 unreachable|flight_create_spot_light|*const flight_sdk::SpotLightOptions
@@ -1637,8 +1637,8 @@ unreachable|flight_find_files|*const flight_sdk::FileWalkOptions
 unreachable|flight_find_gizmo_smart_guides|*mut flight_sdk::GizmoSmartGuideResult
 unreachable|flight_find_node|Box<flight_sdk::Ref<dyn flight_sdk::Node>>
 unreachable|flight_find_node_by_name|Box<flight_sdk::Ref<dyn flight_sdk::Node>>
-unreachable|flight_find_nodes_in_lasso_selection|Box<Vec<flight_sdk::NodeRef>>
-unreachable|flight_find_nodes_in_marquee_selection|Box<Vec<flight_sdk::NodeRef>>
+unreachable|flight_find_nodes_in_lasso_selection|Box<Vec<flight_sdk::Ref<dyn flight_sdk::Node>>>
+unreachable|flight_find_nodes_in_marquee_selection|Box<Vec<flight_sdk::Ref<dyn flight_sdk::Node>>>
 unreachable|flight_find_requirement_catalog_entries|Box<Vec<flight_sdk::RequirementCatalogEntryRef>>
 unreachable|flight_find_timeline_label|Box<flight_sdk::Ref<flight_sdk::Timeline>>
 unreachable|flight_fire_statechart_trigger|Box<flight_sdk::Ref<flight_sdk::StatechartInstanceRaw>>
@@ -2134,13 +2134,13 @@ unreachable|flight_get_node2_dfields_skew_y|*const flight_sdk::Node2DFields
 unreachable|flight_get_node2_dfields_visible|*const flight_sdk::Node2DFields
 unreachable|flight_get_node2_dfields_x|*const flight_sdk::Node2DFields
 unreachable|flight_get_node2_dfields_y|*const flight_sdk::Node2DFields
-unreachable|flight_get_node_ancestors|Box<Vec<flight_sdk::NodeRef>>
+unreachable|flight_get_node_ancestors|Box<Vec<flight_sdk::Ref<dyn flight_sdk::Node>>>
 unreachable|flight_get_node_appearance_revision|Box<flight_sdk::Ref<dyn flight_sdk::Node>>
 unreachable|flight_get_node_child_at|Box<flight_sdk::Ref<dyn flight_sdk::Node>>
 unreachable|flight_get_node_child_by_name|Box<flight_sdk::Ref<dyn flight_sdk::Node>>
 unreachable|flight_get_node_child_count|Box<flight_sdk::Ref<dyn flight_sdk::Node>>
 unreachable|flight_get_node_child_index|Box<flight_sdk::Ref<dyn flight_sdk::Node>>
-unreachable|flight_get_node_children|Box<Vec<flight_sdk::NodeRef>>
+unreachable|flight_get_node_children|Box<Vec<flight_sdk::Ref<dyn flight_sdk::Node>>>
 unreachable|flight_get_node_children_revision|Box<flight_sdk::Ref<dyn flight_sdk::Node>>
 unreachable|flight_get_node_color_adjustments|Box<flight_sdk::Ref<dyn flight_sdk::Node>>
 unreachable|flight_get_node_common_ancestor|Box<flight_sdk::Ref<dyn flight_sdk::Node>>
@@ -2543,7 +2543,7 @@ unreachable|flight_get_screen_cursor_screen|*mut flight_sdk::ScreenQueryScratch
 unreachable|flight_get_screen_nearest_point|*mut flight_sdk::ScreenQueryScratch
 unreachable|flight_get_screen_nearest_rect|*mut flight_sdk::ScreenQueryScratch
 unreachable|flight_get_screens|Box<Vec<flight_sdk::ScreenInfo>>
-unreachable|flight_get_selected_nodes|Box<Vec<flight_sdk::NodeRef>>
+unreachable|flight_get_selected_nodes|Box<Vec<flight_sdk::Ref<dyn flight_sdk::Node>>>
 unreachable|flight_get_sensor_reading_interval|*const flight_sdk::SensorReading
 unreachable|flight_get_sensor_reading_timestamp|*const flight_sdk::SensorReading
 unreachable|flight_get_sepia_adjustment_intensity|Box<flight_sdk::SepiaAdjustment>

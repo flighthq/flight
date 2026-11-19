@@ -7,6 +7,8 @@ mod flight_ffi_hl_shim_test;
 mod flight_ffi_public_perimeter_test;
 #[path = "reachability_census_test.rs"]
 mod flight_ffi_reachability_census_test;
+#[path = "../reachability.rs"]
+mod flight_ffi_reachability_unit_test;
 #[path = "task_k_opaque_handle_test.rs"]
 mod flight_ffi_task_k_opaque_handle_test;
 #[path = "task_m_residual_skip_test.rs"]

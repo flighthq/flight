@@ -1,6 +1,7 @@
 use std::collections::{BTreeMap, BTreeSet};
 use std::fmt::Write as _;
 
+use syn::fold::Fold;
 use syn::visit::Visit;
 use syn::{Expr, FnArg, Item, ReturnType, Type};
 
@@ -35,7 +36,10 @@ pub struct Reports {
     pub baseline: String,
 }
 
-fn function_ownership(function: &syn::ItemFn) -> Option<Ownership> {
+fn function_ownership(
+    function: &syn::ItemFn,
+    aliases: &BTreeMap<String, String>,
+) -> Option<Ownership> {
     function.attrs.iter().find_map(|attribute| {
         if !attribute.path().is_ident("doc") {
             return None;
@@ -57,15 +61,15 @@ fn function_ownership(function: &syn::ItemFn) -> Option<Ownership> {
         return match fields.as_slice() {
             ["owned-return", _, owned_type] => Some(Ownership {
                 kind: OwnershipKind::OwnedReturn,
-                owned_type: Some(canonical_type(owned_type)),
+                owned_type: Some(canonical_type_with_aliases(owned_type, aliases)),
             }),
             ["owned-callback", _, owned_type] => Some(Ownership {
                 kind: OwnershipKind::OwnedCallback,
-                owned_type: Some(canonical_type(owned_type)),
+                owned_type: Some(canonical_type_with_aliases(owned_type, aliases)),
             }),
             ["owned-output", _, owned_type] => Some(Ownership {
                 kind: OwnershipKind::OwnedOutput,
-                owned_type: Some(canonical_type(owned_type)),
+                owned_type: Some(canonical_type_with_aliases(owned_type, aliases)),
             }),
             ["borrowed", _] => Some(Ownership {
                 kind: OwnershipKind::Borrowed,
@@ -90,9 +94,79 @@ fn is_generated_ffi_function(function: &syn::ItemFn) -> bool {
 }
 
 pub(crate) fn canonical_type(source: &str) -> String {
+    canonical_type_with_aliases(source, &BTreeMap::new())
+}
+
+pub(crate) fn canonical_type_with_aliases(
+    source: &str,
+    aliases: &BTreeMap<String, String>,
+) -> String {
     let ty: Type = syn::parse_str(source)
         .unwrap_or_else(|error| panic!("invalid reachability carrier {source}: {error}"));
-    type_fingerprint(&ty)
+    type_fingerprint_with_aliases(&ty, aliases)
+}
+
+pub(crate) fn unambiguous_alias_target(
+    targets: impl IntoIterator<Item = Option<String>>,
+) -> Option<String> {
+    let mut targets = targets.into_iter();
+    let first = targets.next()??;
+    targets
+        .all(|target| target.as_deref() == Some(first.as_str()))
+        .then_some(first)
+}
+
+fn alias_name(path: &syn::TypePath) -> Option<String> {
+    if path.qself.is_some() {
+        return None;
+    }
+    let first = path.path.segments.first()?;
+    let last = path.path.segments.last()?;
+    if !matches!(last.arguments, syn::PathArguments::None) {
+        return None;
+    }
+    (path.path.segments.len() == 1 || first.ident == "flight_sdk")
+        .then(|| last.ident.to_string())
+}
+
+struct AliasExpander<'a> {
+    aliases: &'a BTreeMap<String, String>,
+    resolving: BTreeSet<String>,
+}
+
+impl Fold for AliasExpander<'_> {
+    fn fold_type(&mut self, ty: Type) -> Type {
+        let ty = syn::fold::fold_type(self, ty);
+        let Type::Path(path) = &ty else {
+            return ty;
+        };
+        let Some(name) = alias_name(path) else {
+            return ty;
+        };
+        let Some(target) = self.aliases.get(&name) else {
+            return ty;
+        };
+        if !self.resolving.insert(name.clone()) {
+            return ty;
+        }
+        let target: Type = syn::parse_str(target)
+            .unwrap_or_else(|error| panic!("invalid reachability alias {name} = {target}: {error}"));
+        let expanded = self.fold_type(target);
+        self.resolving.remove(&name);
+        expanded
+    }
+}
+
+fn type_fingerprint_with_aliases(
+    ty: &Type,
+    aliases: &BTreeMap<String, String>,
+) -> String {
+    let expanded = AliasExpander {
+        aliases,
+        resolving: BTreeSet::new(),
+    }
+    .fold_type(ty.clone());
+    type_fingerprint(&expanded)
 }
 
 fn type_fingerprint(ty: &Type) -> String {
@@ -246,9 +320,7 @@ fn carrier_for_pointer(
     if matches!(&*pointer.elem, Type::BareFn(_)) {
         return None;
     }
-    let pointee = type_fingerprint(&pointer.elem);
-    let bare = pointee.rsplit("::").next().unwrap_or(&pointee);
-    let pointee = aliases.get(bare).cloned().unwrap_or(pointee);
+    let pointee = type_fingerprint_with_aliases(&pointer.elem, aliases);
     if is_caller_producible(&pointee, caller_producible) {
         return None;
     }
@@ -280,6 +352,7 @@ fn root_parameter(expr: &Expr) -> Option<String> {
 
 struct CastVisitor<'a> {
     parameters: &'a BTreeSet<String>,
+    aliases: &'a BTreeMap<String, String>,
     casts: BTreeMap<String, Vec<syn::TypePtr>>,
     all_casts: Vec<syn::TypePtr>,
 }
@@ -290,7 +363,7 @@ impl<'ast> Visit<'ast> for CastVisitor<'_> {
             syn::visit::visit_expr_cast(self, cast);
             return;
         };
-        let pointee = type_fingerprint(&pointer.elem);
+        let pointee = type_fingerprint_with_aliases(&pointer.elem, self.aliases);
         if !is_void(&pointee) && pointee != "_" {
             self.all_casts.push(pointer.clone());
             if let Some(parameter) = root_parameter(&cast.expr)
@@ -316,7 +389,7 @@ fn collect_function_carriers(
     caller_producible: &BTreeSet<String>,
     aliases: &BTreeMap<String, String>,
 ) -> FunctionCarriers {
-    let ownership = function_ownership(function);
+    let ownership = function_ownership(function, aliases);
     let parameters: BTreeSet<_> = function
         .sig
         .inputs
@@ -325,6 +398,7 @@ fn collect_function_carriers(
         .collect();
     let mut visitor = CastVisitor {
         parameters: &parameters,
+        aliases,
         casts: BTreeMap::new(),
         all_casts: Vec::new(),
     };
@@ -353,9 +427,9 @@ fn collect_function_carriers(
         {
             continue;
         }
-        let pointee = type_fingerprint(&pointer.elem);
+        let pointee = type_fingerprint_with_aliases(&pointer.elem, aliases);
         if let Type::Ptr(inner) = &*pointer.elem {
-            let inner_pointee = type_fingerprint(&inner.elem);
+            let inner_pointee = type_fingerprint_with_aliases(&inner.elem, aliases);
             if is_void(&inner_pointee) {
                 for cast in &visitor.all_casts {
                     if let Some(carrier) =
@@ -463,7 +537,7 @@ pub fn generate(
 
     let owned_types: BTreeSet<_> = generated
         .values()
-        .filter_map(|function| function_ownership(function))
+        .filter_map(|function| function_ownership(function, aliases))
         .filter_map(|ownership| ownership.owned_type)
         .filter(|ty| !is_caller_producible(ty, &BTreeSet::new()))
         .collect();
@@ -603,4 +677,132 @@ pub fn generate(
     }
 
     Reports { graph, baseline }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    fn aliases() -> BTreeMap<String, String> {
+        BTreeMap::from([
+            ("Kind".to_string(), "String".to_string()),
+            (
+                "Node2DRef".to_string(),
+                "flight_sdk::Ref<dyn flight_sdk::Node2D>".to_string(),
+            ),
+            (
+                "NodeRef".to_string(),
+                "flight_sdk::Ref<dyn flight_sdk::Node>".to_string(),
+            ),
+            ("NodeRefAlias".to_string(), "flight_sdk::NodeRef".to_string()),
+        ])
+    }
+
+    #[test]
+    fn nested_aliases_expand_recursively_to_a_fixed_point() {
+        let aliases = aliases();
+        assert_eq!(
+            canonical_type_with_aliases("Vec<Kind>", &aliases),
+            canonical_type_with_aliases("Vec<String>", &aliases)
+        );
+        assert_eq!(
+            canonical_type_with_aliases("Vec<NodeRef>", &aliases),
+            "Vec<flight_sdk::Ref<dyn flight_sdk::Node>>"
+        );
+        assert_eq!(
+            canonical_type_with_aliases("Option<Node2DRef>", &aliases),
+            "Option<flight_sdk::Ref<dyn flight_sdk::Node2D>>"
+        );
+        assert_eq!(
+            canonical_type_with_aliases("Ref<Vec<Option<NodeRefAlias>>>", &aliases),
+            "Ref<Vec<Option<flight_sdk::Ref<dyn flight_sdk::Node>>>>"
+        );
+    }
+
+    #[test]
+    fn only_unqualified_or_flight_sdk_alias_paths_expand() {
+        let aliases = aliases();
+        assert_eq!(
+            canonical_type_with_aliases("flight_sdk::Kind", &aliases),
+            "String"
+        );
+        assert_eq!(
+            canonical_type_with_aliases("other_sdk::Kind", &aliases),
+            "other_sdk::Kind"
+        );
+        assert_eq!(
+            canonical_type_with_aliases("Vec<AmbiguousAlias>", &aliases),
+            "Vec<AmbiguousAlias>"
+        );
+    }
+
+    #[test]
+    fn missing_nested_alias_is_an_observable_mutation() {
+        let aliases = aliases();
+        let expanded = canonical_type_with_aliases("Vec<Kind>", &aliases);
+        let mut mutated = aliases;
+        mutated.remove("Kind");
+        assert_ne!(
+            canonical_type_with_aliases("Vec<Kind>", &mutated),
+            expanded
+        );
+    }
+
+    #[test]
+    fn ambiguous_or_unproven_alias_targets_stay_out_of_the_registry() {
+        assert_eq!(
+            unambiguous_alias_target([
+                Some("flight_sdk::Ref<dyn flight_sdk::Node>".to_string()),
+                Some("flight_sdk::Ref<dyn flight_sdk::Node>".to_string()),
+            ]),
+            Some("flight_sdk::Ref<dyn flight_sdk::Node>".to_string())
+        );
+        assert_eq!(
+            unambiguous_alias_target([
+                Some("flight_sdk::Ref<dyn flight_sdk::Node>".to_string()),
+                Some("flight_sdk::Ref<dyn flight_sdk::Node2D>".to_string()),
+            ]),
+            None
+        );
+        assert_eq!(
+            unambiguous_alias_target([Some("String".to_string()), None]),
+            None
+        );
+    }
+
+    #[test]
+    fn ownership_aliases_are_expanded_before_boxing_and_fixed_point_solving() {
+        let source = r#"
+            #[doc = "flight-ffi ownership|owned-return|flight_free_alias_values|Vec<Kind>"]
+            pub unsafe extern "C" fn flight_alias_producer() -> *mut std::ffi::c_void {
+                unreachable!()
+            }
+            pub unsafe extern "C" fn flight_alias_consumer(
+                values: *const Vec<String>,
+            ) {
+                unreachable!()
+            }
+        "#;
+        let aliases = BTreeMap::from([("Kind".to_string(), "String".to_string())]);
+        let surface = BTreeSet::from([
+            "flight_alias_consumer".to_string(),
+            "flight_alias_producer".to_string(),
+        ]);
+        let reports = generate(source, &BTreeSet::new(), &aliases, &surface);
+        assert!(
+            reports
+                .graph
+                .contains("produce|flight_alias_producer|Box<Vec<String>>")
+        );
+        assert!(
+            reports
+                .graph
+                .contains("consume|flight_alias_consumer|Box<Vec<String>>")
+        );
+        assert!(
+            reports
+                .graph
+                .contains("function|flight_alias_consumer|surface|reachable|-")
+        );
+    }
 }

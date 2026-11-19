@@ -2099,14 +2099,35 @@ fn collect_reachability_aliases() -> BTreeMap<String, String> {
     TYPE_DEFINITIONS
         .get()
         .unwrap()
-        .keys()
-        .filter_map(|name| {
+        .iter()
+        .filter_map(|(name, definitions)| {
             let resolved = resolve_type_alias(name);
             if resolved == *name {
                 return None;
             }
             let qualified = qualify_opaque_type(&resolved)?;
-            Some((name.clone(), reachability::canonical_type(&qualified)))
+            let expected_target = reachability::canonical_type(&qualified);
+            // A root export selects the SDK meaning for a shared name. Without one, every
+            // definition must prove the vetted reachability alias target; nominal, generic, or
+            // conflicting definitions remain distinct carriers rather than being guessed together.
+            let exported_only = definitions.iter().any(|(exported, _)| *exported);
+            let proven_target = reachability::unambiguous_alias_target(
+                definitions
+                    .iter()
+                    .filter(|(exported, _)| *exported || !exported_only)
+                    .map(|(_, definition)| match definition {
+                        TypeDefinition::Alias(target) => {
+                            qualify_opaque_type(target).and_then(|target| {
+                                syn::parse_str::<syn::Type>(&target)
+                                    .ok()
+                                    .map(|_| reachability::canonical_type(&target))
+                            })
+                        }
+                        TypeDefinition::Nominal { .. } | TypeDefinition::GenericAlias => None,
+                    }),
+            );
+            (proven_target.as_deref() == Some(expected_target.as_str()))
+                .then(|| (name.clone(), expected_target))
         })
         .collect()
 }
