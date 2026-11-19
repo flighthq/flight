@@ -107,7 +107,7 @@ pub struct HostSurfaceCapabilities {
 }
 
 /// Canvas 2D drawable lifecycle (TS `HostCanvasCapability`); context and handles stay opaque.
-// flight-lint: allow(f64) the canvas size is a TS Number logical size carried as f64 to the host, which converts it to its own device extent (foreman-536d86b7)
+// flight-lint: allow(f64) the canvas width and height are the TS Number device-pixel extent, carried as f64 for exact transport; the host narrows and validates them once where it writes its device extent (foreman-536d86b7, foreman-f740c531)
 #[derive(Clone)]
 pub struct HostCanvasCapability {
     pub provider: ProviderRef,

@@ -5,7 +5,7 @@ use flight_surface::{CanvasSurface, HostCanvasCapability};
 
 use crate::CanvasHostSurfaces;
 
-// flight-lint: allow(f64) the canvas size is a TS Number logical size carried as f64 to the host, which converts it to its own device extent (foreman-536d86b7)
+// flight-lint: allow(f64) the canvas width and height are the TS Number device-pixel extent, carried as f64 for exact transport; the host narrows and validates them once where it writes its device extent (foreman-536d86b7, foreman-f740c531)
 // flight-lint: allow(conform-params) D5 caller-owned ownership table replaces the TS module WeakMap
 pub fn create_canvas_host_surface(
     surfaces: &mut CanvasHostSurfaces,

@@ -98,8 +98,10 @@ mod create_canvas_surface {
     use super::*;
 
     #[test]
-    fn passes_a_non_f32_logical_size_to_the_host_exactly() {
-        // 100.1 and 16777217 have no f32 values: an f32 lane would pass 100.0999984741211 and 16777216.
+    fn passes_the_device_pixel_extent_to_the_host_exactly() {
+        // The device-pixel extent is a TS Number carried as f64 until the host writes its device
+        // storage. 16777217 and 16777219 are integers an f32 lane cannot hold: it would pass
+        // 16777216 and 16777220.
         let created = Arc::new(Mutex::new(Vec::new()));
         let capability = capability(
             native("canvas"),
@@ -109,9 +111,9 @@ mod create_canvas_surface {
             Arc::new(Mutex::new(Vec::new())),
         );
         let window = app_window();
-        create_canvas_surface(&capability, &window, 100.1, 16_777_217.0, None);
+        create_canvas_surface(&capability, &window, 16_777_217.0, 16_777_219.0, None);
         let created = created.lock().unwrap();
-        assert_eq!((created[0].1, created[0].2), (100.1, 16_777_217.0));
+        assert_eq!((created[0].1, created[0].2), (16_777_217.0, 16_777_219.0));
     }
 
     #[test]
