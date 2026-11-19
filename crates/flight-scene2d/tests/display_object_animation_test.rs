@@ -16,7 +16,7 @@ fn channel(
     node: &Node2DRef,
     path: Node2DAnimationPath,
     components: usize,
-    values: &[f32],
+    values: &[f64],
     interpolation: Option<AnimationInterpolation>,
 ) -> AnimationChannel {
     let track = {
@@ -41,7 +41,7 @@ fn clip(channels: Vec<AnimationChannel>) -> AnimationClip {
     return create_animation_clip(channels, None, &[]);
 }
 
-fn transform(node: &Node2DRef) -> (f32, f32, f32, f32, f32, f32, f32, f32, f32) {
+fn transform(node: &Node2DRef) -> (f64, f64, f64, f64, f64, f64, f64, f64, f64) {
     let guard = node.read().unwrap();
     let t = guard.node2d_fields();
     return (
@@ -71,8 +71,27 @@ mod apply_animation_clip_to_node2d {
     use super::*;
 
     #[test]
+    fn writes_a_half_unit_position_sample_at_one_billion() {
+        // f32 spacing at 1e9 is 64, so a narrowed sample or field would land on 1e9.
+        let node = display_object();
+        let value = 1_000_000_000.5;
+        assert_eq!(value as f32 as f64, 1.0e9);
+        apply_animation_clip_to_node2d(
+            &clip(vec![channel(
+                &node,
+                Node2DAnimationPath::Position,
+                2,
+                &[value, 0.0, value, 0.0],
+                None,
+            )]),
+            0.5,
+        );
+        assert_eq!(transform(&node).0, value);
+    }
+
+    #[test]
     fn applies_each_vector_path_and_invalidates_the_transform() {
-        let cases: [(Node2DAnimationPath, [f32; 4], [usize; 2], [f32; 2]); 4] = [
+        let cases: [(Node2DAnimationPath, [f64; 4], [usize; 2], [f64; 2]); 4] = [
             (
                 Node2DAnimationPath::Position,
                 [0.0, 0.0, 10.0, 20.0],

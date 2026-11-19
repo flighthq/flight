@@ -17,13 +17,13 @@ use flight_scene2d::contract::*;
 
 use crate::scene2d_fixture::*;
 
-fn custom_node(x: f32) -> Node2DRef {
+fn custom_node(x: f64) -> Node2DRef {
     let mut node: Node2DTest = create_node2d("Custom".to_string(), None);
     node.x = x;
     return Arc::new(RwLock::new(node));
 }
 
-fn sprite_node(width: u32, height: u32, x: f32) -> Node2DRef {
+fn sprite_node(width: u32, height: u32, x: f64) -> Node2DRef {
     let sprite = create_sprite();
     {
         let mut s = sprite.write().unwrap();

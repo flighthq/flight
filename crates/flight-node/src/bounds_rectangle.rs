@@ -18,12 +18,9 @@ use crate::node_transform2d::{
 use crate::revision::invalidate_node_local_transform;
 use crate::types::*;
 
-// D1: the source's 1e-12 threshold is a double-precision cos near 90 degrees. Rotation is stored as
-// an f32 angle here, whose representable error near a quarter turn is about 4e-8 rad, so an exact
-// quarter turn yields |cos| ~4e-8 rather than 0. 1e-6 keeps the same "effectively singular" intent
-// (a fractional-degree rotation still solves) while remaining reachable in f32.
-// TS 1e-12; f32 counterpart (D1), principal-approved, listed for user review
-const SINGULAR_AXIS_EPSILON: f32 = 1e-6;
+// Matches TS: rotation and the local matrix are f64, so an exact quarter turn gives |cos| ~6e-17,
+// well under the threshold, while any rotation short of it still solves.
+const SINGULAR_AXIS_EPSILON: f64 = 1e-12;
 
 /// Writes the area of `source` relative to `target_coordinate_space` (TS
 /// `computeNodeBoundsRectangle`).
@@ -181,7 +178,7 @@ fn ensure_node_world_bounds_rectangle_in_root(target: &NodeRef, root: &NodeRef) 
 
 /// The node's height in its parent's coordinate space (TS `getNodeHeight`).
 
-pub fn get_node_height(source: &NodeRef) -> f32 {
+pub fn get_node_height(source: &NodeRef) -> f64 {
     let parent = get_node_parent(source);
     let mut bounds: Rectangle = create_rectangle(0.0, 0.0, 0.0, 0.0);
     compute_node_bounds_rectangle(&mut bounds, source, parent.as_ref());
@@ -220,7 +217,7 @@ pub fn get_node_parent_bounds_rectangle(target: &NodeRef) -> Rectangle {
 
 /// The node's width in its parent's coordinate space (TS `getNodeWidth`).
 
-pub fn get_node_width(source: &NodeRef) -> f32 {
+pub fn get_node_width(source: &NodeRef) -> f64 {
     let parent = get_node_parent(source);
     let mut bounds: Rectangle = create_rectangle(0.0, 0.0, 0.0, 0.0);
     compute_node_bounds_rectangle(&mut bounds, source, parent.as_ref());
@@ -408,7 +405,7 @@ fn same_node(a: &NodeRef, b: &NodeRef) -> bool {
     return std::sync::Arc::ptr_eq(a, b);
 }
 
-pub fn set_node_height(target: &NodeRef, value: f32) {
+pub fn set_node_height(target: &NodeRef, value: f64) {
     let scale_y = {
         let guard = target.read().unwrap();
         let Some(node) = guard.as_transform2d_node() else {
@@ -445,7 +442,7 @@ pub fn set_node_height(target: &NodeRef, value: f32) {
 /// Sets the node's width through its scale, declining when no finite scale can express it (TS
 /// `setNodeWidth`).
 
-pub fn set_node_width(target: &NodeRef, value: f32) {
+pub fn set_node_width(target: &NodeRef, value: f64) {
     let scale_x = {
         let guard = target.read().unwrap();
         let Some(node) = guard.as_transform2d_node() else {
@@ -479,7 +476,7 @@ pub fn set_node_width(target: &NodeRef, value: f32) {
     invalidate_node_local_transform(target);
 }
 
-fn sign_of(value: f32) -> f32 {
+fn sign_of(value: f64) -> f64 {
     return if value < 0.0 { -1.0 } else { 1.0 };
 }
 

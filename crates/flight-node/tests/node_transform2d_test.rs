@@ -4,9 +4,9 @@ use flight_node::contract::*;
 
 use crate::support::create_test_node_2d;
 
-const CLOSE: f32 = 1e-3;
+const CLOSE: f64 = 1e-3;
 
-fn close(actual: f32, expected: f32) {
+fn close(actual: f64, expected: f64) {
     assert!((actual - expected).abs() <= CLOSE, "{actual} != {expected}");
 }
 
@@ -21,7 +21,7 @@ fn edit(node: &NodeRef, apply: impl FnOnce(Transform2DMut<'_>)) {
     invalidate_node_local_transform(node);
 }
 
-fn set_world_test_x(node: &NodeRef, x: f32) {
+fn set_world_test_x(node: &NodeRef, x: f64) {
     {
         let mut guard = node.write().unwrap();
         *guard
@@ -272,7 +272,7 @@ mod ensure_node_world_matrix {
         assert_eq!(id(&child_a), id(&child_b));
         let child_b_revision = id(&child_b);
         for step in 0..5 {
-            set_world_test_x(&root_a, 50.0 + step as f32);
+            set_world_test_x(&root_a, 50.0 + step as f64);
             get_node_world_matrix(&child_a);
         }
         assert_eq!(get_node_world_matrix(&child_a).tx, 54.0);
@@ -388,6 +388,18 @@ mod get_node_local_matrix {
     use super::*;
 
     #[test]
+    fn keeps_a_quarter_unit_pivot_offset_at_one_billion() {
+        // f32 spacing at 1e9 is 64, so 1e9 - 0.25 collapses to 1e9 unless x and pivot stay f64.
+        let node = create_test_node_2d("Test");
+        edit(&node, |transform| {
+            *transform.x = 1.0e9;
+            *transform.pivot_x = 0.25;
+        });
+        assert_eq!((1.0e9_f32 - 0.25_f32) as f64, 1.0e9);
+        assert_eq!(get_node_local_matrix(&node).tx, 999_999_999.75);
+    }
+
+    #[test]
     fn ensures_and_returns_the_local_transform() {
         let node = create_test_node_2d("Test");
         assert!(
@@ -484,6 +496,16 @@ mod get_node_transform2d {
 
 mod get_node_world_matrix {
     use super::*;
+
+    #[test]
+    fn composes_a_half_unit_child_offset_under_a_parent_at_one_billion() {
+        let parent = create_test_node_2d("Parent");
+        let child = create_test_node_2d("Child");
+        add_node_child(&parent, &child);
+        set_world_test_x(&parent, 1.0e9);
+        set_world_test_x(&child, 0.5);
+        assert_eq!(get_node_world_matrix(&child).tx, 1_000_000_000.5);
+    }
 
     #[test]
     fn ensures_and_returns_the_world_transform() {
@@ -602,8 +624,8 @@ mod set_node_transform2d {
 mod skew {
     use super::*;
 
-    fn degrees(value: f32) -> f32 {
-        return value * std::f32::consts::PI / 180.0;
+    fn degrees(value: f64) -> f64 {
+        return value * std::f64::consts::PI / 180.0;
     }
 
     #[test]

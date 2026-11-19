@@ -3,7 +3,7 @@
 use flight_node::contract::*;
 
 // D23 (B): a viewport is created at the zero rect, then assigned (Principal 21f7557f).
-fn viewport_of(x: f32, y: f32, width: f32, height: f32) -> Viewport {
+fn viewport_of(x: f64, y: f64, width: f64, height: f64) -> Viewport {
     let mut viewport = create_viewport();
     viewport.x = x;
     viewport.y = y;

@@ -24,7 +24,7 @@ fn sprite_with(
     return sprite;
 }
 
-fn local_size(node: &NodeRef) -> (f32, f32) {
+fn local_size(node: &NodeRef) -> (f64, f64) {
     let bounds: Rectangle = get_node_local_bounds_rectangle(node);
     return (bounds.width, bounds.height);
 }
@@ -68,8 +68,8 @@ mod compute_sprite_local_bounds_rectangle {
         compute_sprite_local_bounds_rectangle(&mut out, &*sprite.read().unwrap());
         // The source's exact 30 x 40 is an f64 product; flight-texture keeps the uv window in f32
         // (approved D1 geometry width), where 100 * 0.3 rounds to 30.000002.
-        assert!((out.width - 30.0).abs() <= 30.0 * f32::EPSILON);
-        assert!((out.height - 40.0).abs() <= 40.0 * f32::EPSILON);
+        assert!((out.width - 30.0).abs() <= 30.0 * f64::EPSILON);
+        assert!((out.height - 40.0).abs() <= 40.0 * f64::EPSILON);
     }
 
     #[test]
@@ -88,7 +88,7 @@ mod compute_sprite_local_bounds_rectangle {
             let fields = guard.texture_fields_mut();
             fields.uv_scale.x = 0.3;
             fields.uv_scale.y = 0.2;
-            fields.uv_rotation = -std::f32::consts::FRAC_PI_2;
+            fields.uv_rotation = -std::f64::consts::FRAC_PI_2;
         }
         let mut out = create_rectangle(0.0, 0.0, 0.0, 0.0);
         compute_sprite_local_bounds_rectangle(&mut out, &*sprite_with(Some(image)).read().unwrap());

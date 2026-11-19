@@ -24,7 +24,7 @@ fn scale9_with_texture(
     return sprite;
 }
 
-fn size(node: &NodeRef) -> (f32, f32) {
+fn size(node: &NodeRef) -> (f64, f64) {
     let bounds = get_node_local_bounds_rectangle(node);
     return (bounds.width, bounds.height);
 }

@@ -117,6 +117,7 @@ pub struct NodeFields {
 /// The base node runtime tier (TS `NodeRuntime`, minus the owner-pending interaction slots).
 /// Every revision id is a wrapping revision counter; `-1` marks "no value computed for this axis".
 #[repr(C)]
+// flight-lint: allow(f32) the resolved color matrix is f32 color data consumed by the renderer
 pub struct NodeRuntime {
     pub appearance_id: u32,
     pub bounds_using_local_bounds_id: i32,
@@ -163,6 +164,7 @@ pub struct NodeSignals {
 /// The shared appearance field group (TS `HasAppearance`).
 #[derive(Clone, Debug, PartialEq)]
 #[repr(C)]
+// flight-lint: allow(f32) alpha is a normalized opacity factor, not spatial data
 pub struct HasAppearance {
     pub alpha: f32,
     pub visible: bool,
@@ -170,6 +172,7 @@ pub struct HasAppearance {
 
 /// The shared appearance runtime tier (TS `HasAppearanceRuntime`).
 #[repr(C)]
+// flight-lint: allow(f32) world alpha is a normalized opacity factor, not spatial data
 pub struct HasAppearanceRuntime {
     pub world_alpha: Option<f32>,
     pub world_alpha_using_appearance_id: i32,
@@ -202,24 +205,24 @@ pub struct HasMaterial {
 #[derive(Clone, Debug, PartialEq)]
 #[repr(C)]
 pub struct HasTransform2D {
-    pub pivot_x: f32,
-    pub pivot_y: f32,
-    pub rotation: f32,
-    pub scale_x: f32,
-    pub scale_y: f32,
-    pub skew_x: f32,
-    pub skew_y: f32,
-    pub x: f32,
-    pub y: f32,
+    pub pivot_x: f64,
+    pub pivot_y: f64,
+    pub rotation: f64,
+    pub scale_x: f64,
+    pub scale_y: f64,
+    pub skew_x: f64,
+    pub skew_y: f64,
+    pub x: f64,
+    pub y: f64,
 }
 
 /// The 2D transform runtime cache (TS `HasTransform2DRuntime`).
 #[repr(C)]
 pub struct HasTransform2DRuntime {
     pub local_matrix: Option<Matrix>,
-    pub rotation_angle: f32,
-    pub rotation_cosine: f32,
-    pub rotation_sine: f32,
+    pub rotation_angle: f64,
+    pub rotation_cosine: f64,
+    pub rotation_sine: f64,
     pub world_matrix: Option<Matrix>,
 }
 
@@ -268,37 +271,39 @@ pub struct HasBoundsRectangleRuntime {
 
 /// Borrowed read view of `HasTransform2D` fields.
 pub struct Transform2DRef<'a> {
-    pub x: &'a f32,
-    pub y: &'a f32,
-    pub rotation: &'a f32,
-    pub scale_x: &'a f32,
-    pub scale_y: &'a f32,
-    pub skew_x: &'a f32,
-    pub skew_y: &'a f32,
-    pub pivot_x: &'a f32,
-    pub pivot_y: &'a f32,
+    pub x: &'a f64,
+    pub y: &'a f64,
+    pub rotation: &'a f64,
+    pub scale_x: &'a f64,
+    pub scale_y: &'a f64,
+    pub skew_x: &'a f64,
+    pub skew_y: &'a f64,
+    pub pivot_x: &'a f64,
+    pub pivot_y: &'a f64,
 }
 
 /// Borrowed mutable view of `HasTransform2D` fields.
 pub struct Transform2DMut<'a> {
-    pub x: &'a mut f32,
-    pub y: &'a mut f32,
-    pub rotation: &'a mut f32,
-    pub scale_x: &'a mut f32,
-    pub scale_y: &'a mut f32,
-    pub skew_x: &'a mut f32,
-    pub skew_y: &'a mut f32,
-    pub pivot_x: &'a mut f32,
-    pub pivot_y: &'a mut f32,
+    pub x: &'a mut f64,
+    pub y: &'a mut f64,
+    pub rotation: &'a mut f64,
+    pub scale_x: &'a mut f64,
+    pub scale_y: &'a mut f64,
+    pub skew_x: &'a mut f64,
+    pub skew_y: &'a mut f64,
+    pub pivot_x: &'a mut f64,
+    pub pivot_y: &'a mut f64,
 }
 
 /// Borrowed read view of `HasAppearance` fields.
+// flight-lint: allow(f32) alpha is a normalized opacity factor, not spatial data
 pub struct AppearanceRef<'a> {
     pub alpha: &'a f32,
     pub visible: &'a bool,
 }
 
 /// Borrowed mutable view of `HasAppearance` fields.
+// flight-lint: allow(f32) alpha is a normalized opacity factor, not spatial data
 pub struct AppearanceMut<'a> {
     pub alpha: &'a mut f32,
     pub visible: &'a mut bool,
@@ -456,11 +461,11 @@ pub struct NodeOrderList {
 #[repr(C)]
 pub struct Viewport {
     runtime: EntityRuntimeSlot,
-    pub device_pixel_ratio: f32,
-    pub height: f32,
-    pub width: f32,
-    pub x: f32,
-    pub y: f32,
+    pub device_pixel_ratio: f64,
+    pub height: f64,
+    pub width: f64,
+    pub x: f64,
+    pub y: f64,
 }
 
 /// How scene2d content is mapped into the view (TS `ViewportScaleMode`), a closed union.

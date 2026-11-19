@@ -438,7 +438,7 @@ mod publish_node2d {
 mod set_node2d_clip {
     use super::*;
 
-    fn clip(width: f32, height: f32) -> Ref<flight_clip::ClipRegion> {
+    fn clip(width: f64, height: f64) -> Ref<flight_clip::ClipRegion> {
         return create_clip_region_from_rectangle(&create_rectangle(0.0, 0.0, width, height));
     }
 

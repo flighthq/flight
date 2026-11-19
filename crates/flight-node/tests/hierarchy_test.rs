@@ -97,7 +97,7 @@ fn edit_transform(node: &NodeRef, apply: impl FnOnce(Transform2DMut<'_>)) {
 }
 
 fn assert_world_close(actual: &flight_geometry::Matrix, expected: &flight_geometry::Matrix) {
-    let close = |left: f32, right: f32| (left - right).abs() <= 1e-3;
+    let close = |left: f64, right: f64| (left - right).abs() <= 1e-3;
     assert!(
         close(actual.a, expected.a)
             && close(actual.b, expected.b)
@@ -109,7 +109,7 @@ fn assert_world_close(actual: &flight_geometry::Matrix, expected: &flight_geomet
     );
 }
 
-fn set_world_test_x(node: &NodeRef, x: f32) {
+fn set_world_test_x(node: &NodeRef, x: f64) {
     {
         let mut guard = node.write().unwrap();
         *guard

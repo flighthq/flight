@@ -27,7 +27,7 @@ pub fn initialize_viewport(out: &mut Viewport) {
 }
 
 /// The viewport's aspect ratio, or 1 for a degenerate zero-height rect (TS `getViewportAspect`).
-pub fn get_viewport_aspect(viewport: &Viewport) -> f32 {
+pub fn get_viewport_aspect(viewport: &Viewport) -> f64 {
     return if viewport.height != 0.0 {
         viewport.width / viewport.height
     } else {

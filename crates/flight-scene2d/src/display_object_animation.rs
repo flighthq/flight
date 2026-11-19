@@ -11,8 +11,9 @@ use crate::types::*;
 /// Samples a target-free clip at `time` and applies every channel whose target is a
 /// `Node2DAnimationTarget`; other targets are ignored (TS `applyAnimationClipToNode2D`). Transform
 /// paths invalidate the local transform; alpha and visibility invalidate appearance.
-pub fn apply_animation_clip_to_node2d(clip: &AnimationClip, time: f32) {
-    let mut scratch = [0.0_f32; 4];
+// flight-lint: allow(f32) the alpha channel narrows to the f32 opacity field; transform channels stay f64
+pub fn apply_animation_clip_to_node2d(clip: &AnimationClip, time: f64) {
+    let mut scratch = [0.0_f64; 4];
     sample_animation_clip(&mut scratch, clip, time, &mut |sample, channel, _| {
         let Some(target) = channel
             .target_ref
@@ -26,7 +27,8 @@ pub fn apply_animation_clip_to_node2d(clip: &AnimationClip, time: f32) {
             let fields = node.node2d_fields_mut();
             match target.path {
                 Node2DAnimationPath::Alpha => {
-                    fields.alpha = sample[0];
+                    // Animation samples are f64; alpha narrows once into its f32 opacity field.
+                    fields.alpha = sample[0] as f32;
                     false
                 }
                 Node2DAnimationPath::Pivot => {

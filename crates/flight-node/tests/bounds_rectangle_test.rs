@@ -9,7 +9,7 @@ use flight_node::contract::*;
 
 use crate::support::create_test_node_2d;
 
-fn bounds_node(x: f32, y: f32, width: f32, height: f32) -> NodeRef {
+fn bounds_node(x: f64, y: f64, width: f64, height: f64) -> NodeRef {
     let node = create_test_node_2d("Test");
     let callback: NodeLocalBoundsComputer =
         Arc::new(move |out: &mut Rectangle, _source: &dyn Node| {
@@ -42,7 +42,7 @@ fn edit_transform(node: &NodeRef, apply: impl FnOnce(Transform2DMut<'_>)) {
     invalidate_node_local_transform(node);
 }
 
-type BoundsInput = Arc<std::sync::Mutex<(f32, f32, f32, f32)>>;
+type BoundsInput = Arc<std::sync::Mutex<(f64, f64, f64, f64)>>;
 
 fn mutable_bounds_node(input: BoundsInput) -> NodeRef {
     let node = create_test_node_2d("Test");
@@ -78,7 +78,7 @@ fn local_bounds(node: &NodeRef) -> Rectangle {
     return get_node_local_bounds_rectangle(node);
 }
 
-fn set_position(node: &NodeRef, x: f32, y: f32) {
+fn set_position(node: &NodeRef, x: f64, y: f64) {
     {
         let mut guard = node.write().unwrap();
         let transform = guard
@@ -816,6 +816,17 @@ mod set_node_height {
         edit_transform(&near, |transform| *transform.rotation = 89.999);
         set_node_height(&near, 50.0);
         assert!((get_node_height(&near) - 50.0).abs() <= 1e-2);
+    }
+
+    #[test]
+    fn solves_a_rotation_inside_the_ts_singular_threshold() {
+        // 89.99999 degrees leaves |cos| ~1.7e-7: above TS's 1e-12, so the height still solves.
+        let parent = bounds_node(0.0, 0.0, 0.0, 0.0);
+        let node = bounds_node(0.0, 0.0, 10.0, 20.0);
+        add_node_child(&parent, &node);
+        edit_transform(&node, |transform| *transform.rotation = 89.99999);
+        set_node_height(&node, 50.0);
+        assert!((get_node_height(&node) - 50.0).abs() <= 1e-6);
     }
 
     #[test]

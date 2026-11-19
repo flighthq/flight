@@ -5,9 +5,9 @@ use flight_node::contract::*;
 
 use crate::support::create_test_node_3d;
 
-const CLOSE: f32 = 1e-3;
+const CLOSE: f64 = 1e-3;
 
-fn close(actual: f32, expected: f32) {
+fn close(actual: f64, expected: f64) {
     assert!((actual - expected).abs() <= CLOSE, "{actual} != {expected}");
 }
 
@@ -22,7 +22,7 @@ fn edit(node: &NodeRef, apply: impl FnOnce(Transform3DMut<'_>)) {
     invalidate_node_local_transform(node);
 }
 
-fn set_translation(node: &NodeRef, x: f32, y: f32, z: f32) {
+fn set_translation(node: &NodeRef, x: f64, y: f64, z: f64) {
     edit(node, |transform| {
         transform.position.x = x;
         transform.position.y = y;
@@ -30,7 +30,7 @@ fn set_translation(node: &NodeRef, x: f32, y: f32, z: f32) {
     });
 }
 
-fn set_rotation_z(node: &NodeRef, radians: f32) {
+fn set_rotation_z(node: &NodeRef, radians: f64) {
     edit(node, |transform| {
         flight_geometry::set_quaternion_from_axis_angle(
             transform.rotation,
@@ -40,7 +40,7 @@ fn set_rotation_z(node: &NodeRef, radians: f32) {
     });
 }
 
-fn set_scale(node: &NodeRef, x: f32, y: f32, z: f32) {
+fn set_scale(node: &NodeRef, x: f64, y: f64, z: f64) {
     edit(node, |transform| {
         transform.scale.x = x;
         transform.scale.y = y;
@@ -48,7 +48,7 @@ fn set_scale(node: &NodeRef, x: f32, y: f32, z: f32) {
     });
 }
 
-fn translation_matrix(x: f32, y: f32, z: f32) -> flight_geometry::Matrix4 {
+fn translation_matrix(x: f64, y: f64, z: f64) -> flight_geometry::Matrix4 {
     let mut matrix = flight_geometry::create_matrix4();
     matrix.m[12] = x;
     matrix.m[13] = y;
@@ -299,7 +299,7 @@ mod get_node_world_matrix4 {
         let parent = create_test_node_3d("Test");
         let child = create_test_node_3d("Test");
         add_node_child(&parent, &child);
-        set_rotation_z(&parent, std::f32::consts::FRAC_PI_2);
+        set_rotation_z(&parent, std::f64::consts::FRAC_PI_2);
         set_translation(&child, 1.0, 0.0, 0.0);
         let world = get_node_world_matrix4(&child);
         close(world.m[12], 0.0);
@@ -313,7 +313,7 @@ mod get_node_world_matrix4 {
         let child = create_test_node_3d("Test");
         add_node_child(&parent, &child);
         set_translation(&parent, 10.0, 0.0, 0.0);
-        set_rotation_z(&parent, std::f32::consts::FRAC_PI_2);
+        set_rotation_z(&parent, std::f64::consts::FRAC_PI_2);
         set_translation(&child, 1.0, 0.0, 0.0);
         let world = get_node_world_matrix4(&child);
         close(world.m[12], 10.0);
@@ -341,10 +341,10 @@ mod get_node_world_matrix4 {
         add_node_child(&root, &parent);
         add_node_child(&parent, &child);
         set_translation(&root, 1.0, 2.0, 3.0);
-        set_rotation_z(&root, std::f32::consts::FRAC_PI_6);
+        set_rotation_z(&root, std::f64::consts::FRAC_PI_6);
         set_scale(&root, 2.0, 2.0, 2.0);
         set_translation(&parent, 4.0, 0.0, 0.0);
-        set_rotation_z(&parent, std::f32::consts::FRAC_PI_4);
+        set_rotation_z(&parent, std::f64::consts::FRAC_PI_4);
         set_translation(&child, 0.0, 5.0, 0.0);
         set_scale(&child, 3.0, 1.0, 1.0);
         let mut local_root = flight_geometry::create_matrix4();

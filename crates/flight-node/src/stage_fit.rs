@@ -10,10 +10,10 @@ use crate::types::*;
 
 /// Horizontal alignment offset of scaled content within the view (TS `computeScene2DFitAlignX`).
 pub fn compute_scene2d_fit_align_x(
-    scaled_content_width: f32,
-    view_width: f32,
+    scaled_content_width: f64,
+    view_width: f64,
     align: ViewportAlign,
-) -> f32 {
+) -> f64 {
     match align {
         ViewportAlign::Left | ViewportAlign::TopLeft | ViewportAlign::BottomLeft => return 0.0,
         ViewportAlign::Right | ViewportAlign::TopRight | ViewportAlign::BottomRight => {
@@ -27,10 +27,10 @@ pub fn compute_scene2d_fit_align_x(
 
 /// Vertical alignment offset of scaled content within the view (TS `computeScene2DFitAlignY`).
 pub fn compute_scene2d_fit_align_y(
-    scaled_content_height: f32,
-    view_height: f32,
+    scaled_content_height: f64,
+    view_height: f64,
     align: ViewportAlign,
-) -> f32 {
+) -> f64 {
     match align {
         ViewportAlign::Top | ViewportAlign::TopLeft | ViewportAlign::TopRight => return 0.0,
         ViewportAlign::Bottom | ViewportAlign::BottomLeft | ViewportAlign::BottomRight => {
@@ -44,21 +44,21 @@ pub fn compute_scene2d_fit_align_y(
 
 /// Uniform scale that fills the view, cropping overflow (TS `computeScene2DFitFillScale`).
 pub fn compute_scene2d_fit_fill_scale(
-    content_width: f32,
-    content_height: f32,
-    view_width: f32,
-    view_height: f32,
-) -> f32 {
+    content_width: f64,
+    content_height: f64,
+    view_width: f64,
+    view_height: f64,
+) -> f64 {
     return (view_width / content_width).max(view_height / content_height);
 }
 
 /// Uniform scale that fits the content inside the view (TS `computeScene2DFitScale`).
 pub fn compute_scene2d_fit_scale(
-    content_width: f32,
-    content_height: f32,
-    view_width: f32,
-    view_height: f32,
-) -> f32 {
+    content_width: f64,
+    content_height: f64,
+    view_width: f64,
+    view_height: f64,
+) -> f64 {
     return (view_width / content_width).min(view_height / content_height);
 }
 
@@ -67,8 +67,8 @@ pub fn compute_scene2d_fit_scale(
 pub fn compute_scene2d_fit_transform(
     out: &mut Matrix,
     scene2d: &Scene2DFitContext,
-    view_width: f32,
-    view_height: f32,
+    view_width: f64,
+    view_height: f64,
 ) {
     let mut content_x = 0.0;
     let mut content_y = 0.0;

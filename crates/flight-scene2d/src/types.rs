@@ -60,6 +60,7 @@ pub type Scale9SpriteRuntime = SpriteRuntime;
 /// flight-node's common node fields. Kind data lives on the kind's own struct as `data`.
 /// Dereferences to `NodeFields` for `kind`, `name` and `enabled`.
 #[repr(C)]
+// flight-lint: allow(f32) alpha is a normalized opacity factor, not spatial data
 pub struct Node2DFields {
     node: NodeFields,
     state: Node2DRuntime,
@@ -68,16 +69,16 @@ pub struct Node2DFields {
     pub clip: Option<Ref<flight_clip::ClipRegion>>,
     pub material: Option<Ref<dyn Material2D>>,
     pub material_data: Option<Ref<dyn MaterialData>>,
-    pub pivot_x: f32,
-    pub pivot_y: f32,
-    pub rotation: f32,
-    pub scale_x: f32,
-    pub scale_y: f32,
-    pub skew_x: f32,
-    pub skew_y: f32,
+    pub pivot_x: f64,
+    pub pivot_y: f64,
+    pub rotation: f64,
+    pub scale_x: f64,
+    pub scale_y: f64,
+    pub skew_x: f64,
+    pub skew_y: f64,
     pub visible: bool,
-    pub x: f32,
-    pub y: f32,
+    pub x: f64,
+    pub y: f64,
 }
 
 /// The private 2D runtime tier (TS `Node2DRuntime`): the transform, bounds and appearance caches

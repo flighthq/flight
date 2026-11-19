@@ -6,6 +6,7 @@ use crate::types::*;
 
 /// Options for `init_appearance_trait` (TS `Partial<HasAppearance>`).
 #[derive(Clone, Copy, Debug, Default, PartialEq)]
+// flight-lint: allow(f32) alpha is a normalized opacity factor, not spatial data
 pub struct HasAppearanceOptions {
     pub alpha: Option<f32>,
     pub visible: Option<bool>,

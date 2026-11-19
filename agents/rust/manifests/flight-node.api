@@ -3,13 +3,13 @@ src/bounds_rectangle.rs: pub fn compute_node_root_local_bounds_rectangle(out: &m
 src/bounds_rectangle.rs: pub fn ensure_node_local_bounds_rectangle(target: &NodeRef)
 src/bounds_rectangle.rs: pub fn ensure_node_parent_bounds_rectangle(target: &NodeRef)
 src/bounds_rectangle.rs: pub fn ensure_node_world_bounds_rectangle(target: &NodeRef, revisions: &mut NodeRevisionState)
-src/bounds_rectangle.rs: pub fn get_node_height(source: &NodeRef, revisions: &mut NodeRevisionState) -> f32
+src/bounds_rectangle.rs: pub fn get_node_height(source: &NodeRef) -> f64
 src/bounds_rectangle.rs: pub fn get_node_local_bounds_rectangle(target: &NodeRef) -> Rectangle
 src/bounds_rectangle.rs: pub fn get_node_parent_bounds_rectangle(target: &NodeRef) -> Rectangle
-src/bounds_rectangle.rs: pub fn get_node_width(source: &NodeRef, revisions: &mut NodeRevisionState) -> f32
+src/bounds_rectangle.rs: pub fn get_node_width(source: &NodeRef) -> f64
 src/bounds_rectangle.rs: pub fn get_node_world_bounds_rectangle(target: &NodeRef, revisions: &mut NodeRevisionState,) -> Rectangle
-src/bounds_rectangle.rs: pub fn set_node_height(target: &NodeRef, value: f32)
-src/bounds_rectangle.rs: pub fn set_node_width(target: &NodeRef, value: f32)
+src/bounds_rectangle.rs: pub fn set_node_height(target: &NodeRef, value: f64)
+src/bounds_rectangle.rs: pub fn set_node_width(target: &NodeRef, value: f64)
 src/contract.rs: pub use crate::bounds_rectangle::*;
 src/contract.rs: pub use crate::enable_node_guards::*;
 src/contract.rs: pub use crate::has_appearance::*;
@@ -48,7 +48,7 @@ src/has_clip.rs: #[derive(Clone, Debug, Default)] pub struct HasClipOptions { pu
 src/has_clip.rs: pub fn init_clip_trait(target: &mut HasClip, obj: Option<&HasClipOptions>)
 src/has_material.rs: #[derive(Clone, Default)] pub struct HasMaterialOptions { pub material: Option<Ref<dyn Material2D>>, pub material_data: Option<Ref<dyn MaterialData>>, }
 src/has_material.rs: pub fn init_material_trait(target: &mut HasMaterial, obj: Option<&HasMaterialOptions>)
-src/has_transform2d.rs: #[derive(Clone, Copy, Debug, Default, PartialEq)] pub struct HasTransform2DOptions { pub pivot_x: Option<f32>, pub pivot_y: Option<f32>, pub rotation: Option<f32>, pub scale_x: Option<f32>, pub scale_y: Option<f32>, pub skew_x: Option<f32>, pub skew_y: Option<f32>, pub x: Option<f32>, pub y: Option<f32>, }
+src/has_transform2d.rs: #[derive(Clone, Copy, Debug, Default, PartialEq)] pub struct HasTransform2DOptions { pub pivot_x: Option<f64>, pub pivot_y: Option<f64>, pub rotation: Option<f64>, pub scale_x: Option<f64>, pub scale_y: Option<f64>, pub skew_x: Option<f64>, pub skew_y: Option<f64>, pub x: Option<f64>, pub y: Option<f64>, }
 src/has_transform2d.rs: #[derive(Clone, Copy, Debug, Default, PartialEq, Eq)] pub struct Transform2DRuntimeMethods { }
 src/has_transform2d.rs: pub fn init_transform2d_runtime_trait(target: &mut HasTransform2DRuntime, _methods: Option<&Transform2DRuntimeMethods>,)
 src/has_transform2d.rs: pub fn init_transform2d_trait(target: &mut HasTransform2D, obj: Option<&HasTransform2DOptions>)
@@ -327,11 +327,11 @@ src/revision.rs: pub fn invalidate_node_local_transform(target: &NodeRef)
 src/revision.rs: pub fn invalidate_node_parent_reference(target: &NodeRef)
 src/revision.rs: pub fn invalidate_node_render(target: &NodeRef)
 src/revision.rs: pub fn invalidate_node_world_bounds(target: &NodeRef)
-src/stage_fit.rs: pub fn compute_scene2d_fit_align_x(scaled_content_width: f32, view_width: f32, align: ViewportAlign,) -> f32
-src/stage_fit.rs: pub fn compute_scene2d_fit_align_y(scaled_content_height: f32, view_height: f32, align: ViewportAlign,) -> f32
-src/stage_fit.rs: pub fn compute_scene2d_fit_fill_scale(content_width: f32, content_height: f32, view_width: f32, view_height: f32,) -> f32
-src/stage_fit.rs: pub fn compute_scene2d_fit_scale(content_width: f32, content_height: f32, view_width: f32, view_height: f32,) -> f32
-src/stage_fit.rs: pub fn compute_scene2d_fit_transform(out: &mut Matrix, scene2d: &Scene2DFitContext, view_width: f32, view_height: f32,)
+src/stage_fit.rs: pub fn compute_scene2d_fit_align_x(scaled_content_width: f64, view_width: f64, align: ViewportAlign,) -> f64
+src/stage_fit.rs: pub fn compute_scene2d_fit_align_y(scaled_content_height: f64, view_height: f64, align: ViewportAlign,) -> f64
+src/stage_fit.rs: pub fn compute_scene2d_fit_fill_scale(content_width: f64, content_height: f64, view_width: f64, view_height: f64,) -> f64
+src/stage_fit.rs: pub fn compute_scene2d_fit_scale(content_width: f64, content_height: f64, view_width: f64, view_height: f64,) -> f64
+src/stage_fit.rs: pub fn compute_scene2d_fit_transform(out: &mut Matrix, scene2d: &Scene2DFitContext, view_width: f64, view_height: f64,)
 src/traversal.rs: pub fn find_node(source: &NodeRef, predicate: &mut dyn FnMut(&NodeRef) -> bool) -> Option<NodeRef>
 src/traversal.rs: pub fn find_node_by_name(source: &NodeRef, name: &str) -> Option<NodeRef>
 src/traversal.rs: pub fn for_each_node_ancestor(source: &NodeRef, callback: &mut dyn FnMut(&NodeRef) -> bool)
@@ -346,10 +346,10 @@ src/types.rs: #[derive(Clone, Copy, Debug, Default, PartialEq)] pub struct HasBo
 src/types.rs: #[derive(Clone, Copy, Debug, PartialEq, Eq)] pub enum ViewportScaleMode { ExactFit, NoBorder, NoScale, ShowAll, }
 src/types.rs: #[derive(Clone, Debug, Default)] pub struct HasClip { pub clip: Option<Ref<ClipRegion>>, }
 src/types.rs: #[derive(Clone, Debug, PartialEq)] pub struct HasAppearance { pub alpha: f32, pub visible: bool, }
+src/types.rs: #[derive(Clone, Debug, PartialEq)] pub struct HasTransform2D { pub pivot_x: f64, pub pivot_y: f64, pub rotation: f64, pub scale_x: f64, pub scale_y: f64, pub skew_x: f64, pub skew_y: f64, pub x: f64, pub y: f64, }
+src/types.rs: #[derive(Clone, Debug, PartialEq)] pub struct Viewport { runtime: EntityRuntimeSlot, pub device_pixel_ratio: f64, pub height: f64, pub width: f64, pub x: f64, pub y: f64, }
 src/types.rs: #[derive(Clone, Debug, PartialEq)] pub struct HasBlendMode { pub blend_mode: Option<BlendMode>, }
-src/types.rs: #[derive(Clone, Debug, PartialEq)] pub struct HasTransform2D { pub pivot_x: f32, pub pivot_y: f32, pub rotation: f32, pub scale_x: f32, pub scale_y: f32, pub skew_x: f32, pub skew_y: f32, pub x: f32, pub y: f32, }
 src/types.rs: #[derive(Clone, Debug, PartialEq)] pub struct HasTransform3D { pub position: Vector3, pub rotation: Quaternion, pub scale: Vector3, }
-src/types.rs: #[derive(Clone, Debug, PartialEq)] pub struct Viewport { runtime: EntityRuntimeSlot, pub device_pixel_ratio: f32, pub height: f32, pub width: f32, pub x: f32, pub y: f32, }
 src/types.rs: #[derive(Clone, Default)] pub struct HasMaterial { pub material: Option<Ref<dyn Material2D>>, pub material_data: Option<Ref<dyn MaterialData>>, }
 src/types.rs: impl Default for HasAppearance
 src/types.rs: impl Default for HasAppearance :: fn default() -> Self
@@ -416,7 +416,7 @@ src/types.rs: pub struct ClipMut<'a> { pub clip: &'a mut Option<Ref<ClipRegion>>
 src/types.rs: pub struct ClipRef<'a> { pub clip: &'a Option<Ref<ClipRegion>>, }
 src/types.rs: pub struct HasAppearanceRuntime { pub world_alpha: Option<f32>, pub world_alpha_using_appearance_id: i32, pub world_alpha_using_parent_appearance_id: i32, pub world_appearance_id: u32, }
 src/types.rs: pub struct HasBoundsRectangleRuntime { pub bounds_rectangle: Option<Rectangle>, pub compute_local_bounds_rectangle: NodeLocalBoundsComputer, pub is_local_bounds_rectangle_valid: Option<NodeLocalBoundsValidity>, pub local_bounds_rectangle: Option<Rectangle>, pub world_bounds_rectangle: Option<Rectangle>, }
-src/types.rs: pub struct HasTransform2DRuntime { pub local_matrix: Option<Matrix>, pub rotation_angle: f32, pub rotation_cosine: f32, pub rotation_sine: f32, pub world_matrix: Option<Matrix>, }
+src/types.rs: pub struct HasTransform2DRuntime { pub local_matrix: Option<Matrix>, pub rotation_angle: f64, pub rotation_cosine: f64, pub rotation_sine: f64, pub world_matrix: Option<Matrix>, }
 src/types.rs: pub struct HasTransform3DRuntime { pub local_matrix4: Option<Matrix4>, pub local_matrix4_detached: bool, pub world_matrix4: Option<Matrix4>, }
 src/types.rs: pub struct MaterialMut<'a> { pub material: &'a mut Option<Ref<dyn Material2D>>, pub material_data: &'a mut Option<Ref<dyn MaterialData>>, }
 src/types.rs: pub struct MaterialRef<'a> { pub material: &'a Option<Ref<dyn Material2D>>, pub material_data: &'a Option<Ref<dyn MaterialData>>, }
@@ -427,8 +427,8 @@ src/types.rs: pub struct NodeSignals { runtime: EntityRuntimeSlot, pub on_child_
 src/types.rs: pub struct NodeTraits { pub key: Arc<NodeTraitsKey>, pub narrow: UnknownValue, }
 src/types.rs: pub struct NodeTraitsKey;
 src/types.rs: pub struct RendererDataFields { pub runtime: EntityRuntimeSlot, }
-src/types.rs: pub struct Transform2DMut<'a> { pub x: &'a mut f32, pub y: &'a mut f32, pub rotation: &'a mut f32, pub scale_x: &'a mut f32, pub scale_y: &'a mut f32, pub skew_x: &'a mut f32, pub skew_y: &'a mut f32, pub pivot_x: &'a mut f32, pub pivot_y: &'a mut f32, }
-src/types.rs: pub struct Transform2DRef<'a> { pub x: &'a f32, pub y: &'a f32, pub rotation: &'a f32, pub scale_x: &'a f32, pub scale_y: &'a f32, pub skew_x: &'a f32, pub skew_y: &'a f32, pub pivot_x: &'a f32, pub pivot_y: &'a f32, }
+src/types.rs: pub struct Transform2DMut<'a> { pub x: &'a mut f64, pub y: &'a mut f64, pub rotation: &'a mut f64, pub scale_x: &'a mut f64, pub scale_y: &'a mut f64, pub skew_x: &'a mut f64, pub skew_y: &'a mut f64, pub pivot_x: &'a mut f64, pub pivot_y: &'a mut f64, }
+src/types.rs: pub struct Transform2DRef<'a> { pub x: &'a f64, pub y: &'a f64, pub rotation: &'a f64, pub scale_x: &'a f64, pub scale_y: &'a f64, pub skew_x: &'a f64, pub skew_y: &'a f64, pub pivot_x: &'a f64, pub pivot_y: &'a f64, }
 src/types.rs: pub struct Transform3DMut<'a> { pub position: &'a mut Vector3, pub rotation: &'a mut Quaternion, pub scale: &'a mut Vector3, }
 src/types.rs: pub struct Transform3DRef<'a> { pub position: &'a Vector3, pub rotation: &'a Quaternion, pub scale: &'a Vector3, }
 src/types.rs: pub trait AppearanceNode: Node { fn appearance(&self) -> AppearanceRef<'_>; fn appearance_mut(&mut self) -> AppearanceMut<'_>; fn appearance_runtime(&self) -> &HasAppearanceRuntime; fn appearance_runtime_mut(&mut self) -> &mut HasAppearanceRuntime; }
@@ -448,5 +448,5 @@ src/types.rs: pub type NodeWeak = Weak<RwLock<dyn Node>>;
 src/types.rs: pub type RendererDataRef = Ref<dyn RendererData>;
 src/types.rs: pub use flight_layout::ViewportAlign;
 src/viewport.rs: pub fn create_viewport() -> Viewport
-src/viewport.rs: pub fn get_viewport_aspect(viewport: &Viewport) -> f32
+src/viewport.rs: pub fn get_viewport_aspect(viewport: &Viewport) -> f64
 src/viewport.rs: pub fn initialize_viewport(out: &mut Viewport)

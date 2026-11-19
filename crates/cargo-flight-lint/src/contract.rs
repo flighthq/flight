@@ -119,7 +119,9 @@ pub fn check_contract(
             | "flight-lighting"
             | "flight-math"
             | "flight-meshgeometry"
+            | "flight-node"
             | "flight-path"
+            | "flight-scene2d"
             | "flight-screen"
             | "flight-sensors"
             | "flight-spring"
@@ -1236,6 +1238,8 @@ mod tests {
         let double_source = "pub fn spatial_value(x: f64) -> f64 { return x; }";
         assert!(rules_for_crate(double_source, "flight-camera").is_empty());
         assert!(rules_for_crate(double_source, "flight-camera-controls").is_empty());
+        assert!(rules_for_crate(double_source, "flight-node").is_empty());
+        assert!(rules_for_crate(double_source, "flight-scene2d").is_empty());
         assert!(rules_for_crate(double_source, "flight-geometry").is_empty());
         assert!(rules_for_crate(double_source, "flight-math").is_empty());
         assert!(rules_for_crate(double_source, "flight-path").is_empty());
@@ -1244,6 +1248,11 @@ mod tests {
         assert_eq!(rules_for_crate(single_source, "flight-camera"), vec!["f32"]);
         assert_eq!(
             rules_for_crate(single_source, "flight-camera-controls"),
+            vec!["f32"]
+        );
+        assert_eq!(rules_for_crate(single_source, "flight-node"), vec!["f32"]);
+        assert_eq!(
+            rules_for_crate(single_source, "flight-scene2d"),
             vec!["f32"]
         );
         assert_eq!(

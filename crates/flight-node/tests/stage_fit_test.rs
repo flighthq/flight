@@ -7,7 +7,7 @@ use flight_node::contract::*;
 
 use crate::support::create_test_node_2d;
 
-fn bounds_node(x: f32, y: f32, width: f32, height: f32) -> NodeRef {
+fn bounds_node(x: f64, y: f64, width: f64, height: f64) -> NodeRef {
     let node = create_test_node_2d("Test");
     let callback: NodeLocalBoundsComputer =
         Arc::new(move |out: &mut Rectangle, _source: &dyn Node| {

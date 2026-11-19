@@ -7,15 +7,15 @@ use crate::types::*;
 /// Options for `init_transform2d_trait` (TS `Partial<HasTransform2D>`).
 #[derive(Clone, Copy, Debug, Default, PartialEq)]
 pub struct HasTransform2DOptions {
-    pub pivot_x: Option<f32>,
-    pub pivot_y: Option<f32>,
-    pub rotation: Option<f32>,
-    pub scale_x: Option<f32>,
-    pub scale_y: Option<f32>,
-    pub skew_x: Option<f32>,
-    pub skew_y: Option<f32>,
-    pub x: Option<f32>,
-    pub y: Option<f32>,
+    pub pivot_x: Option<f64>,
+    pub pivot_y: Option<f64>,
+    pub rotation: Option<f64>,
+    pub scale_x: Option<f64>,
+    pub scale_y: Option<f64>,
+    pub skew_x: Option<f64>,
+    pub skew_y: Option<f64>,
+    pub x: Option<f64>,
+    pub y: Option<f64>,
 }
 
 /// Methods a 2D runtime owner may supply (TS `MethodsOf<HasTransform2DRuntime>`; none today).

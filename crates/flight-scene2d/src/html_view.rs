@@ -63,8 +63,8 @@ pub fn compute_html_view_local_bounds_rectangle(out: &mut Rectangle, source: &dy
     let Some(view) = source.as_any().downcast_ref::<HtmlView>() else {
         return;
     };
-    out.width = view.data.width as f32;
-    out.height = view.data.height as f32;
+    out.width = view.data.width;
+    out.height = view.data.height;
 }
 
 /// The html view's runtime tier (TS `getHtmlViewRuntime`).
