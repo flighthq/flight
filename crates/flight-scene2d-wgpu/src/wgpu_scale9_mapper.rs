@@ -11,11 +11,12 @@ use flight_shape::ShapeScale9Mapper;
 
 /// Builds the mapper for `bounds` and `scale9_grid` at the given scale (TS `buildWgpuScale9Mapper`);
 /// `None` for a non-positive scale or empty bounds.
+// flight-lint: allow(f64) 2D geometry, logical sizes and the device pixel ratio are f64 CPU values (Task Q); they narrow once into f32 WGPU uniforms, instance floats, scissor and the f32 canvas-host and text-layout lanes
 pub fn build_wgpu_scale9_mapper(
     bounds: &Rectangle,
     scale9_grid: &Rectangle,
-    scale_x: f32,
-    scale_y: f32,
+    scale_x: f64,
+    scale_y: f64,
 ) -> Option<ShapeScale9Mapper> {
     if scale_x <= 0.0 || scale_y <= 0.0 || bounds.width <= 0.0 || bounds.height <= 0.0 {
         return None;
@@ -29,18 +30,19 @@ pub fn build_wgpu_scale9_mapper(
     let bh = bounds.height;
 
     return Some(ShapeScale9Mapper {
-        map_x: Arc::new(move |x: f32| to_scale9_position(x, gx, gw, bw, scale_x)),
-        map_y: Arc::new(move |y: f32| to_scale9_position(y, gy, gh, bh, scale_y)),
+        map_x: Arc::new(move |x: f64| to_scale9_position(x, gx, gw, bw, scale_x)),
+        map_y: Arc::new(move |y: f64| to_scale9_position(y, gy, gh, bh, scale_y)),
     });
 }
 
+// flight-lint: allow(f64) 2D geometry, logical sizes and the device pixel ratio are f64 CPU values (Task Q); they narrow once into f32 WGPU uniforms, instance floats, scissor and the f32 canvas-host and text-layout lanes
 fn to_scale9_position(
-    pos: f32,
-    scale9_start: f32,
-    scale9_center: f32,
-    unscaled_size: f32,
-    scale: f32,
-) -> f32 {
+    pos: f64,
+    scale9_start: f64,
+    scale9_center: f64,
+    unscaled_size: f64,
+    scale: f64,
+) -> f64 {
     let scale9_end = unscaled_size - scale9_center - scale9_start;
     let size = unscaled_size * scale;
     let center = size - scale9_start - scale9_end;

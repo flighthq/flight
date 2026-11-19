@@ -87,6 +87,7 @@ pub fn destroy_wgpu_rich_text_data(state: &mut WgpuRenderState, data: RendererDa
     }
 }
 
+// flight-lint: allow(f64) 2D geometry, logical sizes and the device pixel ratio are f64 CPU values (Task Q); they narrow once into f32 WGPU uniforms, instance floats, scissor and the f32 canvas-host and text-layout lanes
 fn draw_rich_text_to_canvas(
     context: &CanvasRenderingContext2D,
     source: &RichText,
@@ -107,13 +108,13 @@ fn draw_rich_text_to_canvas(
 
     context.save();
     context.begin_path();
-    context.rect(0.0, 0.0, field_w, field_h);
+    context.rect(0.0, 0.0, f64::from(field_w), f64::from(field_h));
     context.clip();
     context.set_text_baseline("alphabetic");
     context.set_text_align("start");
 
     for group in &result.groups {
-        if (group.line_index as f32) < first_visible_line {
+        if (group.line_index as f64) < first_visible_line {
             continue;
         }
 
@@ -123,8 +124,10 @@ fn draw_rich_text_to_canvas(
             format.color.unwrap_or(data.text_color),
         ));
         let slice = utf16_substring(text, group.start_index, group.end_index);
-        let x = group.offset_x - scroll_x_offset;
-        let y = group.offset_y + group.ascent - scroll_y_offset;
+        // Declared f32 text-layout values widen exactly; the scroll is subtracted in f64 and the
+        // result goes straight to the f64 canvas.
+        let x = f64::from(group.offset_x) - scroll_x_offset;
+        let y = f64::from(group.offset_y) + f64::from(group.ascent) - scroll_y_offset;
         context.fill_text(&slice, x, y);
 
         let underline = format.underline.unwrap_or(false);
@@ -133,21 +136,21 @@ fn draw_rich_text_to_canvas(
             context.set_stroke_style(&compute_rgba_css_string(
                 format.color.unwrap_or(data.text_color),
             ));
-            context.set_line_width(1.0_f32.max(format.size.unwrap_or(12.0) / 16.0));
+            context.set_line_width(1.0_f64.max(f64::from(format.size.unwrap_or(12.0)) / 16.0));
             if underline {
-                let line_y = y + group.descent;
+                let line_y = y + f64::from(group.descent);
                 context.begin_path();
                 context.move_to(x, line_y);
-                context.line_to(x + group.width, line_y);
+                context.line_to(x + f64::from(group.width), line_y);
                 context.stroke();
             }
             // Strikethrough sits ~35% of the ascent above the baseline — through the middle of the
             // glyphs, matching the canvas rich text renderer.
             if strikethrough {
-                let line_y = y - group.ascent * 0.35;
+                let line_y = y - f64::from(group.ascent) * 0.35;
                 context.begin_path();
                 context.move_to(x, line_y);
-                context.line_to(x + group.width, line_y);
+                context.line_to(x + f64::from(group.width), line_y);
                 context.stroke();
             }
         }
@@ -183,6 +186,7 @@ pub fn draw_wgpu_rich_text(
 
 /// Rasterizes and draws a RichText node with an optional overlay (TS
 /// `drawWgpuRichTextWithOverlay`).
+// flight-lint: allow(f64) 2D geometry, logical sizes and the device pixel ratio are f64 CPU values (Task Q); they narrow once into f32 WGPU uniforms, instance floats, scissor and the f32 canvas-host and text-layout lanes
 pub fn draw_wgpu_rich_text_with_overlay(
     state: &mut WgpuRenderState,
     render_proxy: &RenderProxy2D<WgpuRenderState>,
@@ -244,42 +248,45 @@ pub fn draw_wgpu_rich_text_with_overlay(
         state,
         &measure_context,
     );
-    let max_tex_dim = get_wgpu_render_state_native_device(state)
-        .device
-        .limits()
-        .max_texture_dimension_2d as f32;
+    let max_tex_dim = f64::from(
+        get_wgpu_render_state_native_device(state)
+            .device
+            .limits()
+            .max_texture_dimension_2d,
+    );
     let pixel_ratio = state.render_state().pixel_ratio;
     let max_logical = (max_tex_dim / pixel_ratio).floor();
     let spec = rich_text_bounds_spec(data);
-    let field_w = compute_text_bounds_width(&spec, &result)
+    // Whole-pixel field size, clamped in f64 and stored once in the f32 text-layout lane.
+    let field_w = f64::from(compute_text_bounds_width(&spec, &result))
         .ceil()
-        .min(max_logical);
-    let field_h = compute_text_bounds_height(&spec, &result)
+        .min(max_logical) as f32;
+    let field_h = f64::from(compute_text_bounds_height(&spec, &result))
         .ceil()
-        .min(max_logical);
+        .min(max_logical) as f32;
     if field_w <= 0.0 || field_h <= 0.0 {
         return;
     }
 
-    let pw = (field_w * pixel_ratio).ceil();
-    let ph = (field_h * pixel_ratio).ceil();
+    let pw = (f64::from(field_w) * pixel_ratio).ceil();
+    let ph = (f64::from(field_h) * pixel_ratio).ceil();
     let Some(surface) = ensure_wgpu_rich_text_surface(state, rich_data, pw, ph) else {
         return;
     };
     let context_handle = surface.read().unwrap().context.clone();
     let off_ctx = context_handle.handle.clone();
     off_ctx.set_transform(pixel_ratio, 0.0, 0.0, pixel_ratio, 0.0, 0.0);
-    off_ctx.clear_rect(0.0, 0.0, field_w, field_h);
+    off_ctx.clear_rect(0.0, 0.0, f64::from(field_w), f64::from(field_h));
 
     if data.background {
         off_ctx.set_fill_style(&compute_rgba_css_string(data.background_color));
-        off_ctx.fill_rect(0.0, 0.0, field_w, field_h);
+        off_ctx.fill_rect(0.0, 0.0, f64::from(field_w), f64::from(field_h));
     }
 
     if data.border {
         off_ctx.set_stroke_style(&compute_rgba_css_string(data.border_color));
         off_ctx.set_line_width(1.0);
-        off_ctx.stroke_rect(0.0, 0.0, field_w, field_h);
+        off_ctx.stroke_rect(0.0, 0.0, f64::from(field_w), f64::from(field_h));
     }
 
     if !content_text.is_empty() {
@@ -333,10 +340,10 @@ pub fn draw_wgpu_rich_text_with_overlay(
         state,
         render_proxy,
         &entry,
-        offset_x,
+        f64::from(offset_x),
         0.0,
-        offset_x + field_w,
-        field_h,
+        f64::from(offset_x + field_w),
+        f64::from(field_h),
         0.0,
         0.0,
         1.0,
@@ -346,11 +353,12 @@ pub fn draw_wgpu_rich_text_with_overlay(
 
 // Returns a surface at the requested pixel size, creating or resizing via destroy + recreate. The
 // paired image stays in sync with the surface lifecycle.
+// flight-lint: allow(f64) 2D geometry, logical sizes and the device pixel ratio are f64 CPU values (Task Q); they narrow once into f32 WGPU uniforms, instance floats, scissor and the f32 canvas-host and text-layout lanes
 fn ensure_wgpu_rich_text_surface(
     state: &mut WgpuRenderState,
     data: &mut WgpuRichTextData,
-    pw: f32,
-    ph: f32,
+    pw: f64,
+    ph: f64,
 ) -> Option<flight_entity::Ref<CanvasSurface>> {
     if let Some(surface) = &data.surface
         && data.alloc_w == pw
@@ -395,6 +403,7 @@ fn ensure_wgpu_rich_text_surface(
     return Some(surface);
 }
 
+// flight-lint: allow(f64) 2D geometry, logical sizes and the device pixel ratio are f64 CPU values (Task Q); they narrow once into f32 WGPU uniforms, instance floats, scissor and the f32 canvas-host and text-layout lanes
 fn layout_rich_text(
     result: &mut TextLayoutResult,
     data: &RichTextData,
@@ -403,10 +412,12 @@ fn layout_rich_text(
     state: &WgpuRenderState,
     context: &CanvasRenderingContext2D,
 ) {
-    let max_tex_dim = get_wgpu_render_state_native_device(state)
-        .device
-        .limits()
-        .max_texture_dimension_2d as f32;
+    let max_tex_dim = f64::from(
+        get_wgpu_render_state_native_device(state)
+            .device
+            .limits()
+            .max_texture_dimension_2d,
+    );
     let max_logical = (max_tex_dim / state.render_state().pixel_ratio).floor();
     let measure_context = context.handle.clone();
 
@@ -417,7 +428,7 @@ fn layout_rich_text(
             border: None,
             direction: None,
             format_ranges,
-            height: data.height.min(max_logical),
+            height: data.height.min(max_logical) as f32,
             justification: None,
             max_lines: None,
             measure: Arc::new(move |value, format| {
@@ -432,7 +443,7 @@ fn layout_rich_text(
             } else {
                 TextVerticalAlign::Top
             }),
-            width: (if data.word_wrap { data.width } else { 10000.0 }).min(max_logical),
+            width: (if data.word_wrap { data.width } else { 10000.0 }).min(max_logical) as f32,
             word_wrap: Some(data.word_wrap),
         },
     );
@@ -455,8 +466,8 @@ pub fn register_wgpu_text_input_overlay(state: &mut WgpuRenderState, overlay: Wg
 fn rich_text_bounds_spec(data: &RichTextData) -> TextBoundsSpec {
     return TextBoundsSpec {
         auto_size: data.auto_size,
-        height: data.height,
-        width: data.width,
+        height: data.height as f32,
+        width: data.width as f32,
         word_wrap: Some(data.word_wrap),
     };
 }

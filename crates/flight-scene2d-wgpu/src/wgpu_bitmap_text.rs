@@ -49,6 +49,7 @@ pub fn register_wgpu_bitmap_text_renderer(state: &mut WgpuRenderState) {
 }
 
 // Mirrors the QuadBatch vector2 inner loop, sourced from each page's own `ids`/`transforms`.
+// flight-lint: allow(f64) 2D geometry, logical sizes and the device pixel ratio are f64 CPU values (Task Q); they narrow once into f32 WGPU uniforms, instance floats, scissor and the f32 canvas-host and text-layout lanes
 fn submit_wgpu_bitmap_text(state: &mut WgpuRenderState, node: &RenderProxy2D<WgpuRenderState>) {
     if get_wgpu_render_state_runtime(state).render_pass.is_none() {
         return;
@@ -128,8 +129,8 @@ fn submit_wgpu_bitmap_text(state: &mut WgpuRenderState, node: &RenderProxy2D<Wgp
             glyph_transform.b = pb;
             glyph_transform.c = pc;
             glyph_transform.d = pd;
-            glyph_transform.tx = pa * dx + pc * dy + ptx;
-            glyph_transform.ty = pb * dx + pd * dy + pty;
+            glyph_transform.tx = pa * f64::from(dx) + pc * f64::from(dy) + ptx;
+            glyph_transform.ty = pb * f64::from(dx) + pd * f64::from(dy) + pty;
             write_wgpu_atlas_region_instance(
                 &mut get_wgpu_render_state_runtime_mut(state).quad_batch_writer_instance_data,
                 write_base,

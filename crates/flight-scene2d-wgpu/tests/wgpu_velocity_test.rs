@@ -122,6 +122,41 @@ mod register_wgpu_velocity_writer {
 mod render_wgpu_velocity {
     use super::*;
 
+    fn precision_writer(ctx: &mut flight_render_wgpu::WgpuVelocityContext<'_>, _node: &NodeRef) {
+        draw_wgpu_velocity_quad(ctx, 77.7, 0.0, 1.0, 1.0, 0.1, 0.0);
+    }
+
+    #[test]
+    fn maps_clip_space_and_velocity_in_f64_before_the_single_uniform_narrowing() {
+        // On a 128-wide target, x = 77.7 maps to 0.21406249701976776 in f64 (f32 arithmetic:
+        // 0.21406245231628418); velocity 0.1 x pixel ratio 1.1 narrows once to 0.10999999940395355
+        // (f32 arithmetic: 0.11000000685453415).
+        let mut state = create_wgpu_render_state_for_test(None);
+        flight_render::RenderState::render_state_mut(&mut state).pixel_ratio = 1.1;
+        let target = create_wgpu_velocity_target(&state, 128.0, 64.0);
+        let root: NodeRef = flight_scene2d::create_display_object();
+        register_wgpu_velocity_writer(
+            &mut state,
+            DISPLAY_OBJECT_KIND.to_string(),
+            precision_writer,
+        );
+        let mut field = create_velocity_field();
+        begin_velocity_frame(&mut field);
+        contribute_velocity(&mut field, get_entity_id(&*root.read().unwrap()), 1.0, 0.0);
+        open_test_screen_pass(&mut state);
+        let records = record_test_commands(&get_wgpu_render_state_native_device(&state));
+
+        render_wgpu_velocity(&mut state, &root, &field, &target);
+
+        let writes = velocity_writes(&records);
+        assert_eq!(writes.len(), 1);
+        assert_eq!(writes[0][0], ((77.7_f64 / 128.0) * 2.0 - 1.0) as f32);
+        assert_ne!(writes[0][0], (77.7_f32 / 128.0_f32) * 2.0_f32 - 1.0_f32);
+        assert_eq!(writes[0][4], (0.1_f64 * 1.1) as f32);
+        assert_ne!(writes[0][4], 0.1_f32 * 1.1_f32);
+        submit_wgpu_frame(&mut state);
+    }
+
     #[test]
     fn dispatches_the_registered_writer_for_a_moving_node() {
         let mut state = create_wgpu_render_state_for_test(None);

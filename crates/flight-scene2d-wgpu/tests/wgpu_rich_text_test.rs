@@ -145,6 +145,31 @@ mod draw_wgpu_rich_text {
     }
 
     #[test]
+    fn subtracts_the_horizontal_scroll_in_f64_and_passes_it_straight_to_the_canvas() {
+        // The f32 layout offset widens exactly and the 0.1 scroll is subtracted in f64: the text
+        // moves by exactly -0.1. An f32 round trip would land on a different, f32-rounded x.
+        let text_x = |scroll_h: f64| -> f64 {
+            let mut state = create_test_state_in_pass();
+            let record = set_test_hosts(&mut state);
+            let source = create_test_rich_text("hello", 100.0, 40.0);
+            source.write().unwrap().data.scroll_h = scroll_h;
+            let proxy = create_test_rich_text_proxy(&mut state, &source);
+            draw_wgpu_rich_text(&mut state, &proxy);
+            let call = record
+                .last_context()
+                .calls()
+                .into_iter()
+                .find(|call| call.starts_with("fillText(hello,"))
+                .unwrap();
+            submit_wgpu_frame(&mut state);
+            let x = call["fillText(hello,".len()..].split(',').next().unwrap();
+            return x.parse::<f64>().unwrap();
+        };
+        let unscrolled = text_x(0.0);
+        assert_eq!(text_x(0.1), unscrolled - 0.1);
+    }
+
+    #[test]
     fn rasterizes_the_glyph_runs_background_and_border() {
         let mut state = create_test_state_in_pass();
         let record = set_test_hosts(&mut state);

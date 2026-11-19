@@ -441,6 +441,7 @@ fn set_slot<T>(values: &mut Vec<T>, index: usize, value: T) {
 // Column-major mat3x3f = projection · worldTransform, mapping shape-local points to clip space exactly
 // as the clip contours and the quad draw build it. Each column is padded to 4 floats; the color
 // (floats 12..15) is filled per mesh by the caller.
+// flight-lint: allow(f64) 2D geometry, logical sizes and the device pixel ratio are f64 CPU values (Task Q); they narrow once into f32 WGPU uniforms, instance floats, scissor and the f32 canvas-host and text-layout lanes
 fn shape_mesh_matrix(
     state: &WgpuRenderState,
     render_proxy: &RenderProxy2D<WgpuRenderState>,
@@ -449,27 +450,27 @@ fn shape_mesh_matrix(
     let viewport = get_wgpu_render_pass_viewport(state);
     let iw = 2.0
         / if viewport.width != 0.0 {
-            viewport.width
+            f64::from(viewport.width)
         } else {
             1.0
         };
     let ih = 2.0
         / if viewport.height != 0.0 {
-            viewport.height
+            f64::from(viewport.height)
         } else {
             1.0
         };
     let t = &render_proxy.transform_2d;
-    out[0] = t.a * iw;
-    out[1] = -t.b * ih;
+    out[0] = (t.a * iw) as f32;
+    out[1] = (-t.b * ih) as f32;
     out[2] = 0.0;
     out[3] = 0.0;
-    out[4] = t.c * iw;
-    out[5] = -t.d * ih;
+    out[4] = (t.c * iw) as f32;
+    out[5] = (-t.d * ih) as f32;
     out[6] = 0.0;
     out[7] = 0.0;
-    out[8] = t.tx * iw - 1.0;
-    out[9] = -t.ty * ih + 1.0;
+    out[8] = (t.tx * iw - 1.0) as f32;
+    out[9] = (-t.ty * ih + 1.0) as f32;
     out[10] = 1.0;
     out[11] = 0.0;
 }

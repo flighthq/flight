@@ -51,13 +51,14 @@ pub type WgpuRichTextOverlay =
 /// The per-node cache every shape strategy reads and writes (TS `WgpuShapeRendererData`): the
 /// tessellated half (`meshes`, `mesh_buffers`) and the rasterized half (`surface`, `image`, `last_*`).
 #[derive(Default)]
+// flight-lint: allow(f64) logical and allocated surface sizes, scales and the pixel ratio are f64 CPU cache values (Task Q)
 pub struct WgpuShapeRendererData {
     pub(crate) renderer_data: RendererDataFields,
     pub image: Option<Ref<ImageResource>>,
     pub last_content_id: i64,
-    pub last_h: f32,
-    pub last_pixel_ratio: f32,
-    pub last_w: f32,
+    pub last_h: f64,
+    pub last_pixel_ratio: f64,
+    pub last_w: f64,
     pub mesh_buffers: WgpuShapeMeshBuffers,
     pub mesh_version: i64,
     pub meshes: Option<Vec<WgpuShapeMesh>>,
@@ -67,39 +68,42 @@ pub struct WgpuShapeRendererData {
 /// The scratch a TextLabel node keeps on the WebGPU backend (TS `WgpuTextLabelData`): its raster
 /// surface and image, the allocated pixel size, and the logical size last drawn.
 #[derive(Default)]
+// flight-lint: allow(f64) logical and allocated surface sizes, scales and the pixel ratio are f64 CPU cache values (Task Q)
 pub struct WgpuTextLabelData {
     pub(crate) renderer_data: RendererDataFields,
-    pub alloc_h: f32,
-    pub alloc_w: f32,
+    pub alloc_h: f64,
+    pub alloc_w: f64,
     pub image: Option<Ref<ImageResource>>,
     pub last_content_id: i64,
-    pub last_pixel_ratio: f32,
-    pub log_h: f32,
-    pub log_w: f32,
+    pub last_pixel_ratio: f64,
+    pub log_h: f64,
+    pub log_w: f64,
     pub surface: Option<Ref<CanvasSurface>>,
 }
 
 /// The scratch a RichText node keeps on the WebGPU backend (TS `WgpuRichTextData`).
 #[derive(Default)]
+// flight-lint: allow(f64) logical and allocated surface sizes, scales and the pixel ratio are f64 CPU cache values (Task Q)
 pub struct WgpuRichTextData {
     pub(crate) renderer_data: RendererDataFields,
-    pub alloc_h: f32,
-    pub alloc_w: f32,
+    pub alloc_h: f64,
+    pub alloc_w: f64,
     pub image: Option<Ref<ImageResource>>,
     pub surface: Option<Ref<CanvasSurface>>,
 }
 
 /// The scratch a Scale9Shape node keeps on the WebGPU backend (TS `WgpuScale9ShapeData`).
 #[derive(Default)]
+// flight-lint: allow(f64) logical and allocated surface sizes, scales and the pixel ratio are f64 CPU cache values (Task Q)
 pub struct WgpuScale9ShapeData {
     pub(crate) renderer_data: RendererDataFields,
     pub image: Option<Ref<ImageResource>>,
-    pub last_h: f32,
-    pub last_scale_x: f32,
-    pub last_scale_y: f32,
+    pub last_h: f64,
+    pub last_scale_x: f64,
+    pub last_scale_y: f64,
     pub last_content_id: i64,
-    pub last_pixel_ratio: f32,
-    pub last_w: f32,
+    pub last_pixel_ratio: f64,
+    pub last_w: f64,
     pub surface: Option<Ref<CanvasSurface>>,
 }
 

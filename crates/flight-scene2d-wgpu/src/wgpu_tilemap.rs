@@ -44,6 +44,7 @@ pub fn register_wgpu_tilemap_renderer(state: &mut WgpuRenderState) {
     register_node_renderer(state, TILEMAP_KIND.to_string(), &WGPU_TILEMAP_RENDERER);
 }
 
+// flight-lint: allow(f64) 2D geometry, logical sizes and the device pixel ratio are f64 CPU values (Task Q); they narrow once into f32 WGPU uniforms, instance floats, scissor and the f32 canvas-host and text-layout lanes
 fn submit_wgpu_tilemap(state: &mut WgpuRenderState, tilemap_node: &RenderProxy2D<WgpuRenderState>) {
     if get_wgpu_render_state_runtime(state).render_pass.is_none() {
         return;
@@ -122,8 +123,8 @@ fn submit_wgpu_tilemap(state: &mut WgpuRenderState, tilemap_node: &RenderProxy2D
                 continue;
             }
 
-            let dx = col as f32 * tile_width;
-            let dy = row as f32 * tile_height;
+            let dx = f64::from(col) * tile_width;
+            let dy = f64::from(row) * tile_height;
             tile_transform.a = pa;
             tile_transform.b = pb;
             tile_transform.c = pc;

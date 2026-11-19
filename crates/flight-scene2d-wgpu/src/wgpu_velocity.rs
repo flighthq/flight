@@ -69,10 +69,11 @@ const UNIFORM_SLOTS: u32 = 1024;
 
 /// Allocates an rgba16float target sized to hold a signed, sub-pixel screen-space velocity buffer
 /// (TS `createWgpuVelocityTarget`).
+// flight-lint: allow(f64) 2D geometry, logical sizes and the device pixel ratio are f64 CPU values (Task Q); they narrow once into f32 WGPU uniforms, instance floats, scissor and the f32 canvas-host and text-layout lanes
 pub fn create_wgpu_velocity_target(
     state: &WgpuRenderState,
-    width: f32,
-    height: f32,
+    width: f64,
+    height: f64,
 ) -> WgpuTextureRenderTarget {
     return create_wgpu_texture_render_target(
         state,
@@ -87,14 +88,15 @@ pub fn create_wgpu_velocity_target(
 /// Draws one velocity quad: a device-pixel rect filled with (velocity_x, velocity_y) in node units,
 /// scaled by the pixel ratio here (TS `drawWgpuVelocityQuad`). A no-op outside a velocity pass. Each
 /// draw consumes one uniform ring slot addressed by dynamic offset.
+// flight-lint: allow(f64) 2D geometry, logical sizes and the device pixel ratio are f64 CPU values (Task Q); they narrow once into f32 WGPU uniforms, instance floats, scissor and the f32 canvas-host and text-layout lanes
 pub fn draw_wgpu_velocity_quad(
     ctx: &mut WgpuVelocityContext<'_>,
-    x: f32,
-    y: f32,
-    width: f32,
-    height: f32,
-    velocity_x: f32,
-    velocity_y: f32,
+    x: f64,
+    y: f64,
+    width: f64,
+    height: f64,
+    velocity_x: f64,
+    velocity_y: f64,
 ) {
     let (ctx_width, ctx_height, pixel_ratio) = (ctx.width, ctx.height, ctx.pixel_ratio);
     let native = get_wgpu_render_state_native_device(ctx.state);
@@ -116,12 +118,12 @@ pub fn draw_wgpu_velocity_quad(
     let slot = pipeline.cursor;
     pipeline.cursor = (slot + UNIFORM_STRIDE) % (UNIFORM_SLOTS * UNIFORM_STRIDE);
     let scratch = &mut pipeline.scratch;
-    scratch[0] = clip_x0;
-    scratch[1] = clip_y0;
-    scratch[2] = clip_width;
-    scratch[3] = clip_height;
-    scratch[4] = velocity_x * pixel_ratio;
-    scratch[5] = velocity_y * pixel_ratio;
+    scratch[0] = clip_x0 as f32;
+    scratch[1] = clip_y0 as f32;
+    scratch[2] = clip_width as f32;
+    scratch[3] = clip_height as f32;
+    scratch[4] = (velocity_x * pixel_ratio) as f32;
+    scratch[5] = (velocity_y * pixel_ratio) as f32;
     write_wgpu_buffer(
         &native,
         &pipeline.uniform_buffer,
@@ -257,6 +259,7 @@ pub fn register_wgpu_velocity_writer(
 /// the registered writer for each node's kind (TS `renderWgpuVelocity`). Nodes whose kind has no
 /// writer are skipped. Runs inside the frame's command encoder as its own render pass; the caller's
 /// pass is suspended and resumed with its pixels intact.
+// flight-lint: allow(f64) 2D geometry, logical sizes and the device pixel ratio are f64 CPU values (Task Q); they narrow once into f32 WGPU uniforms, instance floats, scissor and the f32 canvas-host and text-layout lanes
 pub fn render_wgpu_velocity(
     state: &mut WgpuRenderState,
     root: &NodeRef,
@@ -324,8 +327,8 @@ pub fn render_wgpu_velocity(
     let mut ctx = WgpuVelocityContext {
         state,
         field,
-        width: target.width as f32,
-        height: target.height as f32,
+        width: f64::from(target.width),
+        height: f64::from(target.height),
         pixel_ratio,
     };
     visit_wgpu_velocity(&mut ctx, root);
@@ -380,6 +383,7 @@ pub fn wgpu_node2d_velocity_writer(ctx: &mut WgpuVelocityContext<'_>, node: &Nod
 /// each over the particle's world rect reconstructed exactly as the particle renderer composes its
 /// quad, then mapped by the emitter world transform (skipped for world-space particles). Skips
 /// particles at rest and emitters without a populated velocities array.
+// flight-lint: allow(f64) 2D geometry, logical sizes and the device pixel ratio are f64 CPU values (Task Q); they narrow once into f32 WGPU uniforms, instance floats, scissor and the f32 canvas-host and text-layout lanes
 pub fn wgpu_particle_emitter2d_velocity_writer(ctx: &mut WgpuVelocityContext<'_>, node: &NodeRef) {
     let world_space = {
         let guard = node.read().unwrap();
@@ -428,27 +432,27 @@ pub fn wgpu_particle_emitter2d_velocity_writer(ctx: &mut WgpuVelocityContext<'_>
         }
         let region = regions[id as usize].read().unwrap();
         let rotated = region.rotation != TextureAtlasRotation::None;
-        let rw = if rotated { region.height } else { region.width };
-        let rh = if rotated { region.width } else { region.height };
+        let rw = f64::from(if rotated { region.height } else { region.width });
+        let rh = f64::from(if rotated { region.width } else { region.height });
         if rw <= 0.0 || rh <= 0.0 {
             continue;
         }
 
         let tt = i * 4;
-        let px = data.transforms[tt];
-        let py = data.transforms[tt + 1];
-        let rotation = data.transforms[tt + 2];
-        let scale = data.transforms[tt + 3];
+        let px = f64::from(data.transforms[tt]);
+        let py = f64::from(data.transforms[tt + 1]);
+        let rotation = f64::from(data.transforms[tt + 2]);
+        let scale = f64::from(data.transforms[tt + 3]);
         let cos_scale = rotation.cos() * scale;
         let sin_scale = rotation.sin() * scale;
 
-        let mut min_x = f32::INFINITY;
-        let mut min_y = f32::INFINITY;
-        let mut max_x = f32::NEG_INFINITY;
-        let mut max_y = f32::NEG_INFINITY;
+        let mut min_x = f64::INFINITY;
+        let mut min_y = f64::INFINITY;
+        let mut max_x = f64::NEG_INFINITY;
+        let mut max_y = f64::NEG_INFINITY;
         for c in 0..4 {
-            let lx = (c & 1) as f32 * rw;
-            let ly = (c >> 1) as f32 * rh;
+            let lx = f64::from(c & 1) * rw;
+            let ly = f64::from(c >> 1) * rh;
             let rx = cos_scale * lx - sin_scale * ly + px;
             let ry = sin_scale * lx + cos_scale * ly + py;
             let wx = if world_space {
@@ -468,12 +472,12 @@ pub fn wgpu_particle_emitter2d_velocity_writer(ctx: &mut WgpuVelocityContext<'_>
         }
         draw_wgpu_velocity_quad(
             ctx,
-            min_x,
-            min_y,
-            max_x - min_x,
-            max_y - min_y,
-            velocity_x,
-            velocity_y,
+            f64::from(min_x),
+            f64::from(min_y),
+            f64::from(max_x - min_x),
+            f64::from(max_y - min_y),
+            f64::from(velocity_x),
+            f64::from(velocity_y),
         );
     }
 }
@@ -482,6 +486,7 @@ pub fn wgpu_particle_emitter2d_velocity_writer(ctx: &mut WgpuVelocityContext<'_>
 /// instance's own world-space region (batch world transform ∘ per-instance local transform), when
 /// the batch carries per-instance velocities; otherwise one coarse field velocity over the batch's
 /// world bounds, like the Node2D writer.
+// flight-lint: allow(f64) 2D geometry, logical sizes and the device pixel ratio are f64 CPU values (Task Q); they narrow once into f32 WGPU uniforms, instance floats, scissor and the f32 canvas-host and text-layout lanes
 pub fn wgpu_quad_batch_velocity_writer(ctx: &mut WgpuVelocityContext<'_>, node: &NodeRef) {
     let has_instances = {
         let guard = node.read().unwrap();
@@ -540,8 +545,8 @@ pub fn wgpu_quad_batch_velocity_writer(ctx: &mut WgpuVelocityContext<'_>, node: 
                 wb = pb;
                 wc = pc;
                 wd = pd;
-                wtx = pa * dx + pc * dy + ptx;
-                wty = pb * dx + pd * dy + pty;
+                wtx = pa * f64::from(dx) + pc * f64::from(dy) + ptx;
+                wty = pb * f64::from(dx) + pd * f64::from(dy) + pty;
             } else {
                 let o = i * 6;
                 let (la, lb, lc, ld, ltx, lty) = (
@@ -552,18 +557,21 @@ pub fn wgpu_quad_batch_velocity_writer(ctx: &mut WgpuVelocityContext<'_>, node: 
                     transforms[o + 4],
                     transforms[o + 5],
                 );
-                wa = pa * la + pc * lb;
-                wb = pb * la + pd * lb;
-                wc = pa * lc + pc * ld;
-                wd = pb * lc + pd * ld;
-                wtx = pa * ltx + pc * lty + ptx;
-                wty = pb * ltx + pd * lty + pty;
+                wa = pa * f64::from(la) + pc * f64::from(lb);
+                wb = pb * f64::from(la) + pd * f64::from(lb);
+                wc = pa * f64::from(lc) + pc * f64::from(ld);
+                wd = pb * f64::from(lc) + pd * f64::from(ld);
+                wtx = pa * f64::from(ltx) + pc * f64::from(lty) + ptx;
+                wty = pb * f64::from(ltx) + pd * f64::from(lty) + pty;
             }
 
             let (x0, y0) = (wtx, wty);
-            let (x1, y1) = (wa * w + wtx, wb * w + wty);
-            let (x2, y2) = (wc * h + wtx, wd * h + wty);
-            let (x3, y3) = (wa * w + wc * h + wtx, wb * w + wd * h + wty);
+            let (x1, y1) = (wa * f64::from(w) + wtx, wb * f64::from(w) + wty);
+            let (x2, y2) = (wc * f64::from(h) + wtx, wd * f64::from(h) + wty);
+            let (x3, y3) = (
+                wa * f64::from(w) + wc * f64::from(h) + wtx,
+                wb * f64::from(w) + wd * f64::from(h) + wty,
+            );
             let min_x = x0.min(x1).min(x2).min(x3);
             let min_y = y0.min(y1).min(y2).min(y3);
             let max_x = x0.max(x1).max(x2).max(x3);
@@ -574,8 +582,8 @@ pub fn wgpu_quad_batch_velocity_writer(ctx: &mut WgpuVelocityContext<'_>, node: 
                 min_y,
                 max_x - min_x,
                 max_y - min_y,
-                velocity_x,
-                velocity_y,
+                f64::from(velocity_x),
+                f64::from(velocity_y),
             );
         }
         return;

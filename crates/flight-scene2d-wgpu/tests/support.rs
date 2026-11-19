@@ -796,7 +796,7 @@ impl Canvas2DContext for TestCanvas2DContext {
         self.log("beginPath".to_string());
     }
 
-    fn clear_rect(&self, x: f32, y: f32, width: f32, height: f32) {
+    fn clear_rect(&self, x: f64, y: f64, width: f64, height: f64) {
         self.log(format!("clearRect({x},{y},{width},{height})"));
     }
 
@@ -804,15 +804,15 @@ impl Canvas2DContext for TestCanvas2DContext {
         self.log("clip".to_string());
     }
 
-    fn fill_rect(&self, x: f32, y: f32, width: f32, height: f32) {
+    fn fill_rect(&self, x: f64, y: f64, width: f64, height: f64) {
         self.log(format!("fillRect({x},{y},{width},{height})"));
     }
 
-    fn fill_text(&self, text: &str, x: f32, y: f32) {
+    fn fill_text(&self, text: &str, x: f64, y: f64) {
         self.log(format!("fillText({text},{x},{y})"));
     }
 
-    fn line_to(&self, x: f32, y: f32) {
+    fn line_to(&self, x: f64, y: f64) {
         self.log(format!("lineTo({x},{y})"));
     }
 
@@ -822,11 +822,11 @@ impl Canvas2DContext for TestCanvas2DContext {
         };
     }
 
-    fn move_to(&self, x: f32, y: f32) {
+    fn move_to(&self, x: f64, y: f64) {
         self.log(format!("moveTo({x},{y})"));
     }
 
-    fn rect(&self, x: f32, y: f32, width: f32, height: f32) {
+    fn rect(&self, x: f64, y: f64, width: f64, height: f64) {
         self.log(format!("rect({x},{y},{width},{height})"));
     }
 
@@ -851,7 +851,7 @@ impl Canvas2DContext for TestCanvas2DContext {
         self.log(format!("globalAlpha={alpha}"));
     }
 
-    fn set_line_width(&self, width: f32) {
+    fn set_line_width(&self, width: f64) {
         self.log(format!("lineWidth={width}"));
     }
 
@@ -867,7 +867,7 @@ impl Canvas2DContext for TestCanvas2DContext {
         self.log(format!("textBaseline={baseline}"));
     }
 
-    fn set_transform(&self, a: f32, b: f32, c: f32, d: f32, e: f32, f: f32) {
+    fn set_transform(&self, a: f64, b: f64, c: f64, d: f64, e: f64, f: f64) {
         self.log(format!("setTransform({a},{b},{c},{d},{e},{f})"));
     }
 
@@ -875,7 +875,7 @@ impl Canvas2DContext for TestCanvas2DContext {
         self.log("stroke".to_string());
     }
 
-    fn stroke_rect(&self, x: f32, y: f32, width: f32, height: f32) {
+    fn stroke_rect(&self, x: f64, y: f64, width: f64, height: f64) {
         self.log(format!("strokeRect({x},{y},{width},{height})"));
     }
 }
@@ -883,9 +883,9 @@ impl Canvas2DContext for TestCanvas2DContext {
 /// One surface the test canvas host created: its size and its 2D context fake.
 pub struct TestCanvasSurfaceRecord {
     pub context: Arc<TestCanvas2DContext>,
-    pub height: f32,
+    pub height: f64,
     pub surface: Ref<CanvasSurface>,
-    pub width: f32,
+    pub width: f64,
 }
 
 /// What the test canvas host did: every surface it created, and how many it destroyed.
@@ -916,7 +916,7 @@ impl TestCanvasHostRecord {
             .clone();
     }
 
-    pub fn last_size(&self) -> (f32, f32) {
+    pub fn last_size(&self) -> (f64, f64) {
         let surfaces = self.surfaces.lock().unwrap();
         let last = surfaces.last().expect("a created surface");
         return (last.width, last.height);
@@ -1274,7 +1274,7 @@ pub fn get_wgpu_render_proxy_for_test(
 // ── text ─────────────────────────────────────────────────────────────────────────────────────
 
 /// A rich text field of `width`x`height` showing `text` (TS `createRichText({ data })`).
-pub fn create_test_rich_text(text: &str, width: f32, height: f32) -> Ref<flight_text::RichText> {
+pub fn create_test_rich_text(text: &str, width: f64, height: f64) -> Ref<flight_text::RichText> {
     let rich_text = flight_text::create_rich_text(None);
     {
         let mut rich_text = rich_text.write().unwrap();

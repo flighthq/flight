@@ -11,6 +11,7 @@ use flight_render_wgpu::{
 
 use crate::wgpu_quad_batch_writer::flush_wgpu_quad_batch_writer;
 
+// flight-lint: allow(f64) 2D geometry, logical sizes and the device pixel ratio are f64 CPU values (Task Q); they narrow once into f32 WGPU uniforms, instance floats, scissor and the f32 canvas-host and text-layout lanes
 fn compute_wgpu_scissor_rect(
     state: &WgpuRenderState,
     rect: &Rectangle,
@@ -28,17 +29,18 @@ fn compute_wgpu_scissor_rect(
         transform.b * (rect.x + rect.width) + transform.d * (rect.y + rect.height) + transform.ty;
 
     let viewport = get_wgpu_render_pass_viewport(state);
-    let min_x = 0.0_f32.max(x0.min(x1).min(x2).min(x3).floor());
-    let max_x = viewport.width.min(x0.max(x1).max(x2).max(x3).ceil());
-    let min_y = 0.0_f32.max(y0.min(y1).min(y2).min(y3).floor());
-    let max_y = viewport.height.min(y0.max(y1).max(y2).max(y3).ceil());
+    let min_x = 0.0_f64.max(x0.min(x1).min(x2).min(x3).floor());
+    let max_x = f64::from(viewport.width).min(x0.max(x1).max(x2).max(x3).ceil());
+    let min_y = 0.0_f64.max(y0.min(y1).min(y2).min(y3).floor());
+    let max_y = f64::from(viewport.height).min(y0.max(y1).max(y2).max(y3).ceil());
 
     // The scissor uses a top-left origin, the same as the canvas coordinate system.
+    // Whole-pixel scissor values, computed in f64 and stored once in the f32 scissor lane.
     return WgpuScissorRect {
-        height: 0.0_f32.max(max_y - min_y),
-        width: 0.0_f32.max(max_x - min_x),
-        x: min_x,
-        y: min_y,
+        height: 0.0_f64.max(max_y - min_y) as f32,
+        width: 0.0_f64.max(max_x - min_x) as f32,
+        x: min_x as f32,
+        y: min_y as f32,
     };
 }
 

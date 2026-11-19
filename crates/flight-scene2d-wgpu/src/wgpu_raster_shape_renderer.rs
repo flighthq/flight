@@ -45,6 +45,7 @@ pub static WGPU_RASTER_SHAPE_RENDERER: NodeRenderer<WgpuRenderState> = NodeRende
 /// Replays the shape's whole command stream into an offscreen 2D canvas and draws the result as
 /// one textured quad (TS `drawWgpuRasterShape`). The surface is sized in device pixels with the
 /// replay pre-scaled to match; the quad stays in local units and samples the whole texture.
+// flight-lint: allow(f64) 2D geometry, logical sizes and the device pixel ratio are f64 CPU values (Task Q); they narrow once into f32 WGPU uniforms, instance floats, scissor and the f32 canvas-host and text-layout lanes
 pub fn draw_wgpu_raster_shape(
     state: &mut WgpuRenderState,
     render_proxy: &RenderProxy2D<WgpuRenderState>,
@@ -108,9 +109,9 @@ pub fn draw_wgpu_raster_shape(
         return;
     };
     if version != shape_data.last_content_id
-        || w != shape_data.last_w
-        || h != shape_data.last_h
-        || pixel_ratio != shape_data.last_pixel_ratio
+        || w != f64::from(shape_data.last_w)
+        || h != f64::from(shape_data.last_h)
+        || pixel_ratio != f64::from(shape_data.last_pixel_ratio)
     {
         let pw = (w * pixel_ratio).ceil();
         let ph = (h * pixel_ratio).ceil();
@@ -124,7 +125,7 @@ pub fn draw_wgpu_raster_shape(
         } else {
             0.0
         };
-        if pw != old_pw || ph != old_ph {
+        if pw != f64::from(old_pw) || ph != f64::from(old_ph) {
             if let Some(image) = &shape_data.image {
                 destroy_wgpu_premultiplied_image_texture(state, image);
             }

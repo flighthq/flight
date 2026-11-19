@@ -123,6 +123,7 @@ pub static WGPU_PARTICLE_EMITTER2D_RENDERER: NodeRenderer<WgpuRenderState> = Nod
 /// Draws an emitter's live particles as one instanced draw (TS `drawWgpuParticleEmitter2D`). Each
 /// particle is an atlas region rotated and scaled about its position, tinted and faded per particle;
 /// `world_space` particles map straight through the viewport.
+// flight-lint: allow(f64) 2D geometry, logical sizes and the device pixel ratio are f64 CPU values (Task Q); they narrow once into f32 WGPU uniforms, instance floats, scissor and the f32 canvas-host and text-layout lanes
 pub fn draw_wgpu_particle_emitter2d(
     state: &mut WgpuRenderState,
     render_proxy: &RenderProxy2D<WgpuRenderState>,
@@ -286,22 +287,32 @@ pub fn draw_wgpu_particle_emitter2d(
     let uniform_offset = runtime.uniform_offset;
     let float_base = (uniform_offset >> 2) as usize;
     let t = &render_proxy.transform_2d;
-    let iw2 = 2.0 / viewport.width;
-    let ih2 = 2.0 / viewport.height;
+    let iw2 = 2.0 / f64::from(viewport.width);
+    let ih2 = 2.0 / f64::from(viewport.height);
     let matrix_array = &mut runtime.matrix_array;
     if data.world_space {
         // Particles are already in world (pixel) space — map directly through the viewport.
-        *matrix_array = [iw2, 0.0, 0.0, 0.0, -ih2, 0.0, -1.0, 1.0, 1.0];
+        *matrix_array = [
+            iw2 as f32,
+            0.0,
+            0.0,
+            0.0,
+            (-ih2) as f32,
+            0.0,
+            -1.0,
+            1.0,
+            1.0,
+        ];
     } else {
         *matrix_array = [
-            t.a * iw2,
-            -t.b * ih2,
+            (t.a * iw2) as f32,
+            (-t.b * ih2) as f32,
             0.0,
-            t.c * iw2,
-            -t.d * ih2,
+            (t.c * iw2) as f32,
+            (-t.d * ih2) as f32,
             0.0,
-            t.tx * iw2 - 1.0,
-            -t.ty * ih2 + 1.0,
+            (t.tx * iw2 - 1.0) as f32,
+            (-t.ty * ih2 + 1.0) as f32,
             1.0,
         ];
     }

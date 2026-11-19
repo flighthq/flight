@@ -109,7 +109,7 @@ mod draw_wgpu_sprite {
             fields.uv_offset.y = 0.4;
             fields.uv_scale.x = 0.3;
             fields.uv_scale.y = 0.2;
-            fields.uv_rotation = -std::f32::consts::FRAC_PI_2;
+            fields.uv_rotation = -std::f64::consts::FRAC_PI_2;
         }
         let node: NodeRef = sprite;
         let mut proxies = prepare_test_scene(&mut state, &node);

@@ -21,6 +21,7 @@ const CARET_WIDTH: f32 = 1.0;
 
 /// Rasterizes the editable-field overlay (selection highlight and caret) onto the offscreen field
 /// canvas of a RichText whose input slot is present (TS `drawWgpuTextInputOverlay`).
+// flight-lint: allow(f64) 2D geometry, logical sizes and the device pixel ratio are f64 CPU values (Task Q); they narrow once into f32 WGPU uniforms, instance floats, scissor and the f32 canvas-host and text-layout lanes
 pub fn draw_wgpu_text_input_overlay(
     context: &CanvasRenderingContext2D,
     source: &Ref<RichText>,
@@ -52,7 +53,7 @@ pub fn draw_wgpu_text_input_overlay(
 
     context.save();
     context.begin_path();
-    context.rect(0.0, 0.0, field_w, field_h);
+    context.rect(0.0, 0.0, f64::from(field_w), f64::from(field_h));
     context.clip();
 
     let mut selection_rectangles: Vec<TextSelectionRectangle> = Vec::new();
@@ -62,10 +63,10 @@ pub fn draw_wgpu_text_input_overlay(
         context.set_global_alpha(input.selection_alpha);
         for rect in &selection_rectangles {
             context.fill_rect(
-                rect.x - scroll_x_offset,
-                rect.y - scroll_y_offset,
-                rect.width,
-                rect.height,
+                f64::from(rect.x) - scroll_x_offset,
+                f64::from(rect.y) - scroll_y_offset,
+                f64::from(rect.width),
+                f64::from(rect.height),
             );
         }
     }
@@ -85,10 +86,10 @@ pub fn draw_wgpu_text_input_overlay(
         context.set_fill_style(&compute_rgba_css_string(input.caret_color));
         context.set_global_alpha(1.0);
         context.fill_rect(
-            caret_rectangle.x - scroll_x_offset,
-            caret_rectangle.y - scroll_y_offset,
-            CARET_WIDTH,
-            caret_rectangle.height,
+            f64::from(caret_rectangle.x) - scroll_x_offset,
+            f64::from(caret_rectangle.y) - scroll_y_offset,
+            f64::from(CARET_WIDTH),
+            f64::from(caret_rectangle.height),
         );
     }
 

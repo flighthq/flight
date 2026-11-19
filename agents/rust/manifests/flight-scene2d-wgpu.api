@@ -77,16 +77,16 @@ src/lib.rs: pub use contract::wgpu_particle_emitter2d_velocity_writer;
 src/scene2d_wgpu_pipeline.rs: pub static WGPU_RENDER_INFRASTRUCTURE: LazyLock<WgpuRenderRegistries>
 src/scene2d_wgpu_pipeline.rs: pub static WGPU_SCENE2D_RENDER_PRESET: LazyLock<WgpuScene2DRenderPreset>
 src/types.rs: #[derive(Clone, Copy, Debug, Default, PartialEq, Eq)] pub struct WgpuRenderStats { pub draw_call_count: u32, pub instance_count: u32, pub batch_flush_count: u32, pub texture_upload_count: u32, }
-src/types.rs: #[derive(Default)] pub struct WgpuRichTextData { pub(crate) renderer_data: RendererDataFields, pub alloc_h: f32, pub alloc_w: f32, pub image: Option<Ref<ImageResource>>, pub surface: Option<Ref<CanvasSurface>>, }
-src/types.rs: #[derive(Default)] pub struct WgpuScale9ShapeData { pub(crate) renderer_data: RendererDataFields, pub image: Option<Ref<ImageResource>>, pub last_h: f32, pub last_scale_x: f32, pub last_scale_y: f32, pub last_content_id: i64, pub last_pixel_ratio: f32, pub last_w: f32, pub surface: Option<Ref<CanvasSurface>>, }
-src/types.rs: #[derive(Default)] pub struct WgpuShapeRendererData { pub(crate) renderer_data: RendererDataFields, pub image: Option<Ref<ImageResource>>, pub last_content_id: i64, pub last_h: f32, pub last_pixel_ratio: f32, pub last_w: f32, pub mesh_buffers: WgpuShapeMeshBuffers, pub mesh_version: i64, pub meshes: Option<Vec<WgpuShapeMesh>>, pub surface: Option<Ref<CanvasSurface>>, }
-src/types.rs: #[derive(Default)] pub struct WgpuTextLabelData { pub(crate) renderer_data: RendererDataFields, pub alloc_h: f32, pub alloc_w: f32, pub image: Option<Ref<ImageResource>>, pub last_content_id: i64, pub last_pixel_ratio: f32, pub log_h: f32, pub log_w: f32, pub surface: Option<Ref<CanvasSurface>>, }
+src/types.rs: #[derive(Default)] pub struct WgpuRichTextData { pub(crate) renderer_data: RendererDataFields, pub alloc_h: f64, pub alloc_w: f64, pub image: Option<Ref<ImageResource>>, pub surface: Option<Ref<CanvasSurface>>, }
+src/types.rs: #[derive(Default)] pub struct WgpuScale9ShapeData { pub(crate) renderer_data: RendererDataFields, pub image: Option<Ref<ImageResource>>, pub last_h: f64, pub last_scale_x: f64, pub last_scale_y: f64, pub last_content_id: i64, pub last_pixel_ratio: f64, pub last_w: f64, pub surface: Option<Ref<CanvasSurface>>, }
+src/types.rs: #[derive(Default)] pub struct WgpuShapeRendererData { pub(crate) renderer_data: RendererDataFields, pub image: Option<Ref<ImageResource>>, pub last_content_id: i64, pub last_h: f64, pub last_pixel_ratio: f64, pub last_w: f64, pub mesh_buffers: WgpuShapeMeshBuffers, pub mesh_version: i64, pub meshes: Option<Vec<WgpuShapeMesh>>, pub surface: Option<Ref<CanvasSurface>>, }
+src/types.rs: #[derive(Default)] pub struct WgpuTextLabelData { pub(crate) renderer_data: RendererDataFields, pub alloc_h: f64, pub alloc_w: f64, pub image: Option<Ref<ImageResource>>, pub last_content_id: i64, pub last_pixel_ratio: f64, pub log_h: f64, pub log_w: f64, pub surface: Option<Ref<CanvasSurface>>, }
 src/types.rs: pub struct WgpuScene2DRenderPreset { pub node_renderers: KindMap<&'static NodeRenderer<WgpuRenderState>>, pub registries: WgpuRenderRegistries, }
 src/types.rs: pub type WgpuRichTextOverlay = fn(&CanvasRenderingContext2D, &Ref<RichText>, &TextLayoutResult, f32, f32, &str);
 src/wgpu_bitmap_text.rs: pub static WGPU_BITMAP_TEXT_RENDERER: NodeRenderer<WgpuRenderState>
 src/wgpu_cache.rs: pub fn create_wgpu_cache_state(owner_state: &mut WgpuRenderState, device_state: &WgpuDeviceState, options: Option<&WgpuRenderStateOptions>,) -> Ref<WgpuRenderState>
 src/wgpu_cache.rs: pub fn enable_wgpu_render_cache(state: &mut WgpuRenderState)
-src/wgpu_cache.rs: pub fn ensure_wgpu_render_cache_target(state: &mut WgpuRenderState, cache: &RenderCache, width: f32, height: f32,) -> Ref<WgpuTextureRenderTarget>
+src/wgpu_cache.rs: pub fn ensure_wgpu_render_cache_target(state: &mut WgpuRenderState, cache: &RenderCache, width: f64, height: f64,) -> Ref<WgpuTextureRenderTarget>
 src/wgpu_cache.rs: pub fn get_wgpu_render_cache_target(state: &WgpuRenderState, cache: &RenderCache,) -> Option<Ref<WgpuTextureRenderTarget>>
 src/wgpu_cache.rs: pub fn refresh_wgpu_render_cache(owner_state: &mut WgpuRenderState, cache_state: &mut WgpuRenderState, cache_proxies: &mut RenderProxies2D<WgpuRenderState>, cache: &Ref<RenderCache>, source: &NodeRef, options: Option<&RenderCacheRefreshOptions>,) -> bool
 src/wgpu_cache.rs: pub fn release_wgpu_render_cache(state: &mut WgpuRenderState, cache: &RenderCache)
@@ -114,8 +114,8 @@ src/wgpu_quad_batch_writer.rs: pub fn pack_wgpu_quad_batch_material_instance(sta
 src/wgpu_quad_batch_writer.rs: pub fn prepare_wgpu_quad_batch_write(state: &mut WgpuRenderState, texture: &Ref<WgpuTextureEntry>, sampler: Option<&WgpuSamplerLike>, blend_mode: Option<&BlendMode>, material: Option<&Ref<dyn Material2D>>, material_renderer: &WgpuQuadMaterialRenderer, max_instances: u32, smoothing: Option<bool>,) -> u32
 src/wgpu_quad_batch_writer.rs: pub fn record_wgpu_quad_batch_color_scale_bias(state: &mut WgpuRenderState, color_scale_bias: Option<&WgpuColorScaleBiasInput>, instance_index: u32,)
 src/wgpu_quad_batch_writer.rs: pub fn reset_wgpu_quad_batch_writer_buffer_pool(state: &mut WgpuRenderState)
-src/wgpu_quad_batch_writer.rs: pub fn write_wgpu_quad_batch_affine_instance(data: &mut [f32], base: usize, transform: &Matrix, width: f32, height: f32, uv_origin_x: f32, uv_origin_y: f32, uv_axis_ux: f32, uv_axis_uy: f32, uv_axis_vx: f32, uv_axis_vy: f32, alpha: f32,)
-src/wgpu_quad_batch_writer.rs: pub fn write_wgpu_quad_batch_instance(data: &mut [f32], base: usize, transform: &Matrix, width: f32, height: f32, u0: f32, v0: f32, u1: f32, v1: f32, alpha: f32,)
+src/wgpu_quad_batch_writer.rs: pub fn write_wgpu_quad_batch_affine_instance(data: &mut [f32], base: usize, transform: &Matrix, width: f64, height: f64, uv_origin_x: f32, uv_origin_y: f32, uv_axis_ux: f32, uv_axis_uy: f32, uv_axis_vx: f32, uv_axis_vy: f32, alpha: f32,)
+src/wgpu_quad_batch_writer.rs: pub fn write_wgpu_quad_batch_instance(data: &mut [f32], base: usize, transform: &Matrix, width: f64, height: f64, u0: f32, v0: f32, u1: f32, v1: f32, alpha: f32,)
 src/wgpu_raster_shape_renderer.rs: pub fn draw_wgpu_raster_shape(state: &mut WgpuRenderState, render_proxy: &RenderProxy2D<WgpuRenderState>,)
 src/wgpu_raster_shape_renderer.rs: pub static WGPU_RASTER_SHAPE_RENDERER: NodeRenderer<WgpuRenderState>
 src/wgpu_render_stats.rs: pub fn get_wgpu_render_stats(state: &mut WgpuRenderState) -> WgpuRenderStats
@@ -132,7 +132,7 @@ src/wgpu_rich_text.rs: pub fn draw_wgpu_rich_text(state: &mut WgpuRenderState, r
 src/wgpu_rich_text.rs: pub fn draw_wgpu_rich_text_with_overlay(state: &mut WgpuRenderState, render_proxy: &RenderProxy2D<WgpuRenderState>, overlay: Option<WgpuRichTextOverlay>,)
 src/wgpu_rich_text.rs: pub fn register_wgpu_text_input_overlay(state: &mut WgpuRenderState, overlay: WgpuRichTextOverlay)
 src/wgpu_rich_text.rs: pub static WGPU_RICH_TEXT_RENDERER: NodeRenderer<WgpuRenderState>
-src/wgpu_scale9_mapper.rs: pub fn build_wgpu_scale9_mapper(bounds: &Rectangle, scale9_grid: &Rectangle, scale_x: f32, scale_y: f32,) -> Option<ShapeScale9Mapper>
+src/wgpu_scale9_mapper.rs: pub fn build_wgpu_scale9_mapper(bounds: &Rectangle, scale9_grid: &Rectangle, scale_x: f64, scale_y: f64,) -> Option<ShapeScale9Mapper>
 src/wgpu_scale9_shape.rs: pub fn acquire_wgpu_scale9_shape_raster_surface(surfaces: &mut CanvasHostSurfaces, canvas_host: &HostCanvasCapability, image_host: &HostImageCapability, data: &mut WgpuScale9ShapeData,) -> Option<Ref<CanvasSurface>>
 src/wgpu_scale9_shape.rs: pub fn create_wgpu_scale9_shape_data(_state: &mut WgpuRenderState, _source: &NodeRef,) -> Option<RendererDataRef>
 src/wgpu_scale9_shape.rs: pub fn destroy_wgpu_scale9_shape_data(state: &mut WgpuRenderState, data: RendererDataRef)
@@ -162,8 +162,8 @@ src/wgpu_text_input.rs: pub fn enable_wgpu_text_input(state: &mut WgpuRenderStat
 src/wgpu_text_label.rs: pub fn draw_wgpu_text_label(state: &mut WgpuRenderState, render_proxy: &RenderProxy2D<WgpuRenderState>,)
 src/wgpu_text_label.rs: pub static WGPU_TEXT_LABEL_RENDERER: NodeRenderer<WgpuRenderState>
 src/wgpu_tilemap.rs: pub static WGPU_TILEMAP_RENDERER: NodeRenderer<WgpuRenderState>
-src/wgpu_velocity.rs: pub fn create_wgpu_velocity_target(state: &WgpuRenderState, width: f32, height: f32,) -> WgpuTextureRenderTarget
-src/wgpu_velocity.rs: pub fn draw_wgpu_velocity_quad(ctx: &mut WgpuVelocityContext<'_>, x: f32, y: f32, width: f32, height: f32, velocity_x: f32, velocity_y: f32,)
+src/wgpu_velocity.rs: pub fn create_wgpu_velocity_target(state: &WgpuRenderState, width: f64, height: f64,) -> WgpuTextureRenderTarget
+src/wgpu_velocity.rs: pub fn draw_wgpu_velocity_quad(ctx: &mut WgpuVelocityContext<'_>, x: f64, y: f64, width: f64, height: f64, velocity_x: f64, velocity_y: f64,)
 src/wgpu_velocity.rs: pub fn get_wgpu_velocity_writer(state: &WgpuRenderState, kind: &Kind,) -> Option<WgpuVelocityWriter>
 src/wgpu_velocity.rs: pub fn register_wgpu_velocity_writer(state: &mut WgpuRenderState, kind: Kind, writer: WgpuVelocityWriter,)
 src/wgpu_velocity.rs: pub fn render_wgpu_velocity(state: &mut WgpuRenderState, root: &NodeRef, field: &VelocityField, target: &WgpuTextureRenderTarget,)

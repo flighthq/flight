@@ -259,6 +259,34 @@ mod draw_wgpu_scale9_shape {
     }
 
     #[test]
+    fn passes_a_non_f32_pixel_ratio_to_the_canvas_context_and_surface_exactly() {
+        // 100 x 1.1 is 110.00000000000001 in f64, so the backing store needs 111 pixels (f32
+        // arithmetic gives 110); the canvas transform receives exactly 1.1 (an f32 lane would pass
+        // 1.100000023841858).
+        let mut state = create_test_state_in_pass();
+        flight_render::RenderState::render_state_mut(&mut state).pixel_ratio = 1.1;
+        let record = set_test_hosts(&mut state);
+        let (rasterizer, _calls) = create_test_counting_rasterizer();
+        register_wgpu_shape_rasterizer(&mut state, Some(rasterizer));
+        let node = filled_scale9_node();
+        let mut proxy = create_test_proxy_for(&mut state, &node);
+        proxy.renderer_data = create_wgpu_scale9_shape_data(&mut state, &node);
+
+        draw_wgpu_scale9_shape(&mut state, &proxy);
+
+        let expected = (100.0_f64 * 1.1).ceil();
+        assert_eq!(record.last_size(), (expected, expected));
+        assert!(
+            record
+                .last_context()
+                .calls()
+                .iter()
+                .any(|call| call.starts_with("setTransform(1.1,0,0,1.1,"))
+        );
+        submit_wgpu_frame(&mut state);
+    }
+
+    #[test]
     fn rasterizes_and_draws_a_filled_shape() {
         let mut state = create_test_state_in_pass();
         let record = set_test_hosts(&mut state);

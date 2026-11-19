@@ -36,6 +36,19 @@ use crate::types::*;
 use crate::wgpu_node2d::render_wgpu_scene2d;
 use crate::wgpu_quad_batch_writer::flush_wgpu_quad_batch_writer;
 
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn widens_a_cache_target_height_beyond_f32_precision_exactly() {
+        // 16777217 has no f32 value: a u32 -> f32 -> f64 conversion would translate by 16777216.
+        let y_invert = create_wgpu_render_cache_y_invert(16_777_217);
+        assert_eq!(y_invert.ty, 16_777_217.0);
+        assert_eq!(y_invert.d, -1.0);
+    }
+}
+
 /// The render-cache renderer (TS `wgpuRenderCacheRenderer`): composites a cache's baked target.
 pub static WGPU_RENDER_CACHE_RENDERER: NodeRenderer<WgpuRenderState> = NodeRenderer {
     format: None,
@@ -78,6 +91,16 @@ pub fn create_wgpu_cache_state(
         }),
     );
     return cache_state;
+}
+
+// The flip from the cache texture's bottom-origin rows into the scene's top-left space: the u32 texel
+// height widens exactly into the f64 translation.
+// flight-lint: allow(f64) widens the u32 cache target height exactly into the f64 bake transform (foreman-15d29ee7)
+fn create_wgpu_render_cache_y_invert(target_height: u32) -> Matrix {
+    let mut y_invert = create_matrix(1.0, 0.0, 0.0, 1.0, 0.0, 0.0);
+    y_invert.d = -1.0;
+    y_invert.ty = f64::from(target_height);
+    return y_invert;
 }
 
 fn destroy_owned_wgpu_render_cache_targets(state: &mut WgpuRenderState) {
@@ -126,11 +149,12 @@ pub fn enable_wgpu_render_cache(state: &mut WgpuRenderState) {
 /// Allocates or resizes the target `state` composites for `cache` (TS
 /// `ensureWgpuRenderCacheTarget`), returning it so a caller can render custom content into it
 /// directly. For engine-baked content prefer `refresh_wgpu_render_cache`.
+// flight-lint: allow(f64) 2D geometry, logical sizes and the device pixel ratio are f64 CPU values (Task Q); they narrow once into f32 WGPU uniforms, instance floats, scissor and the f32 canvas-host and text-layout lanes
 pub fn ensure_wgpu_render_cache_target(
     state: &mut WgpuRenderState,
     cache: &RenderCache,
-    width: f32,
-    height: f32,
+    width: f64,
+    height: f64,
 ) -> Ref<WgpuTextureRenderTarget> {
     let key = get_entity_id(cache);
     if let Some(target) = get_wgpu_render_cache_target(state, cache) {
@@ -185,6 +209,7 @@ fn get_wgpu_render_cache_targets(
 /// whether a bake happened: the cache state's own dirtiness decides it, so this is cheap to call
 /// every frame. The bake runs on the shared device inside the owner's frame.
 // flight-lint: allow(conform-params) D17 the cache state's render proxies are an explicit caller-owned store
+// flight-lint: allow(f64) 2D geometry, logical sizes and the device pixel ratio are f64 CPU values (Task Q); they narrow once into f32 WGPU uniforms, instance floats, scissor and the f32 canvas-host and text-layout lanes
 pub fn refresh_wgpu_render_cache(
     owner_state: &mut WgpuRenderState,
     cache_state: &mut WgpuRenderState,
@@ -216,7 +241,7 @@ pub fn refresh_wgpu_render_cache(
     let existing = get_wgpu_render_cache_target(owner_state, &cache.read().unwrap());
     let resized = existing.is_none_or(|existing| {
         let existing = existing.read().unwrap();
-        return existing.width as f32 != width || existing.height as f32 != height;
+        return f64::from(existing.width) != width || f64::from(existing.height) != height;
     });
     // The owner's targets are allocated before the frame borrow: the borrow lends only the encoder
     // and pass, and allocating storage records nothing into them.
@@ -238,9 +263,7 @@ pub fn refresh_wgpu_render_cache(
         Some(padding),
     );
 
-    let mut y_invert = create_matrix(1.0, 0.0, 0.0, 1.0, 0.0, 0.0);
-    y_invert.d = -1.0;
-    y_invert.ty = target.read().unwrap().height as f32;
+    let y_invert = create_wgpu_render_cache_y_invert(target.read().unwrap().height);
     let mut bake_transform = create_matrix(1.0, 0.0, 0.0, 1.0, 0.0, 0.0);
     multiply_matrix(&mut bake_transform, &y_invert, &render_transform);
 

@@ -87,6 +87,7 @@ fn destroy_wgpu_text_label_data(state: &mut WgpuRenderState, data: RendererDataR
 
 /// Draws a TextLabel (TS `drawWgpuTextLabel`): re-lays-out and re-rasterizes only when the label's
 /// content or the state's pixel ratio changed, then writes one quad of the label's logical size.
+// flight-lint: allow(f64) 2D geometry, logical sizes and the device pixel ratio are f64 CPU values (Task Q); they narrow once into f32 WGPU uniforms, instance floats, scissor and the f32 canvas-host and text-layout lanes
 pub fn draw_wgpu_text_label(
     state: &mut WgpuRenderState,
     render_proxy: &RenderProxy2D<WgpuRenderState>,
@@ -130,14 +131,17 @@ pub fn draw_wgpu_text_label(
     let Some(mut surface) = surface else {
         return;
     };
-    let max_tex_dim = get_wgpu_render_state_native_device(state)
-        .device
-        .limits()
-        .max_texture_dimension_2d as f32;
+    let max_tex_dim = f64::from(
+        get_wgpu_render_state_native_device(state)
+            .device
+            .limits()
+            .max_texture_dimension_2d,
+    );
     let pixel_ratio = state.render_state().pixel_ratio;
     let version = get_node_local_content_revision(source) as i64;
 
-    if version != text_data.last_content_id || pixel_ratio != text_data.last_pixel_ratio {
+    if version != text_data.last_content_id || pixel_ratio != f64::from(text_data.last_pixel_ratio)
+    {
         let measure_context = surface.read().unwrap().context.clone().handle.clone();
         let label_runtime = get_text_label_runtime(source);
         let result = get_text_layout_result(&mut label_runtime.write().unwrap());
@@ -153,7 +157,7 @@ pub fn draw_wgpu_text_label(
                     0,
                     utf16_length(&text),
                 )],
-                height: field_height,
+                height: field_height as f32,
                 justification: None,
                 max_lines: None,
                 measure: Arc::new(move |value, format| {
@@ -168,7 +172,7 @@ pub fn draw_wgpu_text_label(
                 } else {
                     TextVerticalAlign::Top
                 }),
-                width: field_width,
+                width: field_width as f32,
                 word_wrap: None,
             },
         );
@@ -196,8 +200,8 @@ pub fn draw_wgpu_text_label(
         }
 
         let max_logical = (max_tex_dim / pixel_ratio).floor();
-        let w = max_x.ceil().min(max_logical);
-        let h = max_y.ceil().min(max_logical);
+        let w = f64::from(max_x).ceil().min(max_logical);
+        let h = f64::from(max_y).ceil().min(max_logical);
         if w <= 0.0 || h <= 0.0 {
             return;
         }
@@ -222,8 +226,8 @@ pub fn draw_wgpu_text_label(
             let slice = utf16_substring(&text, group.start_index, group.end_index);
             ctx.fill_text(
                 &slice,
-                group.offset_x,
-                group.offset_y + group.ascent * 0.815,
+                f64::from(group.offset_x),
+                f64::from(group.offset_y + group.ascent * 0.815),
             );
         }
 
@@ -231,8 +235,8 @@ pub fn draw_wgpu_text_label(
             invalidate_wgpu_surface_image(state, image);
         }
 
-        text_data.log_w = w;
-        text_data.log_h = h;
+        text_data.log_w = f64::from(w);
+        text_data.log_h = f64::from(h);
     }
 
     if text_data.log_w <= 0.0 || text_data.log_h <= 0.0 {
@@ -293,11 +297,12 @@ pub fn draw_wgpu_text_label(
 
 // Returns a surface at the requested pixel size, creating or resizing it via destroy + recreate.
 // The paired image stays in sync with the surface lifecycle.
+// flight-lint: allow(f64) 2D geometry, logical sizes and the device pixel ratio are f64 CPU values (Task Q); they narrow once into f32 WGPU uniforms, instance floats, scissor and the f32 canvas-host and text-layout lanes
 fn ensure_wgpu_text_label_surface(
     state: &mut WgpuRenderState,
     data: &mut WgpuTextLabelData,
-    pw: f32,
-    ph: f32,
+    pw: f64,
+    ph: f64,
 ) -> Option<flight_entity::Ref<CanvasSurface>> {
     if let Some(surface) = &data.surface
         && data.alloc_w == pw

@@ -99,6 +99,7 @@ pub fn destroy_wgpu_scale9_shape_data(state: &mut WgpuRenderState, data: Rendere
 
 /// Draws a nine-slice shape (TS `drawWgpuScale9Shape`). A fill with no tessellated form is the
 /// registered rasterizer's job; an absent one is reported rather than quietly dropping the fill.
+// flight-lint: allow(f64) 2D geometry, logical sizes and the device pixel ratio are f64 CPU values (Task Q); they narrow once into f32 WGPU uniforms, instance floats, scissor and the f32 canvas-host and text-layout lanes
 pub fn draw_wgpu_scale9_shape(
     state: &mut WgpuRenderState,
     render_proxy: &RenderProxy2D<WgpuRenderState>,
@@ -169,11 +170,11 @@ pub fn draw_wgpu_scale9_shape(
     };
 
     if version != shape_data.last_content_id
-        || w != shape_data.last_w
-        || h != shape_data.last_h
-        || scale_x != shape_data.last_scale_x
-        || scale_y != shape_data.last_scale_y
-        || pixel_ratio != shape_data.last_pixel_ratio
+        || w != f64::from(shape_data.last_w)
+        || h != f64::from(shape_data.last_h)
+        || scale_x != f64::from(shape_data.last_scale_x)
+        || scale_y != f64::from(shape_data.last_scale_y)
+        || pixel_ratio != f64::from(shape_data.last_pixel_ratio)
     {
         let pw = (w * pixel_ratio).ceil();
         let ph = (h * pixel_ratio).ceil();
@@ -187,7 +188,7 @@ pub fn draw_wgpu_scale9_shape(
         } else {
             0.0
         };
-        if pw != old_pw || ph != old_ph {
+        if pw != f64::from(old_pw) || ph != f64::from(old_ph) {
             if let Some(image) = &shape_data.image {
                 destroy_wgpu_premultiplied_image_texture(state, image);
             }

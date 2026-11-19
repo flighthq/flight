@@ -155,12 +155,12 @@ pub fn draw_wgpu_scale9_sprite(
                 &slice_transform,
                 slice_width,
                 slice_height,
-                uv[6] + uv[0] * local_u + uv[3] * local_v,
-                uv[7] + uv[1] * local_u + uv[4] * local_v,
-                uv[0] * delta_u,
-                uv[1] * delta_u,
-                uv[3] * delta_v,
-                uv[4] * delta_v,
+                (uv[6] + uv[0] * local_u + uv[3] * local_v) as f32,
+                (uv[7] + uv[1] * local_u + uv[4] * local_v) as f32,
+                (uv[0] * delta_u) as f32,
+                (uv[1] * delta_u) as f32,
+                (uv[3] * delta_v) as f32,
+                (uv[4] * delta_v) as f32,
                 render_proxy.alpha,
             );
             pack_wgpu_quad_batch_material_instance(

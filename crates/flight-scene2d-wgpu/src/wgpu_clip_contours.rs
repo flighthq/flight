@@ -41,21 +41,22 @@ struct ClipUniforms { matrix : mat3x3f }
 // mat3x3f in a uniform buffer has a 16-byte column stride (each vec3 column padded to vec4).
 const CLIP_UNIFORM_BYTES: u64 = 48;
 
+// flight-lint: allow(f64) 2D geometry, logical sizes and the device pixel ratio are f64 CPU values (Task Q); they narrow once into f32 WGPU uniforms, instance floats, scissor and the f32 canvas-host and text-layout lanes
 fn create_clip_contour_uniform_buffer(state: &WgpuRenderState, t: &Matrix) -> wgpu::Buffer {
     let viewport = get_wgpu_render_pass_viewport(state);
-    let iw = 2.0 / viewport.width;
-    let ih = 2.0 / viewport.height;
+    let iw = 2.0 / f64::from(viewport.width);
+    let ih = 2.0 / f64::from(viewport.height);
     // Column-major mat3x3f = projection · worldTransform, mapping clip-local points to clip space
     // exactly as the quad draw builds the content matrix. Each column is padded to 4 floats.
     let mut m = [0.0_f32; 12];
-    m[0] = t.a * iw;
-    m[1] = -t.b * ih;
+    m[0] = (t.a * iw) as f32;
+    m[1] = (-t.b * ih) as f32;
     m[2] = 0.0;
-    m[4] = t.c * iw;
-    m[5] = -t.d * ih;
+    m[4] = (t.c * iw) as f32;
+    m[5] = (-t.d * ih) as f32;
     m[6] = 0.0;
-    m[8] = t.tx * iw - 1.0;
-    m[9] = -t.ty * ih + 1.0;
+    m[8] = (t.tx * iw - 1.0) as f32;
+    m[9] = (-t.ty * ih + 1.0) as f32;
     m[10] = 1.0;
     let native = get_wgpu_render_state_native_device(state);
     let buffer = native.device.create_buffer(&wgpu::BufferDescriptor {

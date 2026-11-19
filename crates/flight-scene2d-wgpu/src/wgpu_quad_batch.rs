@@ -52,6 +52,7 @@ pub fn register_wgpu_quad_batch_renderer(state: &mut WgpuRenderState) {
     );
 }
 
+// flight-lint: allow(f64) 2D geometry, logical sizes and the device pixel ratio are f64 CPU values (Task Q); they narrow once into f32 WGPU uniforms, instance floats, scissor and the f32 canvas-host and text-layout lanes
 fn submit_wgpu_quad_batch(
     state: &mut WgpuRenderState,
     quad_batch: &RenderProxy2D<WgpuRenderState>,
@@ -136,19 +137,19 @@ fn submit_wgpu_quad_batch(
             quad_transform.b = pb;
             quad_transform.c = pc;
             quad_transform.d = pd;
-            quad_transform.tx = pa * dx + pc * dy + ptx;
-            quad_transform.ty = pb * dx + pd * dy + pty;
+            quad_transform.tx = pa * f64::from(dx) + pc * f64::from(dy) + ptx;
+            quad_transform.ty = pb * f64::from(dx) + pd * f64::from(dy) + pty;
         } else {
             let offset = i * 6;
             let (la, lb) = (transforms[offset], transforms[offset + 1]);
             let (lc, ld) = (transforms[offset + 2], transforms[offset + 3]);
             let (ltx, lty) = (transforms[offset + 4], transforms[offset + 5]);
-            quad_transform.a = pa * la + pc * lb;
-            quad_transform.b = pb * la + pd * lb;
-            quad_transform.c = pa * lc + pc * ld;
-            quad_transform.d = pb * lc + pd * ld;
-            quad_transform.tx = pa * ltx + pc * lty + ptx;
-            quad_transform.ty = pb * ltx + pd * lty + pty;
+            quad_transform.a = pa * f64::from(la) + pc * f64::from(lb);
+            quad_transform.b = pb * f64::from(la) + pd * f64::from(lb);
+            quad_transform.c = pa * f64::from(lc) + pc * f64::from(ld);
+            quad_transform.d = pb * f64::from(lc) + pd * f64::from(ld);
+            quad_transform.tx = pa * f64::from(ltx) + pc * f64::from(lty) + ptx;
+            quad_transform.ty = pb * f64::from(ltx) + pd * f64::from(lty) + pty;
         }
         write_wgpu_atlas_region_instance(
             &mut get_wgpu_render_state_runtime_mut(state).quad_batch_writer_instance_data,
@@ -215,12 +216,13 @@ pub(crate) fn write_wgpu_atlas_region_instance(
 
 // The region instance drawn at `size` (a tile's cell) or, when `None`, at the region's own
 // (rotation-swapped) size.
+// flight-lint: allow(f64) 2D geometry, logical sizes and the device pixel ratio are f64 CPU values (Task Q); they narrow once into f32 WGPU uniforms, instance floats, scissor and the f32 canvas-host and text-layout lanes
 pub(crate) fn write_wgpu_atlas_region_instance_sized(
     data: &mut [f32],
     base: usize,
     transform: &Matrix,
     region: &TextureAtlasRegion,
-    size: Option<(f32, f32)>,
+    size: Option<(f64, f64)>,
     iw: f32,
     ih: f32,
     alpha: f32,
@@ -232,9 +234,9 @@ pub(crate) fn write_wgpu_atlas_region_instance_sized(
     let rotated = region.rotation != TextureAtlasRotation::None;
     let counterclockwise = region.rotation == TextureAtlasRotation::Counterclockwise90;
     let (width, height) = size.unwrap_or(if rotated {
-        (region.height, region.width)
+        (f64::from(region.height), f64::from(region.width))
     } else {
-        (region.width, region.height)
+        (f64::from(region.width), f64::from(region.height))
     });
     write_wgpu_quad_batch_affine_instance(
         data,

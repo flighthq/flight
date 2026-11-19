@@ -132,12 +132,12 @@ pub fn draw_wgpu_sprite(
         &render_proxy.transform_2d,
         width,
         height,
-        uv[6],
-        uv[7],
-        uv[0],
-        uv[1],
-        uv[3],
-        uv[4],
+        uv[6] as f32,
+        uv[7] as f32,
+        uv[0] as f32,
+        uv[1] as f32,
+        uv[3] as f32,
+        uv[4] as f32,
         render_proxy.alpha,
     );
     pack_wgpu_quad_batch_material_instance(

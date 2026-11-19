@@ -740,12 +740,13 @@ pub(crate) fn wgpu_u32_bytes(data: &[u32]) -> &[u8] {
 /// Writes one affine instance record: pre-scaled geometry axes, translation, two affine UV axes and
 /// alpha (TS `writeWgpuQuadBatchAffineInstance`). Rotated texture views add neither bandwidth nor
 /// another allocation.
+// flight-lint: allow(f64) 2D geometry, logical sizes and the device pixel ratio are f64 CPU values (Task Q); they narrow once into f32 WGPU uniforms, instance floats, scissor and the f32 canvas-host and text-layout lanes
 pub fn write_wgpu_quad_batch_affine_instance(
     data: &mut [f32],
     base: usize,
     transform: &Matrix,
-    width: f32,
-    height: f32,
+    width: f64,
+    height: f64,
     uv_origin_x: f32,
     uv_origin_y: f32,
     uv_axis_ux: f32,
@@ -754,12 +755,12 @@ pub fn write_wgpu_quad_batch_affine_instance(
     uv_axis_vy: f32,
     alpha: f32,
 ) {
-    data[base] = transform.a * width;
-    data[base + 1] = transform.b * width;
-    data[base + 2] = transform.c * height;
-    data[base + 3] = transform.d * height;
-    data[base + 4] = transform.tx;
-    data[base + 5] = transform.ty;
+    data[base] = (transform.a * width) as f32;
+    data[base + 1] = (transform.b * width) as f32;
+    data[base + 2] = (transform.c * height) as f32;
+    data[base + 3] = (transform.d * height) as f32;
+    data[base + 4] = transform.tx as f32;
+    data[base + 5] = transform.ty as f32;
     data[base + 6] = uv_origin_x;
     data[base + 7] = uv_origin_y;
     data[base + 8] = uv_axis_ux;
@@ -770,12 +771,13 @@ pub fn write_wgpu_quad_batch_affine_instance(
 }
 
 /// Writes one instance whose UVs are an axis-aligned rectangle (TS `writeWgpuQuadBatchInstance`).
+// flight-lint: allow(f64) 2D geometry, logical sizes and the device pixel ratio are f64 CPU values (Task Q); they narrow once into f32 WGPU uniforms, instance floats, scissor and the f32 canvas-host and text-layout lanes
 pub fn write_wgpu_quad_batch_instance(
     data: &mut [f32],
     base: usize,
     transform: &Matrix,
-    width: f32,
-    height: f32,
+    width: f64,
+    height: f64,
     u0: f32,
     v0: f32,
     u1: f32,
