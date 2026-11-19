@@ -128,6 +128,28 @@ mod get_wgpu_effect_gradient_ramp_texture {
 
     // The cache key covers colours, alphas AND ratios.
     #[test]
+    fn keys_colors_by_exact_u32_identity_beyond_f32_precision() {
+        // 0x01000001 and 0x01000000 are both 16777216 as f32; an f32 key would hand the second
+        // request the first ramp.
+        let mut state = create_wgpu_render_state_for_test(None);
+        let records = record_test_commands(&state);
+        let first = get_wgpu_effect_gradient_ramp_texture(
+            &mut state,
+            &vec![0x0100_0001, 0xffffff],
+            &vec![1.0, 1.0],
+            &vec![0.0, 255.0],
+        );
+        let second = get_wgpu_effect_gradient_ramp_texture(
+            &mut state,
+            &vec![0x0100_0000, 0xffffff],
+            &vec![1.0, 1.0],
+            &vec![0.0, 255.0],
+        );
+        assert_ne!(first, second);
+        assert_eq!(ramp_uploads(&records).len(), 2);
+    }
+
+    #[test]
     fn gives_distinct_stops_distinct_textures_on_every_axis_of_the_key() {
         let mut state = create_wgpu_render_state_for_test(None);
         let records = record_test_commands(&state);

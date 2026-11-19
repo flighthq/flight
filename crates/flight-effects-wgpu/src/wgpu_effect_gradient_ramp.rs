@@ -141,9 +141,10 @@ pub fn get_wgpu_effect_gradient_ramp_texture(
     alphas: &Vec<f32>,
     ratios: &Vec<f32>,
 ) -> wgpu::Texture {
+    // Colors key by their exact u32 identity: packed values beyond 2^24 would collide as f32.
     let key = format!(
         "{}|{}|{}",
-        join_numbers(colors.iter().map(|value| *value as f32)),
+        join_numbers(colors.iter().copied()),
         join_numbers(alphas.iter().copied()),
         join_numbers(ratios.iter().copied())
     );
@@ -157,7 +158,10 @@ pub fn get_wgpu_effect_gradient_ramp_texture(
     return texture;
 }
 
-fn join_numbers(values: impl Iterator<Item = f32>) -> String {
+// flight-lint: allow(f64) formats each key value through its exact f64 widening; u32 colors keep their full identity (foreman-8eb3ace8)
+fn join_numbers<T: Copy + Into<f64> + std::fmt::Display>(
+    values: impl Iterator<Item = T>,
+) -> String {
     let parts: Vec<String> = values
         .map(crate::wgpu_effect_runtime::format_wgpu_effect_number)
         .collect();
