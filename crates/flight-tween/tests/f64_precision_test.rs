@@ -25,8 +25,9 @@ fn linear_manager() -> TweenManager {
 
 #[test]
 fn interpolates_a_sub_millimetre_change_at_one_billion() {
+    assert_ne!(START as f32 as f64, START);
     let manager = linear_manager();
-    let target = Ref::new(RwLock::new(Obj { x: 1e9 }));
+    let target = Ref::new(RwLock::new(Obj { x: START }));
     create_tween(
         &manager,
         &target,
@@ -34,15 +35,15 @@ fn interpolates_a_sub_millimetre_change_at_one_billion() {
         &[TweenProp {
             get: |t: &mut Obj| &mut t.x,
             key: "x",
-            to: 1e9 + 1e-3,
+            to: START + 1e-3,
         }],
         None,
     );
     update_tweens(&manager, 0.5);
     let x = target.read().unwrap().x;
-    assert!((x - (1e9 + 5e-4)).abs() < 2.5e-7, "x {x}");
+    assert!((x - (START + 5e-4)).abs() < 2.5e-7, "x {x}");
     update_tweens(&manager, 0.5);
-    assert_eq!(target.read().unwrap().x, 1e9 + 1e-3);
+    assert_eq!(target.read().unwrap().x, START + 1e-3);
 }
 
 #[test]
@@ -96,3 +97,7 @@ fn keeps_progress_and_easing_bounded_f32() {
     set_tween_progress(&tween, 0.5_f32);
     assert_eq!(target.read().unwrap().x, 4.0);
 }
+
+// A start value f32 cannot hold: its nearest single-precision neighbor is 1e9, half a unit away, so
+// narrowing it anywhere shifts every result in this file by 0.5, far past the asserted deltas.
+const START: f64 = 1e9 + 0.5;

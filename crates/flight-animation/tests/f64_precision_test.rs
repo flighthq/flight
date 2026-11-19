@@ -14,11 +14,12 @@ fn linear_track(times: Vec<f64>, values: Vec<f64>) -> AnimationTrack {
 
 #[test]
 fn samples_a_sub_millimetre_keyframe_delta_at_one_billion() {
-    let track = linear_track(vec![0.0, 1.0], vec![1e9, 1e9 + 1e-3]);
+    assert_ne!(START as f32 as f64, START);
+    let track = linear_track(vec![0.0, 1.0], vec![START, START + 1e-3]);
     let mut out = [0.0_f64; 1];
     sample_animation_track(&mut out, &track, 0.25);
     assert!(
-        (out[0] - (1e9 + 2.5e-4)).abs() < 2.5e-7,
+        (out[0] - (START + 2.5e-4)).abs() < 2.5e-7,
         "sample {}",
         out[0]
     );
@@ -57,8 +58,8 @@ fn accumulates_player_time_in_f64() {
 #[test]
 fn widens_bounded_blend_alpha_without_narrowing_samples() {
     let mut out = [0.0_f64; 1];
-    blend_animation_samples(&mut out, &[1e9], &[1e9 + 4.0], 0.25_f32, false);
-    assert_eq!(out[0], 1e9 + 1.0);
+    blend_animation_samples(&mut out, &[START], &[START + 4.0], 0.25_f32, false);
+    assert_eq!(out[0], START + 1.0);
 
     let mut accumulator = create_animation_sample_accumulator(1, false);
     accumulate_animation_sample(&mut accumulator, &[1e9 + 1e-3], 0.5_f32);
@@ -71,3 +72,7 @@ fn widens_bounded_blend_alpha_without_narrowing_samples() {
         blended[0]
     );
 }
+
+// A start value f32 cannot hold: its nearest single-precision neighbor is 1e9, half a unit away, so
+// narrowing it anywhere shifts every result in this file by 0.5, far past the asserted deltas.
+const START: f64 = 1e9 + 0.5;
