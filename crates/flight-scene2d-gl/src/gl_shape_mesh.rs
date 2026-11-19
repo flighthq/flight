@@ -188,14 +188,14 @@ fn shape_mesh_matrix(
     let ih = 2.0 / if height == 0.0 { 1.0 } else { height };
     let t = &render_proxy.transform_2d;
     return [
-        t.a * iw,
-        -t.b * ih,
+        (t.a * iw) as f32,
+        (-t.b * ih) as f32,
         0.0,
-        t.c * iw,
-        -t.d * ih,
+        (t.c * iw) as f32,
+        (-t.d * ih) as f32,
         0.0,
-        t.tx * iw - 1.0,
-        -t.ty * ih + 1.0,
+        (t.tx * iw - 1.0) as f32,
+        (-t.ty * ih + 1.0) as f32,
         1.0,
     ];
 }

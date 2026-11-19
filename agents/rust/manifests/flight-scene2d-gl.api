@@ -37,7 +37,7 @@ src/explain_gl_scene2d_coverage.rs: pub fn has_gl_scene2d_coverage(state: &GlRen
 src/gl_bitmap_text.rs: pub static GL_BITMAP_TEXT_RENDERER: NodeRenderer<GlRenderState>
 src/gl_cache.rs: pub fn create_gl_cache_state(owner_state: &GlRenderState, options: Option<&GlRenderStateOptions>,) -> GlRenderState
 src/gl_cache.rs: pub fn enable_gl_render_cache(state: &mut GlRenderState)
-src/gl_cache.rs: pub fn ensure_gl_render_cache_target(owner_state: &GlRenderState, cache: &RenderCache, width: f32, height: f32,) -> Rc<RefCell<GlTextureRenderTarget>>
+src/gl_cache.rs: pub fn ensure_gl_render_cache_target(owner_state: &GlRenderState, cache: &RenderCache, width: f64, height: f64,) -> Rc<RefCell<GlTextureRenderTarget>>
 src/gl_cache.rs: pub fn get_gl_render_cache_target(owner_state: &GlRenderState, cache: &RenderCache,) -> Option<Rc<RefCell<GlTextureRenderTarget>>>
 src/gl_cache.rs: pub fn refresh_gl_render_cache(owner_state: &GlRenderState, cache_state: &mut GlRenderState, cache_proxies: &mut RenderProxies2D<GlRenderState>, cache: &Ref<RenderCache>, source: &NodeRef, options: Option<&RenderCacheRefreshOptions>,) -> bool
 src/gl_cache.rs: pub fn release_gl_render_cache(owner_state: &GlRenderState, cache: &RenderCache)
@@ -66,8 +66,8 @@ src/gl_quad_batch_writer.rs: pub fn prepare_gl_quad_batch_write(state: &mut GlRe
 src/gl_quad_batch_writer.rs: pub fn record_gl_quad_batch_color_scale_bias(state: &mut GlRenderState, color_scale_bias: Option<&GlColorAdjustmentData>, instance_index: usize,)
 src/gl_quad_batch_writer.rs: pub fn set_gl_quad_batch_world_and_texture(state: &GlRenderState, loc_world_matrix: Option<&NativeUniformLocation>, loc_texture: Option<&NativeUniformLocation>, loc_straight_texture_alpha: Option<&NativeUniformLocation>,)
 src/gl_quad_batch_writer.rs: pub fn use_gl_quad_batch_program(state: &GlRenderState, program: NativeProgram)
-src/gl_quad_batch_writer.rs: pub fn write_gl_quad_batch_affine_instance(data: &mut [f32], base: usize, transform: &Matrix, width: f32, height: f32, uv_origin_x: f32, uv_origin_y: f32, uv_axis_ux: f32, uv_axis_uy: f32, uv_axis_vx: f32, uv_axis_vy: f32, alpha: f32,)
-src/gl_quad_batch_writer.rs: pub fn write_gl_quad_batch_instance(data: &mut [f32], base: usize, transform: &Matrix, width: f32, height: f32, u0: f32, v0: f32, u1: f32, v1: f32, alpha: f32,)
+src/gl_quad_batch_writer.rs: pub fn write_gl_quad_batch_affine_instance(data: &mut [f32], base: usize, transform: &Matrix, width: f64, height: f64, uv_origin_x: f32, uv_origin_y: f32, uv_axis_ux: f32, uv_axis_uy: f32, uv_axis_vx: f32, uv_axis_vy: f32, alpha: f32,)
+src/gl_quad_batch_writer.rs: pub fn write_gl_quad_batch_instance(data: &mut [f32], base: usize, transform: &Matrix, width: f64, height: f64, u0: f32, v0: f32, u1: f32, v1: f32, alpha: f32,)
 src/gl_raster_shape_renderer.rs: pub fn draw_gl_raster_shape(state: &mut GlRenderState, render_proxy: &RenderProxy2D<GlRenderState>,)
 src/gl_raster_shape_renderer.rs: pub static GL_RASTER_SHAPE_RENDERER: NodeRenderer<GlRenderState>
 src/gl_rich_text.rs: pub fn create_gl_rich_text_data(state: &mut GlRenderState, source: &NodeRef,) -> Option<RendererDataRef>
@@ -77,7 +77,7 @@ src/gl_rich_text.rs: pub fn draw_gl_rich_text_with_overlay(state: &mut GlRenderS
 src/gl_rich_text.rs: pub fn initialize_gl_rich_text_data(out: &mut GlRichTextData, _state: &GlRenderState, _source: &NodeRef,)
 src/gl_rich_text.rs: pub fn register_gl_text_input_overlay(state: &GlRenderState, overlay: GlRichTextOverlay)
 src/gl_rich_text.rs: pub static GL_RICH_TEXT_RENDERER: NodeRenderer<GlRenderState>
-src/gl_scale9_mapper.rs: pub fn build_gl_scale9_mapper(bounds: &Rectangle, scale9_grid: &Rectangle, scale_x: f32, scale_y: f32,) -> Option<ShapeScale9Mapper>
+src/gl_scale9_mapper.rs: pub fn build_gl_scale9_mapper(bounds: &Rectangle, scale9_grid: &Rectangle, scale_x: f64, scale_y: f64,) -> Option<ShapeScale9Mapper>
 src/gl_scale9_shape.rs: pub fn acquire_gl_scale9_shape_raster_surface(surfaces: &mut CanvasHostSurfaces, canvas_host: &HostCanvasCapability, image_host: &HostImageCapability, data: &mut GlScale9ShapeData,) -> Option<Ref<CanvasSurface>>
 src/gl_scale9_shape.rs: pub fn create_gl_scale9_shape_data(state: &mut GlRenderState, source: &NodeRef,) -> Option<RendererDataRef>
 src/gl_scale9_shape.rs: pub fn destroy_gl_scale9_shape_data(state: &mut GlRenderState, data: RendererDataRef)
@@ -116,8 +116,8 @@ src/gl_text_label.rs: pub fn draw_gl_text_label(state: &mut GlRenderState, rende
 src/gl_text_label.rs: pub fn initialize_gl_text_label_data(out: &mut GlTextLabelData)
 src/gl_text_label.rs: pub static GL_TEXT_LABEL_RENDERER: NodeRenderer<GlRenderState>
 src/gl_tilemap.rs: pub static GL_TILEMAP_RENDERER: NodeRenderer<GlRenderState>
-src/gl_velocity.rs: pub fn create_gl_velocity_target(state: &GlRenderState, width: f32, height: f32,) -> GlTextureRenderTarget
-src/gl_velocity.rs: pub fn draw_gl_velocity_quad(ctx: &mut GlVelocityContext<'_>, x: f32, y: f32, width: f32, height: f32, velocity_x: f32, velocity_y: f32,)
+src/gl_velocity.rs: pub fn create_gl_velocity_target(state: &GlRenderState, width: f64, height: f64,) -> GlTextureRenderTarget
+src/gl_velocity.rs: pub fn draw_gl_velocity_quad(ctx: &mut GlVelocityContext<'_>, x: f64, y: f64, width: f64, height: f64, velocity_x: f64, velocity_y: f64,)
 src/gl_velocity.rs: pub fn get_gl_velocity_writer(state: &GlRenderState, kind: &Kind) -> Option<GlVelocityWriter>
 src/gl_velocity.rs: pub fn gl_node2d_velocity_writer(ctx: &mut GlVelocityContext<'_>, node: &NodeRef)
 src/gl_velocity.rs: pub fn gl_particle_emitter2d_velocity_writer(ctx: &mut GlVelocityContext<'_>, node: &NodeRef)
@@ -162,8 +162,8 @@ src/lib.rs: pub use crate::gl_tilemap::*;
 src/lib.rs: pub use crate::scene2d_gl_pipeline::*;
 src/scene2d_gl_pipeline.rs: pub fn gl_render_infrastructure() -> GlRenderStateOptions
 src/scene2d_gl_pipeline.rs: pub fn gl_scene2d_render_preset() -> GlRenderStateOptions
-src/types.rs: #[derive(Default)] pub struct GlRichTextData { pub(crate) renderer_data: RendererDataFields, pub alloc_h: f32, pub alloc_w: f32, pub image: Option<Ref<ImageResource>>, pub surface: Option<Ref<CanvasSurface>>, }
-src/types.rs: #[derive(Default)] pub struct GlScale9ShapeData { pub(crate) renderer_data: RendererDataFields, pub image: Option<Ref<ImageResource>>, pub last_h: f32, pub last_scale_x: f32, pub last_scale_y: f32, pub last_content_id: i64, pub last_pixel_ratio: f32, pub last_w: f32, pub surface: Option<Ref<CanvasSurface>>, }
-src/types.rs: #[derive(Default)] pub struct GlShapeRendererData { pub(crate) renderer_data: RendererDataFields, pub image: Option<Ref<ImageResource>>, pub last_content_id: i64, pub last_h: f32, pub last_pixel_ratio: f32, pub last_w: f32, pub mesh_version: i64, pub meshes: Option<Vec<GlShapeMesh>>, pub surface: Option<Ref<CanvasSurface>>, }
-src/types.rs: #[derive(Default)] pub struct GlTextLabelData { pub(crate) renderer_data: RendererDataFields, pub alloc_h: f32, pub alloc_w: f32, pub image: Option<Ref<ImageResource>>, pub last_content_id: i64, pub last_pixel_ratio: f32, pub log_h: f32, pub log_w: f32, pub surface: Option<Ref<CanvasSurface>>, }
+src/types.rs: #[derive(Default)] pub struct GlRichTextData { pub(crate) renderer_data: RendererDataFields, pub alloc_h: f64, pub alloc_w: f64, pub image: Option<Ref<ImageResource>>, pub surface: Option<Ref<CanvasSurface>>, }
+src/types.rs: #[derive(Default)] pub struct GlScale9ShapeData { pub(crate) renderer_data: RendererDataFields, pub image: Option<Ref<ImageResource>>, pub last_h: f64, pub last_scale_x: f64, pub last_scale_y: f64, pub last_content_id: i64, pub last_pixel_ratio: f64, pub last_w: f64, pub surface: Option<Ref<CanvasSurface>>, }
+src/types.rs: #[derive(Default)] pub struct GlShapeRendererData { pub(crate) renderer_data: RendererDataFields, pub image: Option<Ref<ImageResource>>, pub last_content_id: i64, pub last_h: f64, pub last_pixel_ratio: f64, pub last_w: f64, pub mesh_version: i64, pub meshes: Option<Vec<GlShapeMesh>>, pub surface: Option<Ref<CanvasSurface>>, }
+src/types.rs: #[derive(Default)] pub struct GlTextLabelData { pub(crate) renderer_data: RendererDataFields, pub alloc_h: f64, pub alloc_w: f64, pub image: Option<Ref<ImageResource>>, pub last_content_id: i64, pub last_pixel_ratio: f64, pub log_h: f64, pub log_w: f64, pub surface: Option<Ref<CanvasSurface>>, }
 src/types.rs: pub type GlRichTextOverlay = fn(&CanvasRenderingContext2D, &Ref<flight_text::RichText>, &flight_textlayout::TextLayoutResult, f32, f32, &str,);

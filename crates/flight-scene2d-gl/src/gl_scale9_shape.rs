@@ -102,6 +102,7 @@ pub fn destroy_gl_scale9_shape_data(state: &mut GlRenderState, data: RendererDat
     }
 }
 
+// flight-lint: allow(f64) 2D geometry, logical sizes and the device pixel ratio are f64 CPU values (Task Q); they narrow once into f32 GL uniforms, instance floats and the f32 canvas-host and text-layout lanes
 pub fn draw_gl_scale9_shape(
     state: &mut GlRenderState,
     render_proxy: &RenderProxy2D<GlRenderState>,
@@ -174,11 +175,11 @@ pub fn draw_gl_scale9_shape(
     // and samples the whole texture, so a denser raster is only sharper — no geometry moves with it.
 
     if version != shape_data.last_content_id
-        || w != shape_data.last_w
-        || h != shape_data.last_h
-        || source.scale_x != shape_data.last_scale_x
-        || source.scale_y != shape_data.last_scale_y
-        || pixel_ratio != shape_data.last_pixel_ratio
+        || w != f64::from(shape_data.last_w)
+        || h != f64::from(shape_data.last_h)
+        || source.scale_x != f64::from(shape_data.last_scale_x)
+        || source.scale_y != f64::from(shape_data.last_scale_y)
+        || pixel_ratio != f64::from(shape_data.last_pixel_ratio)
     {
         let pw = (w * pixel_ratio).ceil();
         let ph = (h * pixel_ratio).ceil();
@@ -192,7 +193,7 @@ pub fn draw_gl_scale9_shape(
         } else {
             0.0
         };
-        if pw != old_pw || ph != old_ph {
+        if pw != f64::from(old_pw) || ph != f64::from(old_ph) {
             if let Some(image) = &shape_data.image {
                 delete_gl_premultiplied_image_texture(state, image);
             }
@@ -297,20 +298,37 @@ pub fn get_gl_scale9_shape_data(data: &mut dyn RendererData) -> Option<&mut GlSc
     return data.as_any_mut().downcast_mut::<GlScale9ShapeData>();
 }
 
+// flight-lint: allow(f64) 2D geometry, logical sizes and the device pixel ratio are f64 CPU values (Task Q); they narrow once into f32 GL uniforms, instance floats and the f32 canvas-host and text-layout lanes
 fn set_stripped_gl_matrix_from_values(
     gl: &glow::Context,
     loc: &GlShaderLocations,
     m: &mut [f32; 9],
     t: &flight_geometry::Matrix,
-    scale_x: f32,
-    scale_y: f32,
-    viewport_width: f32,
-    viewport_height: f32,
+    scale_x: f64,
+    scale_y: f64,
+    viewport_width: f64,
+    viewport_height: f64,
 ) {
-    let a = if scale_x != 0.0 { t.a / scale_x } else { t.a };
-    let b = if scale_x != 0.0 { t.b / scale_x } else { t.b };
-    let c = if scale_y != 0.0 { t.c / scale_y } else { t.c };
-    let d = if scale_y != 0.0 { t.d / scale_y } else { t.d };
+    let a = if scale_x != 0.0 {
+        t.a / f64::from(scale_x)
+    } else {
+        t.a
+    };
+    let b = if scale_x != 0.0 {
+        t.b / f64::from(scale_x)
+    } else {
+        t.b
+    };
+    let c = if scale_y != 0.0 {
+        t.c / f64::from(scale_y)
+    } else {
+        t.c
+    };
+    let d = if scale_y != 0.0 {
+        t.d / f64::from(scale_y)
+    } else {
+        t.d
+    };
     set_gl_matrix_from_values(
         gl,
         loc,

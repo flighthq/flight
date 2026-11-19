@@ -103,12 +103,12 @@ pub fn draw_gl_sprite(state: &mut GlRenderState, render_proxy: &RenderProxy2D<Gl
         &render_proxy.transform_2d,
         width,
         height,
-        uv[6],
-        uv_origin_y,
-        uv[0],
-        uv_axis_uy,
-        uv[3],
-        uv_axis_vy,
+        uv[6] as f32,
+        uv_origin_y as f32,
+        uv[0] as f32,
+        uv_axis_uy as f32,
+        uv[3] as f32,
+        uv_axis_vy as f32,
         render_proxy.alpha,
     );
     pack_gl_proxy_material_instance(state, render_proxy.material_data.as_ref(), instance_index);

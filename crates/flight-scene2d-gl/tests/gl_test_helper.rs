@@ -302,7 +302,7 @@ pub fn make_proxy(state: &mut GlRenderState) -> flight_render::RenderProxy2D<GlR
     return flight_render::create_render_proxy_2d(state, &source);
 }
 
-pub fn make_target_descriptor(width: f32, height: f32) -> flight_render::RenderTargetDescriptor {
+pub fn make_target_descriptor(width: f64, height: f64) -> flight_render::RenderTargetDescriptor {
     return flight_render::RenderTargetDescriptor {
         width,
         height,
@@ -322,7 +322,7 @@ pub fn make_texture_target(
 ) -> flight_render_gl::GlTextureRenderTarget {
     return flight_render_gl::create_gl_texture_render_target(
         state,
-        &make_target_descriptor(width, height),
+        &make_target_descriptor(f64::from(width), f64::from(height)),
         None,
     )
     .expect("mock target allocation")
@@ -455,8 +455,8 @@ pub fn make_tint_material_data(tint: u32) -> flight_materials::TintMaterialData 
 pub struct RecordingCanvas2D {
     pub calls: std::sync::Mutex<Vec<String>>,
     pub char_width: f32,
-    pub height: f32,
-    pub width: f32,
+    pub height: f64,
+    pub width: f64,
 }
 
 impl RecordingCanvas2D {
@@ -469,19 +469,19 @@ impl flight_host::Canvas2DContext for RecordingCanvas2D {
     fn begin_path(&self) {
         self.push("beginPath()".to_string());
     }
-    fn clear_rect(&self, x: f32, y: f32, width: f32, height: f32) {
+    fn clear_rect(&self, x: f64, y: f64, width: f64, height: f64) {
         self.push(format!("clearRect({x},{y},{width},{height})"));
     }
     fn clip(&self) {
         self.push("clip()".to_string());
     }
-    fn fill_rect(&self, x: f32, y: f32, width: f32, height: f32) {
+    fn fill_rect(&self, x: f64, y: f64, width: f64, height: f64) {
         self.push(format!("fillRect({x},{y},{width},{height})"));
     }
-    fn fill_text(&self, text: &str, x: f32, y: f32) {
+    fn fill_text(&self, text: &str, x: f64, y: f64) {
         self.push(format!("fillText({text},{x},{y})"));
     }
-    fn line_to(&self, x: f32, y: f32) {
+    fn line_to(&self, x: f64, y: f64) {
         self.push(format!("lineTo({x},{y})"));
     }
     fn measure_text(&self, text: &str) -> flight_host::CanvasTextMetrics {
@@ -489,10 +489,10 @@ impl flight_host::Canvas2DContext for RecordingCanvas2D {
             width: text.chars().count() as f32 * self.char_width,
         };
     }
-    fn move_to(&self, x: f32, y: f32) {
+    fn move_to(&self, x: f64, y: f64) {
         self.push(format!("moveTo({x},{y})"));
     }
-    fn rect(&self, x: f32, y: f32, width: f32, height: f32) {
+    fn rect(&self, x: f64, y: f64, width: f64, height: f64) {
         self.push(format!("rect({x},{y},{width},{height})"));
     }
     fn restore(&self) {
@@ -510,7 +510,7 @@ impl flight_host::Canvas2DContext for RecordingCanvas2D {
     fn set_global_alpha(&self, alpha: f32) {
         self.push(format!("globalAlpha={alpha}"));
     }
-    fn set_line_width(&self, width: f32) {
+    fn set_line_width(&self, width: f64) {
         self.push(format!("lineWidth={width}"));
     }
     fn set_stroke_style(&self, style: &str) {
@@ -522,13 +522,13 @@ impl flight_host::Canvas2DContext for RecordingCanvas2D {
     fn set_text_baseline(&self, baseline: &str) {
         self.push(format!("textBaseline={baseline}"));
     }
-    fn set_transform(&self, a: f32, b: f32, c: f32, d: f32, e: f32, f: f32) {
+    fn set_transform(&self, a: f64, b: f64, c: f64, d: f64, e: f64, f: f64) {
         self.push(format!("setTransform({a},{b},{c},{d},{e},{f})"));
     }
     fn stroke(&self) {
         self.push("stroke()".to_string());
     }
-    fn stroke_rect(&self, x: f32, y: f32, width: f32, height: f32) {
+    fn stroke_rect(&self, x: f64, y: f64, width: f64, height: f64) {
         self.push(format!("strokeRect({x},{y},{width},{height})"));
     }
 }
@@ -557,8 +557,8 @@ thread_local! {
 }
 
 pub fn make_canvas_surface(
-    width: f32,
-    height: f32,
+    width: f64,
+    height: f64,
 ) -> flight_entity::Ref<flight_surface::CanvasSurface> {
     let surface: flight_entity::Ref<flight_surface::CanvasSurface> =
         flight_surface::allocate_surface(None);
@@ -580,7 +580,7 @@ pub fn make_canvas_surface(
 /// A canvas host whose surfaces are counted on creation and destruction.
 pub struct TestCanvasHost {
     pub host: flight_surface::HostCanvasCapability,
-    pub created: Arc<std::sync::Mutex<Vec<(f32, f32)>>>,
+    pub created: Arc<std::sync::Mutex<Vec<(f64, f64)>>>,
     pub destroyed: Arc<std::sync::Mutex<usize>>,
 }
 

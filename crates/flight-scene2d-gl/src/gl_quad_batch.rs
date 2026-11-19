@@ -32,6 +32,7 @@ pub static GL_QUAD_BATCH_RENDERER: NodeRenderer<GlRenderState> = NodeRenderer {
     submit: submit_gl_quad_batch,
 };
 
+// flight-lint: allow(f64) 2D geometry, logical sizes and the device pixel ratio are f64 CPU values (Task Q); they narrow once into f32 GL uniforms, instance floats and the f32 canvas-host and text-layout lanes
 fn submit_gl_quad_batch(state: &mut GlRenderState, quad_batch: &RenderProxy2D<GlRenderState>) {
     let source = quad_batch.source.read().unwrap();
     let Some(source) = source.as_any().downcast_ref::<QuadBatch>() else {
@@ -111,8 +112,8 @@ fn submit_gl_quad_batch(state: &mut GlRenderState, quad_batch: &RenderProxy2D<Gl
             quad_transform.b = pb;
             quad_transform.c = pc;
             quad_transform.d = pd;
-            quad_transform.tx = pa * dx + pc * dy + ptx;
-            quad_transform.ty = pb * dx + pd * dy + pty;
+            quad_transform.tx = pa * f64::from(dx) + pc * f64::from(dy) + ptx;
+            quad_transform.ty = pb * f64::from(dx) + pd * f64::from(dy) + pty;
         } else {
             let offset = index * 6;
             let la = transforms[offset];
@@ -121,12 +122,12 @@ fn submit_gl_quad_batch(state: &mut GlRenderState, quad_batch: &RenderProxy2D<Gl
             let ld = transforms[offset + 3];
             let ltx = transforms[offset + 4];
             let lty = transforms[offset + 5];
-            quad_transform.a = pa * la + pc * lb;
-            quad_transform.b = pb * la + pd * lb;
-            quad_transform.c = pa * lc + pc * ld;
-            quad_transform.d = pb * lc + pd * ld;
-            quad_transform.tx = pa * ltx + pc * lty + ptx;
-            quad_transform.ty = pb * ltx + pd * lty + pty;
+            quad_transform.a = pa * f64::from(la) + pc * f64::from(lb);
+            quad_transform.b = pb * f64::from(la) + pd * f64::from(lb);
+            quad_transform.c = pa * f64::from(lc) + pc * f64::from(ld);
+            quad_transform.d = pb * f64::from(lc) + pd * f64::from(ld);
+            quad_transform.tx = pa * f64::from(ltx) + pc * f64::from(lty) + ptx;
+            quad_transform.ty = pb * f64::from(ltx) + pd * f64::from(lty) + pty;
         }
         write_atlas_region_instance(
             &mut state
@@ -164,6 +165,7 @@ fn submit_gl_quad_batch(state: &mut GlRenderState, quad_batch: &RenderProxy2D<Gl
     state.gl_runtime.borrow_mut().quad_batch_writer_count += draw_count;
 }
 
+// flight-lint: allow(f64) 2D geometry, logical sizes and the device pixel ratio are f64 CPU values (Task Q); they narrow once into f32 GL uniforms, instance floats and the f32 canvas-host and text-layout lanes
 fn write_atlas_region_instance(
     data: &mut [f32],
     base: usize,
@@ -183,8 +185,16 @@ fn write_atlas_region_instance(
         data,
         base,
         transform,
-        if rotated { region.height } else { region.width },
-        if rotated { region.width } else { region.height },
+        if rotated {
+            f64::from(region.height)
+        } else {
+            f64::from(region.width)
+        },
+        if rotated {
+            f64::from(region.width)
+        } else {
+            f64::from(region.height)
+        },
         if rotated {
             if counterclockwise { u0 } else { u1 }
         } else {

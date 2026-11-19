@@ -93,7 +93,17 @@ fn get_projection_mat3(state: &GlRenderState) -> [f32; 9] {
     let (width, height) = get_gl_viewport_size(state);
     let w = if width == 0.0 { 1.0 } else { width };
     let h = if height == 0.0 { 1.0 } else { height };
-    return [2.0 / w, 0.0, 0.0, 0.0, -2.0 / h, 0.0, -1.0, 1.0, 1.0];
+    return [
+        (2.0 / w) as f32,
+        0.0,
+        0.0,
+        0.0,
+        (-2.0 / h) as f32,
+        0.0,
+        -1.0,
+        1.0,
+        1.0,
+    ];
 }
 
 pub fn pop_gl_clip_contours(state: &mut GlRenderState) {
@@ -186,7 +196,17 @@ fn upload_clip_uniforms(state: &GlRenderState, program: &GlClipProgram, m: &Matr
         state.gl.uniform_matrix_3_f32_slice(
             program.world_matrix_location.as_ref(),
             false,
-            &[m.a, m.b, 0.0, m.c, m.d, 0.0, m.tx, m.ty, 1.0],
+            &[
+                m.a as f32,
+                m.b as f32,
+                0.0,
+                m.c as f32,
+                m.d as f32,
+                0.0,
+                m.tx as f32,
+                m.ty as f32,
+                1.0,
+            ],
         );
         state.gl.uniform_matrix_3_f32_slice(
             program.projection_location.as_ref(),

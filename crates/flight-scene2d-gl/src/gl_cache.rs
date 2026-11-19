@@ -88,24 +88,30 @@ pub fn enable_gl_render_cache(state: &mut GlRenderState) {
 /// Allocates or resizes the framebuffer-backed texture `owner_state` composites for `cache`,
 /// returning it so a caller can render custom content into it directly. For engine-baked content
 /// prefer refresh_gl_render_cache.
+// flight-lint: allow(f64) 2D geometry, logical sizes and the device pixel ratio are f64 CPU values (Task Q); they narrow once into f32 GL uniforms, instance floats and the f32 canvas-host and text-layout lanes
 pub fn ensure_gl_render_cache_target(
     owner_state: &GlRenderState,
     cache: &RenderCache,
-    width: f32,
-    height: f32,
+    width: f64,
+    height: f64,
 ) -> Rc<RefCell<GlTextureRenderTarget>> {
     ensure_targets(owner_state);
     let cache_id = get_entity_id(cache);
     if let Some(target) = get_gl_render_cache_target(owner_state, cache) {
-        resize_gl_texture_render_target(owner_state, &mut target.borrow_mut(), width, height)
-            .unwrap_or_else(|error| throw_error(&error));
+        resize_gl_texture_render_target(
+            owner_state,
+            &mut target.borrow_mut(),
+            f64::from(width),
+            f64::from(height),
+        )
+        .unwrap_or_else(|error| throw_error(&error));
         return target;
     }
     let target = create_gl_texture_render_target(
         owner_state,
         &RenderTargetDescriptor {
-            width,
-            height,
+            width: f64::from(width),
+            height: f64::from(height),
             format: None,
             color_attachments: None,
             color_formats: None,
@@ -156,6 +162,7 @@ pub fn get_gl_render_cache_target(
 /// offscreen state's own dirtiness decides it, so this is cheap to call every frame. The render-pass
 /// bracket owns the shared GL context while the cache state bakes, then restores the screen pass.
 // flight-lint: allow(conform-params) D17 the offscreen state's caller-owned proxy store is an explicit argument
+// flight-lint: allow(f64) 2D geometry, logical sizes and the device pixel ratio are f64 CPU values (Task Q); they narrow once into f32 GL uniforms, instance floats and the f32 canvas-host and text-layout lanes
 pub fn refresh_gl_render_cache(
     owner_state: &GlRenderState,
     cache_state: &mut GlRenderState,
@@ -188,7 +195,7 @@ pub fn refresh_gl_render_cache(
         let existing = get_gl_render_cache_target(owner_state, &cache);
         existing.is_none_or(|existing| {
             let existing = existing.borrow();
-            existing.axes.width as f32 != width || existing.axes.height as f32 != height
+            f64::from(existing.axes.width) != width || f64::from(existing.axes.height) != height
         })
     };
     let target = ensure_gl_render_cache_target(owner_state, &cache.read().unwrap(), width, height);

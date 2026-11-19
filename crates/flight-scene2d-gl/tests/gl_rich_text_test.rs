@@ -16,7 +16,7 @@ use flight_textlayout::contract::TextLayoutResult;
 
 use crate::gl_test_helper::{
     count_calls, create_gl_state, create_gl_state_with_hosts, create_test_image_host,
-    make_canvas_surface, make_scene2d_proxy, test_default,
+    make_canvas_surface, make_scene2d_proxy, surface_calls, test_default,
 };
 
 thread_local! {
@@ -214,6 +214,27 @@ mod draw_gl_rich_text {
         let mut state = create_gl_state();
         draw(&mut state, &make_rich_text_node(""));
         assert_eq!(count_calls("draw_elements"), 0);
+    }
+
+    #[test]
+    fn subtracts_the_horizontal_scroll_in_f64_and_passes_it_straight_to_the_canvas() {
+        // The f32 layout offset widens exactly and the 0.1 scroll is subtracted in f64: the text
+        // moves by exactly -0.1. An f32 round trip would land on a different, f32-rounded x.
+        let text_x = |scroll_h: f64| -> f64 {
+            let (mut state, _host) = create_gl_state_with_hosts();
+            let node = make_rich_text_node("hello");
+            node.write().unwrap().data.scroll_h = scroll_h;
+            let data = draw(&mut state, &node);
+            let surface = with_data(&data, |data| data.surface.clone()).unwrap();
+            let call = surface_calls(&surface)
+                .into_iter()
+                .find(|call| call.starts_with("fillText(hello,"))
+                .unwrap();
+            let x = call["fillText(hello,".len()..].split(',').next().unwrap();
+            return x.parse::<f64>().unwrap();
+        };
+        let unscrolled = text_x(0.0);
+        assert_eq!(text_x(0.1), unscrolled - 0.1);
     }
 
     #[test]

@@ -123,7 +123,7 @@ mod draw_gl_sprite {
             fields.uv_offset.y = 0.4;
             fields.uv_scale.x = 0.3;
             fields.uv_scale.y = 0.2;
-            fields.uv_rotation = -std::f32::consts::PI / 2.0;
+            fields.uv_rotation = -std::f64::consts::PI / 2.0;
         }
         let proxy = make_render_proxy(&mut state, make_sprite(texture));
 

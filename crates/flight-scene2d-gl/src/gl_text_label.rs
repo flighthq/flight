@@ -83,6 +83,7 @@ fn destroy_gl_text_label_data(state: &mut GlRenderState, data: RendererDataRef) 
     );
 }
 
+// flight-lint: allow(f64) 2D geometry, logical sizes and the device pixel ratio are f64 CPU values (Task Q); they narrow once into f32 GL uniforms, instance floats and the f32 canvas-host and text-layout lanes
 pub fn draw_gl_text_label(state: &mut GlRenderState, render_proxy: &RenderProxy2D<GlRenderState>) {
     let source_guard = render_proxy.source.read().unwrap();
     let Some(source) = source_guard.as_any().downcast_ref::<TextLabel>() else {
@@ -119,7 +120,8 @@ pub fn draw_gl_text_label(state: &mut GlRenderState, render_proxy: &RenderProxy2
     let pixel_ratio = state.render.pixel_ratio;
     let version = i64::from(get_node_local_content_revision(source));
 
-    if version != text_data.last_content_id || pixel_ratio != text_data.last_pixel_ratio {
+    if version != text_data.last_content_id || pixel_ratio != f64::from(text_data.last_pixel_ratio)
+    {
         let context = surface
             .as_ref()
             .unwrap()
@@ -151,7 +153,7 @@ pub fn draw_gl_text_label(state: &mut GlRenderState, render_proxy: &RenderProxy2
                     0,
                     utf16_length,
                 )],
-                height: field_height,
+                height: field_height as f32,
                 justification: None,
                 max_lines: None,
                 measure,
@@ -163,7 +165,7 @@ pub fn draw_gl_text_label(state: &mut GlRenderState, render_proxy: &RenderProxy2
                 } else {
                     TextVerticalAlign::Top
                 }),
-                width: field_width,
+                width: field_width as f32,
                 word_wrap: None,
             },
         );
@@ -196,8 +198,8 @@ pub fn draw_gl_text_label(state: &mut GlRenderState, render_proxy: &RenderProxy2
             return;
         }
 
-        let pw = (w * pixel_ratio).ceil();
-        let ph = (h * pixel_ratio).ceil();
+        let pw = (f64::from(w) * pixel_ratio).ceil();
+        let ph = (f64::from(h) * pixel_ratio).ceil();
         surface = ensure_gl_text_label_surface(state, text_data, pw, ph);
         let Some(current) = &surface else {
             return;
@@ -205,7 +207,7 @@ pub fn draw_gl_text_label(state: &mut GlRenderState, render_proxy: &RenderProxy2
 
         let context = current.read().unwrap().context.handle.clone();
         context.set_transform(pixel_ratio, 0.0, 0.0, pixel_ratio, 0.0, 0.0);
-        context.clear_rect(0.0, 0.0, w, h);
+        context.clear_rect(0.0, 0.0, f64::from(w), f64::from(h));
         context.set_text_baseline("alphabetic");
         context.set_text_align("start");
 
@@ -219,16 +221,16 @@ pub fn draw_gl_text_label(state: &mut GlRenderState, render_proxy: &RenderProxy2
             let slice = String::from_utf16_lossy(&utf16[start..end]);
             context.fill_text(
                 &slice,
-                group.offset_x,
-                group.offset_y + group.ascent * 0.815,
+                f64::from(group.offset_x),
+                f64::from(group.offset_y + group.ascent * 0.815),
             );
         }
 
         if let Some(image) = &text_data.image {
             invalidate_gl_surface_image(state, image);
         }
-        text_data.log_w = w;
-        text_data.log_h = h;
+        text_data.log_w = f64::from(w);
+        text_data.log_h = f64::from(h);
     }
 
     if text_data.log_w <= 0.0 || text_data.log_h <= 0.0 {
@@ -292,11 +294,12 @@ pub fn draw_gl_text_label(state: &mut GlRenderState, render_proxy: &RenderProxy2
     state.gl_runtime.borrow_mut().quad_batch_writer_count += 1;
 }
 
+// flight-lint: allow(f64) 2D geometry, logical sizes and the device pixel ratio are f64 CPU values (Task Q); they narrow once into f32 GL uniforms, instance floats and the f32 canvas-host and text-layout lanes
 fn ensure_gl_text_label_surface(
     state: &GlRenderState,
     data: &mut GlTextLabelData,
-    pw: f32,
-    ph: f32,
+    pw: f64,
+    ph: f64,
 ) -> Option<Ref<CanvasSurface>> {
     if let Some(surface) = &data.surface
         && data.alloc_w == pw

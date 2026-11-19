@@ -43,6 +43,7 @@ pub static GL_RASTER_SHAPE_RENDERER: NodeRenderer<GlRenderState> = NodeRenderer 
 // Replays the shape's whole command stream into an offscreen 2D canvas and draws the result as one
 // textured quad. Drawing at all is the registered rasterizer's job, so an absent one is reported
 // rather than quietly dropping the shape.
+// flight-lint: allow(f64) 2D geometry, logical sizes and the device pixel ratio are f64 CPU values (Task Q); they narrow once into f32 GL uniforms, instance floats and the f32 canvas-host and text-layout lanes
 pub fn draw_gl_raster_shape(
     state: &mut GlRenderState,
     render_proxy: &RenderProxy2D<GlRenderState>,
@@ -103,9 +104,9 @@ pub fn draw_gl_raster_shape(
         return;
     };
     if version != shape_data.last_content_id
-        || w != shape_data.last_w
-        || h != shape_data.last_h
-        || pixel_ratio != shape_data.last_pixel_ratio
+        || w != f64::from(shape_data.last_w)
+        || h != f64::from(shape_data.last_h)
+        || pixel_ratio != f64::from(shape_data.last_pixel_ratio)
     {
         let pw = (w * pixel_ratio).ceil();
         let ph = (h * pixel_ratio).ceil();
@@ -119,7 +120,7 @@ pub fn draw_gl_raster_shape(
         } else {
             0.0
         };
-        if pw != old_pw || ph != old_ph {
+        if pw != f64::from(old_pw) || ph != f64::from(old_ph) {
             if let Some(image) = &shape_data.image {
                 delete_gl_premultiplied_image_texture(state, image);
             }

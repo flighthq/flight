@@ -35,6 +35,7 @@ pub static GL_BITMAP_TEXT_RENDERER: NodeRenderer<GlRenderState> = NodeRenderer {
     submit: submit_gl_bitmap_text,
 };
 
+// flight-lint: allow(f64) 2D geometry, logical sizes and the device pixel ratio are f64 CPU values (Task Q); they narrow once into f32 GL uniforms, instance floats and the f32 canvas-host and text-layout lanes
 fn submit_gl_bitmap_text(state: &mut GlRenderState, node: &RenderProxy2D<GlRenderState>) {
     let source = node.source.read().unwrap();
     let Some(source) = source.as_any().downcast_ref::<BitmapText>() else {
@@ -111,8 +112,8 @@ fn submit_gl_bitmap_text(state: &mut GlRenderState, node: &RenderProxy2D<GlRende
             glyph_transform.b = pb;
             glyph_transform.c = pc;
             glyph_transform.d = pd;
-            glyph_transform.tx = pa * dx + pc * dy + ptx;
-            glyph_transform.ty = pb * dx + pd * dy + pty;
+            glyph_transform.tx = pa * f64::from(dx) + pc * f64::from(dy) + ptx;
+            glyph_transform.ty = pb * f64::from(dx) + pd * f64::from(dy) + pty;
             let u0 = region.x * iw;
             let v0 = region.y * ih;
             let u1 = (region.x + region.width) * iw;
@@ -126,8 +127,16 @@ fn submit_gl_bitmap_text(state: &mut GlRenderState, node: &RenderProxy2D<GlRende
                     .quad_batch_writer_instance_data,
                 write_base,
                 &glyph_transform,
-                if rotated { region.height } else { region.width },
-                if rotated { region.width } else { region.height },
+                if rotated {
+                    f64::from(region.height)
+                } else {
+                    f64::from(region.width)
+                },
+                if rotated {
+                    f64::from(region.width)
+                } else {
+                    f64::from(region.height)
+                },
                 if rotated {
                     if counterclockwise { u0 } else { u1 }
                 } else {

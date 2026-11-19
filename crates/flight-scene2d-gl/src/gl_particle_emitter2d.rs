@@ -277,17 +277,27 @@ pub fn draw_gl_particle_emitter2d(
         let mut runtime = state.gl_runtime.borrow_mut();
         let m = &mut runtime.matrix_array;
         if data.world_space {
-            *m = [clip_w, 0.0, 0.0, 0.0, -clip_h, 0.0, -1.0, 1.0, 1.0];
+            *m = [
+                clip_w as f32,
+                0.0,
+                0.0,
+                0.0,
+                (-clip_h) as f32,
+                0.0,
+                -1.0,
+                1.0,
+                1.0,
+            ];
         } else {
             *m = [
-                t.a * clip_w,
-                -t.b * clip_h,
+                (t.a * clip_w) as f32,
+                (-t.b * clip_h) as f32,
                 0.0,
-                t.c * clip_w,
-                -t.d * clip_h,
+                (t.c * clip_w) as f32,
+                (-t.d * clip_h) as f32,
                 0.0,
-                t.tx * clip_w - 1.0,
-                -t.ty * clip_h + 1.0,
+                (t.tx * clip_w - 1.0) as f32,
+                (-t.ty * clip_h + 1.0) as f32,
                 1.0,
             ];
         }

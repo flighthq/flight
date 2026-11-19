@@ -332,9 +332,10 @@ pub fn flush_gl_quad_batch_writer(state: &mut GlRenderState) {
 
 /// The effective viewport size (TS `renderTargetViewport ?? gl.drawingBuffer*`). Native GL exposes no
 /// drawing-buffer size, so the fallback reads the live viewport, as render-gl's matrix helper does.
-pub(crate) fn get_gl_viewport_size(state: &GlRenderState) -> (f32, f32) {
+// flight-lint: allow(f64) 2D geometry, logical sizes and the device pixel ratio are f64 CPU values (Task Q); they narrow once into f32 GL uniforms, instance floats and the f32 canvas-host and text-layout lanes
+pub(crate) fn get_gl_viewport_size(state: &GlRenderState) -> (f64, f64) {
     if let Some(viewport) = state.gl_runtime.borrow().render_target_viewport {
-        return (viewport.width as f32, viewport.height as f32);
+        return (f64::from(viewport.width), f64::from(viewport.height));
     }
     let mut values = [0; 4];
     // SAFETY: viewport query occurs on the owning GL thread.
@@ -343,7 +344,7 @@ pub(crate) fn get_gl_viewport_size(state: &GlRenderState) -> (f32, f32) {
             .gl
             .get_parameter_i32_slice(glow::VIEWPORT, &mut values)
     };
-    return (values[2] as f32, values[3] as f32);
+    return (f64::from(values[2]), f64::from(values[3]));
 }
 
 /// Reinterprets an `f32` slice as its native-endian bytes for a GL upload (TS passes the typed array).
@@ -532,11 +533,11 @@ pub fn set_gl_quad_batch_world_and_texture(
     let matrix = {
         let mut runtime = state.gl_runtime.borrow_mut();
         let m = &mut runtime.matrix_array;
-        m[0] = clip_w;
+        m[0] = clip_w as f32;
         m[1] = 0.0;
         m[2] = 0.0;
         m[3] = 0.0;
-        m[4] = -clip_h;
+        m[4] = (-clip_h) as f32;
         m[5] = 0.0;
         m[6] = -1.0;
         m[7] = 1.0;
@@ -570,12 +571,13 @@ pub fn use_gl_quad_batch_program(state: &GlRenderState, program: NativeProgram) 
     });
 }
 
+// flight-lint: allow(f64) 2D geometry, logical sizes and the device pixel ratio are f64 CPU values (Task Q); they narrow once into f32 GL uniforms, instance floats and the f32 canvas-host and text-layout lanes
 pub fn write_gl_quad_batch_affine_instance(
     data: &mut [f32],
     base: usize,
     transform: &Matrix,
-    width: f32,
-    height: f32,
+    width: f64,
+    height: f64,
     uv_origin_x: f32,
     uv_origin_y: f32,
     uv_axis_ux: f32,
@@ -584,12 +586,12 @@ pub fn write_gl_quad_batch_affine_instance(
     uv_axis_vy: f32,
     alpha: f32,
 ) {
-    data[base] = transform.a * width;
-    data[base + 1] = transform.b * width;
-    data[base + 2] = transform.c * height;
-    data[base + 3] = transform.d * height;
-    data[base + 4] = transform.tx;
-    data[base + 5] = transform.ty;
+    data[base] = (transform.a * width) as f32;
+    data[base + 1] = (transform.b * width) as f32;
+    data[base + 2] = (transform.c * height) as f32;
+    data[base + 3] = (transform.d * height) as f32;
+    data[base + 4] = transform.tx as f32;
+    data[base + 5] = transform.ty as f32;
     data[base + 6] = uv_origin_x;
     data[base + 7] = uv_origin_y;
     data[base + 8] = uv_axis_ux;
@@ -602,12 +604,13 @@ pub fn write_gl_quad_batch_affine_instance(
 // Packs the common axis-aligned UV rectangle into the affine base record. Geometry dimensions are
 // folded into the world axes once per instance, freeing the same two floats for the second UV axis;
 // the record therefore supports rotated atlas views without growing beyond 52 bytes.
+// flight-lint: allow(f64) 2D geometry, logical sizes and the device pixel ratio are f64 CPU values (Task Q); they narrow once into f32 GL uniforms, instance floats and the f32 canvas-host and text-layout lanes
 pub fn write_gl_quad_batch_instance(
     data: &mut [f32],
     base: usize,
     transform: &Matrix,
-    width: f32,
-    height: f32,
+    width: f64,
+    height: f64,
     u0: f32,
     v0: f32,
     u1: f32,

@@ -16,13 +16,14 @@ use flight_surface::CanvasSurface;
 /// two halves are independent: `meshes` caches the tessellated form (`None` when some region has
 /// none), and `surface`/`image` plus the `last_*` fields cache the rasterized form.
 #[derive(Default)]
+// flight-lint: allow(f64) logical and allocated surface sizes, scales and the pixel ratio are f64 CPU cache values (Task Q)
 pub struct GlShapeRendererData {
     pub(crate) renderer_data: RendererDataFields,
     pub image: Option<Ref<ImageResource>>,
     pub last_content_id: i64,
-    pub last_h: f32,
-    pub last_pixel_ratio: f32,
-    pub last_w: f32,
+    pub last_h: f64,
+    pub last_pixel_ratio: f64,
+    pub last_w: f64,
     pub mesh_version: i64,
     pub meshes: Option<Vec<GlShapeMesh>>,
     pub surface: Option<Ref<CanvasSurface>>,
@@ -31,15 +32,16 @@ pub struct GlShapeRendererData {
 /// NodeRenderer-private scratch for a Scale9Shape node (TS `GlScale9ShapeData`): the device-pixel
 /// raster surface, its uploadable image, and the inputs it was last rasterized under.
 #[derive(Default)]
+// flight-lint: allow(f64) logical and allocated surface sizes, scales and the pixel ratio are f64 CPU cache values (Task Q)
 pub struct GlScale9ShapeData {
     pub(crate) renderer_data: RendererDataFields,
     pub image: Option<Ref<ImageResource>>,
-    pub last_h: f32,
-    pub last_scale_x: f32,
-    pub last_scale_y: f32,
+    pub last_h: f64,
+    pub last_scale_x: f64,
+    pub last_scale_y: f64,
     pub last_content_id: i64,
-    pub last_pixel_ratio: f32,
-    pub last_w: f32,
+    pub last_pixel_ratio: f64,
+    pub last_w: f64,
     pub surface: Option<Ref<CanvasSurface>>,
 }
 
@@ -47,25 +49,27 @@ pub struct GlScale9ShapeData {
 /// surface and its uploadable image, its allocation, the logical size of the last rasterization, and
 /// the content revision and pixel ratio it was rasterized under.
 #[derive(Default)]
+// flight-lint: allow(f64) logical and allocated surface sizes, scales and the pixel ratio are f64 CPU cache values (Task Q)
 pub struct GlTextLabelData {
     pub(crate) renderer_data: RendererDataFields,
-    pub alloc_h: f32,
-    pub alloc_w: f32,
+    pub alloc_h: f64,
+    pub alloc_w: f64,
     pub image: Option<Ref<ImageResource>>,
     pub last_content_id: i64,
-    pub last_pixel_ratio: f32,
-    pub log_h: f32,
-    pub log_w: f32,
+    pub last_pixel_ratio: f64,
+    pub log_h: f64,
+    pub log_w: f64,
     pub surface: Option<Ref<CanvasSurface>>,
 }
 
 /// NodeRenderer-private scratch for a RichText (TS `GlRichTextData`). The raster surface belongs to
 /// the render node rather than the module; its Image identity is the GPU-cache key.
 #[derive(Default)]
+// flight-lint: allow(f64) logical and allocated surface sizes, scales and the pixel ratio are f64 CPU cache values (Task Q)
 pub struct GlRichTextData {
     pub(crate) renderer_data: RendererDataFields,
-    pub alloc_h: f32,
-    pub alloc_w: f32,
+    pub alloc_h: f64,
+    pub alloc_w: f64,
     pub image: Option<Ref<ImageResource>>,
     pub surface: Option<Ref<CanvasSurface>>,
 }

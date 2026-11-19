@@ -8,6 +8,7 @@ use glow::HasContext;
 
 use crate::gl_quad_batch_writer::{flush_gl_quad_batch_writer, get_gl_viewport_size};
 
+// flight-lint: allow(f64) 2D geometry, logical sizes and the device pixel ratio are f64 CPU values (Task Q); they narrow once into f32 GL uniforms, instance floats and the f32 canvas-host and text-layout lanes
 fn compute_scissor_rect(
     state: &GlRenderState,
     rect: &Rectangle,
@@ -26,9 +27,9 @@ fn compute_scissor_rect(
 
     let viewport = state.gl_runtime.borrow().render_target_viewport;
     let (viewport_width, viewport_height) = get_gl_viewport_size(state);
-    let min_x = 0.0_f32.max(x0.min(x1).min(x2).min(x3).floor());
+    let min_x = 0.0_f64.max(x0.min(x1).min(x2).min(x3).floor());
     let max_x = viewport_width.min(x0.max(x1).max(x2).max(x3).ceil());
-    let min_y = 0.0_f32.max(y0.min(y1).min(y2).min(y3).floor());
+    let min_y = 0.0_f64.max(y0.min(y1).min(y2).min(y3).floor());
     let max_y = viewport_height.min(y0.max(y1).max(y2).max(y3).ceil());
 
     return GlScissorRect {

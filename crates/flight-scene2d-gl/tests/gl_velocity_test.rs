@@ -61,6 +61,34 @@ mod draw_gl_velocity_quad {
     use super::*;
 
     #[test]
+    fn maps_clip_space_and_velocity_in_f64_before_the_single_uniform_narrowing() {
+        // A 16777217-wide context (a u32 device width beyond f32 precision): the last pixel column
+        // maps inside +1 (0.9999998807907104), where an f32 width would map it onto 1.0. The
+        // velocity 0.1 x pixel ratio 1.1 narrows once to 0.10999999940395355 (f32 math: 0.11000000685).
+        let mut state = create_gl_state();
+        let field = create_velocity_field();
+        let mut ctx = flight_render_gl::GlVelocityContext {
+            state: &mut state,
+            field: &field,
+            width: f64::from(16_777_217_u32),
+            height: 1.0,
+            pixel_ratio: 1.1,
+        };
+
+        draw_gl_velocity_quad(&mut ctx, 16_777_216.0, 0.0, 1.0, 1.0, 0.1, 0.0);
+
+        let clip = last_call("uniform_4_f32").floats;
+        assert_eq!(
+            clip[0],
+            ((16_777_216.0_f64 / 16_777_217.0) * 2.0 - 1.0) as f32
+        );
+        assert!(clip[0] < 1.0);
+        let velocity = last_call("uniform_2_f32").floats;
+        assert_eq!(velocity[0], (0.1_f64 * 1.1) as f32);
+        assert_ne!(velocity[0], 0.1_f32 * 1.1_f32);
+    }
+
+    #[test]
     fn maps_a_device_pixel_rect_into_clip_space_and_scales_velocity_by_the_pixel_ratio() {
         let mut state = create_gl_state();
         let field = create_velocity_field();
@@ -96,7 +124,7 @@ mod get_gl_velocity_writer {
 fn call_writer(
     writer: flight_render_gl::GlVelocityWriter,
     node: &NodeRef,
-    velocity: Option<(f32, f32)>,
+    velocity: Option<(f64, f64)>,
 ) {
     let mut state = create_gl_state();
     let mut field = create_velocity_field();
@@ -332,6 +360,32 @@ mod register_gl_velocity_writer {
 
 mod render_gl_velocity {
     use super::*;
+
+    thread_local! {
+        static CAPTURED_WIDTH: std::cell::Cell<f64> = const { std::cell::Cell::new(0.0) };
+    }
+
+    fn capture_width_writer(ctx: &mut flight_render_gl::GlVelocityContext<'_>, _node: &NodeRef) {
+        CAPTURED_WIDTH.with(|width| width.set(ctx.width));
+    }
+
+    #[test]
+    fn builds_the_context_from_the_u32_target_width_exactly_beyond_f32_precision() {
+        // A 16777217-texel-wide target: the context width must be the exact u32 widening; a
+        // u32 -> f32 -> f64 construction would give 16777216.
+        let mut state = create_gl_state();
+        let target = create_gl_velocity_target(&state, 16_777_217.0, 1.0);
+        assert_eq!(target.axes.width, 16_777_217);
+        let root = display_node();
+        register_gl_velocity_writer(&mut state, kind_of(&root), capture_width_writer);
+        let mut field = create_velocity_field();
+        begin_velocity_frame(&mut field);
+        contribute_velocity(&mut field, get_entity_id(&*root.read().unwrap()), 1.0, 0.0);
+
+        render_gl_velocity(&mut state, &root, &field, &target);
+
+        assert_eq!(CAPTURED_WIDTH.with(std::cell::Cell::get), 16_777_217.0);
+    }
 
     #[test]
     fn leaves_the_blend_enable_bit_viewport_and_clear_colour_as_it_found_them() {

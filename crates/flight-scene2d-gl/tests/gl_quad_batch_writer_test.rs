@@ -4,7 +4,7 @@ use std::num::NonZeroU32;
 use std::sync::{Arc, RwLock};
 
 use flight_entity::Ref;
-use flight_geometry::create_matrix;
+use flight_geometry::{Matrix, create_matrix};
 use flight_materials::contract::create_standard_material;
 use flight_materials::{Material, Material2D};
 use flight_render_gl::{
@@ -368,6 +368,40 @@ mod use_gl_quad_batch_program {
 
 mod write_gl_quad_batch_affine_instance {
     use super::*;
+
+    #[test]
+    fn takes_f64_geometry_and_f32_uv_and_alpha_lanes() {
+        // A mixed-lane API contract: width/height are f64 geometry; the six UV values and alpha
+        // are the declared f32 lanes.
+        let _: fn(&mut [f32], usize, &Matrix, f64, f64, f32, f32, f32, f32, f32, f32, f32) =
+            write_gl_quad_batch_affine_instance;
+        let _: fn(&mut [f32], usize, &Matrix, f64, f64, f32, f32, f32, f32, f32) =
+            write_gl_quad_batch_instance;
+    }
+
+    #[test]
+    fn scales_geometry_in_f64_and_narrows_once_into_the_instance_floats() {
+        // 0.7 x 1.3 in f64 narrows to 0.9100000262260437; multiplying the f32-narrowed operands gives
+        // 0.9099999666213989. The 0.1 UV origin is stored narrowed once from the f64 value.
+        let mut data = [0.0_f32; 13];
+        write_gl_quad_batch_affine_instance(
+            &mut data,
+            0,
+            &create_matrix(0.7, 0.0, 0.0, 1.0, 0.0, 0.0),
+            1.3,
+            1.0,
+            0.1,
+            0.0,
+            1.0,
+            0.0,
+            0.0,
+            1.0,
+            1.0,
+        );
+        assert_eq!(data[0], (0.7_f64 * 1.3) as f32);
+        assert_ne!(data[0], 0.7_f32 * 1.3_f32);
+        assert_eq!(data[6], 0.1_f32);
+    }
 
     #[test]
     fn packs_pre_scaled_geometry_and_two_affine_uv_axes_into_thirteen_floats() {

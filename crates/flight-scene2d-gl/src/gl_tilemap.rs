@@ -32,6 +32,7 @@ pub static GL_TILEMAP_RENDERER: NodeRenderer<GlRenderState> = NodeRenderer {
     submit: submit_gl_tilemap,
 };
 
+// flight-lint: allow(f64) 2D geometry, logical sizes and the device pixel ratio are f64 CPU values (Task Q); they narrow once into f32 GL uniforms, instance floats and the f32 canvas-host and text-layout lanes
 fn submit_gl_tilemap(state: &mut GlRenderState, tilemap_node: &RenderProxy2D<GlRenderState>) {
     let source = tilemap_node.source.read().unwrap();
     let Some(source) = source.as_any().downcast_ref::<Tilemap>() else {
@@ -109,8 +110,8 @@ fn submit_gl_tilemap(state: &mut GlRenderState, tilemap_node: &RenderProxy2D<GlR
                 continue;
             }
 
-            let dx = col as f32 * tile_width;
-            let dy = row as f32 * tile_height;
+            let dx = f64::from(col) * tile_width;
+            let dy = f64::from(row) * tile_height;
             tile_transform.a = pa;
             tile_transform.b = pb;
             tile_transform.c = pc;

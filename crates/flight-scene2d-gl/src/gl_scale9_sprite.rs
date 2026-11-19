@@ -144,16 +144,16 @@ pub fn draw_gl_scale9_sprite(
                 &slice_transform,
                 target_x[column + 1] - x,
                 target_y[row + 1] - y,
-                uv[6] + uv[0] * local_u + uv[3] * local_v,
-                if reflect_v {
+                (uv[6] + uv[0] * local_u + uv[3] * local_v) as f32,
+                (if reflect_v {
                     1.0 - uv_origin_y
                 } else {
                     uv_origin_y
-                },
-                uv[0] * delta_u,
-                (if reflect_v { -uv[1] } else { uv[1] }) * delta_u,
-                uv[3] * delta_v,
-                (if reflect_v { -uv[4] } else { uv[4] }) * delta_v,
+                }) as f32,
+                (uv[0] * delta_u) as f32,
+                ((if reflect_v { -uv[1] } else { uv[1] }) * delta_u) as f32,
+                (uv[3] * delta_v) as f32,
+                ((if reflect_v { -uv[4] } else { uv[4] }) * delta_v) as f32,
                 render_proxy.alpha,
             );
             pack_gl_proxy_material_instance(

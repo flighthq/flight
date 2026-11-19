@@ -67,8 +67,8 @@ fn bounds_spec(source: &RichText) -> TextBoundsSpec {
     let data = &source.data;
     return TextBoundsSpec {
         auto_size: data.auto_size,
-        height: data.height,
-        width: data.width,
+        height: data.height as f32,
+        width: data.width as f32,
         word_wrap: Some(data.word_wrap),
     };
 }
@@ -107,6 +107,7 @@ pub fn draw_gl_rich_text(state: &mut GlRenderState, render_proxy: &RenderProxy2D
     draw_gl_rich_text_with_overlay(state, render_proxy, overlay);
 }
 
+// flight-lint: allow(f64) 2D geometry, logical sizes and the device pixel ratio are f64 CPU values (Task Q); they narrow once into f32 GL uniforms, instance floats and the f32 canvas-host and text-layout lanes
 pub fn draw_gl_rich_text_with_overlay(
     state: &mut GlRenderState,
     render_proxy: &RenderProxy2D<GlRenderState>,
@@ -167,8 +168,8 @@ pub fn draw_gl_rich_text_with_overlay(
     }
 
     let pixel_ratio = state.render.pixel_ratio;
-    let pw = (field_w * pixel_ratio).ceil();
-    let ph = (field_h * pixel_ratio).ceil();
+    let pw = (f64::from(field_w) * pixel_ratio).ceil();
+    let ph = (f64::from(field_h) * pixel_ratio).ceil();
     surface = ensure_gl_rich_text_surface(state, rich_text_data, pw, ph);
     let Some(current) = &surface else {
         return;
@@ -176,17 +177,17 @@ pub fn draw_gl_rich_text_with_overlay(
     let context = current.read().unwrap().context.clone();
     let off_ctx = context.handle.clone();
     off_ctx.set_transform(pixel_ratio, 0.0, 0.0, pixel_ratio, 0.0, 0.0);
-    off_ctx.clear_rect(0.0, 0.0, field_w, field_h);
+    off_ctx.clear_rect(0.0, 0.0, f64::from(field_w), f64::from(field_h));
 
     if data.background {
         off_ctx.set_fill_style(&compute_rgba_css_string(data.background_color));
-        off_ctx.fill_rect(0.0, 0.0, field_w, field_h);
+        off_ctx.fill_rect(0.0, 0.0, f64::from(field_w), f64::from(field_h));
     }
 
     if data.border {
         off_ctx.set_stroke_style(&compute_rgba_css_string(data.border_color));
         off_ctx.set_line_width(1.0);
-        off_ctx.stroke_rect(0.0, 0.0, field_w, field_h);
+        off_ctx.stroke_rect(0.0, 0.0, f64::from(field_w), f64::from(field_h));
     }
 
     if !content_text.is_empty() {
@@ -247,10 +248,10 @@ pub fn draw_gl_rich_text_with_overlay(
     // bounds. Zero for none/left.
     let _ = draw_gl_quad(
         state,
-        offset_x,
+        f64::from(offset_x),
         0.0,
-        offset_x + field_w,
-        field_h,
+        f64::from(offset_x + field_w),
+        f64::from(field_h),
         0.0,
         0.0,
         1.0,
@@ -258,6 +259,7 @@ pub fn draw_gl_rich_text_with_overlay(
     );
 }
 
+// flight-lint: allow(f64) 2D geometry, logical sizes and the device pixel ratio are f64 CPU values (Task Q); they narrow once into f32 GL uniforms, instance floats and the f32 canvas-host and text-layout lanes
 fn draw_rich_text_to_canvas(
     context: &dyn Canvas2DContext,
     source: &RichText,
@@ -277,14 +279,14 @@ fn draw_rich_text_to_canvas(
 
     context.save();
     context.begin_path();
-    context.rect(0.0, 0.0, field_w, field_h);
+    context.rect(0.0, 0.0, f64::from(field_w), f64::from(field_h));
     context.clip();
     context.set_text_baseline("alphabetic");
     context.set_text_align("start");
 
     let utf16 = text.encode_utf16().collect::<Vec<_>>();
     for group in &result.groups {
-        if (group.line_index as f32) < first_visible_line {
+        if (group.line_index as f64) < first_visible_line {
             continue;
         }
 
@@ -295,29 +297,31 @@ fn draw_rich_text_to_canvas(
         let end = group.end_index.min(utf16.len());
         let start = group.start_index.min(end);
         let slice = String::from_utf16_lossy(&utf16[start..end]);
-        let x = group.offset_x - scroll_x_offset;
-        let y = group.offset_y + group.ascent - scroll_y_offset;
+        // Declared f32 text-layout values widen exactly; the scroll is subtracted in f64 and the
+        // result goes straight to the f64 canvas.
+        let x = f64::from(group.offset_x) - scroll_x_offset;
+        let y = f64::from(group.offset_y) + f64::from(group.ascent) - scroll_y_offset;
         context.fill_text(&slice, x, y);
 
         let underline = format.underline.unwrap_or(false);
         let strikethrough = format.strikethrough.unwrap_or(false);
         if underline || strikethrough {
             context.set_stroke_style(&compute_rgba_css_string(color));
-            context.set_line_width((format.size.unwrap_or(12.0) / 16.0).max(1.0));
+            context.set_line_width((f64::from(format.size.unwrap_or(12.0)) / 16.0).max(1.0));
             if underline {
-                let line_y = y + group.descent;
+                let line_y = y + f64::from(group.descent);
                 context.begin_path();
                 context.move_to(x, line_y);
-                context.line_to(x + group.width, line_y);
+                context.line_to(x + f64::from(group.width), line_y);
                 context.stroke();
             }
             // Strikethrough sits ~35% of the ascent above the baseline — through the middle of the
             // glyphs.
             if strikethrough {
-                let line_y = y - group.ascent * 0.35;
+                let line_y = y - f64::from(group.ascent) * 0.35;
                 context.begin_path();
                 context.move_to(x, line_y);
-                context.line_to(x + group.width, line_y);
+                context.line_to(x + f64::from(group.width), line_y);
                 context.stroke();
             }
         }
@@ -328,11 +332,12 @@ fn draw_rich_text_to_canvas(
 
 // Returns a surface at the requested pixel dimensions, creating or resizing via destroy+recreate as
 // needed. The paired image resource stays in sync with the surface lifecycle.
+// flight-lint: allow(f64) 2D geometry, logical sizes and the device pixel ratio are f64 CPU values (Task Q); they narrow once into f32 GL uniforms, instance floats and the f32 canvas-host and text-layout lanes
 fn ensure_gl_rich_text_surface(
     state: &GlRenderState,
     data: &mut GlRichTextData,
-    pw: f32,
-    ph: f32,
+    pw: f64,
+    ph: f64,
 ) -> Option<Ref<CanvasSurface>> {
     if let Some(surface) = &data.surface
         && data.alloc_w == pw
@@ -375,8 +380,8 @@ fn ensure_gl_rich_text_surface(
         .create_image_from_surface
         .as_ref()
         .map(|create| create(&erased));
-    data.alloc_w = pw;
-    data.alloc_h = ph;
+    data.alloc_w = f64::from(pw);
+    data.alloc_h = f64::from(ph);
     return Some(surface);
 }
 
@@ -402,7 +407,7 @@ fn layout_rich_text(
             border: None,
             direction: None,
             format_ranges,
-            height: data.height,
+            height: data.height as f32,
             justification: None,
             max_lines: None,
             measure,
@@ -414,7 +419,7 @@ fn layout_rich_text(
             } else {
                 TextVerticalAlign::Top
             }),
-            width: data.width,
+            width: data.width as f32,
             word_wrap: Some(data.word_wrap),
         },
     );

@@ -187,6 +187,43 @@ mod draw_gl_shape {
     }
 
     #[test]
+    fn passes_a_non_f32_pixel_ratio_to_the_canvas_context_and_surface_exactly() {
+        // 1.1 has no f32 value: narrowing anywhere on the way would record 1.100000023841858.
+        let (mut state, hosts) = create_gl_state_with_hosts();
+        state.render.pixel_ratio = 1.1;
+        register_gl_standard_material(&mut state);
+        register_gl_shape_rasterizer(&mut state, Some(Arc::new(|_, _, _| {})));
+        let shape = closed_stroke_shape();
+        let node: NodeRef = shape.clone();
+        let proxy = make_shape_node(&mut state, shape, true);
+        let bounds = get_node_local_bounds_rectangle(&node);
+
+        draw_gl_shape(&mut state, &proxy);
+
+        let w = bounds.width.ceil();
+        let h = bounds.height.ceil();
+        assert_eq!(
+            hosts.created.lock().unwrap().last().copied(),
+            Some(((w * 1.1).ceil(), (h * 1.1).ceil()))
+        );
+        let surface = {
+            let mut guard = proxy.renderer_data.as_ref().unwrap().write().unwrap();
+            get_gl_shape_data(&mut *guard)
+                .unwrap()
+                .surface
+                .clone()
+                .unwrap()
+        };
+        let calls = surface_calls(&surface);
+        assert!(calls.contains(&format!(
+            "setTransform(1.1,0,0,1.1,{},{})",
+            -bounds.x * 1.1,
+            -bounds.y * 1.1
+        )));
+        assert!(calls.contains(&format!("clearRect({},{},{w},{h})", bounds.x, bounds.y)));
+    }
+
+    #[test]
     fn re_rasterizes_when_only_the_pixel_ratio_changes_since_the_cached_raster_is_the_wrong_density()
      {
         let (mut state, _hosts) = create_gl_state_with_hosts();

@@ -52,10 +52,11 @@ void main() {
 // consumers distinguish it from the cleared (0,0,0,0) zero-velocity background.
 
 /// Allocates an rgba16f render target sized to hold a signed, sub-pixel screen-space velocity buffer.
+// flight-lint: allow(f64) 2D geometry, logical sizes and the device pixel ratio are f64 CPU values (Task Q); they narrow once into f32 GL uniforms, instance floats and the f32 canvas-host and text-layout lanes
 pub fn create_gl_velocity_target(
     state: &GlRenderState,
-    width: f32,
-    height: f32,
+    width: f64,
+    height: f64,
 ) -> GlTextureRenderTarget {
     return create_gl_texture_render_target(
         state,
@@ -78,14 +79,15 @@ pub fn create_gl_velocity_target(
 /// Draws one velocity quad: a device-pixel rect filled with (velocity_x, velocity_y) in node units
 /// (scaled by the pixel ratio here). The velocity program must be current — the velocity pass sets it
 /// up before dispatching writers.
+// flight-lint: allow(f64) 2D geometry, logical sizes and the device pixel ratio are f64 CPU values (Task Q); they narrow once into f32 GL uniforms, instance floats and the f32 canvas-host and text-layout lanes
 pub fn draw_gl_velocity_quad(
     ctx: &mut GlVelocityContext<'_>,
-    x: f32,
-    y: f32,
-    width: f32,
-    height: f32,
-    velocity_x: f32,
-    velocity_y: f32,
+    x: f64,
+    y: f64,
+    width: f64,
+    height: f64,
+    velocity_x: f64,
+    velocity_y: f64,
 ) {
     let program = ensure_gl_velocity_program(ctx.state);
     let gl = &ctx.state.gl;
@@ -97,15 +99,15 @@ pub fn draw_gl_velocity_quad(
     unsafe {
         gl.uniform_4_f32(
             program.loc_clip_rect.as_ref(),
-            clip_x0,
-            clip_y0,
-            clip_width,
-            clip_height,
+            clip_x0 as f32,
+            clip_y0 as f32,
+            clip_width as f32,
+            clip_height as f32,
         );
         gl.uniform_2_f32(
             program.loc_velocity.as_ref(),
-            velocity_x * ctx.pixel_ratio,
-            velocity_y * ctx.pixel_ratio,
+            (velocity_x * ctx.pixel_ratio) as f32,
+            (velocity_y * ctx.pixel_ratio) as f32,
         );
         gl.draw_arrays(glow::TRIANGLES, 0, 6);
     }
@@ -183,6 +185,7 @@ pub fn gl_node2d_velocity_writer(ctx: &mut GlVelocityContext<'_>, node: &NodeRef
 // particle renderer composes its quad, then mapped by the emitter world transform (skipped when
 // world_space puts particles in world space already). Skips particles with zero velocity and emitters
 // without a populated velocities array.
+// flight-lint: allow(f64) 2D geometry, logical sizes and the device pixel ratio are f64 CPU values (Task Q); they narrow once into f32 GL uniforms, instance floats and the f32 canvas-host and text-layout lanes
 pub fn gl_particle_emitter2d_velocity_writer(ctx: &mut GlVelocityContext<'_>, node: &NodeRef) {
     let world_space = {
         let guard = node.read().unwrap();
@@ -219,8 +222,8 @@ pub fn gl_particle_emitter2d_velocity_writer(ctx: &mut GlVelocityContext<'_>, no
         let num_regions = regions.len();
 
         for index in 0..particle_count {
-            let velocity_x = data.velocities[index * 2];
-            let velocity_y = data.velocities[index * 2 + 1];
+            let velocity_x = f64::from(data.velocities[index * 2]);
+            let velocity_y = f64::from(data.velocities[index * 2 + 1]);
             if velocity_x == 0.0 && velocity_y == 0.0 {
                 continue;
             }
@@ -230,27 +233,27 @@ pub fn gl_particle_emitter2d_velocity_writer(ctx: &mut GlVelocityContext<'_>, no
             }
             let region = regions[id].read().unwrap();
             let rotated = region.rotation != TextureAtlasRotation::None;
-            let rw = if rotated { region.height } else { region.width };
-            let rh = if rotated { region.width } else { region.height };
+            let rw = f64::from(if rotated { region.height } else { region.width });
+            let rh = f64::from(if rotated { region.width } else { region.height });
             if rw <= 0.0 || rh <= 0.0 {
                 continue;
             }
 
             let tt = index * 4;
-            let px = data.transforms[tt];
-            let py = data.transforms[tt + 1];
-            let rotation = data.transforms[tt + 2];
-            let scale = data.transforms[tt + 3];
+            let px = f64::from(data.transforms[tt]);
+            let py = f64::from(data.transforms[tt + 1]);
+            let rotation = f64::from(data.transforms[tt + 2]);
+            let scale = f64::from(data.transforms[tt + 3]);
             let cos_scale = rotation.cos() * scale;
             let sin_scale = rotation.sin() * scale;
 
-            let mut min_x = f32::INFINITY;
-            let mut min_y = f32::INFINITY;
-            let mut max_x = f32::NEG_INFINITY;
-            let mut max_y = f32::NEG_INFINITY;
+            let mut min_x = f64::INFINITY;
+            let mut min_y = f64::INFINITY;
+            let mut max_x = f64::NEG_INFINITY;
+            let mut max_y = f64::NEG_INFINITY;
             for corner in 0..4 {
-                let lx = (corner & 1) as f32 * rw;
-                let ly = (corner >> 1) as f32 * rh;
+                let lx = f64::from(corner & 1) * rw;
+                let ly = f64::from(corner >> 1) * rh;
                 let rx = cos_scale * lx - sin_scale * ly + px;
                 let ry = sin_scale * lx + cos_scale * ly + py;
                 let wx = if world_space {
@@ -288,6 +291,7 @@ pub fn gl_particle_emitter2d_velocity_writer(ctx: &mut GlVelocityContext<'_>, no
 // instance_velocities) one velocity quad is drawn per instance over that instance's own world-space
 // region. Without one, the batch's world bounds are covered with one coarse field velocity, exactly
 // like the Node2D writer.
+// flight-lint: allow(f64) 2D geometry, logical sizes and the device pixel ratio are f64 CPU values (Task Q); they narrow once into f32 GL uniforms, instance floats and the f32 canvas-host and text-layout lanes
 pub fn gl_quad_batch_velocity_writer(ctx: &mut GlVelocityContext<'_>, node: &NodeRef) {
     let has_instances = {
         let guard = node.read().unwrap();
@@ -324,11 +328,14 @@ pub fn gl_quad_batch_velocity_writer(ctx: &mut GlVelocityContext<'_>, node: &Nod
             let is_vector2 = data.transform_type == QuadTransformType::Vector2;
             let transforms = &data.transforms;
             for index in 0..data.instance_count {
-                let velocity_x = instance_velocities.get(index * 2).copied().unwrap_or(0.0);
+                let velocity_x = instance_velocities
+                    .get(index * 2)
+                    .copied()
+                    .map_or(0.0, f64::from);
                 let velocity_y = instance_velocities
                     .get(index * 2 + 1)
                     .copied()
-                    .unwrap_or(0.0);
+                    .map_or(0.0, f64::from);
                 if velocity_x == 0.0 && velocity_y == 0.0 {
                     continue;
                 }
@@ -353,8 +360,8 @@ pub fn gl_quad_batch_velocity_writer(ctx: &mut GlVelocityContext<'_>, node: &Nod
                         pb,
                         pc,
                         pd,
-                        pa * dx + pc * dy + ptx,
-                        pb * dx + pd * dy + pty,
+                        pa * f64::from(dx) + pc * f64::from(dy) + ptx,
+                        pb * f64::from(dx) + pd * f64::from(dy) + pty,
                     )
                 } else {
                     let o = index * 6;
@@ -367,24 +374,24 @@ pub fn gl_quad_batch_velocity_writer(ctx: &mut GlVelocityContext<'_>, node: &Nod
                         transforms[o + 5],
                     );
                     (
-                        pa * la + pc * lb,
-                        pb * la + pd * lb,
-                        pa * lc + pc * ld,
-                        pb * lc + pd * ld,
-                        pa * ltx + pc * lty + ptx,
-                        pb * ltx + pd * lty + pty,
+                        pa * f64::from(la) + pc * f64::from(lb),
+                        pb * f64::from(la) + pd * f64::from(lb),
+                        pa * f64::from(lc) + pc * f64::from(ld),
+                        pb * f64::from(lc) + pd * f64::from(ld),
+                        pa * f64::from(ltx) + pc * f64::from(lty) + ptx,
+                        pb * f64::from(ltx) + pd * f64::from(lty) + pty,
                     )
                 };
 
                 // Axis-aligned world bounds of the transformed region (the four region corners).
                 let x0 = wtx;
                 let y0 = wty;
-                let x1 = wa * w + wtx;
-                let y1 = wb * w + wty;
-                let x2 = wc * h + wtx;
-                let y2 = wd * h + wty;
-                let x3 = wa * w + wc * h + wtx;
-                let y3 = wb * w + wd * h + wty;
+                let x1 = wa * f64::from(w) + wtx;
+                let y1 = wb * f64::from(w) + wty;
+                let x2 = wc * f64::from(h) + wtx;
+                let y2 = wd * f64::from(h) + wty;
+                let x3 = wa * f64::from(w) + wc * f64::from(h) + wtx;
+                let y3 = wb * f64::from(w) + wd * f64::from(h) + wty;
                 let min_x = x0.min(x1).min(x2).min(x3);
                 let min_y = y0.min(y1).min(y2).min(y3);
                 let max_x = x0.max(x1).max(x2).max(x3);
@@ -424,6 +431,7 @@ pub fn register_gl_velocity_writer(
 /// Walks `root`'s subtree and writes every moving renderable's velocity into `target`, dispatching
 /// the registered GlVelocityWriter for each node's kind. Nodes whose kind has no writer are skipped;
 /// the cleared (0,0,0,0) background means zero velocity. Restores the previously bound framebuffer.
+// flight-lint: allow(f64) 2D geometry, logical sizes and the device pixel ratio are f64 CPU values (Task Q); they narrow once into f32 GL uniforms, instance floats and the f32 canvas-host and text-layout lanes
 pub fn render_gl_velocity(
     state: &mut GlRenderState,
     root: &NodeRef,
@@ -467,8 +475,8 @@ pub fn render_gl_velocity(
     let mut ctx = GlVelocityContext {
         state,
         field,
-        width: target.axes.width as f32,
-        height: target.axes.height as f32,
+        width: f64::from(target.axes.width),
+        height: f64::from(target.axes.height),
         pixel_ratio,
     };
     visit_gl_velocity(&mut ctx, root);
