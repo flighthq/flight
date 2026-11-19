@@ -15,9 +15,21 @@ pub type EasingFunction = fn(f32) -> f32;
 // flight-lint: allow(conform-extra) D22 Rust fn-pointer property accessor replacing TS NumericProps<T>
 // flight-lint: allow(contract-vocabulary) D22 native fn-pointer property accessors support Ref<dyn Trait> targets through relaxed generic bounds
 pub struct TweenProp<T: ?Sized> {
-    pub get: fn(&mut T) -> &mut f64,
+    pub get: TweenPropertyAccessor<T>,
     pub key: &'static str,
     pub to: f64,
+}
+
+/// Where a tween reads and writes its property. Interpolation always runs in f64 (TS Number): an
+/// `F64` field is read and written directly, while an `F32` field (a declared f32 lane such as
+/// node alpha) is widened exactly on read and narrowed exactly once per write.
+// flight-lint: allow(conform-extra) D22 Rust fn-pointer property accessor replacing TS NumericProps<T>
+// flight-lint: allow(contract-vocabulary) D22 native fn-pointer property accessors support Ref<dyn Trait> targets through relaxed generic bounds
+// flight-lint: allow(f32) F32 addresses a declared f32 field lane; tween math stays f64 (foreman-8dd43e2e)
+// flight-lint: allow(enum-payload-named) D22 each arm carries the field accessor fn pointer directly, as TweenProp.get did; a wrapper struct adds no semantic value
+pub enum TweenPropertyAccessor<T: ?Sized> {
+    F32(fn(&mut T) -> &mut f32),
+    F64(fn(&mut T) -> &mut f64),
 }
 
 /// Constructs a [`TweenProp`] from a field name and target value.
@@ -33,7 +45,7 @@ pub struct TweenProp<T: ?Sized> {
 macro_rules! tween_prop {
     ($field:ident, $to:expr) => {
         $crate::TweenProp {
-            get: |t| &mut t.$field,
+            get: $crate::TweenPropertyAccessor::F64(|t| &mut t.$field),
             key: stringify!($field),
             to: $to,
         }
@@ -126,7 +138,7 @@ pub(crate) struct ErasedTweenHandle {
 }
 
 pub(crate) struct PropertyState<T: ?Sized> {
-    pub get: fn(&mut T) -> &mut f64,
+    pub get: TweenPropertyAccessor<T>,
     pub key: String,
     pub to: f64,
     pub start: f64,
@@ -220,6 +232,14 @@ pub(crate) fn get_tween_ops_property_keys(inner: &ErasedTweenInner) -> Vec<Strin
     return TweenOps::property_keys(&*inner.ops);
 }
 
+// flight-lint: allow(f32) widens a declared f32 field lane exactly into the f64 tween value
+pub(crate) fn read_tween_property<T: ?Sized>(get: TweenPropertyAccessor<T>, target: &mut T) -> f64 {
+    return match get {
+        TweenPropertyAccessor::F32(field) => f64::from(*field(target)),
+        TweenPropertyAccessor::F64(field) => *field(target),
+    };
+}
+
 pub(crate) fn target_key_from_ref<T: ?Sized>(target: &Ref<T>) -> usize {
     return Arc::as_ptr(target) as *const () as usize;
 }
@@ -231,12 +251,45 @@ pub fn tween_with<T: ?Sized>(
     key: &'static str,
     to: f64,
 ) -> TweenProp<T> {
-    return TweenProp { get, key, to };
+    return TweenProp {
+        get: TweenPropertyAccessor::F64(get),
+        key,
+        to,
+    };
+}
+
+/// Tweens a declared f32 field (for example node alpha) with f64 interpolation: the start value is
+/// widened exactly, every frame is computed in f64, and each write narrows exactly once.
+// flight-lint: allow(conform-extra) D22 escape hatch for declared f32 field lanes (foreman-8dd43e2e)
+// flight-lint: allow(contract-vocabulary) D22 native fn-pointer property accessors support Ref<dyn Trait> targets through relaxed generic bounds
+// flight-lint: allow(f32) addresses a declared f32 field lane; tween math stays f64 (foreman-8dd43e2e)
+pub fn tween_with_f32<T: ?Sized>(
+    get: fn(&mut T) -> &mut f32,
+    key: &'static str,
+    to: f64,
+) -> TweenProp<T> {
+    return TweenProp {
+        get: TweenPropertyAccessor::F32(get),
+        key,
+        to,
+    };
 }
 
 // flight-lint: allow(f32) eased_t is the bounded f32 easing output
 pub(crate) fn write_tween_ops_values(inner: &ErasedTweenInner, eased_t: f32, snapping: bool) {
     TweenOps::write_values(&*inner.ops, eased_t, snapping);
+}
+
+// flight-lint: allow(f32) narrows the f64 tween value exactly once into a declared f32 field lane
+pub(crate) fn write_tween_property<T: ?Sized>(
+    get: TweenPropertyAccessor<T>,
+    target: &mut T,
+    value: f64,
+) {
+    match get {
+        TweenPropertyAccessor::F32(field) => *field(target) = value as f32,
+        TweenPropertyAccessor::F64(field) => *field(target) = value,
+    }
 }
 
 // ── Impl blocks ──────────────────────────────────────────────────────
@@ -248,6 +301,14 @@ impl<T: ?Sized> Clone for TweenProp<T> {
 }
 
 impl<T: ?Sized> Copy for TweenProp<T> {}
+
+impl<T: ?Sized> Clone for TweenPropertyAccessor<T> {
+    fn clone(&self) -> Self {
+        return *self;
+    }
+}
+
+impl<T: ?Sized> Copy for TweenPropertyAccessor<T> {}
 
 impl Clone for ErasedTweenHandle {
     fn clone(&self) -> Self {
@@ -266,7 +327,7 @@ impl<T: ?Sized + Send + Sync + 'static> TweenOps for TypedTweenOps<T> {
     fn initialize(&mut self, smart_rotation: bool) {
         let mut target = self.target.write().unwrap();
         for prop in self.properties.iter_mut() {
-            let start = *(prop.get)(&mut target);
+            let start = read_tween_property(prop.get, &mut target);
             let end = prop.to;
             prop.start = start;
             prop.change = end - start;
@@ -296,7 +357,7 @@ impl<T: ?Sized + Send + Sync + 'static> TweenOps for TypedTweenOps<T> {
             if snapping {
                 value = value.round();
             }
-            *(prop.get)(&mut target) = value;
+            write_tween_property(prop.get, &mut target, value);
         }
     }
 }

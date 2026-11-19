@@ -119,6 +119,12 @@ const EXPECTED_BOUNDED_F32: &[(&str, usize)] = &[
     ("types.rs:default_ease", 2),
     ("types.rs:write_tween_ops_values", 1),
     ("types.rs:write_values", 2),
+    // Declared f32 field lanes (node alpha): the accessor widens exactly on read and narrows once
+    // per write; interpolation stays f64 (foreman-8dd43e2e).
+    ("lib.rs:<module>", 1),
+    ("types.rs:TweenPropertyAccessor", 1),
+    ("types.rs:tween_with_f32", 2),
+    ("types.rs:write_tween_property", 1),
     // In-crate unit-test fixtures: a packed color field and a linear easing.
     ("sugar.rs:ColorObj", 2),
     ("sugar.rs:linear_ease", 2),

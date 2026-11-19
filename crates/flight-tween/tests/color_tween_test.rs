@@ -166,7 +166,7 @@ mod create_color_tween {
             &target,
             1000.0,
             &[TweenProp {
-                get: |t: &mut ColorObj| &mut t.color_number,
+                get: TweenPropertyAccessor::F64(|t: &mut ColorObj| &mut t.color_number),
                 key: "color",
                 to: 0x00ff00 as f64,
             }],
@@ -190,7 +190,7 @@ mod create_color_tween {
             &manager,
             &target,
             Some(&[TweenProp {
-                get: |t: &mut ColorObj| &mut t.color_number,
+                get: TweenPropertyAccessor::F64(|t: &mut ColorObj| &mut t.color_number),
                 key: "color",
                 to: 0.0,
             }]),

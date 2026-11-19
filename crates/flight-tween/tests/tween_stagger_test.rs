@@ -37,7 +37,7 @@ mod create_tween_stagger {
             &targets,
             1000.0,
             &[TweenProp {
-                get: |t: &mut Obj| &mut t.x,
+                get: TweenPropertyAccessor::F64(|t: &mut Obj| &mut t.x),
                 key: "x",
                 to: 100.0,
             }],
@@ -59,7 +59,7 @@ mod create_tween_stagger {
             &targets,
             1000.0,
             &[TweenProp {
-                get: |t: &mut Obj| &mut t.x,
+                get: TweenPropertyAccessor::F64(|t: &mut Obj| &mut t.x),
                 key: "x",
                 to: 100.0,
             }],
@@ -104,7 +104,7 @@ mod create_tween_stagger {
             &targets,
             1000.0,
             &[TweenProp {
-                get: |t: &mut Obj| &mut t.x,
+                get: TweenPropertyAccessor::F64(|t: &mut Obj| &mut t.x),
                 key: "x",
                 to: 100.0,
             }],
@@ -133,7 +133,7 @@ mod create_tween_stagger {
             &targets,
             1000.0,
             &[TweenProp {
-                get: |t: &mut Obj| &mut t.x,
+                get: TweenPropertyAccessor::F64(|t: &mut Obj| &mut t.x),
                 key: "x",
                 to: 100.0,
             }],
@@ -163,7 +163,7 @@ mod create_tween_stagger {
             &targets,
             1000.0,
             &[TweenProp {
-                get: |t: &mut Obj| &mut t.x,
+                get: TweenPropertyAccessor::F64(|t: &mut Obj| &mut t.x),
                 key: "x",
                 to: 100.0,
             }],
@@ -192,7 +192,7 @@ mod create_tween_stagger {
             &targets,
             1000.0,
             &[TweenProp {
-                get: |t: &mut Obj| &mut t.x,
+                get: TweenPropertyAccessor::F64(|t: &mut Obj| &mut t.x),
                 key: "x",
                 to: 100.0,
             }],
@@ -220,7 +220,7 @@ mod create_tween_stagger {
             &targets,
             1000.0,
             &[TweenProp {
-                get: |t: &mut Obj| &mut t.x,
+                get: TweenPropertyAccessor::F64(|t: &mut Obj| &mut t.x),
                 key: "x",
                 to: 100.0,
             }],
@@ -256,7 +256,7 @@ mod create_tween_stagger {
             &targets,
             1000.0,
             &[TweenProp {
-                get: |t: &mut Obj| &mut t.x,
+                get: TweenPropertyAccessor::F64(|t: &mut Obj| &mut t.x),
                 key: "x",
                 to: 100.0,
             }],
@@ -293,7 +293,7 @@ mod create_tween_stagger {
             &targets,
             2000.0,
             &[TweenProp {
-                get: |t: &mut Obj| &mut t.x,
+                get: TweenPropertyAccessor::F64(|t: &mut Obj| &mut t.x),
                 key: "x",
                 to: 100.0,
             }],

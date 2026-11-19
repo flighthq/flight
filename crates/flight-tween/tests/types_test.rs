@@ -10,6 +10,11 @@ struct Obj {
     y: f64,
 }
 
+// flight-lint: allow(f32) easing over bounded 0-1 progress (flight-easing contract)
+fn linear_ease(t: f32) -> f32 {
+    return t;
+}
+
 mod create_tween_context {
     use super::*;
 
@@ -33,7 +38,7 @@ mod equals_tween {
             &target,
             1000.0,
             &[TweenProp {
-                get: |t: &mut Obj| &mut t.x,
+                get: TweenPropertyAccessor::F64(|t: &mut Obj| &mut t.x),
                 key: "x",
                 to: 100.0,
             }],
@@ -51,7 +56,7 @@ mod equals_tween {
             &target,
             1000.0,
             &[TweenProp {
-                get: |t: &mut Obj| &mut t.x,
+                get: TweenPropertyAccessor::F64(|t: &mut Obj| &mut t.x),
                 key: "x",
                 to: 100.0,
             }],
@@ -62,7 +67,7 @@ mod equals_tween {
             &target,
             1000.0,
             &[TweenProp {
-                get: |t: &mut Obj| &mut t.x,
+                get: TweenPropertyAccessor::F64(|t: &mut Obj| &mut t.x),
                 key: "x",
                 to: 200.0,
             }],
@@ -215,6 +220,21 @@ mod tween_with {
     }
 
     #[test]
+    fn keeps_interpolating_an_f64_field_in_f64() {
+        let manager = create_tween_manager(Some(&TweenManagerOptions {
+            default_ease: Some(linear_ease),
+        }));
+        let target: Ref<Obj> = Ref::new(RwLock::new(Obj { x: 0.1, y: 0.0 }));
+        let prop = tween_with(|t: &mut Obj| &mut t.x, "x", 0.55);
+        assert!(matches!(prop.get, TweenPropertyAccessor::F64(_)));
+        create_tween(&manager, &target, 1.0, &[prop], None);
+        update_tweens(&manager, 0.5);
+        assert_eq!(target.read().unwrap().x, 0.1 + (0.55 - 0.1) * 0.5);
+        update_tweens(&manager, 0.5);
+        assert_eq!(target.read().unwrap().x, 0.55);
+    }
+
+    #[test]
     fn works_as_a_prop_in_create_tween() {
         let manager = create_tween_manager(None);
         let target: Ref<Obj> = Ref::new(RwLock::new(Obj { x: 0.0, y: 0.0 }));
@@ -226,5 +246,63 @@ mod tween_with {
             None,
         );
         assert!(get_tween_property_keys(&tween).contains(&"x".to_string()));
+    }
+}
+
+mod tween_with_f32 {
+    use super::*;
+
+    struct Fade {
+        alpha: f32,
+    }
+
+    fn fade_manager() -> TweenManager {
+        return create_tween_manager(Some(&TweenManagerOptions {
+            default_ease: Some(linear_ease),
+        }));
+    }
+
+    #[test]
+    fn constructs_an_f32_field_accessor_with_an_f64_target() {
+        let prop = tween_with_f32::<Fade>(|t| &mut t.alpha, "alpha", 0.55);
+        assert!(matches!(prop.get, TweenPropertyAccessor::F32(_)));
+        assert_eq!(prop.key, "alpha");
+        assert_eq!(prop.to, 0.55);
+    }
+
+    #[test]
+    fn interpolates_in_f64_and_narrows_once_per_write() {
+        // From 0.3f32 toward 0.85 at t = 0.5: f64 math narrowed once gives 0.574999988079071, while
+        // f32 arithmetic (with either rounding of the change) or an f32-narrowed target gives
+        // 0.5750000476837158.
+        let manager = fade_manager();
+        let target = Ref::new(RwLock::new(Fade { alpha: 0.3 }));
+        create_tween(
+            &manager,
+            &target,
+            1.0,
+            &[tween_with_f32(|t: &mut Fade| &mut t.alpha, "alpha", 0.85)],
+            None,
+        );
+        update_tweens(&manager, 0.5);
+        let start = f64::from(0.3_f32);
+        let expected = (start + (0.85 - start) * 0.5) as f32;
+        assert_eq!(target.read().unwrap().alpha, expected);
+        assert_eq!(expected, 0.574_999_988_079_071_f32);
+        assert_ne!(expected, 0.3_f32 + (0.85_f32 - 0.3_f32) * 0.5_f32);
+        update_tweens(&manager, 0.5);
+        assert_eq!(target.read().unwrap().alpha, 0.85_f32);
+    }
+
+    #[test]
+    fn writes_the_target_endpoint_narrowed_once_through_apply_tween() {
+        let manager = fade_manager();
+        let target = Ref::new(RwLock::new(Fade { alpha: 0.0 }));
+        apply_tween(
+            &manager,
+            &target,
+            &[tween_with_f32(|t: &mut Fade| &mut t.alpha, "alpha", 0.55)],
+        );
+        assert_eq!(target.read().unwrap().alpha, 0.55_f32);
     }
 }

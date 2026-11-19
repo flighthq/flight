@@ -29,6 +29,7 @@ pub use contract::TweenManagerData;
 pub use contract::TweenManagerOptions;
 pub use contract::TweenOptions;
 pub use contract::TweenProp;
+pub use contract::TweenPropertyAccessor;
 pub use contract::TweenPropertyDetail;
 pub use contract::TweenStaggerOptions;
 
@@ -36,6 +37,7 @@ pub use contract::TweenStaggerOptions;
 pub use contract::create_tween_context;
 pub use contract::equals_tween;
 pub use contract::tween_with;
+pub use contract::tween_with_f32;
 
 // colorTween — export *
 pub use contract::create_color_tween;

@@ -9,7 +9,7 @@ use crate::tween_manager::default_manager;
 use crate::types::{
     ErasedTweenHandle, StopTweenOptions, Tween, TweenContext, TweenManager, TweenOptions,
     TweenProp, erase_tween_handle, erased_has_property, get_tween_ops_property_keys,
-    target_key_from_ref, write_tween_ops_values,
+    target_key_from_ref, write_tween_ops_values, write_tween_property,
 };
 
 pub fn create_tween<T: ?Sized + Send + Sync + 'static>(
@@ -49,7 +49,7 @@ pub fn apply_tween<T: ?Sized + Send + Sync + 'static>(
     stop_tweens_by_key(manager, key, Some(props), None);
     let mut t = target.write().unwrap();
     for prop in props {
-        *(prop.get)(&mut t) = prop.to;
+        write_tween_property(prop.get, &mut t, prop.to);
     }
 }
 

@@ -35,7 +35,7 @@ mod complete_tween {
             &target,
             1000.0,
             &[TweenProp {
-                get: |t: &mut Obj| &mut t.x,
+                get: TweenPropertyAccessor::F64(|t: &mut Obj| &mut t.x),
                 key: "x",
                 to: 100.0,
             }],
@@ -64,7 +64,7 @@ mod complete_tween {
             &target,
             1000.0,
             &[TweenProp {
-                get: |t: &mut Obj| &mut t.x,
+                get: TweenPropertyAccessor::F64(|t: &mut Obj| &mut t.x),
                 key: "x",
                 to: 100.0,
             }],
@@ -92,7 +92,7 @@ mod complete_tween {
             &target,
             1000.0,
             &[TweenProp {
-                get: |t: &mut Obj| &mut t.x,
+                get: TweenPropertyAccessor::F64(|t: &mut Obj| &mut t.x),
                 key: "x",
                 to: 100.0,
             }],
@@ -121,7 +121,7 @@ mod complete_tween {
             &target,
             1000.0,
             &[TweenProp {
-                get: |t: &mut Obj| &mut t.x,
+                get: TweenPropertyAccessor::F64(|t: &mut Obj| &mut t.x),
                 key: "x",
                 to: 100.0,
             }],
@@ -150,7 +150,7 @@ mod complete_tween {
             &target,
             1000.0,
             &[TweenProp {
-                get: |t: &mut Obj| &mut t.x,
+                get: TweenPropertyAccessor::F64(|t: &mut Obj| &mut t.x),
                 key: "x",
                 to: 100.0,
             }],
@@ -184,7 +184,7 @@ mod smart_rotation {
             &target,
             1000.0,
             &[TweenProp {
-                get: |t: &mut RotObj| &mut t.rotation,
+                get: TweenPropertyAccessor::F64(|t: &mut RotObj| &mut t.rotation),
                 key: "rotation",
                 to: 350.0,
             }],
@@ -212,7 +212,7 @@ mod smart_rotation {
             &target,
             1000.0,
             &[TweenProp {
-                get: |t: &mut RotObj| &mut t.rotation,
+                get: TweenPropertyAccessor::F64(|t: &mut RotObj| &mut t.rotation),
                 key: "rotation",
                 to: -350.0,
             }],
@@ -240,7 +240,7 @@ mod smart_rotation {
             &target,
             1000.0,
             &[TweenProp {
-                get: |t: &mut RotObj| &mut t.rotation,
+                get: TweenPropertyAccessor::F64(|t: &mut RotObj| &mut t.rotation),
                 key: "rotation",
                 to: 10.0,
             }],
@@ -270,7 +270,7 @@ mod smart_rotation {
             &target,
             1000.0,
             &[TweenProp {
-                get: |t: &mut RotObj| &mut t.rotation,
+                get: TweenPropertyAccessor::F64(|t: &mut RotObj| &mut t.rotation),
                 key: "rotation",
                 to: 90.0,
             }],
@@ -302,7 +302,7 @@ mod update_tweens {
             &target,
             1000.0,
             &[TweenProp {
-                get: |t: &mut Obj| &mut t.x,
+                get: TweenPropertyAccessor::F64(|t: &mut Obj| &mut t.x),
                 key: "x",
                 to: 100.0,
             }],
@@ -330,7 +330,7 @@ mod update_tweens {
             &target,
             1000.0,
             &[TweenProp {
-                get: |t: &mut Obj| &mut t.x,
+                get: TweenPropertyAccessor::F64(|t: &mut Obj| &mut t.x),
                 key: "x",
                 to: 100.0,
             }],
@@ -359,12 +359,12 @@ mod update_tweens {
             1000.0,
             &[
                 TweenProp {
-                    get: |t: &mut ObjXY| &mut t.x,
+                    get: TweenPropertyAccessor::F64(|t: &mut ObjXY| &mut t.x),
                     key: "x",
                     to: 100.0,
                 },
                 TweenProp {
-                    get: |t: &mut ObjXY| &mut t.y,
+                    get: TweenPropertyAccessor::F64(|t: &mut ObjXY| &mut t.y),
                     key: "y",
                     to: 200.0,
                 },
@@ -394,7 +394,7 @@ mod update_tweens {
             &target,
             1000.0,
             &[TweenProp {
-                get: |t: &mut Obj| &mut t.x,
+                get: TweenPropertyAccessor::F64(|t: &mut Obj| &mut t.x),
                 key: "x",
                 to: 100.0,
             }],
@@ -413,7 +413,7 @@ mod update_tweens {
             &target,
             1000.0,
             &[TweenProp {
-                get: |t: &mut Obj| &mut t.x,
+                get: TweenPropertyAccessor::F64(|t: &mut Obj| &mut t.x),
                 key: "x",
                 to: 100.0,
             }],
@@ -433,7 +433,7 @@ mod update_tweens {
             &target,
             1000.0,
             &[TweenProp {
-                get: |t: &mut Obj| &mut t.x,
+                get: TweenPropertyAccessor::F64(|t: &mut Obj| &mut t.x),
                 key: "x",
                 to: 100.0,
             }],
@@ -461,7 +461,7 @@ mod update_tweens {
             &target,
             1000.0,
             &[TweenProp {
-                get: |t: &mut Obj| &mut t.x,
+                get: TweenPropertyAccessor::F64(|t: &mut Obj| &mut t.x),
                 key: "x",
                 to: 100.0,
             }],
@@ -490,7 +490,7 @@ mod update_tweens {
             &target,
             1000.0,
             &[TweenProp {
-                get: |t: &mut Obj| &mut t.x,
+                get: TweenPropertyAccessor::F64(|t: &mut Obj| &mut t.x),
                 key: "x",
                 to: 100.0,
             }],
@@ -520,7 +520,7 @@ mod update_tweens {
             &target,
             1000.0,
             &[TweenProp {
-                get: |t: &mut Obj| &mut t.x,
+                get: TweenPropertyAccessor::F64(|t: &mut Obj| &mut t.x),
                 key: "x",
                 to: 100.0,
             }],
@@ -560,7 +560,7 @@ mod update_tweens {
             &target,
             1000.0,
             &[TweenProp {
-                get: |t: &mut Obj| &mut t.x,
+                get: TweenPropertyAccessor::F64(|t: &mut Obj| &mut t.x),
                 key: "x",
                 to: 100.0,
             }],
@@ -590,7 +590,7 @@ mod update_tweens {
             &target,
             1000.0,
             &[TweenProp {
-                get: |t: &mut Obj| &mut t.x,
+                get: TweenPropertyAccessor::F64(|t: &mut Obj| &mut t.x),
                 key: "x",
                 to: 100.0,
             }],
@@ -622,7 +622,7 @@ mod update_tweens {
             &target,
             1000.0,
             &[TweenProp {
-                get: |t: &mut Obj| &mut t.x,
+                get: TweenPropertyAccessor::F64(|t: &mut Obj| &mut t.x),
                 key: "x",
                 to: 100.0,
             }],
@@ -659,7 +659,7 @@ mod update_tweens {
             &target,
             1000.0,
             &[TweenProp {
-                get: |t: &mut Obj| &mut t.x,
+                get: TweenPropertyAccessor::F64(|t: &mut Obj| &mut t.x),
                 key: "x",
                 to: 100.0,
             }],
@@ -697,7 +697,7 @@ mod update_tweens {
             &target,
             1000.0,
             &[TweenProp {
-                get: |t: &mut Obj| &mut t.x,
+                get: TweenPropertyAccessor::F64(|t: &mut Obj| &mut t.x),
                 key: "x",
                 to: 100.0,
             }],
@@ -736,7 +736,7 @@ mod update_tweens {
             &target,
             1000.0,
             &[TweenProp {
-                get: |t: &mut Obj| &mut t.x,
+                get: TweenPropertyAccessor::F64(|t: &mut Obj| &mut t.x),
                 key: "x",
                 to: 100.0,
             }],
@@ -777,7 +777,7 @@ mod update_tweens {
             &target,
             1000.0,
             &[TweenProp {
-                get: |t: &mut Obj| &mut t.x,
+                get: TweenPropertyAccessor::F64(|t: &mut Obj| &mut t.x),
                 key: "x",
                 to: 100.0,
             }],
@@ -806,7 +806,7 @@ mod update_tweens {
             &target,
             1000.0,
             &[TweenProp {
-                get: |t: &mut Obj| &mut t.x,
+                get: TweenPropertyAccessor::F64(|t: &mut Obj| &mut t.x),
                 key: "x",
                 to: 100.0,
             }],
@@ -835,7 +835,7 @@ mod update_tweens {
             &target,
             1000.0,
             &[TweenProp {
-                get: |t: &mut Obj| &mut t.x,
+                get: TweenPropertyAccessor::F64(|t: &mut Obj| &mut t.x),
                 key: "x",
                 to: 100.0,
             }],
@@ -866,7 +866,7 @@ mod update_tweens {
             &target,
             1000.0,
             &[TweenProp {
-                get: |t: &mut Obj| &mut t.x,
+                get: TweenPropertyAccessor::F64(|t: &mut Obj| &mut t.x),
                 key: "x",
                 to: 100.0,
             }],
@@ -898,7 +898,7 @@ mod update_tweens {
             &target,
             1000.0,
             &[TweenProp {
-                get: |t: &mut Obj| &mut t.x,
+                get: TweenPropertyAccessor::F64(|t: &mut Obj| &mut t.x),
                 key: "x",
                 to: 100.0,
             }],
@@ -929,7 +929,7 @@ mod update_tweens {
             &target,
             0.0,
             &[TweenProp {
-                get: |t: &mut Obj| &mut t.x,
+                get: TweenPropertyAccessor::F64(|t: &mut Obj| &mut t.x),
                 key: "x",
                 to: 100.0,
             }],

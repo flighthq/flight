@@ -33,7 +33,7 @@ fn interpolates_a_sub_millimetre_change_at_one_billion() {
         &target,
         1.0,
         &[TweenProp {
-            get: |t: &mut Obj| &mut t.x,
+            get: TweenPropertyAccessor::F64(|t: &mut Obj| &mut t.x),
             key: "x",
             to: START + 1e-3,
         }],
@@ -55,7 +55,7 @@ fn accumulates_frame_time_in_f64_across_a_long_duration() {
         &target,
         1e6,
         &[TweenProp {
-            get: |t: &mut Obj| &mut t.x,
+            get: TweenPropertyAccessor::F64(|t: &mut Obj| &mut t.x),
             key: "x",
             to: 1e6,
         }],
@@ -83,7 +83,7 @@ fn keeps_progress_and_easing_bounded_f32() {
         &target,
         4.0,
         &[TweenProp {
-            get: |t: &mut Obj| &mut t.x,
+            get: TweenPropertyAccessor::F64(|t: &mut Obj| &mut t.x),
             key: "x",
             to: 8.0,
         }],

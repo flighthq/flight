@@ -25,7 +25,7 @@ fn _get_y(target: &Ref<Obj>) -> f64 {
 
 fn prop_x(to: f64) -> TweenProp<Obj> {
     return TweenProp {
-        get: |t: &mut Obj| &mut t.x,
+        get: TweenPropertyAccessor::F64(|t: &mut Obj| &mut t.x),
         key: "x",
         to,
     };
@@ -33,7 +33,7 @@ fn prop_x(to: f64) -> TweenProp<Obj> {
 
 fn prop_y(to: f64) -> TweenProp<Obj> {
     return TweenProp {
-        get: |t: &mut Obj| &mut t.y,
+        get: TweenPropertyAccessor::F64(|t: &mut Obj| &mut t.y),
         key: "y",
         to,
     };

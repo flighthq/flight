@@ -7,8 +7,8 @@ use flight_signals::connect_signal;
 
 use crate::internal::{add_tween_to_manager, make_tween};
 use crate::types::{
-    ColorComponents, Tween, TweenManager, TweenOptions, TweenProp, erase_tween_handle,
-    target_key_from_ref,
+    ColorComponents, Tween, TweenManager, TweenOptions, TweenProp, TweenPropertyAccessor,
+    erase_tween_handle, target_key_from_ref,
 };
 
 // flight-lint: allow(conform-extra) D22 generic color tween using ColorComponents proxy
@@ -37,17 +37,17 @@ pub fn create_color_tween<T: ?Sized + Send + Sync + 'static>(
 
     let props = [
         TweenProp {
-            get: |c: &mut ColorComponents| &mut c.r,
+            get: TweenPropertyAccessor::F64(|c: &mut ColorComponents| &mut c.r),
             key: "r",
             to: ((to_color >> 16) & 0xff) as f64,
         },
         TweenProp {
-            get: |c: &mut ColorComponents| &mut c.g,
+            get: TweenPropertyAccessor::F64(|c: &mut ColorComponents| &mut c.g),
             key: "g",
             to: ((to_color >> 8) & 0xff) as f64,
         },
         TweenProp {
-            get: |c: &mut ColorComponents| &mut c.b,
+            get: TweenPropertyAccessor::F64(|c: &mut ColorComponents| &mut c.b),
             key: "b",
             to: (to_color & 0xff) as f64,
         },

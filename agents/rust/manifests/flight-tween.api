@@ -22,6 +22,7 @@ src/lib.rs: pub use contract::TweenManagerData;
 src/lib.rs: pub use contract::TweenManagerOptions;
 src/lib.rs: pub use contract::TweenOptions;
 src/lib.rs: pub use contract::TweenProp;
+src/lib.rs: pub use contract::TweenPropertyAccessor;
 src/lib.rs: pub use contract::TweenPropertyDetail;
 src/lib.rs: pub use contract::TweenStaggerOptions;
 src/lib.rs: pub use contract::apply_tween;
@@ -70,6 +71,7 @@ src/lib.rs: pub use contract::stop_all_tweens;
 src/lib.rs: pub use contract::stop_tween;
 src/lib.rs: pub use contract::stop_tweens;
 src/lib.rs: pub use contract::tween_with;
+src/lib.rs: pub use contract::tween_with_f32;
 src/lib.rs: pub use contract::update_tweens;
 src/sugar.rs: impl Tween<T> :: fn complete_tween(&self)
 src/sugar.rs: impl Tween<T> :: fn delay(&self) -> f32
@@ -175,7 +177,10 @@ src/types.rs: impl Clone for TweenManager
 src/types.rs: impl Clone for TweenManager :: fn clone(&self) -> Self
 src/types.rs: impl Clone for TweenProp<T>
 src/types.rs: impl Clone for TweenProp<T> :: fn clone(&self) -> Self
+src/types.rs: impl Clone for TweenPropertyAccessor<T>
+src/types.rs: impl Clone for TweenPropertyAccessor<T> :: fn clone(&self) -> Self
 src/types.rs: impl Copy for TweenProp<T>
+src/types.rs: impl Copy for TweenPropertyAccessor<T>
 src/types.rs: impl Default for StaggerFrom
 src/types.rs: impl Default for StaggerFrom :: fn default() -> Self
 src/types.rs: impl Default for TweenManager
@@ -194,9 +199,11 @@ src/types.rs: impl TweenOps for TypedTweenOps<T> :: fn write_values(&self, eased
 src/types.rs: impl flight_entity::Entity for Tween<T>
 src/types.rs: impl flight_entity::Entity for Tween<T> :: fn entity_runtime(&self) -> &EntityRuntimeSlot
 src/types.rs: impl flight_entity::Entity for Tween<T> :: fn entity_runtime_mut(&mut self) -> &mut EntityRuntimeSlot
+src/types.rs: pub enum TweenPropertyAccessor<T: ? Sized> { F32(fn(&mut T) -> &mut f32), F64(fn(&mut T) -> &mut f64), }
 src/types.rs: pub fn create_tween_context() -> TweenContext
 src/types.rs: pub fn equals_tween<T: ? Sized + Send + Sync + 'static>(a: &Tween<T>, b: &Tween<T>) -> bool
 src/types.rs: pub fn tween_with<T: ? Sized>(get: fn(&mut T) -> &mut f32, key: &'static str, to: f32) -> TweenProp<T>
+src/types.rs: pub fn tween_with_f32<T: ? Sized>(get: fn(&mut T) -> &mut f32, key: &'static str, to: f64,) -> TweenProp<T>
 src/types.rs: pub struct ColorComponents { pub r: f32, pub g: f32, pub b: f32, }
 src/types.rs: pub struct ErasedTweenInner { pub common: TweenCommon, pub(crate) ops: Box<dyn TweenOps>, pub(crate) registration_property_keys: Option<Vec<String>>, }
 src/types.rs: pub struct TimerTarget;
@@ -204,7 +211,7 @@ src/types.rs: pub struct Tween<T: ? Sized + Send + Sync + 'static> { pub(crate) 
 src/types.rs: pub struct TweenCommon { pub complete: bool, pub delay: f32, pub duration: f32, pub ease: EasingFunction, pub elapsed: f32, pub initialized: bool, pub on_complete: Signal<()>, pub on_repeat: Signal<()>, pub on_update: Signal<()>, pub on_yoyo: Signal<()>, pub paused: bool, pub reflect: bool, pub repeat: i32, pub reverse: bool, pub smart_rotation: bool, pub snapping: bool, }
 src/types.rs: pub struct TweenManager { pub data: Ref<TweenManagerData>, runtime: EntityRuntimeSlot, }
 src/types.rs: pub struct TweenManagerData { pub __brand: String, pub default_ease: EasingFunction, pub(crate) tweens: Vec<(usize, Vec<ErasedTweenHandle>)>, }
-src/types.rs: pub struct TweenProp<T: ? Sized> { pub get: fn(&mut T) -> &mut f32, pub key: &'static str, pub to: f32, }
+src/types.rs: pub struct TweenProp<T: ? Sized> { pub get: TweenPropertyAccessor<T>, pub key: &'static str, pub to: f64, }
 src/types.rs: pub type EasingFunction = fn(f32) -> f32;
 src/update_tweens.rs: pub fn complete_tween<T: ? Sized + Send + Sync + 'static>(tween: &Tween<T>)
 src/update_tweens.rs: pub fn update_tweens(manager: &TweenManager, delta_time: f32)

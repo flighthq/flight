@@ -21,7 +21,7 @@ mod sugar_tests {
 
     fn prop_x(to: f64) -> TweenProp<Obj> {
         return TweenProp {
-            get: |t: &mut Obj| &mut t.x,
+            get: TweenPropertyAccessor::F64(|t: &mut Obj| &mut t.x),
             key: "x",
             to,
         };
