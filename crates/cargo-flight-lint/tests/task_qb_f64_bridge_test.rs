@@ -137,16 +137,16 @@ fn item_header(line: &str) -> Option<(&'static str, &str)> {
     return None;
 }
 
-fn boundary_mask_and_id(
-    relative: &str,
-    lines: &[&str],
-    marker: usize,
-) -> (Vec<bool>, String) {
+fn boundary_mask_and_id(relative: &str, lines: &[&str], marker: usize) -> (Vec<bool>, String) {
     let reason = lines[marker]
         .split_once("allow(f32)")
         .map(|(_, value)| value.trim())
         .unwrap_or_default();
-    assert!(!reason.is_empty(), "{relative}:{} needs a reason", marker + 1);
+    assert!(
+        !reason.is_empty(),
+        "{relative}:{} needs a reason",
+        marker + 1
+    );
 
     let mut item = marker + 1;
     let (kind, rest) = loop {
