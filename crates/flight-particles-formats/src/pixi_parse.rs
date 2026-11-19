@@ -2,10 +2,10 @@
 
 //! Pixi.js / pixi-particle-emitter JSON parsing (TS `pixiParse.ts`, parse-only).
 
+use crate::angle_units::degrees_to_radians;
 use flight_importdiagnostics::{
     ImportDiagnostic, ImportDiagnosticSeverity, report_import_diagnostic,
 };
-use flight_math::DEG_TO_RAD;
 use flight_particles::{
     EmitterShape, ParticleBlendMode, ParticleEmitterConfig, ParticleEmitterConfigOptions,
     create_particle_emitter_config,
@@ -127,8 +127,8 @@ fn raw_to_config(raw: &Value) -> ParticleEmitterConfig {
     let angle = raw.get("angle");
     let angle_min = rn(field(angle, "min"), 0.0);
     let angle_max = rn(field(angle, "max"), 360.0);
-    let angle_mid = (angle_min + angle_max) * 0.5 * DEG_TO_RAD;
-    let spread = (angle_max - angle_min) * 0.5 * DEG_TO_RAD;
+    let angle_mid = degrees_to_radians((angle_min + angle_max) * 0.5);
+    let spread = degrees_to_radians((angle_max - angle_min) * 0.5);
     let mut emitter_shape = EmitterShape::Point;
     let mut emitter_radius = 0.0;
     let mut emitter_width = 0.0;
@@ -149,7 +149,7 @@ fn raw_to_config(raw: &Value) -> ParticleEmitterConfig {
         "normal" | "src_alpha" => Some(ParticleBlendMode::Normal),
         _ => None,
     };
-    let rotation_speed = rn(raw.get("rotationSpeed"), 0.0) * DEG_TO_RAD;
+    let rotation_speed = degrees_to_radians(rn(raw.get("rotationSpeed"), 0.0));
     return create_particle_emitter_config(Some(&ParticleEmitterConfigOptions {
         alpha_end: Some(alpha_end),
         alpha_start: Some(alpha_start),

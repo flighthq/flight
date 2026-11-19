@@ -2,10 +2,10 @@
 
 //! Starling / Sparrow PEX XML parsing (TS `starlingPexParse.ts`).
 
+use crate::angle_units::degrees_to_radians;
 use flight_importdiagnostics::{
     ImportDiagnostic, ImportDiagnosticSeverity, report_import_diagnostic,
 };
-use flight_math::DEG_TO_RAD;
 use flight_particles::{
     EmitterShape, ParticleBlendMode, ParticleEmitterConfig, ParticleEmitterConfigOptions,
     create_particle_emitter_config,
@@ -230,7 +230,7 @@ fn dict_to_document(dict: &PexDict) -> StarlingPexDocument {
 }
 
 fn document_to_config(document: &StarlingPexDocument, texture_size: f32) -> ParticleEmitterConfig {
-    let angle_rad = document.angle * DEG_TO_RAD;
+    let angle_rad = degrees_to_radians(document.angle);
     let lifespan = document.particle_lifespan;
     let lifespan_variance = document.particle_lifespan_variance;
     let speed = document.speed;
@@ -254,12 +254,12 @@ fn document_to_config(document: &StarlingPexDocument, texture_size: f32) -> Part
         1.0
     };
     let rotation_speed_mid =
-        ((document.rotation_start + document.rotation_end) * 0.5 * DEG_TO_RAD) / lifetime_mid;
-    let rotation_speed_variance = (document
-        .rotation_start_variance
-        .max(document.rotation_end_variance)
-        * DEG_TO_RAD)
-        / lifetime_mid;
+        degrees_to_radians((document.rotation_start + document.rotation_end) * 0.5) / lifetime_mid;
+    let rotation_speed_variance = degrees_to_radians(
+        document
+            .rotation_start_variance
+            .max(document.rotation_end_variance),
+    ) / lifetime_mid;
     let duration = document.duration;
     return create_particle_emitter_config(Some(&ParticleEmitterConfigOptions {
         alpha_end: Some(document.finish_color.alpha),
@@ -316,7 +316,7 @@ fn document_to_config(document: &StarlingPexDocument, texture_size: f32) -> Part
         scale_min: Some((start_size - start_variance).max(0.0)),
         speed_max: Some(speed + speed_variance),
         speed_min: Some((speed - speed_variance).max(0.0)),
-        spread: Some(document.angle_variance * DEG_TO_RAD),
+        spread: Some(degrees_to_radians(document.angle_variance)),
         ..Default::default()
     }));
 }

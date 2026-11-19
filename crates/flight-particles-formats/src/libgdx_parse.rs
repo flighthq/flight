@@ -2,10 +2,10 @@
 
 //! libGDX 2D Particle Editor `.p` parsing (TS `libgdxParse.ts`).
 
+use crate::angle_units::degrees_to_radians;
 use flight_importdiagnostics::{
     ImportDiagnostic, ImportDiagnosticSeverity, report_import_diagnostic,
 };
-use flight_math::DEG_TO_RAD;
 use flight_particles::{
     EmitterShape, ParticleBlendMode, ParticleEmitterConfig, ParticleEmitterConfigOptions,
     create_particle_emitter_config,
@@ -236,8 +236,8 @@ fn document_to_config(
     } else {
         (0.0, 360.0)
     };
-    let angle_mid = (angle_min + angle_max) * 0.5 * DEG_TO_RAD;
-    let spread = (angle_max - angle_min) * 0.5 * DEG_TO_RAD;
+    let angle_mid = degrees_to_radians((angle_min + angle_max) * 0.5);
+    let spread = degrees_to_radians((angle_max - angle_min) * 0.5);
     let (scale_min_px, scale_max_px) = range_to_min_max(&document.scale);
     let scale_min = scale_min_px / texture_size;
     let scale_max = scale_max_px / texture_size;
@@ -312,8 +312,8 @@ fn document_to_config(
     } else {
         1.0
     };
-    let rotation_speed_min = (rotation_min * DEG_TO_RAD) / lifetime_mid;
-    let rotation_speed_max = (rotation_max * DEG_TO_RAD) / lifetime_mid;
+    let rotation_speed_min = degrees_to_radians(rotation_min) / lifetime_mid;
+    let rotation_speed_max = degrees_to_radians(rotation_max) / lifetime_mid;
     let blend_mode = if document.additive {
         ParticleBlendMode::Add
     } else {

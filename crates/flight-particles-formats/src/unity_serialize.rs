@@ -2,7 +2,7 @@
 
 //! Unity particle system JSON serialization (TS `unitySerialize.ts`).
 
-use flight_math::RAD_TO_DEG;
+use crate::angle_units::radians_to_degrees;
 use flight_particles::{
     EmitterShape, ParticleEmitterConfig, particle_color_curve_to_keyframes,
     particle_curve_to_keyframes,
@@ -148,8 +148,8 @@ fn config_to_document(
     existing: Option<&UnityParticleDocument>,
     ppu: f32,
 ) -> UnityParticleDocument {
-    let rotation_low = config.rotation_speed_min * RAD_TO_DEG;
-    let rotation_high = config.rotation_speed_max * RAD_TO_DEG;
+    let rotation_low = radians_to_degrees(config.rotation_speed_min);
+    let rotation_high = radians_to_degrees(config.rotation_speed_max);
     let has_rotation = config.rotation_speed_min != 0.0 || config.rotation_speed_max != 0.0;
     let has_burst = config.burst_count > 0.0;
     let gravity_world = config.gravity_y / ppu;
@@ -163,7 +163,7 @@ fn config_to_document(
     };
     let mut shape_type = UnityParticleShapeType::Cone;
     let mut radius = 0.0;
-    let mut angle = config.spread * RAD_TO_DEG;
+    let mut angle = radians_to_degrees(config.spread);
     match config.emitter_shape {
         EmitterShape::Circle => {
             shape_type = UnityParticleShapeType::Circle;

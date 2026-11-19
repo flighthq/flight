@@ -9,6 +9,19 @@ mod parse_starling_pex {
     use super::*;
 
     #[test]
+    fn converts_angle_variance_to_radians_with_one_f32_rounding() {
+        // 4.7 degrees: f64 product then one narrowing gives 0.08203047513961792; multiplying by an
+        // f32-rounded DEG_TO_RAD in f32 gives 0.08203046768903732.
+        let text = PEX.replace(
+            "<attribute name=\"angle\" value=\"90\"/>",
+            "<attribute name=\"angle\" value=\"90\"/>\n  <attribute name=\"angleVariance\" value=\"4.7\"/>",
+        );
+        let config = parse_starling_pex(&text, None);
+        assert_eq!(config.spread, 0.082_030_475_139_617_92_f32);
+        assert_ne!(config.spread, 0.082_030_467_689_037_32_f32);
+    }
+
+    #[test]
     fn reads_attribute_style_values_and_colors() {
         let config = parse_starling_pex(PEX, None);
         assert_eq!(config.max_particles, 200.0);

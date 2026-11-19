@@ -3,6 +3,7 @@
 //! Particle format detection, parsing and serialization across the built-in formats. The format
 //! registry is caller-owned state (D5).
 
+mod angle_units;
 mod detect;
 mod format_registry;
 mod libgdx_parse;

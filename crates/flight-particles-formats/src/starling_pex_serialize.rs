@@ -2,7 +2,7 @@
 
 //! Starling / Sparrow PEX XML serialization (TS `starlingPexSerialize.ts`).
 
-use flight_math::RAD_TO_DEG;
+use crate::angle_units::radians_to_degrees;
 use flight_particles::{
     EmitterShape, ParticleBlendMode, ParticleEmitterConfig, particle_blend_mode_as_str,
 };
@@ -73,15 +73,15 @@ fn config_to_document(
     existing: Option<&StarlingPexDocument>,
     texture_size: f32,
 ) -> StarlingPexDocument {
-    let angle_degrees = (-config.direction_y).atan2(config.direction_x) * RAD_TO_DEG;
+    let angle_degrees = radians_to_degrees((-config.direction_y).atan2(config.direction_x));
     let start_size = (config.scale_min + config.scale_max) * 0.5 * texture_size;
     let start_variance = (config.scale_max - config.scale_min) * 0.5 * texture_size;
     let finish_size = start_size * config.scale_end;
     let rotation_speed_mid = (config.rotation_speed_min + config.rotation_speed_max) * 0.5;
     let rotation_speed_variance = (config.rotation_speed_max - config.rotation_speed_min) * 0.5;
     let lifetime_mid = (config.lifetime_min + config.lifetime_max) * 0.5;
-    let rotation_start = rotation_speed_mid * lifetime_mid * RAD_TO_DEG;
-    let rotation_variance = rotation_speed_variance * lifetime_mid * RAD_TO_DEG;
+    let rotation_start = radians_to_degrees(rotation_speed_mid * lifetime_mid);
+    let rotation_variance = radians_to_degrees(rotation_speed_variance * lifetime_mid);
     let (variance_x, variance_y) = match config.emitter_shape {
         EmitterShape::Circle => (config.emitter_radius, config.emitter_radius),
         EmitterShape::Rect => (config.emitter_width * 0.5, config.emitter_height * 0.5),
@@ -112,7 +112,7 @@ fn config_to_document(
         .unwrap_or(zero_color);
     return StarlingPexDocument {
         angle: angle_degrees,
-        angle_variance: config.spread * RAD_TO_DEG,
+        angle_variance: radians_to_degrees(config.spread),
         blend_func_destination: destination,
         blend_func_source: source,
         duration: if config.duration > 0.0 && !config.looping {

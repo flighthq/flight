@@ -2,7 +2,7 @@
 
 //! Spine particle effect JSON serialization (TS `spineSerialize.ts`).
 
-use flight_math::RAD_TO_DEG;
+use crate::angle_units::radians_to_degrees;
 use flight_particles::{
     EmitterShape, ParticleBlendMode, ParticleEmitterConfig, particle_color_curve_to_keyframes,
     particle_curve_to_keyframes,
@@ -59,8 +59,8 @@ fn config_to_document(
     config: &ParticleEmitterConfig,
     existing: Option<&SpineParticleDocument>,
 ) -> SpineParticleDocument {
-    let angle_mid = (-config.direction_y).atan2(config.direction_x) * RAD_TO_DEG;
-    let spread_deg = config.spread * RAD_TO_DEG;
+    let angle_mid = radians_to_degrees((-config.direction_y).atan2(config.direction_x));
+    let spread_deg = radians_to_degrees(config.spread);
     let spawn_shape = match config.emitter_shape {
         EmitterShape::Rect | EmitterShape::Circle => SpineSpawnShape::Ellipse,
         _ => SpineSpawnShape::Point,
@@ -168,8 +168,8 @@ fn config_to_document(
             .map(|document| document.premultiplied)
             .unwrap_or(false),
         rotation: SpineRangeValue {
-            high: config.rotation_speed_max * RAD_TO_DEG,
-            low: config.rotation_speed_min * RAD_TO_DEG,
+            high: radians_to_degrees(config.rotation_speed_max),
+            low: radians_to_degrees(config.rotation_speed_min),
         },
         scale: SpineRangeValue {
             high: config.scale_max,

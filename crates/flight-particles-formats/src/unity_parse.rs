@@ -4,11 +4,11 @@
 
 use std::collections::HashMap;
 
+use crate::angle_units::degrees_to_radians;
 use flight_importdiagnostics::{
     ImportDiagnostic, ImportDiagnosticDetailValue, ImportDiagnosticSeverity,
     report_import_diagnostic,
 };
-use flight_math::DEG_TO_RAD;
 use flight_particles::{
     ColorKeyframe, CurveKeyframe, EmitterShape, ParticleBlendMode, ParticleEmitterConfig,
     ParticleEmitterConfigOptions, create_particle_emitter_config,
@@ -502,7 +502,7 @@ fn raw_to_config(raw: &Value, ppu: f32) -> ParticleEmitterConfig {
                 spread = std::f32::consts::PI * 2.0;
             }
             "Cone" => {
-                spread = rn(shape.and_then(|shape| shape.get("angle")), 25.0) * DEG_TO_RAD;
+                spread = degrees_to_radians(rn(shape.and_then(|shape| shape.get("angle")), 25.0));
                 emitter_shape = if shape_radius > 0.0 {
                     EmitterShape::Circle
                 } else {
@@ -568,18 +568,18 @@ fn raw_to_config(raw: &Value, ppu: f32) -> ParticleEmitterConfig {
         false,
     );
     let rotation_low = if rotation_enabled {
-        mm_low(
+        degrees_to_radians(mm_low(
             rotation_over_lifetime.and_then(|rotation| rotation.get("angularVelocity")),
             0.0,
-        ) * DEG_TO_RAD
+        ))
     } else {
         0.0
     };
     let rotation_high = if rotation_enabled {
-        mm_high(
+        degrees_to_radians(mm_high(
             rotation_over_lifetime.and_then(|rotation| rotation.get("angularVelocity")),
             0.0,
-        ) * DEG_TO_RAD
+        ))
     } else {
         0.0
     };

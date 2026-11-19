@@ -2,10 +2,10 @@
 
 //! Spine 4.x particle effect JSON parsing (TS `spineParse.ts`).
 
+use crate::angle_units::degrees_to_radians;
 use flight_importdiagnostics::{
     ImportDiagnostic, ImportDiagnosticSeverity, report_import_diagnostic,
 };
-use flight_math::DEG_TO_RAD;
 use flight_particles::{
     ColorKeyframe, CurveKeyframe, EmitterShape, ParticleBlendMode, ParticleEmitterConfig,
     ParticleEmitterConfigOptions, create_particle_emitter_config,
@@ -313,8 +313,8 @@ fn raw_to_config(raw: &Value) -> ParticleEmitterConfig {
     let life_high = range_high(raw.get("life"), 1500.0) / 1000.0;
     let angle_low = range_low(raw.get("angle"), 60.0);
     let angle_high = range_high(raw.get("angle"), 120.0);
-    let angle_mid = (angle_low + angle_high) * 0.5 * DEG_TO_RAD;
-    let spread = (angle_high - angle_low) * 0.5 * DEG_TO_RAD;
+    let angle_mid = degrees_to_radians((angle_low + angle_high) * 0.5);
+    let spread = degrees_to_radians((angle_high - angle_low) * 0.5);
     let spawn_shape = string_field(raw, "spawnShape", "point");
     let spawn_width = range_mid(raw.get("spawnWidth"), 0.0);
     let spawn_height = range_mid(raw.get("spawnHeight"), 0.0);
@@ -382,8 +382,8 @@ fn raw_to_config(raw: &Value) -> ParticleEmitterConfig {
             Some(Value::Number(number)) => (number.as_f64().unwrap_or(500.0) as i32) as f32,
             _ => 500.0,
         }),
-        rotation_speed_max: Some(range_high(raw.get("rotation"), 0.0) * DEG_TO_RAD),
-        rotation_speed_min: Some(range_low(raw.get("rotation"), 0.0) * DEG_TO_RAD),
+        rotation_speed_max: Some(degrees_to_radians(range_high(raw.get("rotation"), 0.0))),
+        rotation_speed_min: Some(degrees_to_radians(range_low(raw.get("rotation"), 0.0))),
         scale_end: Some(if spawn_scale_mid > 0.0 {
             end_scale_mid / spawn_scale_mid
         } else {

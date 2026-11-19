@@ -2,7 +2,7 @@
 
 //! libGDX 2D Particle Editor `.p` serialization (TS `libgdxSerialize.ts`).
 
-use flight_math::RAD_TO_DEG;
+use crate::angle_units::radians_to_degrees;
 use flight_particles::{
     EmitterShape, ParticleBlendMode, ParticleEmitterConfig, particle_blend_mode_as_str,
 };
@@ -108,8 +108,8 @@ fn config_to_document(
     existing: Option<&LibgdxParticleDocument>,
     texture_size: f32,
 ) -> LibgdxParticleDocument {
-    let angle_mid = (-config.direction_y).atan2(config.direction_x) * RAD_TO_DEG;
-    let spread_deg = config.spread * RAD_TO_DEG;
+    let angle_mid = radians_to_degrees((-config.direction_y).atan2(config.direction_x));
+    let spread_deg = radians_to_degrees(config.spread);
     let angle_min = angle_mid - spread_deg;
     let angle_max = angle_mid + spread_deg;
     let scale_min_px = config.scale_min * texture_size;
@@ -141,8 +141,8 @@ fn config_to_document(
     } else {
         1.0
     };
-    let rotation_deg_min = config.rotation_speed_min * RAD_TO_DEG * lifetime_mid;
-    let rotation_deg_max = config.rotation_speed_max * RAD_TO_DEG * lifetime_mid;
+    let rotation_deg_min = radians_to_degrees(config.rotation_speed_min) * lifetime_mid;
+    let rotation_deg_max = radians_to_degrees(config.rotation_speed_max) * lifetime_mid;
     let duration_ms = if config.looping {
         -1.0
     } else if config.duration > 0.0 {

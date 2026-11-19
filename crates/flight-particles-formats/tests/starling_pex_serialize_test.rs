@@ -50,6 +50,18 @@ mod serialize_starling_pex {
     use super::*;
 
     #[test]
+    fn converts_spread_to_degrees_with_one_f32_rounding() {
+        // 0.01 rad: f64 product then one narrowing gives 0.5729577541351318; multiplying by an
+        // f32-rounded RAD_TO_DEG in f32 gives 0.5729578137397766.
+        let mut config = create_particle_emitter_config(None);
+        config.spread = 0.01;
+        let text = serialize_starling_pex(&config, None, None);
+        let document = parse_starling_pex_document(&text, None).document;
+        assert_eq!(document.angle_variance, 0.572_957_754_135_131_8_f32);
+        assert_ne!(document.angle_variance, 0.572_957_813_739_776_6_f32);
+    }
+
+    #[test]
     fn writes_attribute_style_xml() {
         let mut config = create_particle_emitter_config(None);
         config.max_particles = 64.0;

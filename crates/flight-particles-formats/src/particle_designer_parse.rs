@@ -2,10 +2,10 @@
 
 //! Particle Designer plist parsing (TS `particleDesignerParse.ts`).
 
+use crate::angle_units::degrees_to_radians;
 use flight_importdiagnostics::{
     ImportDiagnostic, ImportDiagnosticSeverity, report_import_diagnostic,
 };
-use flight_math::DEG_TO_RAD;
 use flight_particles::{
     EmitterShape, ParticleBlendMode, ParticleEmitterConfig, ParticleEmitterConfigOptions,
     create_particle_emitter_config,
@@ -318,7 +318,7 @@ fn pd_blend_mode(source: f32, destination: f32) -> Option<ParticleBlendMode> {
 }
 
 fn raw_dict_to_config(dict: &ParticleDesignerRawDict, texture_size: f32) -> ParticleEmitterConfig {
-    let angle_rad = num(dict, "angle", 90.0) * DEG_TO_RAD;
+    let angle_rad = degrees_to_radians(num(dict, "angle", 90.0));
     let lifespan = num(dict, "particleLifespan", 1.0);
     let lifespan_variance = num(dict, "particleLifespanVariance", 0.0);
     let speed = num(dict, "speed", 100.0);
@@ -345,9 +345,10 @@ fn raw_dict_to_config(dict: &ParticleDesignerRawDict, texture_size: f32) -> Part
     } else {
         1.0
     };
-    let rotation_speed_mid = ((rotation_start + rotation_end) * 0.5 * DEG_TO_RAD) / lifetime_mid;
+    let rotation_speed_mid =
+        degrees_to_radians((rotation_start + rotation_end) * 0.5) / lifetime_mid;
     let rotation_speed_variance =
-        (rotation_start_variance.max(rotation_end_variance) * DEG_TO_RAD) / lifetime_mid;
+        degrees_to_radians(rotation_start_variance.max(rotation_end_variance)) / lifetime_mid;
     let duration = num(dict, "duration", -1.0);
     return create_particle_emitter_config(Some(&ParticleEmitterConfigOptions {
         alpha_end: Some(num(dict, "finishColorAlpha", 0.0)),
@@ -404,7 +405,7 @@ fn raw_dict_to_config(dict: &ParticleDesignerRawDict, texture_size: f32) -> Part
         scale_min: Some((start_size - start_variance).max(0.0)),
         speed_max: Some(speed + speed_variance),
         speed_min: Some((speed - speed_variance).max(0.0)),
-        spread: Some(num(dict, "angleVariance", 0.0) * DEG_TO_RAD),
+        spread: Some(degrees_to_radians(num(dict, "angleVariance", 0.0))),
         ..Default::default()
     }));
 }
