@@ -150,15 +150,18 @@ pub fn append_rich_text_string(source: &Ref<RichText>, value: &str) {
     emit_text_field_change(source, previous_text);
 }
 
+// flight-lint: allow(f32) converts at the f32 textlayout/textshaper lane: box sizes and points narrow in, measurements widen out
 fn bounds_spec(data: &RichTextData) -> TextBoundsSpec {
+    // TextBoundsSpec is textlayout's f32 lane; the f64 box size narrows once here.
     return TextBoundsSpec {
         auto_size: data.auto_size,
-        height: data.height,
-        width: data.width,
+        height: data.height as f32,
+        width: data.width as f32,
         word_wrap: Some(data.word_wrap),
     };
 }
 
+// flight-lint: allow(f32) converts at the f32 textlayout/textshaper lane: box sizes and points narrow in, measurements widen out
 pub fn build_rich_text_layout_params(
     source: &RichText,
     measure: TextMeasureFunction,
@@ -180,7 +183,8 @@ pub fn build_rich_text_layout_params(
         border: None,
         direction: None,
         format_ranges: content.format_ranges.clone(),
-        height: source.data.height,
+        // TextLayoutParams is textlayout's f32 lane; the f64 box size narrows once here.
+        height: source.data.height as f32,
         justification: None,
         max_lines: None,
         measure,
@@ -193,7 +197,7 @@ pub fn build_rich_text_layout_params(
             TextVerticalAlign::Top
         }),
         width: if source.data.word_wrap {
-            source.data.width
+            source.data.width as f32
         } else {
             10_000.0
         },
@@ -214,37 +218,38 @@ pub fn clear_rich_text_format_ranges(source: &Ref<RichText>) {
     invalidate_rich_text_content(source);
 }
 
-fn compute_max_scroll_h_from_layout(data: &RichTextData, layout: &TextLayoutResult) -> f32 {
+fn compute_max_scroll_h_from_layout(data: &RichTextData, layout: &TextLayoutResult) -> f64 {
     let field_width = if data.auto_size == TextAutoSize::None || data.word_wrap {
         data.width
     } else {
-        layout.text_width + 4.0
+        f64::from(layout.text_width) + 4.0
     };
-    return (layout.text_width - (field_width - 4.0).max(0.0))
+    return (f64::from(layout.text_width) - (field_width - 4.0).max(0.0))
         .ceil()
         .max(0.0);
 }
 
-fn compute_max_scroll_v_from_layout(data: &RichTextData, layout: &TextLayoutResult) -> f32 {
+fn compute_max_scroll_v_from_layout(data: &RichTextData, layout: &TextLayoutResult) -> f64 {
     if layout.num_lines <= 1 {
         return 1.0;
     }
     let field_height = if data.auto_size == TextAutoSize::None {
         data.height
     } else {
-        layout.text_height + 4.0
+        f64::from(layout.text_height) + 4.0
     };
     let visible_height = (field_height - 4.0).max(0.0);
     let mut total = 0.0;
     let mut count = 0;
     for height in &layout.line_heights {
+        let height = f64::from(*height);
         if count > 0 && total + height > visible_height {
             break;
         }
         total += height;
         count += 1;
     }
-    return ((layout.num_lines - count.max(1) + 1) as f32).max(1.0);
+    return ((layout.num_lines - count.max(1) + 1) as f64).max(1.0);
 }
 
 pub fn compute_rich_text_local_bounds_rectangle(out: &mut Rectangle, source: &dyn Node) {
@@ -262,10 +267,11 @@ pub fn compute_rich_text_local_bounds_rectangle(out: &mut Rectangle, source: &dy
     compute_text_bounds_rectangle(out, &bounds_spec(&source.data), &layout.read().unwrap());
 }
 
-pub fn dispatch_rich_text_link_at_point(source: &Ref<RichText>, x: f32, y: f32) -> Option<String> {
+// flight-lint: allow(f32) converts at the f32 textlayout/textshaper lane: box sizes and points narrow in, measurements widen out
+pub fn dispatch_rich_text_link_at_point(source: &Ref<RichText>, x: f64, y: f64) -> Option<String> {
     let node: NodeRef = source.clone();
     let layout = crate::text_label_layout::get_text_layout(&node)?;
-    let url = get_rich_text_link_at_point(&layout.read().unwrap(), x, y);
+    let url = get_rich_text_link_at_point(&layout.read().unwrap(), x as f32, y as f32);
     if let Some(url) = &url {
         let signals = get_text_field_signals(source);
         if let Some(signals) = signals {
@@ -284,7 +290,7 @@ pub fn dispatch_rich_text_link_at_point(source: &Ref<RichText>, x: f32, y: f32) 
 
 pub fn dispatch_rich_text_wheel(
     source: &Ref<RichText>,
-    delta_lines: f32,
+    delta_lines: f64,
     layout: Option<&TextLayoutResult>,
 ) {
     let scroll_v = source.read().unwrap().data.scroll_v;
@@ -306,7 +312,7 @@ fn emit_text_field_change(source: &Ref<RichText>, previous_text: String) {
     );
 }
 
-fn emit_text_field_scroll(source: &Ref<RichText>, previous_scroll_h: f32, previous_scroll_v: f32) {
+fn emit_text_field_scroll(source: &Ref<RichText>, previous_scroll_h: f64, previous_scroll_v: f64) {
     let signals = get_text_field_signals(source);
     let Some(signals) = signals else {
         return;
@@ -351,7 +357,7 @@ fn equals_rich_text_content(data: &RichTextData, content: &RichTextContent) -> b
         });
 }
 
-pub fn get_rich_text_bottom_scroll_v(source: &Ref<RichText>) -> f32 {
+pub fn get_rich_text_bottom_scroll_v(source: &Ref<RichText>) -> f64 {
     let node: NodeRef = source.clone();
     let Some(layout) = crate::text_label_layout::get_text_layout(&node) else {
         return 1.0;
@@ -362,12 +368,14 @@ pub fn get_rich_text_bottom_scroll_v(source: &Ref<RichText>) -> f32 {
     );
 }
 
-pub fn get_rich_text_char_index_at_point(source: &Ref<RichText>, x: f32, y: f32) -> i32 {
+// flight-lint: allow(f32) converts at the f32 textlayout/textshaper lane: box sizes and points narrow in, measurements widen out
+pub fn get_rich_text_char_index_at_point(source: &Ref<RichText>, x: f64, y: f64) -> i32 {
     let node: NodeRef = source.clone();
     let Some(layout) = crate::text_label_layout::get_text_layout(&node) else {
         return -1;
     };
-    return compute_rich_text_char_index_at_point(&layout.read().unwrap(), x, y) as i32;
+    return compute_rich_text_char_index_at_point(&layout.read().unwrap(), x as f32, y as f32)
+        as i32;
 }
 
 pub fn get_rich_text_default_text_format(source: &RichText) -> Ref<TextFormat> {
@@ -440,7 +448,7 @@ pub fn get_rich_text_line_metrics(
     return compute_rich_text_line_metrics(&layout.read().unwrap(), line_index);
 }
 
-pub fn get_rich_text_max_scroll_h(source: &Ref<RichText>) -> f32 {
+pub fn get_rich_text_max_scroll_h(source: &Ref<RichText>) -> f64 {
     let node: NodeRef = source.clone();
     let Some(layout) = crate::text_label_layout::get_text_layout(&node) else {
         return 0.0;
@@ -448,7 +456,7 @@ pub fn get_rich_text_max_scroll_h(source: &Ref<RichText>) -> f32 {
     return compute_rich_text_max_scroll_h(&source.read().unwrap().data, &layout.read().unwrap());
 }
 
-pub fn get_rich_text_max_scroll_v(source: &Ref<RichText>) -> f32 {
+pub fn get_rich_text_max_scroll_v(source: &Ref<RichText>) -> f64 {
     let node: NodeRef = source.clone();
     let Some(layout) = crate::text_label_layout::get_text_layout(&node) else {
         return 1.0;
@@ -473,7 +481,7 @@ pub fn get_rich_text_string(source: &RichText) -> String {
     return source.data.text.clone();
 }
 
-pub fn get_rich_text_text_height(source: &Ref<RichText>) -> f32 {
+pub fn get_rich_text_text_height(source: &Ref<RichText>) -> f64 {
     let node: NodeRef = source.clone();
     let Some(layout) = crate::text_label_layout::get_text_layout(&node) else {
         return 0.0;
@@ -481,7 +489,7 @@ pub fn get_rich_text_text_height(source: &Ref<RichText>) -> f32 {
     return compute_rich_text_text_height(&layout.read().unwrap());
 }
 
-pub fn get_rich_text_text_width(source: &Ref<RichText>) -> f32 {
+pub fn get_rich_text_text_width(source: &Ref<RichText>) -> f64 {
     let node: NodeRef = source.clone();
     let Some(layout) = crate::text_label_layout::get_text_layout(&node) else {
         return 0.0;
@@ -604,7 +612,7 @@ pub fn replace_rich_text_string(
     }
 }
 
-fn set_fixed_bounds(out: &mut Rectangle, width: f32, height: f32) {
+fn set_fixed_bounds(out: &mut Rectangle, width: f64, height: f64) {
     out.x = 0.0;
     out.y = 0.0;
     out.width = width;
@@ -713,7 +721,7 @@ pub fn set_rich_text_format_range(
     }
 }
 
-pub fn set_rich_text_height(source: &Ref<RichText>, value: f32) {
+pub fn set_rich_text_height(source: &Ref<RichText>, value: f64) {
     if set_if_changed(source, |data| &mut data.height, value) {
         invalidate_rich_text_content_and_bounds(source);
     }
@@ -739,24 +747,24 @@ pub fn set_rich_text_multiline(source: &Ref<RichText>, value: bool) {
 
 pub fn set_rich_text_scroll_h(
     source: &Ref<RichText>,
-    value: f32,
+    value: f64,
     layout: Option<&TextLayoutResult>,
 ) {
     let max = layout
         .map(|layout| compute_max_scroll_h_from_layout(&source.read().unwrap().data, layout))
-        .unwrap_or(f32::INFINITY);
+        .unwrap_or(f64::INFINITY);
     let clamped = value.round().min(max).max(0.0);
     set_scroll(source, Some(clamped), None);
 }
 
 pub fn set_rich_text_scroll_v(
     source: &Ref<RichText>,
-    value: f32,
+    value: f64,
     layout: Option<&TextLayoutResult>,
 ) {
     let max = layout
         .map(|layout| compute_max_scroll_v_from_layout(&source.read().unwrap().data, layout))
-        .unwrap_or(f32::INFINITY);
+        .unwrap_or(f64::INFINITY);
     let clamped = value.round().min(max).max(1.0);
     set_scroll(source, None, Some(clamped));
 }
@@ -793,7 +801,7 @@ pub fn set_rich_text_vertical_align(source: &Ref<RichText>, value: TextVerticalA
     }
 }
 
-pub fn set_rich_text_width(source: &Ref<RichText>, value: f32) {
+pub fn set_rich_text_width(source: &Ref<RichText>, value: f64) {
     if set_if_changed(source, |data| &mut data.width, value) {
         invalidate_rich_text_content_and_bounds(source);
     }
@@ -805,7 +813,7 @@ pub fn set_rich_text_word_wrap(source: &Ref<RichText>, value: bool) {
     }
 }
 
-fn set_scroll(source: &Ref<RichText>, scroll_h: Option<f32>, scroll_v: Option<f32>) {
+fn set_scroll(source: &Ref<RichText>, scroll_h: Option<f64>, scroll_v: Option<f64>) {
     let (previous_scroll_h, previous_scroll_v, changed) = {
         let mut source = source.write().unwrap();
         let previous_h = source.data.scroll_h;

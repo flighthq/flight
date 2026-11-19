@@ -108,6 +108,14 @@ mod get_rich_text_scroll_y_offset {
     use super::*;
 
     #[test]
+    fn sums_f32_line_heights_in_double_precision() {
+        // 0.1f32 + 0.2f32 rounds differently in f32 than when each height widens and sums in f64.
+        let expected = f64::from(0.1_f32) + f64::from(0.2_f32);
+        assert_ne!(f64::from(0.1_f32 + 0.2_f32), expected);
+        assert_eq!(get_rich_text_scroll_y_offset(&[0.1, 0.2, 5.0], 2), expected);
+    }
+
+    #[test]
     fn clamps_to_the_available_line_count() {
         assert_eq!(get_rich_text_scroll_y_offset(&[10.0, 12.0], 5), 22.0);
     }

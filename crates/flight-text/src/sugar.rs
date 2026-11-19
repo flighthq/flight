@@ -33,15 +33,15 @@ impl NativeText {
 
 pub trait NativeTextMethods {
     fn compute_local_bounds_rectangle(&self, out: &mut Rectangle);
-    fn measured_height(&self) -> f32;
-    fn measured_width(&self) -> f32;
+    fn measured_height(&self) -> f64;
+    fn measured_width(&self) -> f64;
     fn patch_style(&self, patch: &NativeTextStyle);
     fn set_auto_size(&self, value: TextAutoSize);
-    fn set_height(&self, value: f32);
+    fn set_height(&self, value: f64);
     fn set_string(&self, value: &str);
     fn set_style(&self, value: Ref<NativeTextStyle>);
     fn set_vertical_align(&self, value: TextVerticalAlign);
-    fn set_width(&self, value: f32);
+    fn set_width(&self, value: f64);
     fn string(&self) -> String;
     fn style(&self) -> Ref<NativeTextStyle>;
 }
@@ -51,11 +51,11 @@ impl NativeTextMethods for Ref<NativeText> {
         compute_native_text_local_bounds_rectangle(out, &*self.read().unwrap());
     }
 
-    fn measured_height(&self) -> f32 {
+    fn measured_height(&self) -> f64 {
         return get_native_text_measured_height(&self.read().unwrap());
     }
 
-    fn measured_width(&self) -> f32 {
+    fn measured_width(&self) -> f64 {
         return get_native_text_measured_width(&self.read().unwrap());
     }
 
@@ -67,7 +67,7 @@ impl NativeTextMethods for Ref<NativeText> {
         set_native_text_auto_size(self, value);
     }
 
-    fn set_height(&self, value: f32) {
+    fn set_height(&self, value: f64) {
         set_native_text_height(self, value);
     }
 
@@ -83,7 +83,7 @@ impl NativeTextMethods for Ref<NativeText> {
         set_native_text_vertical_align(self, value);
     }
 
-    fn set_width(&self, value: f32) {
+    fn set_width(&self, value: f64) {
         set_native_text_width(self, value);
     }
 
@@ -109,10 +109,10 @@ pub trait TextLabelMethods {
     fn format(&self) -> Ref<TextFormat>;
     fn set_auto_size(&self, value: TextAutoSize);
     fn set_format(&self, value: Ref<TextFormat>);
-    fn set_height(&self, value: f32);
+    fn set_height(&self, value: f64);
     fn set_string(&self, value: &str);
     fn set_vertical_align(&self, value: TextVerticalAlign);
-    fn set_width(&self, value: f32);
+    fn set_width(&self, value: f64);
     fn string(&self) -> String;
 }
 
@@ -137,7 +137,7 @@ impl TextLabelMethods for Ref<TextLabel> {
         set_text_label_format(self, value);
     }
 
-    fn set_height(&self, value: f32) {
+    fn set_height(&self, value: f64) {
         set_text_label_height(self, value);
     }
 
@@ -149,7 +149,7 @@ impl TextLabelMethods for Ref<TextLabel> {
         set_text_label_vertical_align(self, value);
     }
 
-    fn set_width(&self, value: f32) {
+    fn set_width(&self, value: f64) {
         set_text_label_width(self, value);
     }
 
@@ -167,14 +167,14 @@ impl RichText {
 
 pub trait RichTextMethods {
     fn append_string(&self, value: &str);
-    fn bottom_scroll_v(&self) -> f32;
+    fn bottom_scroll_v(&self) -> f64;
     fn build_layout_params(&self, measure: TextMeasureFunction) -> TextLayoutParams;
-    fn char_index_at_point(&self, x: f32, y: f32) -> i32;
+    fn char_index_at_point(&self, x: f64, y: f64) -> i32;
     fn clear_format_ranges(&self);
     fn compute_local_bounds_rectangle(&self, out: &mut Rectangle);
     fn default_text_format(&self) -> Ref<TextFormat>;
-    fn dispatch_link_at_point(&self, x: f32, y: f32) -> Option<String>;
-    fn dispatch_wheel(&self, delta_lines: f32, layout: Option<&TextLayoutResult>);
+    fn dispatch_link_at_point(&self, x: f64, y: f64) -> Option<String>;
+    fn dispatch_wheel(&self, delta_lines: f64, layout: Option<&TextLayoutResult>);
     fn enable_signals(&self) -> Ref<TextFieldSignals>;
     fn format_range_at(&self, out: &mut TextFormat, index: usize);
     fn format_range_by_index(&self, out: &mut TextFormatRange, index: usize) -> bool;
@@ -184,8 +184,8 @@ pub trait RichTextMethods {
     fn length(&self) -> usize;
     fn line_count(&self) -> usize;
     fn line_metrics(&self, line_index: usize) -> Option<TextLineMetrics>;
-    fn max_scroll_h(&self) -> f32;
-    fn max_scroll_v(&self) -> f32;
+    fn max_scroll_h(&self) -> f64;
+    fn max_scroll_v(&self) -> f64;
     fn password_character(&self) -> Option<String>;
     fn remove_format_ranges_in(&self, begin: usize, end: usize);
     fn replace_string(&self, begin: i32, end: i32, value: &str);
@@ -197,22 +197,22 @@ pub trait RichTextMethods {
     fn set_content(&self, content: &RichTextContent);
     fn set_default_text_format(&self, value: Ref<TextFormat>);
     fn set_format_range(&self, format: Ref<TextFormat>, start: Option<usize>, end: Option<usize>);
-    fn set_height(&self, value: f32);
+    fn set_height(&self, value: f64);
     fn set_max_chars(&self, value: i32);
     fn set_mouse_wheel_enabled(&self, value: bool);
     fn set_multiline(&self, value: bool);
-    fn set_scroll_h(&self, value: f32, layout: Option<&TextLayoutResult>);
-    fn set_scroll_v(&self, value: f32, layout: Option<&TextLayoutResult>);
+    fn set_scroll_h(&self, value: f64, layout: Option<&TextLayoutResult>);
+    fn set_scroll_v(&self, value: f64, layout: Option<&TextLayoutResult>);
     fn set_selectable(&self, value: bool);
     fn set_string(&self, value: &str);
     fn set_text_color(&self, value: u32);
     fn set_vertical_align(&self, value: TextVerticalAlign);
-    fn set_width(&self, value: f32);
+    fn set_width(&self, value: f64);
     fn set_word_wrap(&self, value: bool);
     fn signals(&self) -> Option<Ref<TextFieldSignals>>;
     fn string(&self) -> String;
-    fn text_height(&self) -> f32;
-    fn text_width(&self) -> f32;
+    fn text_height(&self) -> f64;
+    fn text_width(&self) -> f64;
 }
 
 impl RichTextMethods for Ref<RichText> {
@@ -220,7 +220,7 @@ impl RichTextMethods for Ref<RichText> {
         append_rich_text_string(self, value);
     }
 
-    fn bottom_scroll_v(&self) -> f32 {
+    fn bottom_scroll_v(&self) -> f64 {
         return get_rich_text_bottom_scroll_v(self);
     }
 
@@ -228,7 +228,7 @@ impl RichTextMethods for Ref<RichText> {
         return build_rich_text_layout_params(&self.read().unwrap(), measure);
     }
 
-    fn char_index_at_point(&self, x: f32, y: f32) -> i32 {
+    fn char_index_at_point(&self, x: f64, y: f64) -> i32 {
         return get_rich_text_char_index_at_point(self, x, y);
     }
 
@@ -244,11 +244,11 @@ impl RichTextMethods for Ref<RichText> {
         return get_rich_text_default_text_format(&self.read().unwrap());
     }
 
-    fn dispatch_link_at_point(&self, x: f32, y: f32) -> Option<String> {
+    fn dispatch_link_at_point(&self, x: f64, y: f64) -> Option<String> {
         return dispatch_rich_text_link_at_point(self, x, y);
     }
 
-    fn dispatch_wheel(&self, delta_lines: f32, layout: Option<&TextLayoutResult>) {
+    fn dispatch_wheel(&self, delta_lines: f64, layout: Option<&TextLayoutResult>) {
         dispatch_rich_text_wheel(self, delta_lines, layout);
     }
 
@@ -288,11 +288,11 @@ impl RichTextMethods for Ref<RichText> {
         return get_rich_text_line_metrics(self, line_index);
     }
 
-    fn max_scroll_h(&self) -> f32 {
+    fn max_scroll_h(&self) -> f64 {
         return get_rich_text_max_scroll_h(self);
     }
 
-    fn max_scroll_v(&self) -> f32 {
+    fn max_scroll_v(&self) -> f64 {
         return get_rich_text_max_scroll_v(self);
     }
 
@@ -340,7 +340,7 @@ impl RichTextMethods for Ref<RichText> {
         set_rich_text_format_range(self, format, start, end);
     }
 
-    fn set_height(&self, value: f32) {
+    fn set_height(&self, value: f64) {
         set_rich_text_height(self, value);
     }
 
@@ -356,11 +356,11 @@ impl RichTextMethods for Ref<RichText> {
         set_rich_text_multiline(self, value);
     }
 
-    fn set_scroll_h(&self, value: f32, layout: Option<&TextLayoutResult>) {
+    fn set_scroll_h(&self, value: f64, layout: Option<&TextLayoutResult>) {
         set_rich_text_scroll_h(self, value, layout);
     }
 
-    fn set_scroll_v(&self, value: f32, layout: Option<&TextLayoutResult>) {
+    fn set_scroll_v(&self, value: f64, layout: Option<&TextLayoutResult>) {
         set_rich_text_scroll_v(self, value, layout);
     }
 
@@ -380,7 +380,7 @@ impl RichTextMethods for Ref<RichText> {
         set_rich_text_vertical_align(self, value);
     }
 
-    fn set_width(&self, value: f32) {
+    fn set_width(&self, value: f64) {
         set_rich_text_width(self, value);
     }
 
@@ -396,11 +396,11 @@ impl RichTextMethods for Ref<RichText> {
         return get_rich_text_string(&self.read().unwrap());
     }
 
-    fn text_height(&self) -> f32 {
+    fn text_height(&self) -> f64 {
         return get_rich_text_text_height(self);
     }
 
-    fn text_width(&self) -> f32 {
+    fn text_width(&self) -> f64 {
         return get_rich_text_text_width(self);
     }
 }

@@ -52,11 +52,11 @@ pub struct TextLabel {
 pub struct TextLabelData {
     runtime: EntityRuntimeSlot,
     pub auto_size: TextAutoSize,
-    pub height: f32,
+    pub height: f64,
     pub text: String,
     pub text_format: Ref<TextFormat>,
     pub vertical_align: TextVerticalAlign,
-    pub width: f32,
+    pub width: f64,
 }
 
 pub struct TextLabelRuntime {
@@ -68,6 +68,7 @@ pub struct TextLabelRuntime {
 }
 
 #[derive(Clone, Debug, Default, PartialEq)]
+// flight-lint: allow(f32) alpha and font metrics stay f32: opacity and the textformat font-metric lane
 pub struct NativeTextStyle {
     pub align: Option<TextFormatAlign>,
     pub bold: Option<bool>,
@@ -88,17 +89,17 @@ pub struct NativeText {
 pub struct NativeTextData {
     runtime: EntityRuntimeSlot,
     pub auto_size: TextAutoSize,
-    pub height: f32,
+    pub height: f64,
     pub style: Ref<NativeTextStyle>,
     pub text: String,
     pub vertical_align: TextVerticalAlign,
-    pub width: f32,
+    pub width: f64,
 }
 
 pub struct NativeTextRuntime {
     pub element: Unknown,
-    pub measured_height: f32,
-    pub measured_width: f32,
+    pub measured_height: f64,
+    pub measured_width: f64,
 }
 
 pub struct RichText {
@@ -117,19 +118,19 @@ pub struct RichTextData {
     pub border_color: u32,
     pub condense_white: bool,
     pub default_text_format: Ref<TextFormat>,
-    pub height: f32,
+    pub height: f64,
     pub max_chars: i32,
     pub mouse_wheel_enabled: bool,
     pub multiline: bool,
-    pub scroll_h: f32,
-    pub scroll_v: f32,
+    pub scroll_h: f64,
+    pub scroll_v: f64,
     pub selectable: bool,
     pub text: String,
     pub text_color: u32,
     pub text_format: Ref<TextFormat>,
     pub text_format_ranges: Vec<TextFormatRange>,
     pub vertical_align: TextVerticalAlign,
-    pub width: f32,
+    pub width: f64,
     pub word_wrap: bool,
 }
 
@@ -156,12 +157,13 @@ pub struct TextInputHistoryEntry {
 
 #[derive(Clone, Debug, Default, PartialEq)]
 #[repr(C)]
+// flight-lint: allow(f32) alpha and font metrics stay f32: opacity and the textformat font-metric lane
 pub struct TextInputState {
     pub always_show_selection: bool,
     pub caret_color: u32,
     pub caret_index: usize,
-    pub caret_width: f32,
-    pub desired_caret_x: f32,
+    pub caret_width: f64,
+    pub desired_caret_x: f64,
     pub display_as_password: bool,
     pub focused: bool,
     pub history: Vec<TextInputHistoryEntry>,
@@ -175,10 +177,11 @@ pub struct TextInputState {
 }
 
 #[derive(Clone, Debug, Default, PartialEq)]
+// flight-lint: allow(f32) alpha and font metrics stay f32: opacity and the textformat font-metric lane
 pub struct TextInputOptions {
     pub always_show_selection: Option<bool>,
     pub caret_color: Option<u32>,
-    pub caret_width: Option<f32>,
+    pub caret_width: Option<f64>,
     pub display_as_password: Option<bool>,
     pub history_limit: Option<usize>,
     pub password_character: Option<String>,
@@ -197,17 +200,17 @@ pub struct TextFieldChangeEvent {
 #[repr(C)]
 pub struct TextFieldLinkEvent {
     pub url: String,
-    pub x: f32,
-    pub y: f32,
+    pub x: f64,
+    pub y: f64,
 }
 
 #[derive(Clone, Copy, Debug, Default, PartialEq)]
 #[repr(C)]
 pub struct TextFieldScrollEvent {
-    pub previous_scroll_h: f32,
-    pub previous_scroll_v: f32,
-    pub scroll_h: f32,
-    pub scroll_v: f32,
+    pub previous_scroll_h: f64,
+    pub previous_scroll_v: f64,
+    pub scroll_h: f64,
+    pub scroll_v: f64,
 }
 
 pub struct TextFieldSignals {

@@ -826,6 +826,7 @@ fn format_ref(color: Option<u32>) -> Ref<TextFormat> {
     return Arc::new(RwLock::new(format));
 }
 
+// flight-lint: allow(f32) converts at the f32 textlayout/textshaper lane: box sizes and points narrow in, measurements widen out
 fn measure() -> TextMeasureFunction {
     return Arc::new(|text, _| text.encode_utf16().count() as f32 * 4.0);
 }

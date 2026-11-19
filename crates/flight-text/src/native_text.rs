@@ -111,11 +111,11 @@ pub fn compute_native_text_local_bounds_rectangle(out: &mut Rectangle, source: &
     };
 }
 
-pub fn get_native_text_measured_height(source: &NativeText) -> f32 {
+pub fn get_native_text_measured_height(source: &NativeText) -> f64 {
     return source.native_text_runtime.read().unwrap().measured_height;
 }
 
-pub fn get_native_text_measured_width(source: &NativeText) -> f32 {
+pub fn get_native_text_measured_width(source: &NativeText) -> f64 {
     return source.native_text_runtime.read().unwrap().measured_width;
 }
 
@@ -156,7 +156,7 @@ pub fn set_native_text_auto_size(source: &Ref<NativeText>, value: TextAutoSize) 
     invalidate_native_text_content_and_bounds(source);
 }
 
-pub fn set_native_text_height(source: &Ref<NativeText>, value: f32) {
+pub fn set_native_text_height(source: &Ref<NativeText>, value: f64) {
     {
         let mut source = source.write().unwrap();
         if source.data.height == value {
@@ -195,7 +195,7 @@ pub fn set_native_text_vertical_align(source: &Ref<NativeText>, value: TextVerti
     invalidate_node_local_content(&node);
 }
 
-pub fn set_native_text_width(source: &Ref<NativeText>, value: f32) {
+pub fn set_native_text_width(source: &Ref<NativeText>, value: f64) {
     {
         let mut source = source.write().unwrap();
         if source.data.width == value {

@@ -90,6 +90,7 @@ pub fn append_text_label_string(source: &Ref<TextLabel>, value: &str) {
     invalidate_text_label_content(source);
 }
 
+// flight-lint: allow(f32) converts at the f32 textlayout/textshaper lane: box sizes and points narrow in, measurements widen out
 fn build_text_label_layout_params(
     source: &dyn Node,
     measure: TextMeasureFunction,
@@ -105,7 +106,8 @@ fn build_text_label_layout_params(
             0,
             data.text.encode_utf16().count(),
         )],
-        height: data.height,
+        // TextLayoutParams is textlayout's f32 lane; the f64 box size narrows once here.
+        height: data.height as f32,
         justification: None,
         max_lines: None,
         measure,
@@ -117,11 +119,12 @@ fn build_text_label_layout_params(
         } else {
             TextVerticalAlign::Top
         }),
-        width: data.width,
+        width: data.width as f32,
         word_wrap: None,
     });
 }
 
+// flight-lint: allow(f32) converts at the f32 textlayout/textshaper lane: box sizes and points narrow in, measurements widen out
 pub fn compute_text_label_local_bounds_rectangle(out: &mut Rectangle, source: &dyn Node) {
     let Some(label) = source.as_any().downcast_ref::<TextLabel>() else {
         return;
@@ -135,10 +138,11 @@ pub fn compute_text_label_local_bounds_rectangle(out: &mut Rectangle, source: &d
         set_fixed_bounds(out, data.width, data.height);
         return;
     };
+    // TextBoundsSpec is textlayout's f32 lane; the f64 box size narrows once here.
     let spec = TextBoundsSpec {
         auto_size: data.auto_size,
-        height: data.height,
-        width: data.width,
+        height: data.height as f32,
+        width: data.width as f32,
         word_wrap: None,
     };
     compute_text_bounds_rectangle(out, &spec, &layout.read().unwrap());
@@ -171,7 +175,7 @@ fn invalidate_text_label_content_and_bounds(source: &Ref<TextLabel>) {
     invalidate_node_local_bounds(&node);
 }
 
-fn set_fixed_bounds(out: &mut Rectangle, width: f32, height: f32) {
+fn set_fixed_bounds(out: &mut Rectangle, width: f64, height: f64) {
     out.x = 0.0;
     out.y = 0.0;
     out.width = width;
@@ -194,7 +198,7 @@ pub fn set_text_label_format(source: &Ref<TextLabel>, value: Ref<TextFormat>) {
     invalidate_text_label_content(source);
 }
 
-pub fn set_text_label_height(source: &Ref<TextLabel>, value: f32) {
+pub fn set_text_label_height(source: &Ref<TextLabel>, value: f64) {
     {
         let mut label = source.write().unwrap();
         if label.data.height == value {
@@ -228,7 +232,7 @@ pub fn set_text_label_vertical_align(source: &Ref<TextLabel>, value: TextVertica
     invalidate_node_local_content(&node);
 }
 
-pub fn set_text_label_width(source: &Ref<TextLabel>, value: f32) {
+pub fn set_text_label_width(source: &Ref<TextLabel>, value: f64) {
     {
         let mut label = source.write().unwrap();
         if label.data.width == value {
