@@ -6,7 +6,26 @@ those records itself. The crate is a workspace member but is intentionally outsi
 `default-members`, so a root `cargo build` does not compile winit.
 
 All host verbs and all borrowed capabilities must be used on the thread that called
-`create_winit_host`. There is no module-level state or process singleton.
+`create_winit_host`. There is no module-level state or process singleton, but winit allows exactly
+one event loop per process: a second `create_winit_host`, including one after `destroy_winit_host`,
+fails with `WinitHostFailureKind::EventLoop` ("EventLoop can't be recreated"). Create one host per
+process and keep it for the process lifetime.
+
+## Destroy and held capabilities
+
+`destroy_winit_host` releases the wgpu surface and then the native window, and pumps the still-live
+event loop so the display server destroys the window before the loop is dropped. A host that is
+dropped without `destroy_winit_host` releases the same way. When `run_winit_host` returns, its
+consumed loop has already released the window.
+
+Capability records cloned out of the host stay valid values after destroy, and every one of them
+fails closed: window verbs do nothing, `get_bounds` leaves its output untouched, `request_frame`
+returns handle 0 and never schedules, `is_supported` is false, `create` and `attach_surface` return
+`None`, and `acquire` returns an error. Acquisitions and surface contexts held past destroy reach
+the surface only through a liveness check and skip their frames. The native-window, input-source
+and surface handles carry an identity token, not the window, so retaining them cannot keep the
+window alive. A `WgpuDevice` clone keeps the GPU device itself alive, which is safe without a
+surface.
 
 ## Capability table
 
@@ -21,17 +40,20 @@ All host verbs and all borrowed capabilities must be used on the thread that cal
 | `state` | yes | `get_winit_host_window_state_capability` | maximize, minimize, restore |
 | `visibility` | yes | `get_winit_host_window_visibility_capability` | show/hide; winit has no portable visibility-change notification |
 | `z_order` | yes | `get_winit_host_window_z_order_capability` | normal/always-on-top |
-| `attach`, `content_protection`, `hierarchy`, `progress`, `shadow`, `shell` | no | — | no coherent portable one-window implementation in this host |
+| `attach`, `attention`, `content_protection`, `hierarchy`, `progress`, `shadow`, `shell` | no | — | no coherent portable one-window implementation in this host |
 | cursor mutation | no slot | — | the current `HostWindowCapabilities` contract has no cursor facet |
 | `HostAppLoopCapability` | yes | `get_winit_host_app_loop_capability` | monotonic `now`; request/cancel callbacks run at pump and run frame points |
 | `HostLifecycleCapability` | yes | `get_winit_host_lifecycle_capability` | active/inactive/background plus resumed/suspended/focus notifications |
-| `HostScreenCapabilities.query` | yes | `get_winit_host_screen_query_capability` | monitor enumeration, current monitor, scale factor, tracked cursor position |
+| `HostScreenCapabilities.query` | yes | `get_winit_host_screen_query_capability` | monitor enumeration, current monitor, scale factor, tracked cursor position; on Wayland no monitor is marked primary because winit reports no current monitor there |
 | screen change/details/permission | no | — | winit exposes no portable permission or monitor-change subscription |
-| `HostInputIngressCapability` | yes | `get_winit_host_input_ingress_capability` | keyboard, pointer/touch, relative pointer, wheel, committed/composing text |
+| `HostInputIngressCapability` | yes | `get_winit_host_input_ingress_capability` | keyboard, pointer/touch, relative pointer, wheel, committed/composing text (IME is allowed while a text attachment is active) |
 | gamepad ingress | inert | — | the SDK field is required, but winit has no gamepad API; attach returns an inert release |
 | `HostSurfaceCapabilities.display` | yes | `get_winit_host_surface_display_capability` | logical display-size requests |
 | `HostSurfaceCapabilities.resize` | yes | `get_winit_host_surface_resize_capability` | backing-size reconfiguration |
 | `HostWgpuCapability` | yes | `get_winit_host_wgpu_capability` | immediate acquisition, surface attachment and live extent |
+
+The host owns exactly one window, so the window capabilities act on it whatever `AppWindow` record
+the caller passes.
 
 `create_winit_host_surface` returns an owned clone of the host's one canonical `SurfaceRef`; callers
 may release their clone independently. `get_winit_host_wgpu_device` borrows the host-owned device.
@@ -43,6 +65,23 @@ events update the live presentation extent and reconfigure the surface. A zero-s
 window keeps its last valid surface configuration and reports a zero live extent, so Flight skips
 presentation until a nonzero resize arrives. Flight's render-target code reconfigures and retries on
 the frame after an outdated or lost acquisition.
+
+## Input translation
+
+Keyboard records follow the web host's DOM conventions and its key-code tables exactly: `code` is the
+DOM code (`MetaLeft`/`MetaRight` for winit's Super keys), `key` is the DOM key value for every winit
+named key, and `key_code` comes from the physical code, then a single character, then the logical
+key, as the web host derives it. A modifier key's own keydown reports that modifier held and its
+keyup reports it released. winit 0.30 exposes no lock-key state, so `caps_lock` and `num_lock` are
+always false.
+
+Text ingress follows DOM input semantics. IME is allowed on the window while at least one text
+attachment is active and disallowed when the last one is released; composition (`Ime::Preedit`)
+goes to `text_edit` and committed text to `text_input`. Key text containing control characters, or
+typed with Ctrl (without Alt, so AltGr text still commits) or Meta held, is not committed.
+
+Wheel records carry the pointer position and DOM signs: `delta_y` is positive for wheel-down and
+`delta_x` positive for scrolling right, in lines or pixels as winit reports them.
 
 ## Pump and run
 
@@ -65,10 +104,14 @@ cargo run -p flight-host-winit --example pump
 ```
 
 Set `FLIGHT_WINIT_EXAMPLE_FRAMES` to a positive frame count for an unattended smoke run; otherwise
-the example closes on Escape.
+the example closes on Escape. Pointer motion drags the red rectangle. The Rust render path picks up a
+moved node only after `invalidate_node_local_transform`, so the example's `scene.rs` invalidates
+each move explicitly; the G3 test shares that module.
 
-The display-backed G3 smoke test runs a fixed frame count and closes the host. It reports a skipped
-test when neither `DISPLAY` nor `WAYLAND_DISPLAY` is present. On Linux it can run under a virtual
+The display-backed G3 test draws the example scene and checks captured pixels exactly; on X11 with
+`xdotool`, `xwd` and ImageMagick `convert` it also checks presented pixels, a skipped zero-extent
+frame, a real pointer drag and that destroy removes the window, and reports those gates skipped
+otherwise. The whole test reports a skip when neither `DISPLAY` nor `WAYLAND_DISPLAY` is present. On Linux it can run under a virtual
 display:
 
 ```sh
