@@ -106,6 +106,17 @@ mod trim_bitmap {
     use super::*;
 
     #[test]
+    fn crops_to_an_off_center_non_square_content_rectangle() {
+        let mut src = create_bitmap(6, 7, None);
+        set_bitmap_pixel(&mut src, 1, 2, 0x112233ff);
+        set_bitmap_pixel(&mut src, 2, 4, 0x445566ff);
+        let out = trim_bitmap(&src);
+        assert_eq!((out.width, out.height), (2, 3));
+        assert_eq!(get_bitmap_pixel(&out, 0, 0), 0x112233ff);
+        assert_eq!(get_bitmap_pixel(&out, 1, 2), 0x445566ff);
+    }
+
+    #[test]
     fn removes_transparent_border_rows_and_columns() {
         let mut src = create_bitmap(5, 5, None);
         set_bitmap_pixel(&mut src, 2, 2, 0xff0000ff);

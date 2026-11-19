@@ -169,6 +169,7 @@ fn resolve_edge_crop(v: i32, size: i32, mode: BitmapEdgeMode) -> Option<i32> {
 }
 
 /// Trims transparent border from source.
+// flight-lint: allow(f64) integer pixel bounds into a flight-geometry Rectangle, whose fields are f64
 pub fn trim_bitmap(source: &Bitmap) -> Bitmap {
     let sw = source.width as i32;
     let sh = source.height as i32;
@@ -213,10 +214,10 @@ pub fn trim_bitmap(source: &Bitmap) -> Bitmap {
     crop_bitmap(
         source,
         &create_rectangle(
-            min_x as f32,
-            min_y as f32,
-            (max_x - min_x + 1) as f32,
-            (max_y - min_y + 1) as f32,
+            min_x as f64,
+            min_y as f64,
+            (max_x - min_x + 1) as f64,
+            (max_y - min_y + 1) as f64,
         ),
     )
 }

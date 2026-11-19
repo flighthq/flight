@@ -38,6 +38,7 @@ mod sugar_tests {
 /// Scans the `source` region for pixels matching `color` under `mask`
 /// (`find_color` true) or not matching it (false), and returns the tightest
 /// bounding rectangle, or None if none match.
+// flight-lint: allow(f64) integer pixel bounds into a flight-geometry Rectangle, whose fields are f64
 pub fn get_bitmap_color_bounds_rectangle(
     source: &BitmapRegion,
     mask: u32,
@@ -91,10 +92,10 @@ pub fn get_bitmap_color_bounds_rectangle(
             None
         } else {
             Some(create_rectangle(
-                min_x as f32,
-                min_y as f32,
-                (max_x - min_x + 1) as f32,
-                (max_y - min_y + 1) as f32,
+                min_x as f64,
+                min_y as f64,
+                (max_x - min_x + 1) as f64,
+                (max_y - min_y + 1) as f64,
             ))
         }
     });
