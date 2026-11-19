@@ -10,11 +10,12 @@ use flight_render::{EffectPadding, RenderState};
 use std::sync::{Arc, RwLock};
 
 #[derive(Clone, Debug, Default)]
+// flight-lint: allow(f64) public pixel-valued descriptor parameters are f64 CPU/API values (foreman-66f8c2c6); shader and normalized parameters stay f32
 pub struct BloomEffect {
     fields: crate::contract::EffectFields,
     pub threshold: Option<f32>,
     pub intensity: Option<f32>,
-    pub radius: Option<f32>,
+    pub radius: Option<f64>,
     pub passes: Option<f32>,
 }
 
@@ -32,7 +33,8 @@ pub fn initialize_bloom_effect(out: &mut BloomEffect) {
     initialize_effect(out, "BloomEffect");
 }
 
-pub fn compute_bloom_blur_radius(effect: &BloomEffect) -> f32 {
+// flight-lint: allow(f64) pixel-valued effect geometry and the property protocol's Number are f64 CPU/API values (foreman-66f8c2c6); shader parameters stay f32
+pub fn compute_bloom_blur_radius(effect: &BloomEffect) -> f64 {
     return effect.radius.unwrap_or(8.0).max(0.0);
 }
 

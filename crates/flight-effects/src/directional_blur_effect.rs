@@ -8,10 +8,11 @@ use flight_render::{EffectPadding, RenderState};
 use std::sync::{Arc, RwLock};
 
 #[derive(Clone, Debug, Default)]
+// flight-lint: allow(f64) public pixel-valued descriptor parameters are f64 CPU/API values (foreman-66f8c2c6); shader and normalized parameters stay f32
 pub struct DirectionalBlurEffect {
     fields: crate::contract::EffectFields,
-    pub angle: Option<f32>,
-    pub length: Option<f32>,
+    pub angle: Option<f64>,
+    pub length: Option<f64>,
     pub samples: Option<f32>,
 }
 
@@ -34,6 +35,7 @@ pub fn get_directional_blur_effect_padding(
     out: &mut EffectPadding,
     effect: &DirectionalBlurEffect,
 ) {
+    // TS computes padding in Number from the f32 effect parameters.
     let angle = effect.angle.unwrap_or(0.0).to_radians();
     let half_length = effect.length.unwrap_or(8.0).max(0.0) * 0.5;
     let projected_x = (angle.cos() * half_length).abs();

@@ -8,9 +8,10 @@ use flight_render::{EffectPadding, RenderState};
 use std::sync::{Arc, RwLock};
 
 #[derive(Clone, Debug, Default)]
+// flight-lint: allow(f64) public pixel-valued descriptor parameters are f64 CPU/API values (foreman-66f8c2c6); shader and normalized parameters stay f32
 pub struct ContactShadowsEffect {
     fields: crate::contract::EffectFields,
-    pub distance: Option<f32>,
+    pub distance: Option<f64>,
     pub opacity: Option<f32>,
     pub samples: Option<f32>,
     pub smoothness: Option<f32>,

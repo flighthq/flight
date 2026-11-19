@@ -5,11 +5,12 @@ use flight_entity::{Ref, allocate_entity};
 use std::sync::{Arc, RwLock};
 
 #[derive(Clone, Debug, Default)]
+// flight-lint: allow(f64) public pixel-valued descriptor parameters are f64 CPU/API values (foreman-66f8c2c6); shader and normalized parameters stay f32
 pub struct FilmEmulationEffect {
     fields: crate::contract::EffectFields,
     pub gate_weave: Option<f32>,
     pub grain_intensity: Option<f32>,
-    pub halation_radius: Option<f32>,
+    pub halation_radius: Option<f64>,
     pub halation_strength: Option<f32>,
 }
 

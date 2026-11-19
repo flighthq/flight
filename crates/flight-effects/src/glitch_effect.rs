@@ -8,11 +8,12 @@ use flight_render::{EffectPadding, RenderState};
 use std::sync::{Arc, RwLock};
 
 #[derive(Clone, Debug, Default)]
+// flight-lint: allow(f64) public pixel-valued descriptor parameters are f64 CPU/API values (foreman-66f8c2c6); shader and normalized parameters stay f32
 pub struct GlitchEffect {
     fields: crate::contract::EffectFields,
     pub intensity: Option<f32>,
-    pub block_size: Option<f32>,
-    pub color_shift: Option<f32>,
+    pub block_size: Option<f64>,
+    pub color_shift: Option<f64>,
     pub seed: Option<f32>,
 }
 
@@ -31,8 +32,10 @@ pub fn initialize_glitch_effect(out: &mut GlitchEffect) {
 }
 
 // flight-lint: allow(conform-params) D24 requires the caller-owned out parameter first
+// flight-lint: allow(f64) pixel-valued effect geometry and the property protocol's Number are f64 CPU/API values (foreman-66f8c2c6); shader parameters stay f32
 pub fn get_glitch_effect_padding(out: &mut EffectPadding, effect: &GlitchEffect) {
-    let horizontal = (effect.intensity.unwrap_or(0.5).abs() * 40.0
+    // TS computes padding in Number from the f32 effect parameters.
+    let horizontal = (f64::from(effect.intensity.unwrap_or(0.5)).abs() * 40.0
         + effect.color_shift.unwrap_or(8.0).abs() * 1.4)
         .ceil();
     *out = EffectPadding {

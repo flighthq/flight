@@ -188,7 +188,8 @@ pub fn normalize_effect(effect: &EffectRef, out: &EffectRef) -> bool {
     return true;
 }
 
-fn number(value: f32) -> EffectValue {
+// flight-lint: allow(f64) pixel-valued effect geometry and the property protocol's Number are f64 CPU/API values (foreman-66f8c2c6); shader parameters stay f32
+fn number(value: f64) -> EffectValue {
     return EffectValue::Number(value);
 }
 

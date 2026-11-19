@@ -8,11 +8,12 @@ use flight_render::{EffectPadding, RenderState};
 use std::sync::{Arc, RwLock};
 
 #[derive(Clone, Debug, Default)]
+// flight-lint: allow(f64) public pixel-valued descriptor parameters are f64 CPU/API values (foreman-66f8c2c6); shader and normalized parameters stay f32
 pub struct TiltShiftEffect {
     fields: crate::contract::EffectFields,
     pub center: Option<f32>,
     pub width: Option<f32>,
-    pub blur: Option<f32>,
+    pub blur: Option<f64>,
 }
 
 crate::impl_effect!(TiltShiftEffect, "center" => center, "width" => width, "blur" => blur);

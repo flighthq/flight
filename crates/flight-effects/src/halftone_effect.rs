@@ -5,10 +5,11 @@ use flight_entity::{Ref, allocate_entity};
 use std::sync::{Arc, RwLock};
 
 #[derive(Clone, Debug, Default)]
+// flight-lint: allow(f64) public pixel-valued descriptor parameters are f64 CPU/API values (foreman-66f8c2c6); shader and normalized parameters stay f32
 pub struct HalftoneEffect {
     fields: crate::contract::EffectFields,
-    pub scale: Option<f32>,
-    pub angle: Option<f32>,
+    pub scale: Option<f64>,
+    pub angle: Option<f64>,
 }
 
 crate::impl_effect!(HalftoneEffect, "scale" => scale, "angle" => angle);

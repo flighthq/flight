@@ -14,7 +14,8 @@ pub fn compute_outline_edge_params(out: &mut [f32; 6], effect: &OutlineEffect) {
     out[5] = (color & 0xff) as f32 / 255.0;
 }
 
-pub fn compute_outline_thickness_px(effect: &OutlineEffect) -> f32 {
+// flight-lint: allow(f64) pixel-valued effect geometry and the property protocol's Number are f64 CPU/API values (foreman-66f8c2c6); shader parameters stay f32
+pub fn compute_outline_thickness_px(effect: &OutlineEffect) -> f64 {
     return (effect.thickness.unwrap_or(1.0) + 0.5).floor().max(0.0);
 }
 

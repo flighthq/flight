@@ -9,11 +9,12 @@ use std::sync::{Arc, RwLock};
 
 #[derive(Clone, Debug, Default)]
 #[repr(C)]
+// flight-lint: allow(f64) public pixel-valued descriptor parameters are f64 CPU/API values (foreman-66f8c2c6); shader and normalized parameters stay f32
 pub struct ConvolutionEffect {
     fields: crate::contract::EffectFields,
     pub matrix: Vec<f32>,
-    pub matrix_x: f32,
-    pub matrix_y: f32,
+    pub matrix_x: f64,
+    pub matrix_y: f64,
     pub bias: Option<f32>,
     pub clamp: Option<bool>,
     pub color: Option<u32>,
@@ -37,6 +38,7 @@ pub fn initialize_convolution_effect(out: &mut ConvolutionEffect) {
 
 // flight-lint: allow(conform-params) D24 requires the caller-owned out parameter first
 pub fn get_convolution_effect_padding(out: &mut EffectPadding, effect: &ConvolutionEffect) {
+    // TS computes padding in Number from the f32 effect parameters.
     let offset_x = (effect.matrix_x.max(0.0) * 0.5).floor();
     let offset_y = (effect.matrix_y.max(0.0) * 0.5).floor();
     out.bottom = offset_y;

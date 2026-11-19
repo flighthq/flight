@@ -8,11 +8,12 @@ use flight_render::{EffectPadding, RenderState};
 use std::sync::{Arc, RwLock};
 
 #[derive(Clone, Debug, Default)]
+// flight-lint: allow(f64) public pixel-valued descriptor parameters are f64 CPU/API values (foreman-66f8c2c6); shader and normalized parameters stay f32
 pub struct BokehDepthOfFieldEffect {
     fields: crate::contract::EffectFields,
-    pub focus_distance: Option<f32>,
-    pub focus_range: Option<f32>,
-    pub max_blur: Option<f32>,
+    pub focus_distance: Option<f64>,
+    pub focus_range: Option<f64>,
+    pub max_blur: Option<f64>,
 }
 
 crate::impl_effect!(BokehDepthOfFieldEffect, "focusDistance" => focus_distance, "focusRange" => focus_range, "maxBlur" => max_blur);
@@ -34,6 +35,7 @@ pub fn get_bokeh_depth_of_field_effect_padding(
     out: &mut EffectPadding,
     effect: &BokehDepthOfFieldEffect,
 ) {
+    // TS computes padding in Number from the f32 effect parameters.
     let padding = effect.max_blur.unwrap_or(4.0).max(0.0).ceil();
     *out = EffectPadding {
         bottom: padding,

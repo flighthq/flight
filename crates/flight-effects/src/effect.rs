@@ -17,12 +17,13 @@ pub enum CustomShaderUniformValue {
 }
 
 #[derive(Clone, Debug)]
+// flight-lint: allow(f64) public pixel-valued descriptor parameters are f64 CPU/API values (foreman-66f8c2c6); shader and normalized parameters stay f32
 pub enum EffectValue {
     Boolean(bool),
     Color(u32),
     ColorList(Vec<u32>),
     ImageChannel(ImageChannel),
-    Number(f32),
+    Number(f64),
     NumberList(Vec<f32>),
     Text(String),
     Texture2D(Option<Ref<Texture2D>>),
@@ -82,7 +83,28 @@ impl PartialEq for EffectValue {
     }
 }
 
+// An f32 shader-parameter field carries the property protocol's f64 Number: widened on read and
+// narrowed once on write.
 impl EffectProperty for Option<f32> {
+    fn clear_effect_property(&mut self) -> bool {
+        *self = None;
+        true
+    }
+    // flight-lint: allow(f64) pixel-valued effect geometry and the property protocol's Number are f64 CPU/API values (foreman-66f8c2c6); shader parameters stay f32
+    fn get_effect_property(&self) -> Option<EffectValue> {
+        return self.map(|value| EffectValue::Number(f64::from(value)));
+    }
+
+    fn set_effect_property(&mut self, value: EffectValue) -> bool {
+        let EffectValue::Number(value) = value else {
+            return false;
+        };
+        *self = Some(value as f32);
+        return true;
+    }
+}
+
+impl EffectProperty for Option<f64> {
     fn clear_effect_property(&mut self) -> bool {
         *self = None;
         true
@@ -154,7 +176,7 @@ impl EffectProperty for Option<String> {
     }
 }
 
-impl EffectProperty for f32 {
+impl EffectProperty for f64 {
     fn clear_effect_property(&mut self) -> bool {
         false
     }

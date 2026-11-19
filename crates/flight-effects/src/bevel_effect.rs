@@ -11,13 +11,14 @@ use flight_render::{EffectPadding, RenderState};
 use std::sync::{Arc, RwLock};
 
 #[derive(Clone, Debug, Default)]
+// flight-lint: allow(f64) public pixel-valued descriptor parameters are f64 CPU/API values (foreman-66f8c2c6); shader and normalized parameters stay f32
 pub struct BevelEffect {
     fields: crate::contract::EffectFields,
-    pub angle: Option<f32>,
+    pub angle: Option<f64>,
     pub bevel_type: Option<BevelType>,
-    pub blur_x: Option<f32>,
-    pub blur_y: Option<f32>,
-    pub distance: Option<f32>,
+    pub blur_x: Option<f64>,
+    pub blur_y: Option<f64>,
+    pub distance: Option<f64>,
     pub highlight_alpha: Option<f32>,
     pub highlight_color: Option<u32>,
     pub quality: Option<f32>,
@@ -43,6 +44,7 @@ pub fn initialize_bevel_effect(out: &mut BevelEffect) {
 
 // flight-lint: allow(conform-params) D24 requires the caller-owned out parameter first
 pub fn get_bevel_effect_padding(out: &mut EffectPadding, effect: &BevelEffect) {
+    // The directional offset is TS Number trigonometry over the f32 effect parameters.
     let angle = effect.angle.unwrap_or(45.0).to_radians();
     let distance = effect.distance.unwrap_or(4.0);
     get_directional_effect_padding(

@@ -12,13 +12,14 @@ use flight_texture::Texture2D;
 use std::sync::{Arc, RwLock};
 
 #[derive(Clone, Debug, Default)]
+// flight-lint: allow(f64) public pixel-valued descriptor parameters are f64 CPU/API values (foreman-66f8c2c6); shader and normalized parameters stay f32
 pub struct BitmapDisplacementEffect {
     fields: crate::contract::EffectFields,
     pub map: Option<Ref<Texture2D>>,
     pub component_x: Option<ImageChannel>,
     pub component_y: Option<ImageChannel>,
-    pub scale_x: Option<f32>,
-    pub scale_y: Option<f32>,
+    pub scale_x: Option<f64>,
+    pub scale_y: Option<f64>,
     pub edge_mode: Option<BitmapDisplacementEffectEdgeMode>,
 }
 
@@ -41,6 +42,7 @@ pub fn get_bitmap_displacement_effect_padding(
     out: &mut EffectPadding,
     effect: &BitmapDisplacementEffect,
 ) {
+    // TS computes padding in Number from the f32 effect parameters.
     let horizontal = (effect.scale_x.unwrap_or(0.0).abs() * 0.5).ceil();
     let vertical = (effect.scale_y.unwrap_or(0.0).abs() * 0.5).ceil();
     *out = EffectPadding {

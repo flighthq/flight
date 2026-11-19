@@ -29,7 +29,7 @@ mod can_lerp_effects {
 mod lerp_effect {
     use super::*;
 
-    fn bloom(threshold: f32, radius: f32) -> Ref<BloomEffect> {
+    fn bloom(threshold: f32, radius: f64) -> Ref<BloomEffect> {
         let effect = create_bloom_effect();
         {
             let mut guard = effect.write().unwrap();
@@ -47,6 +47,59 @@ mod lerp_effect {
             guard.intensity = intensity;
         }
         return effect;
+    }
+
+    #[test]
+    fn interpolates_a_number_in_f64_with_t_widened_exactly() {
+        // Normalized t stays the f32 easing lane; the Number arm widens it exactly and interpolates
+        // the f64 radius in f64. f32 arithmetic would give a different, f32-rounded radius.
+        let out = create_bloom_effect();
+        lerp_effect(
+            &effect_ref(bloom(0.2, 0.1)),
+            &effect_ref(bloom(0.8, 0.3)),
+            0.1,
+            &effect_ref(out.clone()),
+            None,
+        );
+        let expected = 0.1 + (0.3 - 0.1) * f64::from(0.1_f32);
+        assert_eq!(out.read().unwrap().radius, Some(expected));
+        assert_ne!(expected, f64::from(0.1_f32 + (0.3_f32 - 0.1_f32) * 0.1_f32));
+    }
+
+    #[test]
+    fn keeps_unpacked_color_interpolation_in_the_f32_lane() {
+        // With no packed-color role (empty roles), a u32 Color interpolates as a single f32 value:
+        // 0 toward 0xffffffff at t = 0.7 gives 3006477056, where f64 arithmetic gives 3006477055.
+        let out = vignette(0, Some(1.0));
+        lerp_effect(
+            &effect_ref(vignette(0, Some(1.0))),
+            &effect_ref(vignette(0xffff_ffff, Some(1.0))),
+            0.7,
+            &effect_ref(out.clone()),
+            Some(&[]),
+        );
+        assert_eq!(out.read().unwrap().color, Some(3_006_477_056));
+    }
+
+    #[test]
+    fn keeps_normalized_t_as_the_f32_easing_lane() {
+        // An API contract: widening t to f64 would fail to compile here.
+        let contract: fn(
+            &EffectRef,
+            &EffectRef,
+            f32,
+            &EffectRef,
+            Option<&EffectFieldRoles>,
+        ) -> bool = lerp_effect;
+        let out = create_bloom_effect();
+        assert!(contract(
+            &effect_ref(bloom(0.2, 4.0)),
+            &effect_ref(bloom(0.8, 16.0)),
+            0.5_f32,
+            &effect_ref(out.clone()),
+            None,
+        ));
+        assert_eq!(out.read().unwrap().radius, Some(10.0));
     }
 
     #[test]

@@ -6,6 +6,19 @@ mod create_blur_effect {
     use super::*;
 
     #[test]
+    fn round_trips_a_pixel_blur_through_the_property_protocol_as_an_exact_double() {
+        // 0.1 has no exact f32: an f32 blur field would read back 0.10000000149011612.
+        let effect = create_blur_effect();
+        let mut guard = effect.write().unwrap();
+        assert!(guard.set_effect_field("blurX", EffectValue::Number(0.1)));
+        assert_eq!(guard.blur_x, Some(0.1));
+        assert_eq!(
+            guard.get_effect_field("blurX"),
+            Some(EffectValue::Number(0.1))
+        );
+    }
+
+    #[test]
     fn sets_the_kind() {
         let effect = create_blur_effect();
         assert_effect_kind(&effect, "BlurEffect");
@@ -32,6 +45,20 @@ mod create_blur_effect {
 
 mod get_blur_effect_padding {
     use super::*;
+
+    #[test]
+    fn derives_padding_from_an_f64_blur_beyond_f32_precision() {
+        // 3 * 16777216.4 = 50331649.2 ceils to 50331650; an f32 blur (16777216) gives 50331648.
+        let effect = create_blur_effect();
+        {
+            let mut guard = effect.write().unwrap();
+            guard.blur_x = Some(16_777_216.4);
+            guard.blur_y = Some(0.0);
+        }
+        let mut out = zero_padding();
+        get_blur_effect_padding(&mut out, &effect.read().unwrap());
+        assert_eq!((out.left, out.right), (50_331_650.0, 50_331_650.0));
+    }
 
     #[test]
     fn derives_directional_gaussian_footprint_from_ceil_three_sigma() {

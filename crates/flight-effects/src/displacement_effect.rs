@@ -8,9 +8,10 @@ use flight_render::{EffectPadding, RenderState};
 use std::sync::{Arc, RwLock};
 
 #[derive(Clone, Debug, Default)]
+// flight-lint: allow(f64) public pixel-valued descriptor parameters are f64 CPU/API values (foreman-66f8c2c6); shader and normalized parameters stay f32
 pub struct DisplacementEffect {
     fields: crate::contract::EffectFields,
-    pub intensity: Option<f32>,
+    pub intensity: Option<f64>,
     pub frequency: Option<f32>,
     pub seed: Option<f32>,
 }
@@ -31,6 +32,7 @@ pub fn initialize_displacement_effect(out: &mut DisplacementEffect) {
 
 // flight-lint: allow(conform-params) D24 requires the caller-owned out parameter first
 pub fn get_displacement_effect_padding(out: &mut EffectPadding, effect: &DisplacementEffect) {
+    // TS computes padding in Number from the f32 effect parameters.
     let intensity = effect.intensity.unwrap_or(8.0).abs();
     let horizontal = (intensity * 1.5).ceil();
     let vertical = intensity.ceil();

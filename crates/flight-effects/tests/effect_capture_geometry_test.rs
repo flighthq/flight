@@ -139,9 +139,9 @@ fn create_capture_node(bounds: Rectangle, x: f32, y: f32, rotation: f32) -> Node
     node.bounds_runtime.compute_local_bounds_rectangle = Arc::new(move |out, _| {
         flight_geometry::copy_rectangle(out, &captured);
     });
-    node.transform2d.x = x;
-    node.transform2d.y = y;
-    node.transform2d.rotation = rotation;
+    node.transform2d.x = f64::from(x);
+    node.transform2d.y = f64::from(y);
+    node.transform2d.rotation = f64::from(rotation);
     let out: NodeRef = Arc::new(RwLock::new(node));
     invalidate_node_local_bounds(&out);
     invalidate_node_local_transform(&out);
@@ -158,7 +158,7 @@ fn create_out() -> EffectCaptureGeometry {
     };
 }
 
-fn capture_out_values(out: &EffectCaptureGeometry) -> [f32; 16] {
+fn capture_out_values(out: &EffectCaptureGeometry) -> [f64; 16] {
     return [
         out.bounds.x,
         out.bounds.y,
@@ -180,7 +180,7 @@ fn capture_out_values(out: &EffectCaptureGeometry) -> [f32; 16] {
 }
 
 fn assert_matrix_close(actual: &Matrix, expected: &Matrix) {
-    // D1 f32 bound (TS: toBeCloseTo default precision 2).
+    // TS: toBeCloseTo default precision 2, an absolute bound of 0.005.
     for (actual, expected) in [
         (actual.a, expected.a),
         (actual.b, expected.b),
@@ -189,14 +189,17 @@ fn assert_matrix_close(actual: &Matrix, expected: &Matrix) {
         (actual.tx, expected.tx),
         (actual.ty, expected.ty),
     ] {
-        assert_close(actual, expected, 0.005);
+        assert!(
+            (actual - expected).abs() < 0.005,
+            "actual={actual}, expected={expected}"
+        );
     }
 }
 
 fn set_node_x(node: &NodeRef, x: f32) {
     let mut guard = node.write().unwrap();
     let concrete = guard.as_any_mut().downcast_mut::<TestNode2D>().unwrap();
-    concrete.transform2d.x = x;
+    concrete.transform2d.x = f64::from(x);
     drop(guard);
     invalidate_node_local_transform(node);
 }

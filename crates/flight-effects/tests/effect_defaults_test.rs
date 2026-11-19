@@ -9,7 +9,7 @@ struct TestEffect {
 
 flight_effects::impl_effect!(TestEffect);
 
-fn number(defaults: &EffectDefaults, key: &str) -> f32 {
+fn number(defaults: &EffectDefaults, key: &str) -> f64 {
     let Some(EffectValue::Number(value)) = defaults.get(key) else {
         panic!("missing numeric default {key}");
     };

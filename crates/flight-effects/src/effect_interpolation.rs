@@ -83,6 +83,7 @@ fn collect_keys(a: &dyn Effect, b: &dyn Effect) -> HashSet<String> {
     return keys;
 }
 
+// flight-lint: allow(f64) the property protocol's Number is an f64 CPU/API value; normalized t stays f32 and widens only inside Number arithmetic (foreman-220feeb2)
 fn interpolate_value(
     a: Option<EffectValue>,
     b: Option<EffectValue>,
@@ -91,7 +92,7 @@ fn interpolate_value(
 ) -> InterpolatedEffectValue {
     return match (a, b) {
         (Some(EffectValue::Number(a)), Some(EffectValue::Number(b))) => {
-            InterpolatedEffectValue::Write(Some(EffectValue::Number(a + (b - a) * t)))
+            InterpolatedEffectValue::Write(Some(EffectValue::Number(a + (b - a) * f64::from(t))))
         }
         (Some(EffectValue::Color(a)), Some(EffectValue::Color(b))) if packed_color => {
             InterpolatedEffectValue::Write(Some(EffectValue::Color(lerp_color(a, b, t))))

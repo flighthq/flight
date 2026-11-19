@@ -57,12 +57,13 @@ pub fn explain_effect_padding<S: RenderState>(
 }
 
 // flight-lint: allow(conform-params) D24 requires the caller-owned out parameter first
+// flight-lint: allow(f64) pixel-valued effect geometry and the property protocol's Number are f64 CPU/API values (foreman-66f8c2c6); shader parameters stay f32
 pub fn get_directional_effect_padding(
     out: &mut EffectPadding,
-    blur_x: f32,
-    blur_y: f32,
-    offset_x: f32,
-    offset_y: f32,
+    blur_x: f64,
+    blur_y: f64,
+    offset_x: f64,
+    offset_y: f64,
 ) {
     get_gaussian_effect_padding(out, blur_x, blur_y);
     let dx = if offset_x.abs() < 1e-10 {
@@ -82,7 +83,8 @@ pub fn get_directional_effect_padding(
 }
 
 // flight-lint: allow(conform-params) D24 requires the caller-owned out parameter first
-pub fn get_gaussian_effect_padding(out: &mut EffectPadding, blur_x: f32, blur_y: f32) {
+// flight-lint: allow(f64) pixel-valued effect geometry and the property protocol's Number are f64 CPU/API values (foreman-66f8c2c6); shader parameters stay f32
+pub fn get_gaussian_effect_padding(out: &mut EffectPadding, blur_x: f64, blur_y: f64) {
     let horizontal = (blur_x.max(0.0) * 3.0).ceil();
     let vertical = (blur_y.max(0.0) * 3.0).ceil();
     out.bottom = vertical;
@@ -130,7 +132,8 @@ pub(crate) fn resolve_typed_effect_padding<T: Effect + 'static>(
     return out;
 }
 
-fn sanitize_padding(value: f32) -> f32 {
+// flight-lint: allow(f64) pixel-valued effect geometry and the property protocol's Number are f64 CPU/API values (foreman-66f8c2c6); shader parameters stay f32
+fn sanitize_padding(value: f64) -> f64 {
     return if value.is_finite() {
         value.max(0.0)
     } else {
@@ -138,6 +141,7 @@ fn sanitize_padding(value: f32) -> f32 {
     };
 }
 
+// flight-lint: allow(f64) pixel-valued effect geometry and the property protocol's Number are f64 CPU/API values (foreman-66f8c2c6); shader parameters stay f32
 fn write_effect_padding<S: RenderState>(
     out: &mut EffectPadding,
     state: &mut S,
@@ -145,10 +149,10 @@ fn write_effect_padding<S: RenderState>(
     mut missing_kinds: Option<&mut Vec<Kind>>,
     emit_misses: bool,
 ) {
-    let mut bottom = 0.0;
-    let mut left = 0.0;
-    let mut right = 0.0;
-    let mut top = 0.0;
+    let mut bottom = 0.0_f64;
+    let mut left = 0.0_f64;
+    let mut right = 0.0_f64;
+    let mut top = 0.0_f64;
     for (index, effect) in effects.iter().enumerate() {
         let kind = effect.read().unwrap().effect_fields().kind.clone();
         let resolver = state

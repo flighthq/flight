@@ -12,12 +12,13 @@ use crate::contract::{EffectRef, compute_effect_padding};
 
 #[derive(Clone, Debug, PartialEq)]
 #[repr(C)]
+// flight-lint: allow(f64) public pixel-valued descriptor parameters are f64 CPU/API values (foreman-66f8c2c6); shader and normalized parameters stay f32
 pub struct EffectCaptureGeometry {
     pub bounds: Rectangle,
     pub capture_transform: Matrix,
     pub padding: EffectPadding,
-    pub target_height: f32,
-    pub target_width: f32,
+    pub target_height: f64,
+    pub target_width: f64,
 }
 
 pub fn compute_effect_capture_geometry<S: RenderState>(

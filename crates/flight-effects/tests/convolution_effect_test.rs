@@ -41,6 +41,19 @@ mod get_convolution_effect_padding {
     use super::*;
 
     #[test]
+    fn derives_the_reach_of_a_kernel_size_beyond_f32_precision() {
+        // 16777217 has no f32: as f32 (16777216) the left reach would be 8388607.
+        let effect = create_convolution_effect();
+        let mut guard = effect.write().unwrap();
+        guard.matrix_x = 16_777_217.0;
+        guard.matrix_y = 1.0;
+        drop(guard);
+        let mut out = zero_padding();
+        get_convolution_effect_padding(&mut out, &effect.read().unwrap());
+        assert_eq!((out.left, out.right), (8_388_608.0, 8_388_608.0));
+    }
+
+    #[test]
     fn preserves_the_exact_asymmetric_reach_of_even_kernels() {
         let effect = create_convolution_effect();
         let mut guard = effect.write().unwrap();
