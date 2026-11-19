@@ -28,6 +28,22 @@ mod apply_directional_blur_effect_to_gl {
     }
 
     #[test]
+    fn uploads_the_f64_angle_narrowed_once_at_the_uniform() {
+        // At 10.1 degrees, f32 arithmetic uploads 0.1762782633304596 instead of 0.1762782484292984.
+        let mut state = make_state();
+        let target = make_texture_target(&state, 8.0, 8.0);
+        let effect = create_directional_blur_effect();
+        effect.write().unwrap().angle = Some(10.1);
+        clear_calls();
+        apply_directional_blur_effect_to_gl(&mut state, &target, &target, &effect.read().unwrap())
+            .unwrap();
+        assert_eq!(
+            last_uniform("u_angle"),
+            vec![(10.1_f64 * std::f64::consts::PI / 180.0) as f32]
+        );
+    }
+
+    #[test]
     fn negates_sin_u_angle_for_gl_uv_bottom_left_origin() {
         let mut state = make_state();
         let target = make_texture_target(&state, 8.0, 8.0);

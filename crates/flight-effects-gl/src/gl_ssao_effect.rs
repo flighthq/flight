@@ -51,7 +51,7 @@ pub fn apply_ssao_effect_to_gl(
     let program = get_gl_effect_program(state, "atmospheric.ssao", SSAO_FRAGMENT_SRC)?;
     return draw_gl_fullscreen_pass(state, &program, &[source.texture], Some(dest), |gl, p| {
         uniform_2f(gl, p, "u_resolution", width, height);
-        uniform_1f(gl, p, "u_radius", radius);
+        uniform_1f(gl, p, "u_radius", radius as f32);
         uniform_1f(gl, p, "u_intensity", intensity);
     });
 }

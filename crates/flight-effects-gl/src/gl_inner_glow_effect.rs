@@ -84,8 +84,8 @@ pub fn apply_inner_glow_effect_to_gl(
             &s1,
             &s2,
             &GlEffectBoxBlurOptions {
-                blur_x: Some(effect.blur_x.unwrap_or(6.0)),
-                blur_y: Some(effect.blur_y.unwrap_or(6.0)),
+                blur_x: Some((effect.blur_x.unwrap_or(6.0)) as f32),
+                blur_y: Some((effect.blur_y.unwrap_or(6.0)) as f32),
                 passes: Some(quality),
                 edge_color: Some(get_invert_tint_edge_color(color, alpha, strength)),
             },

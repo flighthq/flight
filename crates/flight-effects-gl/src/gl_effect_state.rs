@@ -64,6 +64,7 @@ pub fn create_gl_effect_state(
 /// Starts the scene pass: (re)allocates the pipeline's scene target to the current default
 /// framebuffer viewport and begins a render pass into it. `clear` defaults to transparent black
 /// with depth 1; `color_space` defaults to sRGB, and a linear scene linearizes the clear color.
+// flight-lint: allow(f64) widens integer pixel sizes exactly into the f64 logical render-target descriptor (foreman-e0d2390c)
 // flight-lint: allow(conform-params) D17 the native pass entry returns render-gl's Result diagnostics
 pub fn begin_gl_effect_pass(
     state: &mut GlRenderState,
@@ -87,8 +88,8 @@ pub fn begin_gl_effect_pass(
             .gl
             .get_parameter_i32_slice(glow::VIEWPORT, &mut viewport);
     }
-    let w = viewport[2].max(0) as f32;
-    let h = viewport[3].max(0) as f32;
+    let w = f64::from(viewport[2].max(0));
+    let h = f64::from(viewport[3].max(0));
     let options = pipeline.options;
 
     match pipeline.scene_target.as_mut() {
@@ -145,6 +146,7 @@ pub fn destroy_gl_effect_state(state: &GlRenderState, pipeline: &mut GlEffectSta
 /// default framebuffer. A maximal run of consecutive pointwise adjustments fuses into ONE pass; an
 /// effect (or the end of the list) flushes the run first, preserving order. An effect whose kind
 /// has no runner is skipped and reported through the skip guard.
+// flight-lint: allow(f64) widens integer pixel sizes exactly into the f64 logical render-target descriptor (foreman-e0d2390c)
 // flight-lint: allow(conform-params) D17 native pass handles do not carry their owning render state, so the state is passed explicitly first (as render-gl's end_gl_render_pass)
 pub fn end_gl_effect_pass(
     state: &mut GlRenderState,
@@ -170,8 +172,8 @@ pub fn end_gl_effect_pass(
     // Intermediate ping-pong targets carry the scene's declared color space, so after the last
     // effect the final source still reports whether its content is linear or sRGB.
     let descriptor = RenderTargetDescriptor {
-        width: scene.axes.width as f32,
-        height: scene.axes.height as f32,
+        width: f64::from(scene.axes.width),
+        height: f64::from(scene.axes.height),
         format: Some(format),
         color_attachments: None,
         color_formats: None,

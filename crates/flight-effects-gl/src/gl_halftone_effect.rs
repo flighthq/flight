@@ -38,13 +38,13 @@ pub fn apply_halftone_effect_to_gl(
     effect: &HalftoneEffect,
 ) -> Result<(), String> {
     let scale = effect.scale.unwrap_or(6.0);
-    let angle = (effect.angle.unwrap_or(22.92) * std::f32::consts::PI) / 180.0;
+    let angle = (effect.angle.unwrap_or(22.92) * std::f64::consts::PI) / 180.0;
     let width = source.axes.width as f32;
     let height = source.axes.height as f32;
     let program = get_gl_effect_program(state, "stylization.halftone", HALFTONE_FRAGMENT_SRC)?;
     return draw_gl_fullscreen_pass(state, &program, &[source.texture], Some(dest), |gl, p| {
-        uniform_1f(gl, p, "u_scale", scale.max(1.0));
-        uniform_1f(gl, p, "u_angle", angle);
+        uniform_1f(gl, p, "u_scale", (scale.max(1.0)) as f32);
+        uniform_1f(gl, p, "u_angle", angle as f32);
         uniform_2f(gl, p, "u_resolution", width, height);
     });
 }

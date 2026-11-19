@@ -47,7 +47,7 @@ pub fn apply_displacement_effect_to_gl(
     let resolution_y = source.axes.height as f32;
     let program = get_gl_effect_program(state, "lens.displacement", DISPLACEMENT_FRAGMENT_SRC)?;
     return draw_gl_fullscreen_pass(state, &program, &[source.texture], Some(dest), |gl, p| {
-        uniform_1f(gl, p, "u_intensity", intensity);
+        uniform_1f(gl, p, "u_intensity", intensity as f32);
         uniform_1f(gl, p, "u_frequency", frequency);
         uniform_1f(gl, p, "u_seed", seed);
         uniform_2f(gl, p, "u_resolution", resolution_x, resolution_y);

@@ -16,7 +16,7 @@ const SOURCE_WIDTH: f32 = 128.0;
 const SOURCE_HEIGHT: f32 = 64.0;
 
 fn displacement_effect(
-    intensity: Option<f32>,
+    intensity: Option<f64>,
     frequency: Option<f32>,
     seed: Option<f32>,
 ) -> Ref<DisplacementEffect> {

@@ -71,7 +71,7 @@ pub(crate) fn lease_render_texture(
     return flight_render_gl::acquire_gl_render_texture(
         state,
         pool,
-        &gl_test_helper::make_target_descriptor(width, height),
+        &gl_test_helper::make_target_descriptor(f64::from(width), f64::from(height)),
     )
     .unwrap();
 }

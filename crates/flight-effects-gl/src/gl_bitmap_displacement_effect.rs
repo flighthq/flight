@@ -159,7 +159,7 @@ pub fn apply_bitmap_displacement_effect_to_gl(
                 set_uniform_2f(gl, resolution_loc.as_ref(), width, height);
             }
             if scale_loc.is_some() {
-                set_uniform_2f(gl, scale_loc.as_ref(), scale_x, scale_y);
+                set_uniform_2f(gl, scale_loc.as_ref(), scale_x as f32, scale_y as f32);
             }
         },
     );

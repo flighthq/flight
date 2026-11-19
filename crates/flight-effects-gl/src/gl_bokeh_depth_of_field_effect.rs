@@ -63,10 +63,10 @@ pub fn apply_bokeh_depth_of_field_effect_to_gl(
     };
     let has_input = if depth_texture.is_some() { 1.0 } else { 0.0 };
     return draw_gl_fullscreen_pass(state, &program, &inputs, Some(dest), |gl, p| {
-        uniform_1f(gl, p, "u_maxBlur", max_blur);
+        uniform_1f(gl, p, "u_maxBlur", max_blur as f32);
         uniform_2f(gl, p, "u_resolution", width, height);
-        uniform_1f(gl, p, "u_focusDistance", focus_distance);
-        uniform_1f(gl, p, "u_focusRange", focus_range);
+        uniform_1f(gl, p, "u_focusDistance", focus_distance as f32);
+        uniform_1f(gl, p, "u_focusRange", focus_range as f32);
         uniform_1f(gl, p, "u_hasDepth", has_input);
     });
 }

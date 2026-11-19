@@ -68,6 +68,7 @@ void main() {
 
 /// Throws (D10 programmer error) when the kernel dimensions are not positive, exceed 7×7, or do not
 /// match the matrix length.
+// flight-lint: allow(f64) pixel-valued effect parameters are f64 CPU values (foreman-66f8c2c6), computed in f64 and narrowed once at the f32 uniform or pass boundary
 pub fn apply_convolution_effect_to_gl(
     state: &mut GlRenderState,
     source: &GlTextureRenderTarget,
@@ -80,7 +81,7 @@ pub fn apply_convolution_effect_to_gl(
     if matrix_x <= 0.0 || matrix_y <= 0.0 {
         throw_error("Convolution matrix dimensions must be positive");
     }
-    if matrix_x * matrix_y > MAX_CONVOLUTION_EFFECT_GL_KERNEL_SIZE as f32 {
+    if matrix_x * matrix_y > MAX_CONVOLUTION_EFFECT_GL_KERNEL_SIZE as f64 {
         throw_error(&format!(
             "Convolution kernel exceeds the WebGL maximum of 7×7 ({matrix_x}×{matrix_y} given)"
         ));

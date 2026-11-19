@@ -132,6 +132,7 @@ fn warn_gl_custom_shader_source_reregistered(log_state: Option<&LogStateRef>, sh
     );
 }
 
+// flight-lint: allow(f64) pixel-valued effect parameters are f64 CPU values (foreman-66f8c2c6), computed in f64 and narrowed once at the f32 uniform or pass boundary
 fn warn_gl_effect_application(
     log_state: Option<&LogStateRef>,
     explanation: &GlEffectApplicationExplanation,

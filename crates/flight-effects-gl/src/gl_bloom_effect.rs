@@ -80,8 +80,8 @@ pub fn apply_bloom_effect_to_gl(
             &blurred,
             &temp,
             &GlGaussianBlurOptions {
-                blur_x: Some(radius),
-                blur_y: Some(radius),
+                blur_x: Some(radius as f32),
+                blur_y: Some(radius as f32),
             },
         )?;
 

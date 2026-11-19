@@ -39,14 +39,15 @@ pub(crate) struct GlEffectStateRuntime {
     pub blend_backdrops: HashMap<String, NativeTexture>,
 }
 
+// flight-lint: allow(f64) widens integer pixel sizes exactly into the f64 logical render-target descriptor (foreman-e0d2390c)
 pub(crate) fn acquire_gl_effect_target(
     state: &GlRenderState,
     pool: &mut GlTextureRenderTargetPool,
     source: &GlTextureRenderTarget,
 ) -> Result<GlTextureRenderTarget, String> {
     let descriptor = RenderTargetDescriptor {
-        width: source.axes.width as f32,
-        height: source.axes.height as f32,
+        width: f64::from(source.axes.width),
+        height: f64::from(source.axes.height),
         format: Some(source.axes.format),
         color_attachments: None,
         color_formats: None,

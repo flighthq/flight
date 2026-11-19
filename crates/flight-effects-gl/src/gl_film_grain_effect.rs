@@ -40,7 +40,7 @@ pub fn apply_film_grain_effect_to_gl(
     let program = get_gl_effect_program(state, "stylization.filmGrain", FILM_GRAIN_FRAGMENT_SRC)?;
     return draw_gl_fullscreen_pass(state, &program, &[source.texture], Some(dest), |gl, p| {
         uniform_1f(gl, p, "u_intensity", intensity);
-        uniform_1f(gl, p, "u_size", size.max(0.0001));
+        uniform_1f(gl, p, "u_size", (size.max(0.0001)) as f32);
         uniform_1f(gl, p, "u_seed", seed);
     });
 }

@@ -7,8 +7,8 @@ fn blur_effect(blur_x: f32, blur_y: f32) -> Ref<BlurEffect> {
     let effect = create_blur_effect();
     {
         let mut effect = effect.write().unwrap();
-        effect.blur_x = Some(blur_x);
-        effect.blur_y = Some(blur_y);
+        effect.blur_x = Some(f64::from(blur_x));
+        effect.blur_y = Some(f64::from(blur_y));
     }
     return effect;
 }

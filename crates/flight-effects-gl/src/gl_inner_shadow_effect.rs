@@ -68,7 +68,7 @@ pub fn apply_inner_shadow_effect_to_gl(
     let s1 = acquire_gl_effect_target(state, pool, source)?;
     let s2 = acquire_gl_effect_target(state, pool, source)?;
 
-    let angle = effect.angle.unwrap_or(45.0) * std::f32::consts::PI / 180.0;
+    let angle = effect.angle.unwrap_or(45.0) * std::f64::consts::PI / 180.0;
     let distance = effect.distance.unwrap_or(4.0);
     let dx = angle.cos() * distance;
     let dy = angle.sin() * distance;
@@ -88,15 +88,15 @@ pub fn apply_inner_shadow_effect_to_gl(
             &s1,
             &s2,
             &GlEffectBoxBlurOptions {
-                blur_x: Some(effect.blur_x.unwrap_or(4.0)),
-                blur_y: Some(effect.blur_y.unwrap_or(4.0)),
+                blur_x: Some((effect.blur_x.unwrap_or(4.0)) as f32),
+                blur_y: Some((effect.blur_y.unwrap_or(4.0)) as f32),
                 passes: Some(quality),
                 edge_color: Some(get_invert_tint_edge_color(color, alpha, strength)),
             },
         )?;
         // Pass 3: shift the blurred shadow by the offset → s0 (cleared first).
         clear_gl_render_target(&s0, &transparent_clear());
-        apply_gl_effect_blit_offset_pass(state, &s1, &s0, dx, dy)?;
+        apply_gl_effect_blit_offset_pass(state, &s1, &s0, dx as f32, dy as f32)?;
         // Pass 4: clip offset shadow (s0) to source alpha → s1 (cleared first).
         clear_gl_render_target(&s1, &transparent_clear());
         apply_gl_inner_clip_pass(state, &s0, source, &s1)?;

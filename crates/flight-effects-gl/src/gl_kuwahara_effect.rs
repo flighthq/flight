@@ -73,7 +73,7 @@ pub fn apply_kuwahara_effect_to_gl(
     let height = source.axes.height as f32;
     let program = get_gl_effect_program(state, "stylization.kuwahara", KUWAHARA_FRAGMENT_SRC)?;
     return draw_gl_fullscreen_pass(state, &program, &[source.texture], Some(dest), |gl, p| {
-        uniform_1f(gl, p, "u_radius", radius.max(1.0));
+        uniform_1f(gl, p, "u_radius", (radius.max(1.0)) as f32);
         uniform_2f(gl, p, "u_resolution", width, height);
     });
 }

@@ -44,15 +44,15 @@ pub fn apply_directional_blur_effect_to_gl(
     dest: &GlTextureRenderTarget,
     effect: &DirectionalBlurEffect,
 ) -> Result<(), String> {
-    let angle = (effect.angle.unwrap_or(0.0) * std::f32::consts::PI) / 180.0;
+    let angle = (effect.angle.unwrap_or(0.0) * std::f64::consts::PI) / 180.0;
     let length = effect.length.unwrap_or(8.0);
     let samples = effect.samples.unwrap_or(16.0);
     let width = source.axes.width as f32;
     let height = source.axes.height as f32;
     let program = get_gl_effect_program(state, "directionalBlur", DIRECTIONAL_BLUR_FRAGMENT_SRC)?;
     return draw_gl_fullscreen_pass(state, &program, &[source.texture], Some(dest), |gl, p| {
-        uniform_1f(gl, p, "u_angle", angle);
-        uniform_1f(gl, p, "u_length", length);
+        uniform_1f(gl, p, "u_angle", angle as f32);
+        uniform_1f(gl, p, "u_length", length as f32);
         uniform_1f(gl, p, "u_samples", samples);
         uniform_2f(gl, p, "u_resolution", width, height);
     });

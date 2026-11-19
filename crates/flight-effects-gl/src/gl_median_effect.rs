@@ -17,13 +17,14 @@ pub const MAX_MEDIAN_EFFECT_GL_RADIUS: i32 = 2;
 const MAX_SAMPLES: i32 =
     (MAX_MEDIAN_EFFECT_GL_RADIUS * 2 + 1) * (MAX_MEDIAN_EFFECT_GL_RADIUS * 2 + 1); // 25
 
+// flight-lint: allow(f64) pixel-valued effect parameters are f64 CPU values (foreman-66f8c2c6), computed in f64 and narrowed once at the f32 uniform or pass boundary
 pub fn apply_median_effect_to_gl(
     state: &mut GlRenderState,
     source: &GlTextureRenderTarget,
     dest: &GlTextureRenderTarget,
     effect: &MedianEffect,
 ) -> Result<(), String> {
-    let radius = (MAX_MEDIAN_EFFECT_GL_RADIUS as f32)
+    let radius = (MAX_MEDIAN_EFFECT_GL_RADIUS as f64)
         .min(round_half_up(effect.radius.unwrap_or(1.0)).max(0.0)) as i32;
     let program = get_gl_effect_program(state, "stylization.median", &median_fragment_source())?;
     let width = source.axes.width as f32;
@@ -109,6 +110,7 @@ pub fn register_gl_median_effect(state: &mut GlRenderState) {
 }
 
 /// JS `Math.round`: halves round toward +infinity.
-fn round_half_up(value: f32) -> f32 {
+// flight-lint: allow(f64) pixel-valued effect parameters are f64 CPU values (foreman-66f8c2c6), computed in f64 and narrowed once at the f32 uniform or pass boundary
+fn round_half_up(value: f64) -> f64 {
     return (value + 0.5).floor();
 }

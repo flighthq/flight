@@ -54,7 +54,7 @@ pub fn apply_outline_effect_to_gl(
     let program = get_gl_effect_program(state, "stylization.outline", OUTLINE_FRAGMENT_SRC)?;
     return draw_gl_fullscreen_pass(state, &program, &[source.texture], Some(dest), |gl, p| {
         uniform_1f(gl, p, "u_threshold", threshold);
-        uniform_1f(gl, p, "u_thickness", thickness);
+        uniform_1f(gl, p, "u_thickness", thickness as f32);
         uniform_4f(
             gl,
             p,

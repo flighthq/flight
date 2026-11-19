@@ -61,8 +61,8 @@ pub fn apply_blur_effect_to_gl(
         dest,
         temp,
         &GlGaussianBlurOptions {
-            blur_x: effect.blur_x,
-            blur_y: effect.blur_y,
+            blur_x: effect.blur_x.map(|value| value as f32),
+            blur_y: effect.blur_y.map(|value| value as f32),
         },
     );
 }
@@ -83,8 +83,8 @@ pub fn apply_blur_effect_to_gl_render_textures(
         dest,
         temp,
         &GlGaussianBlurOptions {
-            blur_x: effect.blur_x,
-            blur_y: effect.blur_y,
+            blur_x: effect.blur_x.map(|value| value as f32),
+            blur_y: effect.blur_y.map(|value| value as f32),
         },
     );
 }

@@ -50,8 +50,8 @@ pub fn apply_outer_glow_effect_to_gl(
             blurred,
             blur_temp,
             &GlEffectBoxBlurOptions {
-                blur_x: Some(effect.blur_x.unwrap_or(6.0)),
-                blur_y: Some(effect.blur_y.unwrap_or(6.0)),
+                blur_x: Some((effect.blur_x.unwrap_or(6.0)) as f32),
+                blur_y: Some((effect.blur_y.unwrap_or(6.0)) as f32),
                 passes: Some(quality),
                 edge_color: None,
             },

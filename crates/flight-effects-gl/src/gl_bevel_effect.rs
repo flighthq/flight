@@ -67,6 +67,7 @@ struct BevelCompositeParams {
     clip_mode: f32,
 }
 
+// flight-lint: allow(f64) pixel-valued effect parameters are f64 CPU values (foreman-66f8c2c6), computed in f64 and narrowed once at the f32 uniform or pass boundary
 pub fn apply_bevel_effect_to_gl(
     state: &mut GlRenderState,
     source: &GlTextureRenderTarget,
@@ -78,7 +79,7 @@ pub fn apply_bevel_effect_to_gl(
     let s1 = acquire_gl_effect_target(state, pool, source)?;
     let s2 = acquire_gl_effect_target(state, pool, source)?;
 
-    let angle = effect.angle.unwrap_or(45.0) * std::f32::consts::PI / 180.0;
+    let angle = effect.angle.unwrap_or(45.0) * std::f64::consts::PI / 180.0;
     let distance = effect.distance.unwrap_or(4.0);
     let offset_x = round_half_up(angle.cos() * distance);
     let offset_y = round_half_up(angle.sin() * distance);
@@ -102,8 +103,8 @@ pub fn apply_bevel_effect_to_gl(
             blurred,
             blur_temp,
             &GlEffectBoxBlurOptions {
-                blur_x: Some(effect.blur_x.unwrap_or(4.0)),
-                blur_y: Some(effect.blur_y.unwrap_or(4.0)),
+                blur_x: Some((effect.blur_x.unwrap_or(4.0)) as f32),
+                blur_y: Some((effect.blur_y.unwrap_or(4.0)) as f32),
                 passes: Some(quality),
                 edge_color: None,
             },
@@ -128,8 +129,8 @@ pub fn apply_bevel_effect_to_gl(
             source,
             dest,
             &BevelCompositeParams {
-                offset_x: offset_x / source.axes.width as f32,
-                offset_y: -offset_y / source.axes.height as f32,
+                offset_x: (offset_x / f64::from(source.axes.width)) as f32,
+                offset_y: (-offset_y / f64::from(source.axes.height)) as f32,
                 highlight_color,
                 highlight_alpha,
                 shadow_color,
@@ -212,6 +213,7 @@ pub fn register_gl_bevel_effect(state: &mut GlRenderState) {
 }
 
 /// JS `Math.round`: halves round toward +infinity.
-fn round_half_up(value: f32) -> f32 {
+// flight-lint: allow(f64) pixel-valued effect parameters are f64 CPU values (foreman-66f8c2c6), computed in f64 and narrowed once at the f32 uniform or pass boundary
+fn round_half_up(value: f64) -> f64 {
     return (value + 0.5).floor();
 }

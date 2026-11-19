@@ -53,7 +53,7 @@ pub fn apply_tilt_shift_effect_to_gl(
     return draw_gl_fullscreen_pass(state, &program, &[source.texture], Some(dest), |gl, p| {
         uniform_1f(gl, p, "u_center", center);
         uniform_1f(gl, p, "u_width", width);
-        uniform_1f(gl, p, "u_blur", blur);
+        uniform_1f(gl, p, "u_blur", blur as f32);
         uniform_2f(gl, p, "u_resolution", resolution_x, resolution_y);
     });
 }

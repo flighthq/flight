@@ -96,6 +96,7 @@ fn apply_bevel_encode_pass(
     });
 }
 
+// flight-lint: allow(f64) pixel-valued effect parameters are f64 CPU values (foreman-66f8c2c6), computed in f64 and narrowed once at the f32 uniform or pass boundary
 pub fn apply_gradient_bevel_effect_to_gl(
     state: &mut GlRenderState,
     source: &GlTextureRenderTarget,
@@ -107,7 +108,7 @@ pub fn apply_gradient_bevel_effect_to_gl(
     let s1 = acquire_gl_effect_target(state, pool, source)?;
     let s2 = acquire_gl_effect_target(state, pool, source)?;
 
-    let angle = effect.angle.unwrap_or(45.0) * std::f32::consts::PI / 180.0;
+    let angle = effect.angle.unwrap_or(45.0) * std::f64::consts::PI / 180.0;
     let distance = effect.distance.unwrap_or(4.0);
     let quality = effect.quality.unwrap_or(1.0).round().max(1.0);
     let strength = effect.strength.unwrap_or(1.0);
@@ -121,8 +122,8 @@ pub fn apply_gradient_bevel_effect_to_gl(
             &s1,
             &s2,
             &GlEffectBoxBlurOptions {
-                blur_x: Some(effect.blur_x.unwrap_or(4.0)),
-                blur_y: Some(effect.blur_y.unwrap_or(4.0)),
+                blur_x: Some((effect.blur_x.unwrap_or(4.0)) as f32),
+                blur_y: Some((effect.blur_y.unwrap_or(4.0)) as f32),
                 passes: Some(quality),
                 edge_color: None,
             },
@@ -134,8 +135,8 @@ pub fn apply_gradient_bevel_effect_to_gl(
             state,
             &s1,
             &s0,
-            dx / s1.axes.width as f32,
-            -dy / s1.axes.height as f32,
+            (dx / f64::from(s1.axes.width)) as f32,
+            (-dy / f64::from(s1.axes.height)) as f32,
         )?;
 
         let ramp = create_gl_effect_gradient_ramp_texture(

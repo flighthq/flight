@@ -58,8 +58,8 @@ pub fn apply_glitch_effect_to_gl(
     let program = get_gl_effect_program(state, "stylization.glitch", GLITCH_FRAGMENT_SRC)?;
     return draw_gl_fullscreen_pass(state, &program, &[source.texture], Some(dest), |gl, p| {
         uniform_1f(gl, p, "u_intensity", intensity);
-        uniform_1f(gl, p, "u_blockSize", block_size);
-        uniform_1f(gl, p, "u_colorShift", color_shift);
+        uniform_1f(gl, p, "u_blockSize", block_size as f32);
+        uniform_1f(gl, p, "u_colorShift", color_shift as f32);
         uniform_1f(gl, p, "u_seed", seed);
         uniform_2f(gl, p, "u_resolution", width, height);
     });

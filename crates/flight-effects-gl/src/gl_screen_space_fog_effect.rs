@@ -67,8 +67,8 @@ pub fn apply_screen_space_fog_effect_to_gl(
     return draw_gl_fullscreen_pass(state, &program, &inputs, Some(dest), |gl, p| {
         uniform_3f(gl, p, "u_fogColor", r, g, b);
         uniform_1f(gl, p, "u_density", density);
-        uniform_1f(gl, p, "u_near", near);
-        uniform_1f(gl, p, "u_far", far);
+        uniform_1f(gl, p, "u_near", near as f32);
+        uniform_1f(gl, p, "u_far", far as f32);
         uniform_1f(gl, p, "u_hasDepth", has_depth);
     });
 }
