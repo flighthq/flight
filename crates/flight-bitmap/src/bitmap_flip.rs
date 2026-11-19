@@ -46,6 +46,8 @@ mod sugar_tests {
     }
 }
 
+// Copies `source` mirrored into `dest` and invalidates `dest`, both under the one write lock, so no
+// reader sees the new pixels with the old version.
 fn copy_mirrored(
     dest: &mut BitmapRegion,
     source: &BitmapRegion,
@@ -78,6 +80,7 @@ fn copy_mirrored(
                 bitmap.data[di + 3] = sd[si + 3];
             }
         }
+        invalidate_bitmap(bitmap);
     });
 }
 
@@ -111,7 +114,6 @@ pub fn flip_bitmap_horizontal(dest: &mut BitmapRegion, source: &BitmapRegion) {
         return;
     }
     copy_mirrored(dest, source, w, h, true, false);
-    write_region_bitmap(dest, invalidate_bitmap);
 }
 
 /// Mirrors source top-to-bottom into dest.
@@ -144,7 +146,6 @@ pub fn flip_bitmap_vertical(dest: &mut BitmapRegion, source: &BitmapRegion) {
         return;
     }
     copy_mirrored(dest, source, w, h, false, true);
-    write_region_bitmap(dest, invalidate_bitmap);
 }
 
 // The same shared bitmap and the same rectangle (TS `isSameRegion`).

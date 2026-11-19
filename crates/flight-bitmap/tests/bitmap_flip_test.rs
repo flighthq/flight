@@ -31,8 +31,51 @@ fn ramp(width: u32, height: u32) -> Bitmap {
     return bmp;
 }
 
+// Flips alternating solid sources into one shared destination on a writer thread while a reader
+// samples (version, pixel) pairs under read locks. Flip N publishes version N + 1 with source N's
+// color, so a sample pairing a new color with an old version means a reader saw the copy before
+// its invalidation: the two were not published under one write lock.
+fn count_unpublished_flip_samples(flip: fn(&mut BitmapRegion, &BitmapRegion)) -> usize {
+    let dest = share_bitmap(create_bitmap(8, 8, None));
+    let done = std::sync::Arc::new(std::sync::atomic::AtomicBool::new(false));
+    let writer = {
+        let dest = dest.clone();
+        let done = done.clone();
+        std::thread::spawn(move || {
+            let sources = [
+                region(create_bitmap(8, 8, Some(0x111111ff))),
+                region(create_bitmap(8, 8, Some(0x222222ff))),
+            ];
+            let mut dr = shared_region(&dest);
+            for i in 0..20_000 {
+                flip(&mut dr, &sources[i % 2]);
+            }
+            done.store(true, std::sync::atomic::Ordering::Release);
+        })
+    };
+    let mut violations = 0;
+    while !done.load(std::sync::atomic::Ordering::Acquire) {
+        let bitmap = dest.read().unwrap();
+        let expected = match bitmap.version {
+            0 => 0x00,
+            version if version % 2 == 1 => 0x11,
+            _ => 0x22,
+        };
+        if bitmap.data[0] != expected {
+            violations += 1;
+        }
+    }
+    writer.join().unwrap();
+    return violations;
+}
+
 mod flip_bitmap_horizontal {
     use super::*;
+
+    #[test]
+    fn publishes_the_copied_pixels_and_the_new_version_under_one_write_lock() {
+        assert_eq!(count_unpublished_flip_samples(flip_bitmap_horizontal), 0);
+    }
 
     #[test]
     fn mirrors_columns_left_to_right_into_a_separate_dest() {
@@ -62,6 +105,11 @@ mod flip_bitmap_horizontal {
 
 mod flip_bitmap_vertical {
     use super::*;
+
+    #[test]
+    fn publishes_the_copied_pixels_and_the_new_version_under_one_write_lock() {
+        assert_eq!(count_unpublished_flip_samples(flip_bitmap_vertical), 0);
+    }
 
     #[test]
     fn mirrors_rows_top_to_bottom_into_a_separate_dest() {
