@@ -590,14 +590,10 @@ pub fn compute_quaternion_from_orientation_reading(
     let sin_beta = beta.sin();
     let cos_gamma = gamma.cos();
     let sin_gamma = gamma.sin();
-    out.x =
-        (sin_alpha * sin_beta * cos_gamma - cos_alpha * cos_beta * sin_gamma) as f32;
-    out.y =
-        (sin_alpha * cos_beta * sin_gamma + cos_alpha * sin_beta * cos_gamma) as f32;
-    out.z =
-        (cos_alpha * cos_beta * sin_gamma - sin_alpha * sin_beta * cos_gamma) as f32;
-    out.w =
-        (cos_alpha * cos_beta * cos_gamma + sin_alpha * sin_beta * sin_gamma) as f32;
+    out.x = (sin_alpha * sin_beta * cos_gamma - cos_alpha * cos_beta * sin_gamma) as f32;
+    out.y = (sin_alpha * cos_beta * sin_gamma + cos_alpha * sin_beta * cos_gamma) as f32;
+    out.z = (cos_alpha * cos_beta * sin_gamma - sin_alpha * sin_beta * cos_gamma) as f32;
+    out.w = (cos_alpha * cos_beta * cos_gamma + sin_alpha * sin_beta * sin_gamma) as f32;
     out.interval = interval;
     out.timestamp = timestamp;
     out.accuracy = accuracy;
