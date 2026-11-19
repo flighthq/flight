@@ -1179,6 +1179,7 @@ fn main() {
     all_output.push_str(generate_disposer_support());
     all_output.push_str(generate_signal_connection_support());
     all_output.push_str(&generate_signal_connect_wrappers());
+    all_output.push_str(&generate_signal_field_producers(&signal_inventory));
     boxed_types.extend(REGISTERED_HANDLE_REFS.iter().map(|ty| ty.to_string()));
     all_output.push_str(generate_storage_set_items_result_support());
 
@@ -2672,6 +2673,18 @@ fn generate_signal_inventory_report(inventory: &[SignalInventoryEntry]) -> Strin
     }
     for (payload, count) in counts {
         writeln!(report, "payload|{payload}|{count}").unwrap();
+    }
+    for entry in inventory {
+        let decision = get_signal_producer_decision(entry);
+        match decision.strip_prefix("skip:") {
+            Some(reason) => writeln!(
+                report,
+                "producer|{}|{}|skip|{reason}",
+                entry.owner, entry.item
+            )
+            .unwrap(),
+            None => writeln!(report, "producer|{}|{}|{decision}", entry.owner, entry.item).unwrap(),
+        }
     }
     for (payload, decision) in SIGNAL_PAYLOAD_POLICIES {
         match decision.strip_prefix("skip:") {
@@ -4474,6 +4487,147 @@ pub unsafe extern "C" fn flight_free_owned_byte_reader(reader: *mut FfiOwnedByte
 //   thread keeps the slot alive until it returns, so `release` never overlaps or precedes a call,
 //   and the callback can never run after `release`.
 // - Callbacks run synchronously on the thread that emits the signal.
+// The Rust type a connectable payload names inside `flight_sdk::Signal<...>`.
+fn get_signal_payload_rust_type(payload: &str) -> String {
+    if payload == "()" || is_scalar(payload) {
+        return payload.to_string();
+    }
+    if let Some(inner) = payload
+        .strip_prefix("Ref<")
+        .and_then(|rest| rest.strip_suffix('>'))
+    {
+        return format!("{QUALIFIER}::Ref<{}>", qualify_type(inner));
+    }
+    qualify_type(payload)
+}
+
+// How C reaches one inventoried signal: `function` (the SDK function itself crosses), `get` (a
+// borrowed field getter), `get+enable` (an optional input signal on an `*Options` struct, which C
+// creates in place before passing the options), or `skip:<reason>`. Producers hand out borrowed
+// pointers to the owner's own field, never `Signal` clones: a clone owns a separate emit cell, so
+// after the last disconnect resets one handle's cell, a reconnect through another handle is not
+// reached by emits through the first.
+fn get_signal_producer_decision(entry: &SignalInventoryEntry) -> String {
+    if entry.item.starts_with("fn ") {
+        return "function".to_string();
+    }
+    let policy = SIGNAL_PAYLOAD_POLICIES
+        .iter()
+        .find(|(payload, _)| *payload == entry.payload)
+        .map(|(_, decision)| *decision)
+        .unwrap_or("skip:unclassified");
+    if policy != "connect" {
+        return "skip:payload has no connect wrapper".to_string();
+    }
+    if entry.declared.starts_with("Arc<dyn Fn") {
+        return "skip:host capability construction is withdrawn from the alpha ABI (Task S)"
+            .to_string();
+    }
+    let payload = &entry.payload;
+    let (owner, _) = entry.item.split_once('.').unwrap();
+    if [
+        format!("Signal<{payload}>"),
+        format!("Ref<Signal<{payload}>>"),
+    ]
+    .contains(&entry.declared)
+    {
+        return "get".to_string();
+    }
+    if [
+        format!("Option<Signal<{payload}>>"),
+        format!("Option<Ref<Signal<{payload}>>>"),
+    ]
+    .contains(&entry.declared)
+    {
+        return if owner.ends_with("Options") {
+            "get+enable".to_string()
+        } else {
+            "get".to_string()
+        };
+    }
+    panic!(
+        "signal field {} declares `{}`, which has no producer rule",
+        entry.item, entry.declared
+    );
+}
+
+// Borrowed producers for every connectable signal field. The getter takes the owner the way the
+// existing field accessors do (`*const Owner`) and returns a pointer into the owner's field;
+// `Ref<Signal<T>>` fields return a pointer to the signal inside the shared cell, which lives as long
+// as the owner's handle on it.
+fn generate_signal_field_producers(inventory: &[SignalInventoryEntry]) -> String {
+    let mut out = String::new();
+    let mut names = BTreeSet::new();
+    for entry in inventory {
+        let decision = get_signal_producer_decision(entry);
+        if decision != "get" && decision != "get+enable" {
+            continue;
+        }
+        let (owner, field) = entry.item.split_once('.').unwrap();
+        let owner_ty = qualify_type(owner);
+        let signal_ty = format!(
+            "{QUALIFIER}::Signal<{}>",
+            get_signal_payload_rust_type(&entry.payload)
+        );
+        let base = format!("{}_{field}", to_snake_case(owner));
+        assert!(
+            names.insert(base.clone()),
+            "two signal producers share flight_get_{base}"
+        );
+        let borrowed = borrowed_ownership_doc(&format!(
+            "the {owner} owner remains alive and its {field} field is not reassigned"
+        ));
+        let optional = entry.declared.starts_with("Option<");
+        let shared = entry.declared.contains("Ref<Signal<");
+        let borrow = if shared {
+            format!("{{ let guard = signal.read().unwrap(); &*guard as *const {signal_ty} }}")
+        } else {
+            format!("signal as *const {signal_ty}")
+        };
+        let read = if optional {
+            format!(
+                "match &unsafe {{ &*owner }}.{field} {{ Some(signal) => {borrow}, None => std::ptr::null() }}"
+            )
+        } else {
+            format!("{{ let signal = &unsafe {{ &*owner }}.{field}; {borrow} }}")
+        };
+        writeln!(
+            out,
+            "#[doc = \"flight-ffi contract|Returns a borrowed pointer to the {owner}.{field} signal for the flight_connect_*_signal wrappers; it is valid while the owner is alive and the field is not reassigned, and the caller never frees it. NULL owner{absent} returns NULL.\"]\n\
+             {borrowed}#[unsafe(no_mangle)]\n\
+             pub unsafe extern \"C\" fn flight_get_{base}(owner: *const {owner_ty}) -> *const {signal_ty} {{\n    \
+                 if owner.is_null() {{ return std::ptr::null(); }}\n    \
+                 return {read};\n\
+             }}",
+            absent = if optional { ", or an absent signal," } else { "" },
+            borrowed = borrowed,
+        )
+        .unwrap();
+        if decision != "get+enable" {
+            continue;
+        }
+        let create = if shared {
+            format!(
+                "|| {QUALIFIER}::Ref::new(std::sync::RwLock::new({QUALIFIER}::create_signal()))"
+            )
+        } else {
+            format!("{QUALIFIER}::create_signal")
+        };
+        writeln!(
+            out,
+            "#[doc = \"flight-ffi contract|Creates the optional {owner}.{field} signal if it is absent and returns a borrowed pointer to it, valid while the owner is alive and the field is not reassigned; the caller never frees it. Connect before passing the options to the call that emits through them. NULL owner returns NULL.\"]\n\
+             {borrowed}#[unsafe(no_mangle)]\n\
+             pub unsafe extern \"C\" fn flight_enable_{base}(owner: *mut {owner_ty}) -> *const {signal_ty} {{\n    \
+                 if owner.is_null() {{ return std::ptr::null(); }}\n    \
+                 let signal = unsafe {{ &mut *owner }}.{field}.get_or_insert_with({create});\n    \
+                 return {borrow};\n\
+             }}"
+        )
+        .unwrap();
+    }
+    out
+}
+
 // One `flight_connect_<payload>_signal` per `connect` policy. The callback receives the context
 // first, then the payload lowered by its Task M class; the returned connection is owned by C and
 // freed (which disconnects) with `flight_free_signal_connection`.
@@ -4485,35 +4639,19 @@ fn generate_signal_connect_wrappers() -> String {
         }
         let class = get_signal_payload_class(payload)
             .unwrap_or_else(|| panic!("connect payload `{payload}` has no Task M class"));
-        let (rust_ty, callback_args, call_args) = match class {
-            "unit" => ("()".to_string(), String::new(), String::new()),
-            "scalar" => (
-                payload.to_string(),
-                format!(", {payload}"),
-                ", *payload".to_string(),
+        let rust_ty = get_signal_payload_rust_type(payload);
+        let (callback_args, call_args) = match class {
+            "unit" => (String::new(), String::new()),
+            "scalar" => (format!(", {payload}"), ", *payload".to_string()),
+            "enum-u32" => (", u32".to_string(), ", *payload as u32".to_string()),
+            "borrowed-struct" => (
+                format!(", *const {rust_ty}"),
+                format!(", payload as *const {rust_ty}"),
             ),
-            "enum-u32" => (
-                qualify_type(payload),
-                ", u32".to_string(),
-                ", *payload as u32".to_string(),
+            "borrowed-ref-handle" => (
+                ", *const std::ffi::c_void".to_string(),
+                format!(", payload as *const {rust_ty} as *const std::ffi::c_void"),
             ),
-            "borrowed-struct" => {
-                let qualified = qualify_type(payload);
-                (
-                    qualified.clone(),
-                    format!(", *const {qualified}"),
-                    format!(", payload as *const {qualified}"),
-                )
-            }
-            "borrowed-ref-handle" => {
-                let inner = &payload["Ref<".len()..payload.len() - 1];
-                let qualified = format!("{QUALIFIER}::Ref<{}>", qualify_type(inner));
-                (
-                    qualified.clone(),
-                    ", *const std::ffi::c_void".to_string(),
-                    format!(", payload as *const {qualified} as *const std::ffi::c_void"),
-                )
-            }
             other => panic!("unknown signal payload class `{other}`"),
         };
         let stem = get_signal_payload_stem(payload);

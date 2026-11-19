@@ -78,6 +78,72 @@ fn disconnect_releases_once_and_free_does_not_release_again() {
 }
 
 #[test]
+// flight-lint: allow(f64) the clock tick payload carries the SDK's f64 frame delta
+fn field_producers_borrow_the_owner_signal() {
+    let clock = flight_sdk::create_clock();
+    let mut owner = clock.write().unwrap();
+    assert!(unsafe { crate::flight_get_clock_on_tick(&*owner) }.is_null());
+    flight_sdk::enable_clock_signals(&mut owner);
+    let signal = unsafe { crate::flight_get_clock_on_tick(&*owner) };
+    assert_eq!(signal, owner.on_tick.as_ref().unwrap() as *const _);
+    drop(owner);
+    let probe = Probe::default();
+    let connection = unsafe {
+        crate::flight_connect_frame_tick_signal(
+            signal,
+            Some(z_record_frame_tick),
+            z_get_probe_context(&probe),
+            Some(z_release),
+            0,
+            false,
+            std::ptr::null(),
+        )
+    };
+    let tick = flight_sdk::FrameTick { delta_time: 5.0 };
+    flight_sdk::emit_signal(clock.read().unwrap().on_tick.as_ref().unwrap(), &tick);
+    unsafe { crate::flight_free_signal_connection(connection) };
+    assert_eq!(*probe.values.lock().unwrap(), [5.0]);
+
+    let mut options = flight_sdk::NetRequestOptions::default();
+    assert!(unsafe { crate::flight_get_net_request_options_progress(&options) }.is_null());
+    let created = unsafe { crate::flight_enable_net_request_options_progress(&mut options) };
+    let again = unsafe { crate::flight_enable_net_request_options_progress(&mut options) };
+    assert_eq!(created, again);
+    assert_eq!(
+        unsafe { crate::flight_get_net_request_options_progress(&options) },
+        created
+    );
+    let progress_probe = Probe::default();
+    let connection = unsafe {
+        crate::flight_connect_net_progress_signal(
+            created,
+            Some(z_record_net_progress),
+            z_get_probe_context(&progress_probe),
+            Some(z_release),
+            0,
+            false,
+            std::ptr::null(),
+        )
+    };
+    let passed = options.clone();
+    let value: flight_sdk::Ref<flight_sdk::NetProgress> =
+        Arc::new(RwLock::new(flight_sdk::NetProgress {
+            phase: flight_sdk::NetProgressPhase::Upload,
+            loaded: 7,
+            total: 9,
+        }));
+    flight_sdk::emit_signal(&passed.progress.as_ref().unwrap().read().unwrap(), &value);
+    unsafe { crate::flight_free_signal_connection(connection) };
+    assert_eq!(*progress_probe.values.lock().unwrap(), [7.0]);
+    assert_eq!(z_get_probe_releases(&progress_probe), 1);
+    assert!(unsafe { crate::flight_get_clock_on_tick(std::ptr::null()) }.is_null());
+    assert!(
+        unsafe { crate::flight_enable_net_request_options_progress(std::ptr::null_mut()) }
+            .is_null()
+    );
+}
+
+#[test]
 // flight-lint: allow(f64) frame-rate callbacks receive the SDK's f64 accumulated milliseconds
 fn frame_rate_connection_shares_the_signal_connection_teardown() {
     let signal = flight_sdk::create_signal::<flight_sdk::FrameTick>();
