@@ -520,7 +520,7 @@ const SIGNAL_PAYLOAD_POLICIES: &[(&str, &str)] = &[
         "skip:dynamic `Unknown` payload has no C representation",
     ),
     (
-        "(f32, f32)",
+        "(f64, f64)",
         "skip:tuple payload has no Task M callback carrier",
     ),
     (

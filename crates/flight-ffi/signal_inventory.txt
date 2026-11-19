@@ -43,11 +43,11 @@ signal|flight-connectivity|flight-connectivity/src/types.rs|Connectivity.on_conn
 signal|flight-connectivity|flight-connectivity/src/types.rs|Connectivity.on_metered_change|Signal<bool>|bool
 signal|flight-connectivity|flight-connectivity/src/types.rs|Connectivity.on_offline|Signal<()>|()
 signal|flight-connectivity|flight-connectivity/src/types.rs|Connectivity.on_online|Signal<()>|()
-signal|flight-gizmo|flight-gizmo/src/types.rs|GizmoSignals.on_rotate|Signal<f32>|f32
-signal|flight-gizmo|flight-gizmo/src/types.rs|GizmoSignals.on_scale|Signal<(f32, f32)>|(f32, f32)
+signal|flight-gizmo|flight-gizmo/src/types.rs|GizmoSignals.on_rotate|Signal<f64>|f64
+signal|flight-gizmo|flight-gizmo/src/types.rs|GizmoSignals.on_scale|Signal<(f64, f64)>|(f64, f64)
 signal|flight-gizmo|flight-gizmo/src/types.rs|GizmoSignals.on_transform_begin|Signal<()>|()
 signal|flight-gizmo|flight-gizmo/src/types.rs|GizmoSignals.on_transform_end|Signal<()>|()
-signal|flight-gizmo|flight-gizmo/src/types.rs|GizmoSignals.on_translate|Signal<(f32, f32)>|(f32, f32)
+signal|flight-gizmo|flight-gizmo/src/types.rs|GizmoSignals.on_translate|Signal<(f64, f64)>|(f64, f64)
 signal|flight-gui|flight-gui/src/button_controller.rs|ButtonControllerSignals.on_click|Ref<Signal<()>>|()
 signal|flight-gui|flight-gui/src/button_controller.rs|ButtonControllerSignals.on_press|Ref<Signal<()>>|()
 signal|flight-gui|flight-gui/src/button_controller.rs|ButtonControllerSignals.on_release|Ref<Signal<()>>|()
@@ -59,10 +59,10 @@ signal|flight-gui|flight-gui/src/gui_dialog.rs|GuiDialogSignals.on_queue_change|
 signal|flight-gui|flight-gui/src/list_controller.rs|ListControllerSignals.on_activate|Ref<Signal<i32>>|i32
 signal|flight-gui|flight-gui/src/list_controller.rs|ListControllerSignals.on_select|Ref<Signal<i32>>|i32
 signal|flight-gui|flight-gui/src/radio_group_controller.rs|RadioGroupControllerSignals.on_change|Ref<Signal<i32>>|i32
-signal|flight-gui|flight-gui/src/scroll_bar_controller.rs|ScrollBarControllerSignals.on_change|Ref<Signal<f32>>|f32
-signal|flight-gui|flight-gui/src/scroll_view_controller.rs|ScrollViewControllerSignals.on_scroll|Ref<Signal<(f32, f32)>>|(f32, f32)
-signal|flight-gui|flight-gui/src/slider_controller.rs|SliderControllerSignals.on_change|Ref<Signal<f32>>|f32
-signal|flight-gui|flight-gui/src/split_pane_controller.rs|SplitPaneControllerSignals.on_change|Ref<Signal<f32>>|f32
+signal|flight-gui|flight-gui/src/scroll_bar_controller.rs|ScrollBarControllerSignals.on_change|Ref<Signal<f64>>|f64
+signal|flight-gui|flight-gui/src/scroll_view_controller.rs|ScrollViewControllerSignals.on_scroll|Ref<Signal<(f64, f64)>>|(f64, f64)
+signal|flight-gui|flight-gui/src/slider_controller.rs|SliderControllerSignals.on_change|Ref<Signal<f64>>|f64
+signal|flight-gui|flight-gui/src/split_pane_controller.rs|SplitPaneControllerSignals.on_change|Ref<Signal<f64>>|f64
 signal|flight-gui|flight-gui/src/tab_bar_controller.rs|TabBarControllerSignals.on_change|Ref<Signal<i32>>|i32
 signal|flight-gui|flight-gui/src/text_input_controller.rs|TextInputControllerSignals.on_change|Ref<Signal<String>>|String
 signal|flight-gui|flight-gui/src/text_input_controller.rs|TextInputControllerSignals.on_submit|Ref<Signal<String>>|String
@@ -71,8 +71,8 @@ signal|flight-gui|flight-gui/src/tree_view_controller.rs|TreeViewControllerSigna
 signal|flight-gui|flight-gui/src/tree_view_controller.rs|TreeViewControllerSignals.on_expand_change|Ref<Signal<(Ref<TreeViewControllerItem>, bool)>>|(Ref<TreeViewControllerItem>, bool)
 signal|flight-gui|flight-gui/src/tree_view_controller.rs|TreeViewControllerSignals.on_select|Ref<Signal<Option<Ref<TreeViewControllerItem>>>>|Option<Ref<TreeViewControllerItem>>
 signal|flight-gui|flight-gui/src/window_controller.rs|WindowControllerSignals.on_close|Ref<Signal<()>>|()
-signal|flight-gui|flight-gui/src/window_controller.rs|WindowControllerSignals.on_move|Ref<Signal<(f32, f32)>>|(f32, f32)
-signal|flight-gui|flight-gui/src/window_controller.rs|WindowControllerSignals.on_resize|Ref<Signal<(f32, f32)>>|(f32, f32)
+signal|flight-gui|flight-gui/src/window_controller.rs|WindowControllerSignals.on_move|Ref<Signal<(f64, f64)>>|(f64, f64)
+signal|flight-gui|flight-gui/src/window_controller.rs|WindowControllerSignals.on_resize|Ref<Signal<(f64, f64)>>|(f64, f64)
 signal|flight-input|flight-input/src/types.rs|InputManager.on_gamepad_axis_move|Signal<InputGamepadAxisData>|InputGamepadAxisData
 signal|flight-input|flight-input/src/types.rs|InputManager.on_gamepad_button_down|Signal<InputGamepadButtonData>|InputGamepadButtonData
 signal|flight-input|flight-input/src/types.rs|InputManager.on_gamepad_button_up|Signal<InputGamepadButtonData>|InputGamepadButtonData
@@ -263,7 +263,7 @@ payload|(String, Unknown)|1
 payload|(String, Unknown, usize)|1
 payload|(String, usize, f64)|1
 payload|(Unknown, String)|1
-payload|(f32, f32)|5
+payload|(f64, f64)|5
 payload|(i32, i32, i16)|1
 payload|(i32, i32, i32)|1
 payload|(i32, i32, i32, i32)|1
@@ -339,8 +339,8 @@ payload|Unknown|1
 payload|Vec<NodeRef>|1
 payload|Vec<String>|1
 payload|bool|3
-payload|f32|7
-payload|f64|2
+payload|f32|3
+payload|f64|6
 payload|i32|6
 payload|usize|1
 producer|flight-animation|AnimationPlayer.on_event|get
@@ -607,7 +607,7 @@ policy|(String, Unknown)|skip|dynamic `Unknown` payload has no C representation
 policy|(String, Unknown, usize)|skip|dynamic `Unknown` payload has no C representation
 policy|(String, usize, f64)|skip|tuple payload has no Task M callback carrier
 policy|(Unknown, String)|skip|dynamic `Unknown` payload has no C representation
-policy|(f32, f32)|skip|tuple payload has no Task M callback carrier
+policy|(f64, f64)|skip|tuple payload has no Task M callback carrier
 policy|(i32, i32, i16)|skip|tuple payload has no Task M callback carrier
 policy|(i32, i32, i32)|skip|tuple payload has no Task M callback carrier
 policy|(i32, i32, i32, i32)|skip|tuple payload has no Task M callback carrier
