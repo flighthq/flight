@@ -113,6 +113,38 @@ fn interaction_signal_rejection_links_static_library_and_runs() {
     }
 }
 
+#[test]
+fn render_pass_bracket_links_static_library_and_runs() {
+    if let Some(output) =
+        z_compile_link_and_run("render_pass_bracket.c", "render_pass_bracket", true, false)
+    {
+        assert_eq!(
+            String::from_utf8_lossy(&output.stdout).trim(),
+            "flight-ffi render pass bracket: ok"
+        );
+    }
+}
+
+#[test]
+fn render_pass_bracket_sanitizer_probe_detects_a_leaked_scene_source() {
+    if let Some(output) = z_compile_link_and_run(
+        "render_pass_bracket.c",
+        "render_pass_bracket-leak-probe",
+        true,
+        true,
+    ) {
+        let diagnostics = String::from_utf8_lossy(&output.stderr);
+        assert!(
+            !output.status.success(),
+            "LeakSanitizer accepted a deliberately leaked scene source"
+        );
+        assert!(
+            diagnostics.contains("LeakSanitizer") && diagnostics.contains("detected memory leaks"),
+            "deliberate scene source leak did not produce a live LeakSanitizer report:\n{diagnostics}"
+        );
+    }
+}
+
 // `cargo test` compiles the library only as a test harness, never as its declared `staticlib`, so
 // the archive is built here with the outer Cargo and located through its artifact messages. The
 // test only runs when the target is the host, so a host build matches the consumer's target.

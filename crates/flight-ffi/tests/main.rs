@@ -15,6 +15,8 @@ mod flight_ffi_public_perimeter_test;
 mod flight_ffi_reachability_census_test;
 #[path = "../reachability.rs"]
 mod flight_ffi_reachability_unit_test;
+#[path = "render_pass_bracket_test.rs"]
+mod flight_ffi_render_pass_bracket_test;
 #[path = "signal_identity_test.rs"]
 mod flight_ffi_signal_identity_test;
 #[path = "signal_ref_connect_test.rs"]
