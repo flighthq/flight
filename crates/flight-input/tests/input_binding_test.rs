@@ -60,6 +60,32 @@ fn recording_host(recorder: Recorder) -> HostInputIngressCapability {
     };
 }
 
+fn pointer_data(x: f64, y: f64, width: f64, height: f64) -> InputPointerData {
+    return InputPointerData {
+        alt_key: false,
+        button: 0,
+        buttons: 1,
+        ctrl_key: false,
+        delta_x: 0.0,
+        delta_y: 0.0,
+        height,
+        is_primary: true,
+        meta_key: false,
+        pointer_id: 1,
+        pointer_type: PointerType::Touch,
+        pressure: 0.5,
+        shift_key: false,
+        tilt_x: 0.0,
+        tilt_y: 0.0,
+        time_stamp: 0.0,
+        twist: 0.0,
+        wheel_mode: MouseWheelMode::Unknown,
+        width,
+        x,
+        y,
+    };
+}
+
 fn keyboard_data(key_code: i32) -> InputKeyboardData {
     return InputKeyboardData {
         alt_key: false,
@@ -124,6 +150,32 @@ mod attach_keyboard_input {
 
 mod attach_pointer_input {
     use super::*;
+
+    #[test]
+    fn forwards_pointer_position_and_contact_size_as_exact_doubles() {
+        // 0.1 has no exact f32 and f32 spacing at 1e9 is 64: both survive only as doubles.
+        let recorder = create_recorder();
+        let host = recording_host(recorder.clone());
+        let manager = create_input_manager();
+        let seen = Arc::new(Mutex::new(None));
+        let captured = seen.clone();
+        connect_signal(
+            &manager.read().unwrap().on_pointer_down.clone(),
+            Arc::new(move |data: &InputPointerData| {
+                *captured.lock().unwrap() = Some((data.x, data.y, data.width, data.height));
+            }),
+            None,
+        );
+        attach_pointer_input(&host, &manager, &create_source(), None);
+        let sink = recorder.sinks.lock().unwrap()[0].clone();
+
+        (sink.pointer_down)(&pointer_data(0.1, 1_000_000_000.5, 0.1, 1_000_000_000.5));
+
+        assert_eq!(
+            *seen.lock().unwrap(),
+            Some((0.1, 1_000_000_000.5, 0.1, 1_000_000_000.5))
+        );
+    }
 
     #[test]
     fn reattaching_the_same_source_releases_the_old_origin_once() {

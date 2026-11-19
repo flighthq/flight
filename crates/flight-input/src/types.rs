@@ -158,16 +158,16 @@ pub struct InputKeyboardData {
 
 /// One normalized pointer/wheel event (TS `InputPointerData`).
 #[derive(Clone, Debug, PartialEq, Default)]
-// flight-lint: allow(f64) D1: event timestamps are millisecond values whose fractional precision f32 loses after a few hours of uptime
+// flight-lint: allow(f64) D1: event timestamps are millisecond values whose fractional precision f32 loses after a few hours of uptime; pointer x/y, wheel deltas and contact width/height are JS Number spatial (CSS pixel) values (Task Q)
 #[repr(C)]
 pub struct InputPointerData {
     pub alt_key: bool,
     pub button: i32,
     pub buttons: u32,
     pub ctrl_key: bool,
-    pub delta_x: f32,
-    pub delta_y: f32,
-    pub height: f32,
+    pub delta_x: f64,
+    pub delta_y: f64,
+    pub height: f64,
     pub is_primary: bool,
     pub meta_key: bool,
     pub pointer_id: i32,
@@ -179,9 +179,9 @@ pub struct InputPointerData {
     pub time_stamp: f64,
     pub twist: f32,
     pub wheel_mode: MouseWheelMode,
-    pub width: f32,
-    pub x: f32,
-    pub y: f32,
+    pub width: f64,
+    pub x: f64,
+    pub y: f64,
 }
 
 /// One normalized text event (TS `InputTextData`).
