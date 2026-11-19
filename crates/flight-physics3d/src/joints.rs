@@ -41,7 +41,7 @@ const HINGE_LIMIT_MASS: usize = HINGE_UPPER_IMPULSE + 1;
 const HINGE_LIMIT_GAMMA: usize = HINGE_LIMIT_MASS + 1;
 const HINGE_LENGTH: usize = HINGE_LIMIT_GAMMA + 1;
 
-const AXIS_EPSILON: f32 = 1e-9;
+const AXIS_EPSILON: f64 = 1e-9;
 const CONE_SWING_ROW: usize = POINT_LENGTH;
 const CONE_TWIST_ROW: usize = CONE_SWING_ROW + ROW_LENGTH;
 const CONE_SWING_MASS: usize = CONE_TWIST_ROW + ROW_LENGTH;
@@ -59,9 +59,9 @@ const CONE_TWIST_SOFT_MASS: usize = CONE_SWING_GAMMA + 1;
 const CONE_TWIST_GAMMA: usize = CONE_TWIST_SOFT_MASS + 1;
 const CONE_LENGTH: usize = CONE_TWIST_GAMMA + 1;
 
-const DOF_FREE: f32 = 0.0;
-const DOF_LOCKED: f32 = 1.0;
-const DOF_LIMITED: f32 = 2.0;
+const DOF_FREE: f64 = 0.0;
+const DOF_LOCKED: f64 = 1.0;
+const DOF_LIMITED: f64 = 2.0;
 const DOF_ROWS: usize = 0;
 const DOF_MASS: usize = DOF_ROWS + 6 * ROW_LENGTH;
 const DOF_VALUE: usize = DOF_MASS + 6;
@@ -556,7 +556,7 @@ fn distance_solver() -> Physics3DJointSolver {
     };
 }
 
-fn dot3(a: &[f32], a_offset: usize, b: &[f32], b_offset: usize) -> f32 {
+fn dot3(a: &[f64], a_offset: usize, b: &[f64], b_offset: usize) -> f64 {
     return a[a_offset] * b[b_offset]
         + a[a_offset + 1] * b[b_offset + 1]
         + a[a_offset + 2] * b[b_offset + 2];
@@ -821,9 +821,9 @@ fn generic_6_dof_solver() -> Physics3DJointSolver {
 
 fn get_cone_swing_limit(
     cone: &Physics3DConeTwistJoint,
-    basis_a: &[f32; 9],
-    basis_b: &[f32; 9],
-) -> f32 {
+    basis_a: &[f64; 9],
+    basis_b: &[f64; 9],
+) -> f64 {
     if cone.swing_limit_y <= 0.0 || cone.swing_limit_z <= 0.0 {
         return cone.swing_limit_y.min(cone.swing_limit_z);
     }
@@ -838,7 +838,7 @@ fn get_cone_swing_limit(
     return 1.0 / (unit_y * unit_y + unit_z * unit_z).sqrt();
 }
 
-fn get_signed_axis_angle(basis_a: &[f32; 9], basis_b: &[f32; 9]) -> f32 {
+fn get_signed_axis_angle(basis_a: &[f64; 9], basis_b: &[f64; 9]) -> f64 {
     let cross_x = basis_a[4] * basis_b[5] - basis_a[5] * basis_b[4];
     let cross_y = basis_a[5] * basis_b[3] - basis_a[3] * basis_b[5];
     let cross_z = basis_a[3] * basis_b[4] - basis_a[4] * basis_b[3];
@@ -1257,7 +1257,7 @@ fn point_solver(lock_rotation: bool) -> Physics3DJointSolver {
     };
 }
 
-fn read_dof_bounds(dof: &Physics3DGeneric6DofJoint) -> ([f32; 6], [f32; 6]) {
+fn read_dof_bounds(dof: &Physics3DGeneric6DofJoint) -> ([f64; 6], [f64; 6]) {
     return (
         [
             dof.lower_linear_x,
@@ -1605,15 +1605,15 @@ fn swap_slider_joint(joint: &Physics3DJointRef) -> bool {
 }
 
 fn write_limit_row_parameters(
-    state: &mut [f32],
+    state: &mut [f64],
     mass_slot: usize,
     gamma_slot: usize,
     bias_slot: usize,
-    row_mass: f32,
+    row_mass: f64,
     soft: bool,
-    frequency_hz: f32,
-    damping_ratio: f32,
-    dt: f32,
+    frequency_hz: f64,
+    damping_ratio: f64,
+    dt: f64,
 ) {
     if soft && frequency_hz > 0.0 {
         let mut parameters = [0.0; 3];
@@ -1636,12 +1636,12 @@ fn write_limit_row_parameters(
 }
 
 fn write_linear_axis_row(
-    state: &mut [f32],
+    state: &mut [f64],
     offset: usize,
     joint: &dyn Physics3DJoint,
-    basis: &[f32; 9],
+    basis: &[f64; 9],
     basis_offset: usize,
-    separation: &[f32; 3],
+    separation: &[f64; 3],
 ) {
     let direction_x = basis[basis_offset];
     let direction_y = basis[basis_offset + 1];

@@ -6,7 +6,7 @@ use crate::*;
 pub fn explain_physics_3d_step(
     out: &mut Physics3DStepExplanation,
     world: &Physics3DWorld,
-    dt: f32,
+    dt: f64,
 ) {
     let config = &world.config;
     let body_state_valid = is_physics_3d_body_state_valid(world);

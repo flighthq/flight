@@ -30,7 +30,7 @@ fn for_each_solve_body(world: &mut Physics3DWorld, mut visit: impl FnMut(&mut Ri
     }
 }
 
-fn integrate_solve_poses(world: &mut Physics3DWorld, registry: &CollisionRegistry3D, dt: f32) {
+fn integrate_solve_poses(world: &mut Physics3DWorld, registry: &CollisionRegistry3D, dt: f64) {
     if world.config.continuous_collision && has_active_physics_3d_bullet(world) {
         integrate_physics_3d_continuous(world, registry, dt);
         return;
@@ -78,7 +78,7 @@ fn run_contact_hook(
     }
 }
 
-fn scale_warm_start_caches(world: &mut Physics3DWorld, dt: f32) {
+fn scale_warm_start_caches(world: &mut Physics3DWorld, dt: f64) {
     let previous = world.previous_timestep;
     if previous <= 0.0 || previous == dt {
         return;
@@ -124,7 +124,7 @@ pub fn set_physics_3d_step_guard(
 pub fn step_physics_3d(
     world: &mut Physics3DWorld,
     registry: &CollisionRegistry3D,
-    dt: f32,
+    dt: f64,
     guards: Option<&Physics3DGuardState>,
 ) {
     assert!(!world.stepping, "Cannot step a physics world recursively");
@@ -158,7 +158,7 @@ pub fn step_physics_3d(
 pub fn step_physics_3d_interval(
     world: &mut Physics3DWorld,
     registry: &CollisionRegistry3D,
-    dt: f32,
+    dt: f64,
 ) {
     for_each_solve_body(world, refresh_rigid_body_3d_world_inertia);
     let (gravity_x, gravity_y, gravity_z) = (world.gravity_x, world.gravity_y, world.gravity_z);
@@ -199,10 +199,10 @@ pub fn step_physics_3d_interval(
 fn step_validated_physics_3d(
     world: &mut Physics3DWorld,
     registry: &CollisionRegistry3D,
-    dt: f32,
+    dt: f64,
     guards: Option<&Physics3DGuardState>,
 ) {
-    let substep_dt = dt / world.config.substeps as f32;
+    let substep_dt = dt / world.config.substeps as f64;
     world.joint_events.broke.clear();
     if let Some(guard) = guards.and_then(|guards| guards.contact_intake_guard.as_ref()) {
         guard(world, registry);

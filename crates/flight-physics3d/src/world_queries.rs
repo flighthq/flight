@@ -115,9 +115,9 @@ fn passes_collider_filter(
 pub fn query_physics_3d_point(
     out: &mut Physics3DQueryResult,
     world: &mut Physics3DWorld,
-    x: f32,
-    y: f32,
-    z: f32,
+    x: f64,
+    y: f64,
+    z: f64,
     filter: Option<&Physics3DQueryFilter>,
 ) {
     out.hit_count = 0;
@@ -155,13 +155,13 @@ pub fn query_physics_3d_point(
 pub fn query_physics_3d_ray(
     out: &mut Physics3DRayResult,
     world: &mut Physics3DWorld,
-    origin_x: f32,
-    origin_y: f32,
-    origin_z: f32,
-    direction_x: f32,
-    direction_y: f32,
-    direction_z: f32,
-    max_fraction: Option<f32>,
+    origin_x: f64,
+    origin_y: f64,
+    origin_z: f64,
+    direction_x: f64,
+    direction_y: f64,
+    direction_z: f64,
+    max_fraction: Option<f64>,
     filter: Option<&Physics3DQueryFilter>,
 ) {
     query_ray_internal(
@@ -173,7 +173,7 @@ pub fn query_physics_3d_ray(
         direction_x,
         direction_y,
         direction_z,
-        max_fraction.unwrap_or(f32::INFINITY),
+        max_fraction.unwrap_or(f64::INFINITY),
         filter,
         false,
     );
@@ -183,13 +183,13 @@ pub fn query_physics_3d_ray(
 pub fn query_physics_3d_ray_closest(
     out: &mut Physics3DRayResult,
     world: &mut Physics3DWorld,
-    origin_x: f32,
-    origin_y: f32,
-    origin_z: f32,
-    direction_x: f32,
-    direction_y: f32,
-    direction_z: f32,
-    max_fraction: Option<f32>,
+    origin_x: f64,
+    origin_y: f64,
+    origin_z: f64,
+    direction_x: f64,
+    direction_y: f64,
+    direction_z: f64,
+    max_fraction: Option<f64>,
     filter: Option<&Physics3DQueryFilter>,
 ) {
     query_ray_internal(
@@ -201,7 +201,7 @@ pub fn query_physics_3d_ray_closest(
         direction_x,
         direction_y,
         direction_z,
-        max_fraction.unwrap_or(f32::INFINITY),
+        max_fraction.unwrap_or(f64::INFINITY),
         filter,
         true,
     );
@@ -249,10 +249,10 @@ pub fn query_physics_3d_shape_cast(
     world: &mut Physics3DWorld,
     registry: &CollisionRegistry3D,
     shape: &CollisionShape3D,
-    dx: f32,
-    dy: f32,
-    dz: f32,
-    max_fraction: Option<f32>,
+    dx: f64,
+    dy: f64,
+    dz: f64,
+    max_fraction: Option<f64>,
     filter: Option<&Physics3DQueryFilter>,
 ) {
     initialize_physics_3d_shape_cast_result(out);
@@ -266,7 +266,7 @@ pub fn query_physics_3d_shape_cast(
     }
     synchronize_physics_3d_broadphase(world);
     let shape = CollisionColliderShape3D::BuiltIn(shape.clone());
-    let mut best = f32::INFINITY;
+    let mut best = f64::INFINITY;
     let candidates = world.bodies.clone();
     for body_ref in candidates {
         let body = body_ref.read().unwrap();
@@ -315,13 +315,13 @@ pub fn query_physics_3d_shape_cast(
 fn query_ray_internal(
     out: &mut Physics3DRayResult,
     world: &mut Physics3DWorld,
-    origin_x: f32,
-    origin_y: f32,
-    origin_z: f32,
-    direction_x: f32,
-    direction_y: f32,
-    direction_z: f32,
-    max_fraction: f32,
+    origin_x: f64,
+    origin_y: f64,
+    origin_z: f64,
+    direction_x: f64,
+    direction_y: f64,
+    direction_z: f64,
+    max_fraction: f64,
     filter: Option<&Physics3DQueryFilter>,
     closest: bool,
 ) {

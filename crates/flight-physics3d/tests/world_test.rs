@@ -44,7 +44,7 @@ fn unit_box_shape() -> CollisionColliderShape3D {
     }))
 }
 
-fn add_collider_test_body(world: &mut Physics3DWorld, x: f32) -> RigidBody3DRef {
+fn add_collider_test_body(world: &mut Physics3DWorld, x: f64) -> RigidBody3DRef {
     let body = create_rigid_body_3d();
     body.write().unwrap().x = x;
     add_physics_3d_body(world, &body);
@@ -399,7 +399,7 @@ mod apply_physics_3d_angular_impulse {
         }
         assert!(!apply_physics_3d_angular_impulse(&body, 1.0, 0.0, 0.0));
         body.write().unwrap().body_type = Physics3DBodyType::Dynamic;
-        assert!(!apply_physics_3d_angular_impulse(&body, f32::NAN, 0.0, 0.0));
+        assert!(!apply_physics_3d_angular_impulse(&body, f64::NAN, 0.0, 0.0));
         assert_eq!(body.read().unwrap().angular_velocity_x, 0.0);
     }
 }
@@ -427,7 +427,7 @@ mod apply_physics_3d_force {
     fn rejects_a_non_finite_force_without_partially_mutating_or_waking_the_body() {
         let body = sphere_body();
         body.write().unwrap().sleeping = true;
-        assert!(!apply_physics_3d_force(&body, 1.0, f32::NAN, 3.0));
+        assert!(!apply_physics_3d_force(&body, 1.0, f64::NAN, 3.0));
         let body = body.read().unwrap();
         assert_eq!(body.force_x, 0.0);
         assert_eq!(body.force_y, 0.0);
@@ -480,7 +480,7 @@ mod apply_physics_3d_force_at_point {
             1.0,
             2.0,
             3.0,
-            f32::INFINITY,
+            f64::INFINITY,
             0.0,
             0.0
         ));
@@ -511,7 +511,7 @@ mod apply_physics_3d_linear_impulse {
     #[test]
     fn rejects_a_non_finite_impulse_without_poisoning_velocity() {
         let body = sphere_body();
-        assert!(!apply_physics_3d_linear_impulse(&body, f32::NAN, 0.0, 0.0));
+        assert!(!apply_physics_3d_linear_impulse(&body, f64::NAN, 0.0, 0.0));
         assert_eq!(body.read().unwrap().velocity_x, 0.0);
     }
 }
@@ -549,7 +549,7 @@ mod apply_physics_3d_linear_impulse_at_point {
             0.0,
             0.0,
             0.0,
-            f32::NAN,
+            f64::NAN,
             0.0
         ));
         let body = body.read().unwrap();
@@ -571,7 +571,7 @@ mod apply_physics_3d_torque {
     #[test]
     fn rejects_non_finite_torque_and_a_body_with_fixed_rotation() {
         let body = sphere_body();
-        assert!(!apply_physics_3d_torque(&body, 0.0, 0.0, f32::NAN));
+        assert!(!apply_physics_3d_torque(&body, 0.0, 0.0, f64::NAN));
         body.write().unwrap().fixed_rotation = true;
         assert!(!apply_physics_3d_torque(&body, 0.0, 0.0, 4.0));
         assert_eq!(body.read().unwrap().torque_z, 0.0);
@@ -1464,7 +1464,7 @@ mod set_physics_3d_body_transform {
         assert!(!set_physics_3d_body_transform(
             &mut world,
             &body,
-            f32::NAN,
+            f64::NAN,
             2.0,
             3.0,
             0.0,
@@ -1686,8 +1686,8 @@ mod write_rigid_body_3d_world_center {
         let body = sphere_body();
         let mut body_write = body.write().unwrap();
         body_write.center_x = 1.0;
-        body_write.orientation_z = std::f32::consts::FRAC_1_SQRT_2;
-        body_write.orientation_w = std::f32::consts::FRAC_1_SQRT_2;
+        body_write.orientation_z = std::f64::consts::FRAC_1_SQRT_2;
+        body_write.orientation_w = std::f64::consts::FRAC_1_SQRT_2;
         let mut center = [0.0; 3];
         write_rigid_body_3d_world_center(&body_write, &mut center);
         assert!(center[0].abs() < 1e-6);

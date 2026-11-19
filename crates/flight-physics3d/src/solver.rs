@@ -15,7 +15,7 @@ use crate::{
     Physics3DContactConstraint, Physics3DContactConstraintPoint, Physics3DWorld, RigidBody3D,
 };
 
-const AXIS_SELECTION_THRESHOLD: f32 = 0.5773502691896258;
+const AXIS_SELECTION_THRESHOLD: f64 = 0.5773502691896258;
 
 pub fn create_physics_3d_contact_constraint() -> Physics3DContactConstraint {
     let mut out: Physics3DContactConstraint = allocate_entity();
@@ -41,12 +41,12 @@ pub fn initialize_physics_3d_contact_constraint_point(out: &mut Physics3DContact
 #[allow(clippy::too_many_arguments)]
 fn apply_body_impulse(
     body: &mut RigidBody3D,
-    rx: f32,
-    ry: f32,
-    rz: f32,
-    ix: f32,
-    iy: f32,
-    iz: f32,
+    rx: f64,
+    ry: f64,
+    rz: f64,
+    ix: f64,
+    iy: f64,
+    iz: f64,
 ) {
     body.velocity_x += ix * body.inverse_mass;
     body.velocity_y += iy * body.inverse_mass;
@@ -65,7 +65,7 @@ fn apply_body_impulse(
     body.angular_velocity_z += turn[2];
 }
 
-fn apply_body_position_correction(body: &mut RigidBody3D, r: [f32; 3], c: [f32; 3]) {
+fn apply_body_position_correction(body: &mut RigidBody3D, r: [f64; 3], c: [f64; 3]) {
     body.x += c[0] * body.inverse_mass;
     body.y += c[1] * body.inverse_mass;
     body.z += c[2] * body.inverse_mass;
@@ -91,7 +91,7 @@ fn apply_body_position_correction(body: &mut RigidBody3D, r: [f32; 3], c: [f32; 
         qz + 0.5 * (angle[2] * qw + angle[0] * qy - angle[1] * qx),
         qw - 0.5 * (angle[0] * qx + angle[1] * qy + angle[2] * qz),
     ];
-    let length = (next.iter().map(|v| v * v).sum::<f32>()).sqrt();
+    let length = (next.iter().map(|v| v * v).sum::<f64>()).sqrt();
     if length == 0.0 {
         return;
     }
@@ -110,15 +110,15 @@ fn apply_body_position_correction(body: &mut RigidBody3D, r: [f32; 3], c: [f32; 
 fn apply_contact_impulse(
     a: &mut RigidBody3D,
     b: &mut RigidBody3D,
-    rax: f32,
-    ray: f32,
-    raz: f32,
-    rbx: f32,
-    rby: f32,
-    rbz: f32,
-    ix: f32,
-    iy: f32,
-    iz: f32,
+    rax: f64,
+    ray: f64,
+    raz: f64,
+    rbx: f64,
+    rby: f64,
+    rbz: f64,
+    ix: f64,
+    iy: f64,
+    iz: f64,
 ) {
     apply_body_impulse(a, rax, ray, raz, ix, iy, iz);
     apply_body_impulse(b, rbx, rby, rbz, -ix, -iy, -iz);
@@ -127,9 +127,9 @@ fn apply_contact_impulse(
 fn apply_position_correction(
     a: &mut RigidBody3D,
     b: &mut RigidBody3D,
-    ra: [f32; 3],
-    rb: [f32; 3],
-    c: [f32; 3],
+    ra: [f64; 3],
+    rb: [f64; 3],
+    c: [f64; 3],
 ) {
     apply_body_position_correction(a, ra, c);
     apply_body_position_correction(b, rb, [-c[0], -c[1], -c[2]]);
@@ -139,16 +139,16 @@ fn apply_position_correction(
 fn get_effective_mass(
     a: &RigidBody3D,
     b: &RigidBody3D,
-    rax: f32,
-    ray: f32,
-    raz: f32,
-    rbx: f32,
-    rby: f32,
-    rbz: f32,
-    dx: f32,
-    dy: f32,
-    dz: f32,
-) -> f32 {
+    rax: f64,
+    ray: f64,
+    raz: f64,
+    rbx: f64,
+    rby: f64,
+    rbz: f64,
+    dx: f64,
+    dy: f64,
+    dz: f64,
+) -> f64 {
     let mut denominator = a.inverse_mass + b.inverse_mass;
     for (body, rx, ry, rz) in [(a, rax, ray, raz), (b, rbx, rby, rbz)] {
         let cross = [ry * dz - rz * dy, rz * dx - rx * dz, rx * dy - ry * dx];
@@ -173,16 +173,16 @@ fn get_effective_mass(
 fn get_relative_velocity(
     a: &RigidBody3D,
     b: &RigidBody3D,
-    rax: f32,
-    ray: f32,
-    raz: f32,
-    rbx: f32,
-    rby: f32,
-    rbz: f32,
-    dx: f32,
-    dy: f32,
-    dz: f32,
-) -> f32 {
+    rax: f64,
+    ray: f64,
+    raz: f64,
+    rbx: f64,
+    rby: f64,
+    rbz: f64,
+    dx: f64,
+    dy: f64,
+    dz: f64,
+) -> f64 {
     let pa = [
         a.velocity_x + a.angular_velocity_y * raz - a.angular_velocity_z * ray,
         a.velocity_y + a.angular_velocity_z * rax - a.angular_velocity_x * raz,
@@ -360,8 +360,8 @@ pub fn prepare_physics_3d_contact_constraints(world: &mut Physics3DWorld) {
 pub fn solve_physics_3d_contact_positions(
     world: &mut Physics3DWorld,
     registry: &CollisionRegistry3D,
-) -> f32 {
-    let mut deepest = 0.0_f32;
+) -> f64 {
+    let mut deepest = 0.0_f64;
     let mut manifold = create_collision_contact_manifold3d();
     let constraint_contacts: Vec<usize> = world
         .solver
@@ -604,7 +604,7 @@ pub fn warm_start_physics_3d_contacts(world: &mut Physics3DWorld) {
     }
 }
 
-fn world_inertia(body: &RigidBody3D) -> [f32; 6] {
+fn world_inertia(body: &RigidBody3D) -> [f64; 6] {
     return [
         body.inverse_inertia_world_xx,
         body.inverse_inertia_world_yy,
@@ -615,7 +615,7 @@ fn world_inertia(body: &RigidBody3D) -> [f32; 6] {
     ];
 }
 
-fn write_friction_basis(nx: f32, ny: f32, nz: f32, out: &mut Physics3DContactConstraint) {
+fn write_friction_basis(nx: f64, ny: f64, nz: f64, out: &mut Physics3DContactConstraint) {
     let (mut sx, mut sy, mut sz) = (0.0, 0.0, 0.0);
     if nx.abs() < AXIS_SELECTION_THRESHOLD {
         sx = 1.0

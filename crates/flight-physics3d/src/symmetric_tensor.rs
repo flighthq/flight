@@ -8,7 +8,7 @@ pub const TENSOR_XY: usize = 3;
 pub const TENSOR_XZ: usize = 4;
 pub const TENSOR_YZ: usize = 5;
 
-pub fn apply_symmetric_tensor(out: &mut [f32; 3], tensor: &[f32; 6], vx: f32, vy: f32, vz: f32) {
+pub fn apply_symmetric_tensor(out: &mut [f64; 3], tensor: &[f64; 6], vx: f64, vy: f64, vz: f64) {
     let xx = tensor[TENSOR_XX];
     let yy = tensor[TENSOR_YY];
     let zz = tensor[TENSOR_ZZ];
@@ -20,7 +20,7 @@ pub fn apply_symmetric_tensor(out: &mut [f32; 3], tensor: &[f32; 6], vx: f32, vy
     out[2] = xz * vx + yz * vy + zz * vz;
 }
 
-pub fn inverse_symmetric_tensor(out: &mut [f32; 6], tensor: &[f32; 6]) -> bool {
+pub fn inverse_symmetric_tensor(out: &mut [f64; 6], tensor: &[f64; 6]) -> bool {
     let xx = tensor[TENSOR_XX];
     let yy = tensor[TENSOR_YY];
     let zz = tensor[TENSOR_ZZ];
@@ -32,7 +32,7 @@ pub fn inverse_symmetric_tensor(out: &mut [f32; 6], tensor: &[f32; 6]) -> bool {
     let cofactor_xz = xy * yz - xz * yy;
     let determinant = xx * cofactor_xx + xy * cofactor_xy + xz * cofactor_xz;
     let scale = xx.abs() + yy.abs() + zz.abs();
-    if !determinant.is_finite() || determinant.abs() <= 1e-12_f32 * scale * scale * scale {
+    if !determinant.is_finite() || determinant.abs() <= 1e-12_f64 * scale * scale * scale {
         *out = [0.0; 6];
         return false;
     }
@@ -47,12 +47,12 @@ pub fn inverse_symmetric_tensor(out: &mut [f32; 6], tensor: &[f32; 6]) -> bool {
 }
 
 pub fn rotate_symmetric_tensor(
-    out: &mut [f32; 6],
-    tensor: &[f32; 6],
-    quaternion_x: f32,
-    quaternion_y: f32,
-    quaternion_z: f32,
-    quaternion_w: f32,
+    out: &mut [f64; 6],
+    tensor: &[f64; 6],
+    quaternion_x: f64,
+    quaternion_y: f64,
+    quaternion_z: f64,
+    quaternion_w: f64,
 ) {
     let x2 = quaternion_x + quaternion_x;
     let y2 = quaternion_y + quaternion_y;
@@ -99,12 +99,12 @@ pub fn rotate_symmetric_tensor(
 }
 
 pub fn translate_symmetric_tensor(
-    out: &mut [f32; 6],
-    tensor: &[f32; 6],
-    mass: f32,
-    dx: f32,
-    dy: f32,
-    dz: f32,
+    out: &mut [f64; 6],
+    tensor: &[f64; 6],
+    mass: f64,
+    dx: f64,
+    dy: f64,
+    dz: f64,
 ) {
     let xx = tensor[TENSOR_XX];
     let yy = tensor[TENSOR_YY];

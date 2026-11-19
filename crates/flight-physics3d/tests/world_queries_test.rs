@@ -22,9 +22,9 @@ fn unit_box() -> CollisionShape3D {
 
 fn add_box_body(
     world: &mut Physics3DWorld,
-    x: f32,
-    y: f32,
-    z: f32,
+    x: f64,
+    y: f64,
+    z: f64,
     body_type: Physics3DBodyType,
     sensor: bool,
 ) -> RigidBody3DRef {
@@ -42,7 +42,7 @@ fn add_box_body(
     body
 }
 
-fn region(min_x: f32, min_y: f32, min_z: f32, max_x: f32, max_y: f32, max_z: f32) -> SpatialAabb3D {
+fn region(min_x: f64, min_y: f64, min_z: f64, max_x: f64, max_y: f64, max_z: f64) -> SpatialAabb3D {
     SpatialAabb3D {
         min_x,
         min_y,
@@ -262,7 +262,7 @@ mod query_physics_3d_point {
         let mut world = world();
         add_box_body(&mut world, 0.0, 0.0, 0.0, Physics3DBodyType::Dynamic, false);
         let mut out = create_physics_3d_query_result();
-        query_physics_3d_point(&mut out, &mut world, f32::NAN, 0.0, 0.0, None);
+        query_physics_3d_point(&mut out, &mut world, f64::NAN, 0.0, 0.0, None);
         assert_eq!(out.hit_count, 0);
     }
 
@@ -394,7 +394,7 @@ mod query_physics_3d_ray {
             1.0,
             0.0,
             0.0,
-            Some(f32::INFINITY),
+            Some(f64::INFINITY),
             Some(&filter),
         );
         assert_eq!(out.hit_count, 0);
@@ -411,7 +411,7 @@ mod query_physics_3d_ray {
             0.0,
             0.0,
             0.0,
-            f32::NAN,
+            f64::NAN,
             0.0,
             0.0,
             None,
@@ -616,7 +616,7 @@ mod query_physics_3d_region {
         query_physics_3d_region(
             &mut out,
             &mut world,
-            &region(f32::NAN, -1.0, -1.0, 1.0, 1.0, 1.0),
+            &region(f64::NAN, -1.0, -1.0, 1.0, 1.0, 1.0),
             None,
         );
         assert_eq!(out.hit_count, 0);
@@ -833,7 +833,7 @@ mod query_physics_3d_shape_cast {
             &mut world,
             &registry,
             &unit_box(),
-            f32::NAN,
+            f64::NAN,
             0.0,
             0.0,
             None,
@@ -848,7 +848,7 @@ mod query_physics_3d_shape_cast {
             20.0,
             0.0,
             0.0,
-            Some(f32::INFINITY),
+            Some(f64::INFINITY),
             None,
         );
         assert!(!out.hit);

@@ -13,47 +13,47 @@ use flight_spatial::SpatialPair;
 use crate::contacts::set_physics_3d_contact_pair;
 use crate::*;
 
-const APPROACH_EPSILON: f32 = 1e-9;
+const APPROACH_EPSILON: f64 = 1e-9;
 const CCD_ROTATION_BISECTION_ITERATIONS: usize = 12;
-const CCD_ROTATION_INCREMENT: f32 = std::f32::consts::PI / 180.0;
-const IMPACT_AXIS_SELECTION_THRESHOLD: f32 = 0.577_350_26;
+const CCD_ROTATION_INCREMENT: f64 = std::f64::consts::PI / 180.0;
+const IMPACT_AXIS_SELECTION_THRESHOLD: f64 = 0.577_350_26;
 const ROTATIONAL_IMPACT_ITERATIONS: usize = 4;
 
 #[derive(Clone)]
 struct ImpactPoint {
-    x: f32,
-    y: f32,
-    z: f32,
-    depth: f32,
+    x: f64,
+    y: f64,
+    z: f64,
+    depth: f64,
     feature_id: i64,
 }
 
 #[derive(Clone)]
 struct Impact {
-    fraction: f32,
+    fraction: f64,
     body_a: i32,
     body_b: i32,
     collider_a: usize,
     collider_b: usize,
-    normal_x: f32,
-    normal_y: f32,
-    normal_z: f32,
-    friction: f32,
-    restitution: f32,
+    normal_x: f64,
+    normal_y: f64,
+    normal_z: f64,
+    friction: f64,
+    restitution: f64,
     rotational: bool,
     points: Vec<ImpactPoint>,
 }
 
 #[derive(Clone)]
 struct ImpactCandidate {
-    fraction: f32,
-    normal_x: f32,
-    normal_y: f32,
-    normal_z: f32,
+    fraction: f64,
+    normal_x: f64,
+    normal_y: f64,
+    normal_z: f64,
     rotational: bool,
     points: Vec<ImpactPoint>,
-    center_a: [f32; 3],
-    center_b: [f32; 3],
+    center_a: [f64; 3],
+    center_b: [f64; 3],
 }
 
 fn create_impact_contact(impact: &Impact) -> Physics3DContactRef {
@@ -68,7 +68,7 @@ fn create_impact_contact(impact: &Impact) -> Physics3DContactRef {
     return contact;
 }
 
-fn advance_awake_bodies(world: &mut Physics3DWorld, dt: f32) {
+fn advance_awake_bodies(world: &mut Physics3DWorld, dt: f64) {
     for body in &world.bodies {
         let mut body = body.write().unwrap();
         if body.body_type == Physics3DBodyType::Static || body.sleeping {
@@ -79,7 +79,7 @@ fn advance_awake_bodies(world: &mut Physics3DWorld, dt: f32) {
     }
 }
 
-fn angular_mass_term(body: &RigidBody3D, r: [f32; 3], normal: [f32; 3]) -> f32 {
+fn angular_mass_term(body: &RigidBody3D, r: [f64; 3], normal: [f64; 3]) -> f64 {
     let cross = [
         r[1] * normal[2] - r[2] * normal[1],
         r[2] * normal[0] - r[0] * normal[2],
@@ -93,12 +93,12 @@ fn angular_mass_term(body: &RigidBody3D, r: [f32; 3], normal: [f32; 3]) -> f32 {
 
 fn apply_impact_impulse(
     body: &mut RigidBody3D,
-    r_x: f32,
-    r_y: f32,
-    r_z: f32,
-    impulse_x: f32,
-    impulse_y: f32,
-    impulse_z: f32,
+    r_x: f64,
+    r_y: f64,
+    r_z: f64,
+    impulse_x: f64,
+    impulse_y: f64,
+    impulse_z: f64,
 ) {
     body.velocity_x += impulse_x * body.inverse_mass;
     body.velocity_y += impulse_y * body.inverse_mass;
@@ -127,9 +127,9 @@ fn ccd_pair_active(a: &RigidBody3D, b: &RigidBody3D) -> bool {
 fn centers_at_fraction(
     body_a: &mut RigidBody3D,
     body_b: &mut RigidBody3D,
-    dt: f32,
-    fraction: f32,
-) -> ([f32; 3], [f32; 3]) {
+    dt: f64,
+    fraction: f64,
+) -> ([f64; 3], [f64; 3]) {
     let pose_a = save_pose(body_a);
     let pose_b = save_pose(body_b);
     integrate_rigid_body_3d_pose(body_a, dt * fraction);
@@ -153,10 +153,10 @@ fn collider_pair_enabled(a: &Physics3DCollider, b: &Physics3DCollider) -> bool {
 fn effective_mass(
     a: &RigidBody3D,
     b: &RigidBody3D,
-    r_a: [f32; 3],
-    r_b: [f32; 3],
-    normal: [f32; 3],
-) -> f32 {
+    r_a: [f64; 3],
+    r_b: [f64; 3],
+    normal: [f64; 3],
+) -> f64 {
     let denominator = a.inverse_mass
         + b.inverse_mass
         + angular_mass_term(a, r_a, normal)
@@ -174,7 +174,7 @@ fn find_collider_impact(
     body_b: &mut RigidBody3D,
     collider_a: &mut Physics3DCollider,
     collider_b: &mut Physics3DCollider,
-    dt: f32,
+    dt: f64,
     max_rotation_substeps: usize,
     accept_non_approaching: bool,
 ) -> Option<ImpactCandidate> {
@@ -293,7 +293,7 @@ fn find_collider_impact(
 fn find_earliest_impact(
     world: &mut Physics3DWorld,
     registry: &CollisionRegistry3D,
-    dt: f32,
+    dt: f64,
 ) -> Option<Impact> {
     synchronize_physics_3d_swept_broadphase(world, dt);
     let mut pairs = Vec::<SpatialPair>::new();
@@ -380,7 +380,7 @@ fn find_earliest_impact(
     }
     let boundary = earliest
         .as_ref()
-        .map_or(f32::INFINITY, |impact| impact.fraction);
+        .map_or(f64::INFINITY, |impact| impact.fraction);
     sensors.sort_by(|a, b| {
         return a
             .fraction
@@ -404,8 +404,8 @@ fn find_rotational_impact(
     body_b: &mut RigidBody3D,
     collider_a: &mut Physics3DCollider,
     collider_b: &mut Physics3DCollider,
-    dt: f32,
-    angular_travel: f32,
+    dt: f64,
+    angular_travel: f64,
     max_substeps: usize,
 ) -> Option<ImpactCandidate> {
     if overlap_at_fraction(registry, body_a, body_b, collider_a, collider_b, dt, 0.0).is_some() {
@@ -414,7 +414,7 @@ fn find_rotational_impact(
     let substeps = rotation_sample_count(angular_travel, max_substeps);
     let mut lower_fraction = 0.0;
     for sample in 1..=substeps {
-        let upper_fraction = sample as f32 / substeps as f32;
+        let upper_fraction = sample as f64 / substeps as f64;
         if overlap_at_fraction(
             registry,
             body_a,
@@ -469,7 +469,7 @@ fn find_rotational_impact(
     return None;
 }
 
-fn friction_basis(normal: [f32; 3]) -> ([f32; 3], [f32; 3]) {
+fn friction_basis(normal: [f64; 3]) -> ([f64; 3], [f64; 3]) {
     let seed = if normal[0].abs() < IMPACT_AXIS_SELECTION_THRESHOLD {
         [1.0, 0.0, 0.0]
     } else if normal[1].abs() < IMPACT_AXIS_SELECTION_THRESHOLD {
@@ -517,7 +517,7 @@ fn has_contact_transition(world: &Physics3DWorld, impact: &Impact) -> bool {
 pub fn integrate_physics_3d_continuous(
     world: &mut Physics3DWorld,
     registry: &CollisionRegistry3D,
-    dt: f32,
+    dt: f64,
 ) {
     if world.continuous_integrating {
         throw_error("Cannot integrate a physics world recursively while it is stepping");
@@ -564,9 +564,9 @@ fn overlap_at_fraction(
     body_b: &mut RigidBody3D,
     collider_a: &mut Physics3DCollider,
     collider_b: &mut Physics3DCollider,
-    dt: f32,
-    fraction: f32,
-) -> Option<(CollisionContactManifold3D, [f32; 3], [f32; 3])> {
+    dt: f64,
+    fraction: f64,
+) -> Option<(CollisionContactManifold3D, [f64; 3], [f64; 3])> {
     let pose_a = save_pose(body_a);
     let pose_b = save_pose(body_b);
     integrate_rigid_body_3d_pose(body_a, dt * fraction);
@@ -599,10 +599,10 @@ fn overlap_at_fraction(
 fn point_normal_velocity(
     a: &RigidBody3D,
     b: &RigidBody3D,
-    r_a: [f32; 3],
-    r_b: [f32; 3],
-    normal: [f32; 3],
-) -> f32 {
+    r_a: [f64; 3],
+    r_b: [f64; 3],
+    normal: [f64; 3],
+) -> f64 {
     let point_a = [
         a.velocity_x + a.angular_velocity_y * r_a[2] - a.angular_velocity_z * r_a[1],
         a.velocity_y + a.angular_velocity_z * r_a[0] - a.angular_velocity_x * r_a[2],
@@ -621,16 +621,16 @@ fn point_normal_velocity(
 fn relative_normal_velocity(
     a: &RigidBody3D,
     b: &RigidBody3D,
-    normal_x: f32,
-    normal_y: f32,
-    normal_z: f32,
-) -> f32 {
+    normal_x: f64,
+    normal_y: f64,
+    normal_z: f64,
+) -> f64 {
     return (a.velocity_x - b.velocity_x) * normal_x
         + (a.velocity_y - b.velocity_y) * normal_y
         + (a.velocity_z - b.velocity_z) * normal_z;
 }
 
-fn report_sensor_impact(world: &mut Physics3DWorld, impact: Impact, dt: f32) {
+fn report_sensor_impact(world: &mut Physics3DWorld, impact: Impact, dt: f64) {
     let (Some(a_ref), Some(b_ref)) = (
         world.body_by_index.get(&impact.body_a).cloned(),
         world.body_by_index.get(&impact.body_b).cloned(),
@@ -763,8 +763,8 @@ fn resolve_rotational_impact(
     a: &mut RigidBody3D,
     b: &mut RigidBody3D,
     impact: &Impact,
-    friction: f32,
-    restitution: f32,
+    friction: f64,
+    restitution: f64,
 ) {
     let (mut center_a, mut center_b) = ([0.0; 3], [0.0; 3]);
     write_rigid_body_3d_world_center(a, &mut center_a);
@@ -869,7 +869,7 @@ fn resolve_rotational_impact(
     }
 }
 
-fn restore_pose(body: &mut RigidBody3D, pose: &[f32; 7]) {
+fn restore_pose(body: &mut RigidBody3D, pose: &[f64; 7]) {
     body.x = pose[0];
     body.y = pose[1];
     body.z = pose[2];
@@ -879,7 +879,7 @@ fn restore_pose(body: &mut RigidBody3D, pose: &[f32; 7]) {
     body.orientation_w = pose[6];
 }
 
-fn rotation_sample_count(angular_travel: f32, max_substeps: usize) -> usize {
+fn rotation_sample_count(angular_travel: f64, max_substeps: usize) -> usize {
     if angular_travel <= 0.0 || max_substeps == 0 {
         return 0;
     } else {
@@ -942,7 +942,7 @@ fn run_impact_pre_solve_hook(world: &mut Physics3DWorld, contact: &Physics3DCont
     }
 }
 
-fn save_pose(body: &RigidBody3D) -> [f32; 7] {
+fn save_pose(body: &RigidBody3D) -> [f64; 7] {
     return [
         body.x,
         body.y,
@@ -962,7 +962,7 @@ fn wake_impact_body(body: &RigidBody3DRef) {
     }
 }
 
-fn world_inverse_inertia(body: &RigidBody3D) -> [f32; 6] {
+fn world_inverse_inertia(body: &RigidBody3D) -> [f64; 6] {
     return [
         body.inverse_inertia_world_xx,
         body.inverse_inertia_world_yy,
@@ -1033,9 +1033,9 @@ fn write_impact_contact(
 
 pub fn write_physics_3d_rotational_ccd_envelope(
     out: &mut Physics3DRotationalCcdEnvelope,
-    angular_speed: f32,
-    maximum_radius: f32,
-    dt: f32,
+    angular_speed: f64,
+    maximum_radius: f64,
+    dt: f64,
     max_substeps: usize,
 ) -> bool {
     if !angular_speed.is_finite()
@@ -1057,9 +1057,9 @@ pub fn write_physics_3d_rotational_ccd_envelope(
     let max_angular_increment = if angular_travel == 0.0 {
         0.0
     } else if sample_count == 0 {
-        f32::INFINITY
+        f64::INFINITY
     } else {
-        angular_travel / sample_count as f32
+        angular_travel / sample_count as f64
     };
     out.angular_travel = angular_travel;
     out.sample_count = sample_count;

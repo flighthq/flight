@@ -279,19 +279,19 @@ mod update_physics_3d_sleep {
         let mut world = world();
         let body = create_box(&mut world);
         let frame_duration = 1.0_f64 / 60.0;
-        let frames_to_sleep = (f64::from(world.config.time_to_sleep) / frame_duration) as usize;
+        let frames_to_sleep = (world.config.time_to_sleep / frame_duration) as usize;
         assert_eq!(frames_to_sleep, 30);
         let mut accumulated = 0.0_f64;
 
         for _ in 1..frames_to_sleep {
             accumulated += frame_duration;
-            update_physics_3d_sleep(&mut world, frame_duration as f32);
+            update_physics_3d_sleep(&mut world, frame_duration);
         }
         assert!(!body.read().unwrap().sleeping);
 
         accumulated += frame_duration;
-        update_physics_3d_sleep(&mut world, frame_duration as f32);
-        assert!(accumulated < f64::from(world.config.time_to_sleep));
+        update_physics_3d_sleep(&mut world, frame_duration);
+        assert!(accumulated < world.config.time_to_sleep);
         assert!(body.read().unwrap().sleeping);
     }
 

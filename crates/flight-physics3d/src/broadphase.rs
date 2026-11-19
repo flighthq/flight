@@ -10,10 +10,10 @@ use crate::physics_3d_broadphase_publication::{
 };
 use crate::{Physics3DBodyType, Physics3DWorld};
 
-const MAX_SIMULATED_EXTENT: f32 = 1e7;
+const MAX_SIMULATED_EXTENT: f64 = 1e7;
 
-fn padded_upper_bound(value: f32) -> f32 {
-    let padded = value + value.abs().max(1.0) * f32::EPSILON * 4.0;
+fn padded_upper_bound(value: f64) -> f64 {
+    let padded = value + value.abs().max(1.0) * f64::EPSILON * 4.0;
     return if padded.is_finite() { padded } else { value };
 }
 
@@ -21,15 +21,15 @@ pub fn synchronize_physics_3d_broadphase(world: &mut Physics3DWorld) {
     synchronize_physics_3d_broadphase_with_dt(world, 0.0);
 }
 
-fn synchronize_physics_3d_broadphase_with_dt(world: &mut Physics3DWorld, dt: f32) {
+fn synchronize_physics_3d_broadphase_with_dt(world: &mut Physics3DWorld, dt: f64) {
     let bodies = world.bodies.clone();
     for body_ref in bodies {
         let body = body_ref.read().unwrap();
         let mut bounds = SpatialAabb3D::default();
-        let (mut min_x, mut min_y, mut min_z) = (f32::INFINITY, f32::INFINITY, f32::INFINITY);
+        let (mut min_x, mut min_y, mut min_z) = (f64::INFINITY, f64::INFINITY, f64::INFINITY);
         let (mut max_x, mut max_y, mut max_z) =
-            (f32::NEG_INFINITY, f32::NEG_INFINITY, f32::NEG_INFINITY);
-        let mut rotation_radius_squared = 0.0_f32;
+            (f64::NEG_INFINITY, f64::NEG_INFINITY, f64::NEG_INFINITY);
+        let mut rotation_radius_squared = 0.0_f64;
         for collider_ref in &body.colliders {
             let mut collider = collider_ref.write().unwrap();
             update_physics_3d_collider_world_shape(&mut collider, &body);
@@ -126,6 +126,6 @@ fn synchronize_physics_3d_broadphase_with_dt(world: &mut Physics3DWorld, dt: f32
     }
 }
 
-pub fn synchronize_physics_3d_swept_broadphase(world: &mut Physics3DWorld, dt: f32) {
+pub fn synchronize_physics_3d_swept_broadphase(world: &mut Physics3DWorld, dt: f64) {
     synchronize_physics_3d_broadphase_with_dt(world, dt);
 }

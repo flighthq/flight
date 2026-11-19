@@ -22,7 +22,7 @@ fn test_joint() -> flight_entity::Ref<Physics3DBallAndSocketJoint> {
     physics_3d_ball_and_socket_joint(&joint_options(0, 1))
 }
 
-fn set_axis_angle(body: &RigidBody3DRef, x: f32, y: f32, z: f32, angle: f32) {
+fn set_axis_angle(body: &RigidBody3DRef, x: f64, y: f64, z: f64, angle: f64) {
     let sine = (angle * 0.5).sin();
     let mut body = body.write().unwrap();
     body.orientation_x = x * sine;
@@ -32,12 +32,12 @@ fn set_axis_angle(body: &RigidBody3DRef, x: f32, y: f32, z: f32, angle: f32) {
     refresh_rigid_body_3d_world_inertia(&mut body);
 }
 
-fn normalized(x: f32, y: f32, z: f32) -> [f32; 3] {
+fn normalized(x: f64, y: f64, z: f64) -> [f64; 3] {
     let length = (x * x + y * y + z * z).sqrt();
     [x / length, y / length, z / length]
 }
 
-fn cross(a: [f32; 3], b: [f32; 3]) -> [f32; 3] {
+fn cross(a: [f64; 3], b: [f64; 3]) -> [f64; 3] {
     [
         a[1] * b[2] - a[2] * b[1],
         a[2] * b[0] - a[0] * b[2],
@@ -45,7 +45,7 @@ fn cross(a: [f32; 3], b: [f32; 3]) -> [f32; 3] {
     ]
 }
 
-fn multiply(a: [f32; 4], b: [f32; 4]) -> [f32; 4] {
+fn multiply(a: [f64; 4], b: [f64; 4]) -> [f64; 4] {
     [
         a[3] * b[0] + a[0] * b[3] + a[1] * b[2] - a[2] * b[1],
         a[3] * b[1] - a[0] * b[2] + a[1] * b[3] + a[2] * b[0],
@@ -54,7 +54,7 @@ fn multiply(a: [f32; 4], b: [f32; 4]) -> [f32; 4] {
     ]
 }
 
-fn assert_close(actual: f32, expected: f32) {
+fn assert_close(actual: f64, expected: f64) {
     assert!(
         (actual - expected).abs() < 1e-5,
         "actual={actual}, expected={expected}"
@@ -492,7 +492,7 @@ mod write_physics_3d_joint_anchors {
     #[test]
     fn rotates_the_local_anchor_by_the_body_orientation() {
         let a = unit_body();
-        set_axis_angle(&a, 0.0, 0.0, 1.0, std::f32::consts::FRAC_PI_2);
+        set_axis_angle(&a, 0.0, 0.0, 1.0, std::f64::consts::FRAC_PI_2);
         let b = unit_body();
         let joint = test_joint();
         joint.write().unwrap().joint.local_anchor_ax = 1.0;
@@ -559,7 +559,7 @@ mod write_physics_3d_joint_frame_basis {
     #[test]
     fn carries_the_body_orientation_into_the_frame_axes() {
         let body = unit_body();
-        set_axis_angle(&body, 0.0, 0.0, 1.0, std::f32::consts::FRAC_PI_2);
+        set_axis_angle(&body, 0.0, 0.0, 1.0, std::f64::consts::FRAC_PI_2);
         let mut out = [0.0; 9];
 
         write_physics_3d_joint_frame_basis(&mut out, &body.read().unwrap(), 0.0, 0.0, 0.0, 1.0);
@@ -573,8 +573,8 @@ mod write_physics_3d_joint_frame_basis {
     #[test]
     fn applies_the_local_rotation_before_the_body_orientation() {
         let body = unit_body();
-        set_axis_angle(&body, 0.0, 0.0, 1.0, std::f32::consts::FRAC_PI_2);
-        let half = std::f32::consts::FRAC_1_SQRT_2;
+        set_axis_angle(&body, 0.0, 0.0, 1.0, std::f64::consts::FRAC_PI_2);
+        let half = std::f64::consts::FRAC_1_SQRT_2;
         let mut out = [0.0; 9];
 
         write_physics_3d_joint_frame_basis(&mut out, &body.read().unwrap(), half, 0.0, 0.0, half);
@@ -606,8 +606,8 @@ mod write_physics_3d_joint_frame_rotation {
     #[test]
     fn composes_two_quarter_turns_about_the_same_axis_into_a_half_turn() {
         let body = unit_body();
-        set_axis_angle(&body, 0.0, 0.0, 1.0, std::f32::consts::FRAC_PI_2);
-        let half = std::f32::consts::FRAC_1_SQRT_2;
+        set_axis_angle(&body, 0.0, 0.0, 1.0, std::f64::consts::FRAC_PI_2);
+        let half = std::f64::consts::FRAC_1_SQRT_2;
         let mut out = [0.0; 4];
 
         write_physics_3d_joint_frame_rotation(
@@ -709,8 +709,8 @@ mod write_physics_3d_joint_relative_rotation {
 
     #[test]
     fn expresses_the_relative_rotation_in_frame_a_not_world_space() {
-        let quarter = std::f32::consts::FRAC_1_SQRT_2;
-        let twist = 0.4_f32;
+        let quarter = std::f64::consts::FRAC_1_SQRT_2;
+        let twist = 0.4_f64;
         let frame_b = multiply(
             [0.0, 0.0, quarter, quarter],
             [(twist * 0.5).sin(), 0.0, 0.0, (twist * 0.5).cos()],
@@ -736,7 +736,7 @@ mod write_physics_3d_joint_relative_rotation {
 
     #[test]
     fn returns_the_representative_with_a_non_negative_scalar_part() {
-        let angle = std::f32::consts::TAU - 0.3;
+        let angle = std::f64::consts::TAU - 0.3;
         let half = angle * 0.5;
         let mut out = [0.0; 4];
 
@@ -753,7 +753,7 @@ mod write_physics_3d_joint_relative_rotation {
         );
 
         assert!(out[3] >= 0.0);
-        assert_close(out[2], -0.15_f32.sin());
+        assert_close(out[2], -0.15_f64.sin());
     }
 }
 
@@ -770,19 +770,19 @@ mod write_physics_3d_joint_rotation_error {
     #[test]
     fn reports_the_true_angle_rather_than_its_small_angle_approximation() {
         let mut out = [0.0; 3];
-        let half = std::f32::consts::FRAC_1_SQRT_2;
+        let half = std::f64::consts::FRAC_1_SQRT_2;
 
         write_physics_3d_joint_rotation_error(&mut out, 0.0, 0.0, 0.0, 1.0, 0.0, half, 0.0, half);
 
         assert_close(out[0], 0.0);
-        assert_close(out[1], std::f32::consts::FRAC_PI_2);
+        assert_close(out[1], std::f64::consts::FRAC_PI_2);
         assert_close(out[2], 0.0);
     }
 
     #[test]
     fn takes_the_shorter_arc_when_frames_are_aligned_the_long_way_round() {
         let mut out = [0.0; 3];
-        let angle = std::f32::consts::TAU - 0.3;
+        let angle = std::f64::consts::TAU - 0.3;
         let half = angle * 0.5;
 
         write_physics_3d_joint_rotation_error(
@@ -802,8 +802,8 @@ mod write_physics_3d_joint_rotation_error {
 
     #[test]
     fn expresses_the_error_in_world_space_not_in_frame_a() {
-        let quarter = std::f32::consts::FRAC_1_SQRT_2;
-        let twist = 0.4_f32;
+        let quarter = std::f64::consts::FRAC_1_SQRT_2;
+        let twist = 0.4_f64;
         let frame_b = multiply(
             [0.0, 0.0, quarter, quarter],
             [(twist * 0.5).sin(), 0.0, 0.0, (twist * 0.5).cos()],

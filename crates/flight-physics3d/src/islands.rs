@@ -5,7 +5,7 @@ use std::collections::HashMap;
 
 use crate::{Physics3DBodyType, Physics3DWorld, RigidBody3D};
 
-fn body_is_still(body: &RigidBody3D, linear: f32, angular: f32) -> bool {
+fn body_is_still(body: &RigidBody3D, linear: f64, angular: f64) -> bool {
     if [
         body.force_x,
         body.force_y,
@@ -254,10 +254,10 @@ fn union_pair_owned(world: &mut Physics3DWorld, a: i32, b: i32) {
     }
 }
 
-pub fn update_physics_3d_sleep(world: &mut Physics3DWorld, dt: f32) {
+pub fn update_physics_3d_sleep(world: &mut Physics3DWorld, dt: f64) {
     let world_island_parents: &mut HashMap<i32, i32> = &mut world.island_parents;
     world_island_parents.clear();
-    let world_island_sleep_timers: &mut HashMap<i32, f32> = &mut world.island_sleep_timers;
+    let world_island_sleep_timers: &mut HashMap<i32, f64> = &mut world.island_sleep_timers;
     world_island_sleep_timers.clear();
     // Build directly into the world-owned graph without retaining contact locks.
     let contact_pairs: Vec<(i32, i32)> = world
@@ -350,7 +350,7 @@ pub fn update_physics_3d_sleep(world: &mut Physics3DWorld, dt: f32) {
             .get(&root)
             .copied()
             .unwrap_or(body.sleep_timer);
-        let tolerance = f32::EPSILON * 1.0_f32.max(timer).max(world.config.time_to_sleep);
+        let tolerance = f64::EPSILON * 1.0_f64.max(timer).max(world.config.time_to_sleep);
         let should = body.sleep_enabled && timer + tolerance >= world.config.time_to_sleep;
         if !should && body.sleeping {
             body.sleep_timer = 0.0;

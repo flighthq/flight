@@ -8,14 +8,14 @@ pub const ROW_LENGTH: usize = 9;
 pub const POINT_MASS: usize = 0;
 pub const POINT_BIAS: usize = 6;
 pub const POINT_LENGTH: usize = 9;
-const BAUMGARTE: f32 = 0.2;
+const BAUMGARTE: f64 = 0.2;
 
 pub fn apply_row(
     a: &mut RigidBody3D,
     b: &mut RigidBody3D,
-    state: &[f32],
+    state: &[f64],
     offset: usize,
-    impulse: f32,
+    impulse: f64,
 ) {
     if impulse == 0.0 {
         return;
@@ -36,7 +36,7 @@ pub fn apply_row(
     );
 }
 
-pub fn begin_joint_solve(joint: &mut dyn Physics3DJoint, length: usize) -> &mut Vec<f32> {
+pub fn begin_joint_solve(joint: &mut dyn Physics3DJoint, length: usize) -> &mut Vec<f64> {
     let f = joint.fields_mut();
     let state = f.solve_state.get_or_insert_with(Vec::new);
     state.resize(length, 0.0);
@@ -47,11 +47,11 @@ pub fn clear_joint_solve(joint: &mut dyn Physics3DJoint) {
     joint.fields_mut().solve_state = None;
 }
 
-pub fn get_joint_solve_state(joint: &dyn Physics3DJoint) -> Option<&[f32]> {
+pub fn get_joint_solve_state(joint: &dyn Physics3DJoint) -> Option<&[f64]> {
     return joint.fields().solve_state.as_deref();
 }
 
-pub fn get_row_mass(a: &RigidBody3D, b: &RigidBody3D, state: &[f32], offset: usize) -> f32 {
+pub fn get_row_mass(a: &RigidBody3D, b: &RigidBody3D, state: &[f64], offset: usize) -> f64 {
     return get_physics_3d_joint_row_mass(
         a,
         b,
@@ -67,7 +67,7 @@ pub fn get_row_mass(a: &RigidBody3D, b: &RigidBody3D, state: &[f32], offset: usi
     );
 }
 
-pub fn get_row_velocity(a: &RigidBody3D, b: &RigidBody3D, state: &[f32], offset: usize) -> f32 {
+pub fn get_row_velocity(a: &RigidBody3D, b: &RigidBody3D, state: &[f64], offset: usize) -> f64 {
     return get_physics_3d_joint_row_velocity(
         a,
         b,
@@ -84,14 +84,14 @@ pub fn get_row_velocity(a: &RigidBody3D, b: &RigidBody3D, state: &[f32], offset:
 }
 
 pub fn prepare_angular_block(
-    state: &mut [f32],
+    state: &mut [f64],
     mass_offset: usize,
     bias_offset: usize,
     a: &RigidBody3D,
     b: &RigidBody3D,
-    frame_a: &[f32; 4],
-    frame_b: &[f32; 4],
-    dt: f32,
+    frame_a: &[f64; 4],
+    frame_b: &[f64; 4],
+    dt: f64,
 ) {
     let mut tensor = [0.0; 6];
     let mut inverse = [0.0; 6];
@@ -113,8 +113,8 @@ pub fn prepare_point_block(
     a: &RigidBody3D,
     b: &RigidBody3D,
     joint: &mut dyn Physics3DJoint,
-    state: &mut [f32],
-    dt: f32,
+    state: &mut [f64],
+    dt: f64,
 ) {
     write_physics_3d_joint_anchors(joint, a, b);
     let f = joint.fields();
@@ -141,8 +141,8 @@ pub fn prepare_point_block(
 }
 
 pub fn read_frame_bases(
-    out_a: &mut [f32; 9],
-    out_b: &mut [f32; 9],
+    out_a: &mut [f64; 9],
+    out_b: &mut [f64; 9],
     a: &RigidBody3D,
     b: &RigidBody3D,
     frames: &Physics3DJointFrames,
@@ -166,8 +166,8 @@ pub fn read_frame_bases(
 }
 
 pub fn read_frame_rotations(
-    out_a: &mut [f32; 4],
-    out_b: &mut [f32; 4],
+    out_a: &mut [f64; 4],
+    out_b: &mut [f64; 4],
     a: &RigidBody3D,
     b: &RigidBody3D,
     frames: &Physics3DJointFrames,
@@ -190,7 +190,7 @@ pub fn read_frame_rotations(
     );
 }
 
-pub fn read_joint_impulse(joint: &dyn Physics3DJoint, slot: usize) -> f32 {
+pub fn read_joint_impulse(joint: &dyn Physics3DJoint, slot: usize) -> f64 {
     let f = joint.fields();
     match slot {
         0 => return f.impulse0,
@@ -206,11 +206,11 @@ pub fn solve_angular_block(
     a: &mut RigidBody3D,
     b: &mut RigidBody3D,
     joint: &mut dyn Physics3DJoint,
-    state: &[f32],
+    state: &[f64],
     mass_offset: usize,
     bias_offset: usize,
 ) {
-    let tensor: [f32; 6] = state[mass_offset..mass_offset + 6].try_into().unwrap();
+    let tensor: [f64; 6] = state[mass_offset..mass_offset + 6].try_into().unwrap();
     let mut result = [0.0; 3];
     apply_symmetric_tensor(
         &mut result,
@@ -233,11 +233,11 @@ pub fn solve_equality_row(
     b: &mut RigidBody3D,
     joint: &mut dyn Physics3DJoint,
     slot: usize,
-    state: &[f32],
+    state: &[f64],
     offset: usize,
-    mass: f32,
-    error: f32,
-    bias_factor: f32,
+    mass: f64,
+    error: f64,
+    bias_factor: f64,
 ) {
     let impulse = -mass * (get_row_velocity(a, b, state, offset) + error * bias_factor);
     let previous = read_joint_impulse(joint, slot);
@@ -249,13 +249,13 @@ pub fn solve_equality_row(
 pub fn solve_lower_limit_row(
     a: &mut RigidBody3D,
     b: &mut RigidBody3D,
-    state: &mut [f32],
+    state: &mut [f64],
     offset: usize,
-    mass: f32,
-    error: f32,
-    bias_factor: f32,
+    mass: f64,
+    error: f64,
+    bias_factor: f64,
     accumulator_slot: usize,
-    gamma: Option<f32>,
+    gamma: Option<f64>,
 ) {
     let previous = state[accumulator_slot];
     let total = (previous
@@ -272,13 +272,13 @@ pub fn solve_lower_limit_row(
 pub fn solve_motor_row(
     a: &mut RigidBody3D,
     b: &mut RigidBody3D,
-    state: &[f32],
+    state: &[f64],
     offset: usize,
-    mass: f32,
-    speed: f32,
-    max_impulse: f32,
-    previous: f32,
-) -> f32 {
+    mass: f64,
+    speed: f64,
+    max_impulse: f64,
+    previous: f64,
+) -> f64 {
     let total = (previous - mass * (get_row_velocity(a, b, state, offset) - speed))
         .clamp(-max_impulse, max_impulse);
     apply_row(a, b, state, offset, total - previous);
@@ -289,11 +289,11 @@ pub fn solve_point_block(
     a: &mut RigidBody3D,
     b: &mut RigidBody3D,
     joint: &mut dyn Physics3DJoint,
-    state: &[f32],
+    state: &[f64],
 ) {
     let mut velocity = [0.0; 3];
     write_physics_3d_joint_anchor_velocity(&mut velocity, a, b, joint);
-    let tensor: [f32; 6] = state[POINT_MASS..POINT_MASS + 6].try_into().unwrap();
+    let tensor: [f64; 6] = state[POINT_MASS..POINT_MASS + 6].try_into().unwrap();
     let mut result = [0.0; 3];
     apply_symmetric_tensor(
         &mut result,
@@ -316,13 +316,13 @@ pub fn solve_point_block(
 pub fn solve_upper_limit_row(
     a: &mut RigidBody3D,
     b: &mut RigidBody3D,
-    state: &mut [f32],
+    state: &mut [f64],
     offset: usize,
-    mass: f32,
-    error: f32,
-    bias_factor: f32,
+    mass: f64,
+    error: f64,
+    bias_factor: f64,
     accumulator_slot: usize,
-    gamma: Option<f32>,
+    gamma: Option<f64>,
 ) {
     let previous = state[accumulator_slot];
     let total = (previous
@@ -355,11 +355,11 @@ pub fn warm_start_point_block(
     );
 }
 
-pub fn write_angular_row(state: &mut [f32], offset: usize, x: f32, y: f32, z: f32) {
+pub fn write_angular_row(state: &mut [f64], offset: usize, x: f64, y: f64, z: f64) {
     write_row(state, offset, 0.0, 0.0, 0.0, x, y, z, x, y, z);
 }
 
-pub fn write_joint_impulse(joint: &mut dyn Physics3DJoint, slot: usize, value: f32) {
+pub fn write_joint_impulse(joint: &mut dyn Physics3DJoint, slot: usize, value: f64) {
     let f = joint.fields_mut();
     match slot {
         0 => f.impulse0 = value,
@@ -372,18 +372,18 @@ pub fn write_joint_impulse(joint: &mut dyn Physics3DJoint, slot: usize, value: f
 }
 
 pub fn write_physics_3d_soft_row_parameters(
-    out: &mut [f32; 3],
-    mass: f32,
-    frequency_hz: f32,
-    damping_ratio: f32,
-    dt: f32,
-    hard_bias_factor: f32,
+    out: &mut [f64; 3],
+    mass: f64,
+    frequency_hz: f64,
+    damping_ratio: f64,
+    dt: f64,
+    hard_bias_factor: f64,
 ) {
     if frequency_hz <= 0.0 || dt <= 0.0 {
         *out = [mass, hard_bias_factor, 0.0];
         return;
     }
-    let angular = std::f32::consts::TAU * frequency_hz;
+    let angular = std::f64::consts::TAU * frequency_hz;
     let damping = 2.0 * mass * damping_ratio * angular;
     let stiffness = mass * angular * angular;
     let denominator = dt * (damping + dt * stiffness);
@@ -402,17 +402,17 @@ pub fn write_physics_3d_soft_row_parameters(
 
 #[allow(clippy::too_many_arguments)]
 pub fn write_row(
-    state: &mut [f32],
+    state: &mut [f64],
     offset: usize,
-    dx: f32,
-    dy: f32,
-    dz: f32,
-    aax: f32,
-    aay: f32,
-    aaz: f32,
-    abx: f32,
-    aby: f32,
-    abz: f32,
+    dx: f64,
+    dy: f64,
+    dz: f64,
+    aax: f64,
+    aay: f64,
+    aaz: f64,
+    abx: f64,
+    aby: f64,
+    abz: f64,
 ) {
     state[offset..offset + 9].copy_from_slice(&[dx, dy, dz, aax, aay, aaz, abx, aby, abz]);
 }

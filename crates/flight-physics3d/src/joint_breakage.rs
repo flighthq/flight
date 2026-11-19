@@ -12,7 +12,7 @@ pub fn break_physics_3d_joint(world: &mut Physics3DWorld, joint: &Physics3DJoint
     world.joint_events.broke.push(joint.clone());
 }
 
-pub fn evaluate_physics_3d_joint_breakage(world: &mut Physics3DWorld, dt: f32) {
+pub fn evaluate_physics_3d_joint_breakage(world: &mut Physics3DWorld, dt: f64) {
     let joints = world.joints.clone();
     for joint in joints {
         let (broken, break_force, break_torque) = {

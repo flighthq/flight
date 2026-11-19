@@ -9,7 +9,7 @@ use flight_collision::{CollisionAabb3D, CollisionColliderShape3D, CollisionShape
 use super::*;
 use crate::common::*;
 
-fn assert_close(actual: f32, expected: f32, tolerance: f32) {
+fn assert_close(actual: f64, expected: f64, tolerance: f64) {
     assert!(
         (actual - expected).abs() <= tolerance,
         "expected {actual} to be within {tolerance} of {expected}"
@@ -47,7 +47,7 @@ fn add_unit_body(world: &mut Physics3DWorld) -> RigidBody3DRef {
     body
 }
 
-fn attach_unit_box_collider(world: &mut Physics3DWorld, body: &RigidBody3DRef, friction: f32) {
+fn attach_unit_box_collider(world: &mut Physics3DWorld, body: &RigidBody3DRef, friction: f64) {
     let shape = CollisionColliderShape3D::BuiltIn(CollisionShape3D::Aabb(CollisionAabb3D {
         min_x: -0.5,
         min_y: -0.5,
@@ -78,7 +78,7 @@ fn add_resting_contact(
     world: &mut Physics3DWorld,
     box_body: &RigidBody3DRef,
     ground: &RigidBody3DRef,
-    friction: f32,
+    friction: f64,
 ) -> Physics3DContactRef {
     let box_y = box_body.read().unwrap().y;
     ground.write().unwrap().y = box_y - 0.99;
@@ -161,7 +161,7 @@ mod step_physics_3d {
         let registry = registered_registry();
 
         step_physics_3d(&mut world, &registry, 0.0, None);
-        step_physics_3d(&mut world, &registry, f32::NAN, None);
+        step_physics_3d(&mut world, &registry, f64::NAN, None);
 
         let body = body.read().unwrap();
         assert_eq!(body.velocity_y, 0.0);
@@ -173,7 +173,7 @@ mod step_physics_3d {
         let mut world = create_test_world();
         let body = add_unit_body(&mut world);
         let other = add_unit_body(&mut world);
-        other.write().unwrap().velocity_x = f32::INFINITY;
+        other.write().unwrap().velocity_x = f64::INFINITY;
 
         step_physics_3d(&mut world, &registered_registry(), 1.0 / 60.0, None);
 
@@ -186,7 +186,7 @@ mod step_physics_3d {
         let body = add_unit_body(&mut world);
         let collider = physics_3d_collider(&sphere_shape(1.0, 0.0, 0.0, 0.0), None, None, None);
         add_physics_3d_collider(&mut world, &body, &collider);
-        collider.write().unwrap().material.friction = f32::NAN;
+        collider.write().unwrap().material.friction = f64::NAN;
 
         step_physics_3d(&mut world, &registered_registry(), 1.0 / 60.0, None);
 
@@ -428,7 +428,7 @@ mod step_physics_3d {
         let body = add_unit_body(&mut world);
         body.write().unwrap().velocity_y = -10.0;
         add_resting_contact(&mut world, &body, &ground, 0.0);
-        let observed = Arc::new(Mutex::new(f32::NAN));
+        let observed = Arc::new(Mutex::new(f64::NAN));
         let hook_observed = observed.clone();
         let hook_body = body.clone();
         world.contact_hooks.post_solve = Some(Arc::new(move |_, _| {
@@ -495,7 +495,7 @@ mod step_physics_3d {
         let body = add_unit_body(&mut world);
         let contact = add_resting_contact(&mut world, &body, &ground, 0.0);
         world.contact_hooks.pre_solve = Some(Arc::new(|_, edited| {
-            edited.write().unwrap().friction = f32::NAN;
+            edited.write().unwrap().friction = f64::NAN;
         }));
 
         let result = catch_unwind(AssertUnwindSafe(|| {

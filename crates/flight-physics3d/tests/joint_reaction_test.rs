@@ -8,7 +8,7 @@ struct HangingScene {
     joint: Physics3DJointRef,
 }
 
-fn unit_body(mass: f32) -> RigidBody3DRef {
+fn unit_body(mass: f64) -> RigidBody3DRef {
     let body = create_rigid_body_3d();
     let mut data = create_physics_3d_mass_data();
     data.mass = mass;
@@ -19,7 +19,7 @@ fn unit_body(mass: f32) -> RigidBody3DRef {
     body
 }
 
-fn hanging_scene(mass: f32, gravity: f32) -> HangingScene {
+fn hanging_scene(mass: f64, gravity: f64) -> HangingScene {
     let mut world = world();
     world.gravity_y = -gravity;
     register_built_in_physics_3d_joint_solvers(&mut world);
@@ -35,7 +35,7 @@ fn hanging_scene(mass: f32, gravity: f32) -> HangingScene {
     }
 }
 
-fn step(world: &mut Physics3DWorld, dt: f32) {
+fn step(world: &mut Physics3DWorld, dt: f64) {
     step_physics_3d(world, &registered_registry(), dt, None);
 }
 

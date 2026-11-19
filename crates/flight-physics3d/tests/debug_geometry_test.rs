@@ -35,7 +35,7 @@ fn unit_box() -> CollisionColliderShape3D {
 fn add_shaped_body(
     world: &mut Physics3DWorld,
     shape: CollisionColliderShape3D,
-    y: f32,
+    y: f64,
 ) -> RigidBody3DRef {
     add_shaped_body_of_type(world, shape, y, Physics3DBodyType::Dynamic)
 }
@@ -43,7 +43,7 @@ fn add_shaped_body(
 fn add_shaped_body_of_type(
     world: &mut Physics3DWorld,
     shape: CollisionColliderShape3D,
-    y: f32,
+    y: f64,
     body_type: Physics3DBodyType,
 ) -> RigidBody3DRef {
     let body = rigid_body(body_type);
@@ -62,7 +62,7 @@ fn live_spheres(out: &Physics3DDebugGeometry) -> &[Physics3DDebugSphere] {
     &out.spheres[..out.sphere_count]
 }
 
-fn line_length(line: &Physics3DDebugLine) -> f32 {
+fn line_length(line: &Physics3DDebugLine) -> f64 {
     ((line.x1 - line.x0).powi(2) + (line.y1 - line.y0).powi(2) + (line.z1 - line.z0).powi(2)).sqrt()
 }
 
@@ -194,8 +194,8 @@ mod write_physics_3d_debug_geometry {
         let body = add_shaped_body(&mut world, unit_box(), 0.0);
         {
             let mut body = body.write().unwrap();
-            body.orientation_y = (std::f32::consts::PI / 8.0).sin();
-            body.orientation_w = (std::f32::consts::PI / 8.0).cos();
+            body.orientation_y = (std::f64::consts::PI / 8.0).sin();
+            body.orientation_w = (std::f64::consts::PI / 8.0).cos();
         }
         let mut out = create_physics_3d_debug_geometry();
         let mut options = options();

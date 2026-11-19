@@ -10,7 +10,7 @@ use flight_collision::{
 use super::*;
 use crate::common::*;
 
-fn box_shape(half_x: f32, half_y: f32, half_z: f32) -> CollisionColliderShape3D {
+fn box_shape(half_x: f64, half_y: f64, half_z: f64) -> CollisionColliderShape3D {
     CollisionColliderShape3D::BuiltIn(CollisionShape3D::Aabb(CollisionAabb3D {
         min_x: -half_x,
         min_y: -half_y,
@@ -37,7 +37,7 @@ fn add_floor(world: &mut Physics3DWorld) -> RigidBody3DRef {
     floor
 }
 
-fn add_crate(world: &mut Physics3DWorld, x: f32, y: f32, sensor: bool) -> RigidBody3DRef {
+fn add_crate(world: &mut Physics3DWorld, x: f64, y: f64, sensor: bool) -> RigidBody3DRef {
     let body = create_rigid_body_3d();
     {
         let mut body = body.write().unwrap();
@@ -257,8 +257,8 @@ mod build_physics_3d_contacts {
             .iter()
             .take(contact.point_count)
             .map(|point| point.r_bx)
-            .sum::<f32>()
-            / contact.point_count as f32;
+            .sum::<f64>()
+            / contact.point_count as f64;
         assert!(average.abs() < 1e-5, "{average}");
     }
 }
@@ -408,7 +408,7 @@ mod step_physics_3d_contact_generation {
 
     #[test]
     fn runs_identically_from_the_same_initial_state() {
-        fn trace() -> Vec<[f32; 3]> {
+        fn trace() -> Vec<[f64; 3]> {
             let registry = contact_registry();
             let mut world = world();
             add_floor(&mut world);

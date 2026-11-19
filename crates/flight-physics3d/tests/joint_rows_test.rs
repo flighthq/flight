@@ -3,7 +3,7 @@
 use super::*;
 use crate::common::*;
 
-fn assert_close(actual: f32, expected: f32) {
+fn assert_close(actual: f64, expected: f64) {
     assert!(
         (actual - expected).abs() < 1e-5,
         "actual={actual}, expected={expected}"
@@ -18,11 +18,11 @@ fn joint() -> flight_entity::Ref<Physics3DFixedJoint> {
     physics_3d_fixed_joint(&frame_options(0, 1))
 }
 
-fn new_state() -> Vec<f32> {
+fn new_state() -> Vec<f64> {
     vec![0.0; 32]
 }
 
-fn set_axis_angle(body: &RigidBody3DRef, x: f32, y: f32, z: f32, angle: f32) {
+fn set_axis_angle(body: &RigidBody3DRef, x: f64, y: f64, z: f64, angle: f64) {
     let sine = (angle * 0.5).sin();
     let mut body = body.write().unwrap();
     body.orientation_x = x * sine;
@@ -101,12 +101,12 @@ mod begin_joint_solve {
             let mut joint = joint.write().unwrap();
             let state = begin_joint_solve(&mut *joint, 5);
             state[0] = 9.0;
-            state as *mut Vec<f32>
+            state as *mut Vec<f64>
         };
         let mut joint = joint.write().unwrap();
         let second = begin_joint_solve(&mut *joint, 8);
 
-        assert_eq!(second as *mut Vec<f32>, first);
+        assert_eq!(second as *mut Vec<f64>, first);
         assert_eq!(second.len(), 8);
         assert_eq!(second[0], 9.0);
     }
@@ -269,7 +269,7 @@ mod read_frame_bases {
     #[test]
     fn expands_both_frames_into_world_axes() {
         let (a, b) = bodies();
-        set_axis_angle(&a, 0.0, 0.0, 1.0, std::f32::consts::FRAC_PI_2);
+        set_axis_angle(&a, 0.0, 0.0, 1.0, std::f64::consts::FRAC_PI_2);
         let joint = joint();
         let mut out_a = [0.0; 9];
         let mut out_b = [0.0; 9];
@@ -329,7 +329,7 @@ mod read_joint_impulse {
         let joint = joint.read().unwrap();
 
         for slot in 0..6 {
-            assert_eq!(read_joint_impulse(&*joint, slot), 10.0 + slot as f32);
+            assert_eq!(read_joint_impulse(&*joint, slot), 10.0 + slot as f64);
         }
     }
 }
@@ -683,7 +683,7 @@ mod write_joint_impulse {
         {
             let mut joint = joint.write().unwrap();
             for slot in 0..6 {
-                write_joint_impulse(&mut *joint, slot, slot as f32 + 1.0);
+                write_joint_impulse(&mut *joint, slot, slot as f64 + 1.0);
             }
         }
         let joint = joint.read().unwrap();

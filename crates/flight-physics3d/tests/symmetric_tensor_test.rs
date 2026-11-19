@@ -2,7 +2,7 @@
 
 use super::*;
 
-fn assert_close(actual: f32, expected: f32) {
+fn assert_close(actual: f64, expected: f64) {
     assert!(
         (actual - expected).abs() < 1.0e-5,
         "expected {actual} to be close to {expected}"
@@ -102,8 +102,8 @@ mod rotate_symmetric_tensor {
     #[test]
     fn leaves_an_isotropic_tensor_unchanged_under_any_rotation() {
         let mut out = [0.0; 6];
-        let axis = 1.0 / 3.0_f32.sqrt();
-        let angle = 0.7_f32;
+        let axis = 1.0 / 3.0_f64.sqrt();
+        let angle = 0.7_f64;
         let sine = (angle / 2.0).sin();
         rotate_symmetric_tensor(
             &mut out,
@@ -129,7 +129,7 @@ mod rotate_symmetric_tensor {
 
     #[test]
     fn preserves_input_components_while_writing_the_output() {
-        let half = std::f32::consts::FRAC_1_SQRT_2;
+        let half = std::f64::consts::FRAC_1_SQRT_2;
         let mut tensor = [1.0, 5.0, 9.0, 0.0, 0.0, 0.0];
         let input = tensor;
         rotate_symmetric_tensor(&mut tensor, &input, 0.0, 0.0, half, half);
@@ -140,7 +140,7 @@ mod rotate_symmetric_tensor {
     #[test]
     fn preserves_the_trace() {
         let mut out = [0.0; 6];
-        let angle = 1.1_f32;
+        let angle = 1.1_f64;
         rotate_symmetric_tensor(
             &mut out,
             &[2.0, 5.0, 11.0, 0.3, -0.4, 0.6],
@@ -154,7 +154,7 @@ mod rotate_symmetric_tensor {
 
     #[test]
     fn swaps_x_and_y_moments_under_a_quarter_turn_about_z() {
-        let half = std::f32::consts::FRAC_1_SQRT_2;
+        let half = std::f64::consts::FRAC_1_SQRT_2;
         let mut out = [0.0; 6];
         rotate_symmetric_tensor(
             &mut out,

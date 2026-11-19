@@ -72,8 +72,8 @@ pub fn initialize_physics_3d_cone_twist_joint(out: &mut Physics3DConeTwistJoint)
     *out = Physics3DConeTwistJoint::default();
     out.joint.kind = PHYSICS_3D_CONE_TWIST_JOINT_KIND.to_string();
     out.enable_swing_limit = true;
-    out.swing_limit_y = std::f32::consts::PI / 4.0;
-    out.swing_limit_z = std::f32::consts::PI / 4.0;
+    out.swing_limit_y = std::f64::consts::PI / 4.0;
+    out.swing_limit_z = std::f64::consts::PI / 4.0;
 }
 
 // flight-lint: allow(conform-params) D23: canonical Entity initialize mirrors zero-argument creation; callers assign joint fields afterward

@@ -18,9 +18,9 @@ pub fn initialize_physics_3d_joint_reaction(out: &mut Physics3DJointReaction) {
 pub fn accumulate_physics_3d_joint_row_reaction(
     out: &mut Physics3DJointReaction,
     joint: &dyn Physics3DJoint,
-    state: &[f32],
+    state: &[f64],
     offset: usize,
-    impulse: f32,
+    impulse: f64,
 ) {
     if impulse == 0.0 {
         return;
@@ -49,14 +49,14 @@ pub fn clear_physics_3d_joint_reaction(out: &mut Physics3DJointReaction) {
     out.torque_z = 0.0;
 }
 
-pub fn get_physics_3d_joint_reaction_force(reaction: &Physics3DJointReaction) -> f32 {
+pub fn get_physics_3d_joint_reaction_force(reaction: &Physics3DJointReaction) -> f64 {
     return (reaction.force_x * reaction.force_x
         + reaction.force_y * reaction.force_y
         + reaction.force_z * reaction.force_z)
         .sqrt();
 }
 
-pub fn get_physics_3d_joint_reaction_torque(reaction: &Physics3DJointReaction) -> f32 {
+pub fn get_physics_3d_joint_reaction_torque(reaction: &Physics3DJointReaction) -> f64 {
     return (reaction.torque_x * reaction.torque_x
         + reaction.torque_y * reaction.torque_y
         + reaction.torque_z * reaction.torque_z)
@@ -67,7 +67,7 @@ pub fn write_physics_3d_joint_reaction(
     out: &mut Physics3DJointReaction,
     world: &Physics3DWorld,
     joint: &Physics3DJointRef,
-    dt: f32,
+    dt: f64,
 ) -> bool {
     clear_physics_3d_joint_reaction(out);
     if dt <= 0.0 {

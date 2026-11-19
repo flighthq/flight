@@ -8,14 +8,14 @@ use flight_collision::{
 use super::*;
 use crate::common::*;
 
-fn assert_close(actual: f32, expected: f32, tolerance: f32) {
+fn assert_close(actual: f64, expected: f64, tolerance: f64) {
     assert!(
         (actual - expected).abs() <= tolerance,
         "expected {actual} to be within {tolerance} of {expected}"
     );
 }
 
-fn box_points(half_x: f32, half_y: f32, half_z: f32, offset_x: f32) -> Vec<f32> {
+fn box_points(half_x: f64, half_y: f64, half_z: f64, offset_x: f64) -> Vec<f64> {
     let mut points = Vec::new();
     for x in [-half_x, half_x] {
         for y in [-half_y, half_y] {
@@ -27,7 +27,7 @@ fn box_points(half_x: f32, half_y: f32, half_z: f32, offset_x: f32) -> Vec<f32> 
     points
 }
 
-fn collider_of(shape: CollisionShape3D, density: f32) -> Physics3DColliderRef {
+fn collider_of(shape: CollisionShape3D, density: f64) -> Physics3DColliderRef {
     let material = Physics3DMaterial {
         density,
         friction: 0.2,
@@ -184,7 +184,7 @@ mod compute_physics_3d_capsule_mass_data {
     fn derives_mass_as_cylinder_plus_two_hemispheres() {
         let mut out = create_physics_3d_mass_data();
         compute_physics_3d_capsule_mass_data(1.0, 2.0, 1.0, &mut out);
-        let expected = std::f32::consts::PI * 4.0 + (4.0 / 3.0) * std::f32::consts::PI;
+        let expected = std::f64::consts::PI * 4.0 + (4.0 / 3.0) * std::f64::consts::PI;
         assert_close(out.mass, expected, 1.0e-5);
     }
 
@@ -255,8 +255,8 @@ mod compute_physics_3d_collider_mass_data {
                 half_z: 1.0,
                 rotation_x: 0.0,
                 rotation_y: 0.0,
-                rotation_z: (std::f32::consts::PI / 8.0).sin(),
-                rotation_w: (std::f32::consts::PI / 8.0).cos(),
+                rotation_z: (std::f64::consts::PI / 8.0).sin(),
+                rotation_w: (std::f64::consts::PI / 8.0).cos(),
             }),
             1.0,
         );
@@ -322,18 +322,18 @@ mod compute_physics_3d_cone_mass_data {
         let apex_y = 0.75 * height;
         let base_y = -0.25 * height;
         let steps = 90;
-        let step = (2.0 * radius) / steps as f32;
-        let step_y = height / steps as f32;
+        let step = (2.0 * radius) / steps as f64;
+        let step_y = height / steps as f64;
         let mut mass = 0.0;
         let mut axial = 0.0;
         let mut transverse = 0.0;
         for iy in 0..steps {
-            let y = base_y + (iy as f32 + 0.5) * step_y;
+            let y = base_y + (iy as f64 + 0.5) * step_y;
             let permitted = radius * ((apex_y - y) / height);
             for ix in 0..steps {
-                let x = -radius + (ix as f32 + 0.5) * step;
+                let x = -radius + (ix as f64 + 0.5) * step;
                 for iz in 0..steps {
-                    let z = -radius + (iz as f32 + 0.5) * step;
+                    let z = -radius + (iz as f64 + 0.5) * step;
                     if x * x + z * z > permitted * permitted {
                         continue;
                     }
@@ -397,9 +397,9 @@ mod compute_physics_3d_convex_hull_mass_data {
         let mut sphere = create_physics_3d_mass_data();
         let mut points = Vec::new();
         for i in 0..400 {
-            let z = 1.0 - (2.0 * i as f32) / 399.0;
+            let z = 1.0 - (2.0 * i as f64) / 399.0;
             let radius = (1.0 - z * z).max(0.0).sqrt();
-            let theta = i as f32 * 2.399963;
+            let theta = i as f64 * 2.399963;
             points.extend_from_slice(&[radius * theta.cos(), radius * theta.sin(), z]);
         }
         compute_physics_3d_convex_hull_mass_data(&points, 1.0, &mut hull);
@@ -446,7 +446,7 @@ mod compute_physics_3d_cylinder_mass_data {
         let mut capsule = create_physics_3d_mass_data();
         compute_physics_3d_cylinder_mass_data(2.0, 3.0, 1.5, &mut cylinder);
         compute_physics_3d_capsule_mass_data(2.0, 3.0, 1.5, &mut capsule);
-        let hemispheres = (4.0 / 3.0) * std::f32::consts::PI * 8.0 * 1.5;
+        let hemispheres = (4.0 / 3.0) * std::f64::consts::PI * 8.0 * 1.5;
         assert_close(cylinder.mass, capsule.mass - hemispheres, 1.0e-5);
     }
 
@@ -461,7 +461,7 @@ mod compute_physics_3d_cylinder_mass_data {
     fn matches_the_closed_form_for_a_solid_cylinder() {
         let mut out = create_physics_3d_mass_data();
         compute_physics_3d_cylinder_mass_data(2.0, 1.5, 1.0, &mut out);
-        let mass = std::f32::consts::PI * 4.0 * 3.0;
+        let mass = std::f64::consts::PI * 4.0 * 3.0;
         assert_close(out.mass, mass, 1.0e-5);
         assert_close(out.inertia_yy, 0.5 * mass * 4.0, 1.0e-5);
         assert_close(out.inertia_xx, mass * (9.0 / 12.0 + 1.0), 1.0e-5);
@@ -477,7 +477,7 @@ mod compute_physics_3d_sphere_mass_data {
         compute_physics_3d_sphere_mass_data(2.0, 3.0, &mut out);
         assert_close(
             out.mass,
-            (4.0 / 3.0) * std::f32::consts::PI * 8.0 * 3.0,
+            (4.0 / 3.0) * std::f64::consts::PI * 8.0 * 3.0,
             1.0e-5,
         );
     }

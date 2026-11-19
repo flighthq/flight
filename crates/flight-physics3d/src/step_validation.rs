@@ -9,7 +9,7 @@ use flight_collision::{
 
 use crate::*;
 
-fn all_finite(values: &[f32]) -> bool {
+fn all_finite(values: &[f64]) -> bool {
     return values.iter().all(|value| value.is_finite());
 }
 
@@ -284,7 +284,7 @@ pub fn is_physics_3d_substeps_valid(config: &Physics3DSolverConfig) -> bool {
     return config.substeps >= 1;
 }
 
-pub fn is_physics_3d_timestep_valid(dt: f32) -> bool {
+pub fn is_physics_3d_timestep_valid(dt: f64) -> bool {
     return dt.is_finite() && dt > 0.0;
 }
 

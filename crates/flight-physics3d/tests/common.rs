@@ -18,9 +18,9 @@ pub fn add_body(world: &mut Physics3DWorld, body_type: Physics3DBodyType) -> Rig
 pub fn collision_heightfield3d(
     columns: usize,
     rows: usize,
-    heights: Vec<f32>,
-    cell_size_x: f32,
-    cell_size_z: f32,
+    heights: Vec<f64>,
+    cell_size_x: f64,
+    cell_size_z: f64,
 ) -> CollisionHeightfield3D {
     let mut out = create_collision_heightfield3d();
     out.columns = columns;
@@ -31,7 +31,7 @@ pub fn collision_heightfield3d(
     return out;
 }
 
-pub fn collision_triangle_mesh3d(points: Vec<f32>, indices: Vec<usize>) -> CollisionTriangleMesh3D {
+pub fn collision_triangle_mesh3d(points: Vec<f64>, indices: Vec<usize>) -> CollisionTriangleMesh3D {
     let mut out = create_collision_triangle_mesh3d();
     out.points = points;
     out.indices = indices;
@@ -90,8 +90,8 @@ pub fn physics_3d_cone_twist_joint(
         apply_physics_3d_joint_options(&mut joint.joint, &options.frame.joint);
         apply_physics_3d_joint_frames(&mut joint.frames, &options.frame);
         joint.enable_swing_limit = options.enable_swing_limit.unwrap_or(true);
-        joint.swing_limit_y = options.swing_limit_y.unwrap_or(std::f32::consts::PI / 4.0);
-        joint.swing_limit_z = options.swing_limit_z.unwrap_or(std::f32::consts::PI / 4.0);
+        joint.swing_limit_y = options.swing_limit_y.unwrap_or(std::f64::consts::PI / 4.0);
+        joint.swing_limit_z = options.swing_limit_z.unwrap_or(std::f64::consts::PI / 4.0);
         joint.enable_twist_limit = options.enable_twist_limit.unwrap_or(false);
         joint.lower_twist_angle = options.lower_twist_angle.unwrap_or(0.0);
         joint.upper_twist_angle = options.upper_twist_angle.unwrap_or(0.0);
@@ -115,7 +115,7 @@ pub fn physics_3d_distance_joint(
         joint.damping_ratio = options.damping_ratio.unwrap_or(0.0);
         joint.enable_limit = options.enable_limit.unwrap_or(false);
         joint.min_length = options.min_length.unwrap_or(0.0);
-        joint.max_length = options.max_length.unwrap_or(f32::INFINITY);
+        joint.max_length = options.max_length.unwrap_or(f64::INFINITY);
     }
     joint
 }
@@ -205,8 +205,8 @@ fn apply_physics_3d_joint_options(out: &mut Physics3DJointFields, options: &Phys
     out.local_anchor_by = options.local_anchor_by.unwrap_or(0.0);
     out.local_anchor_bz = options.local_anchor_bz.unwrap_or(0.0);
     out.collide_connected = options.collide_connected.unwrap_or(false);
-    out.break_force = options.break_force.unwrap_or(f32::INFINITY);
-    out.break_torque = options.break_torque.unwrap_or(f32::INFINITY);
+    out.break_force = options.break_force.unwrap_or(f64::INFINITY);
+    out.break_torque = options.break_torque.unwrap_or(f64::INFINITY);
 }
 
 fn apply_physics_3d_joint_frames(
@@ -360,7 +360,7 @@ pub fn registered_registry() -> CollisionRegistry3D {
     registry
 }
 
-pub fn sphere_shape(radius: f32, x: f32, y: f32, z: f32) -> CollisionColliderShape3D {
+pub fn sphere_shape(radius: f64, x: f64, y: f64, z: f64) -> CollisionColliderShape3D {
     CollisionColliderShape3D::BuiltIn(CollisionShape3D::Sphere(CollisionSphere3D {
         x,
         y,

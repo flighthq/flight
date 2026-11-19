@@ -3,7 +3,7 @@
 use super::*;
 use crate::common::rigid_body;
 
-fn assert_close(actual: f32, expected: f32, tolerance: f32) {
+fn assert_close(actual: f64, expected: f64, tolerance: f64) {
     assert!(
         (actual - expected).abs() <= tolerance,
         "expected {actual} to be within {tolerance} of {expected}"
@@ -22,7 +22,7 @@ fn dynamic_sphere() -> RigidBody3DRef {
     body
 }
 
-fn world_center(body: &RigidBody3D) -> [f32; 3] {
+fn world_center(body: &RigidBody3D) -> [f64; 3] {
     let (qx, qy, qz, qw) = (
         body.orientation_x,
         body.orientation_y,
@@ -68,6 +68,19 @@ mod integrate_rigid_body_3d_pose {
     use super::*;
 
     #[test]
+    fn advances_a_body_at_one_billion_by_a_half_unit() {
+        // f32 spacing at 1e9 is 64, so an f32 position would not move at all.
+        let body = dynamic_sphere();
+        let mut body = body.write().unwrap();
+        body.x = 1.0e9;
+        body.velocity_x = 1.0;
+
+        integrate_rigid_body_3d_pose(&mut body, 0.5);
+
+        assert_eq!(body.x, 1_000_000_000.5);
+    }
+
+    #[test]
     fn advances_position_by_the_current_velocity() {
         let body = dynamic_sphere();
         let mut body = body.write().unwrap();
@@ -82,7 +95,7 @@ mod integrate_rigid_body_3d_pose {
     fn holds_the_previous_orientation_for_a_diverged_angular_velocity() {
         let body = dynamic_sphere();
         let mut body = body.write().unwrap();
-        body.angular_velocity_x = f32::INFINITY;
+        body.angular_velocity_x = f64::INFINITY;
 
         integrate_rigid_body_3d_pose(&mut body, 1.0 / 60.0);
 
@@ -169,7 +182,7 @@ mod integrate_rigid_body_3d_pose {
     fn rotates_about_the_angular_velocity_axis_by_magnitude_times_dt() {
         let body = dynamic_sphere();
         let mut body = body.write().unwrap();
-        body.angular_velocity_z = std::f32::consts::PI;
+        body.angular_velocity_z = std::f64::consts::PI;
 
         for _ in 0..200 {
             integrate_rigid_body_3d_pose(&mut body, 0.005);
@@ -177,12 +190,12 @@ mod integrate_rigid_body_3d_pose {
 
         assert_close(
             body.orientation_z,
-            (std::f32::consts::PI / 2.0).sin(),
+            (std::f64::consts::PI / 2.0).sin(),
             1.0e-3,
         );
         assert_close(
             body.orientation_w,
-            (std::f32::consts::PI / 2.0).cos(),
+            (std::f64::consts::PI / 2.0).cos(),
             1.0e-3,
         );
     }
@@ -309,8 +322,8 @@ mod refresh_rigid_body_3d_world_inertia {
         compute_physics_3d_sphere_mass_data(1.0, 1.0, &mut data);
         let mut body = body.write().unwrap();
         set_rigid_body_3d_mass_data(&mut body, &data);
-        body.orientation_z = std::f32::consts::FRAC_1_SQRT_2;
-        body.orientation_w = std::f32::consts::FRAC_1_SQRT_2;
+        body.orientation_z = std::f64::consts::FRAC_1_SQRT_2;
+        body.orientation_w = std::f64::consts::FRAC_1_SQRT_2;
 
         refresh_rigid_body_3d_world_inertia(&mut body);
 
@@ -339,8 +352,8 @@ mod refresh_rigid_body_3d_world_inertia {
         compute_physics_3d_box_mass_data(4.0, 1.0, 1.0, 1.0, &mut data);
         let mut body = body.write().unwrap();
         set_rigid_body_3d_mass_data(&mut body, &data);
-        body.orientation_z = std::f32::consts::FRAC_1_SQRT_2;
-        body.orientation_w = std::f32::consts::FRAC_1_SQRT_2;
+        body.orientation_z = std::f64::consts::FRAC_1_SQRT_2;
+        body.orientation_w = std::f64::consts::FRAC_1_SQRT_2;
 
         refresh_rigid_body_3d_world_inertia(&mut body);
 

@@ -54,8 +54,8 @@ fn spatial_bounds() -> SpatialAabb3D {
 fn spun_body() -> RigidBody3DRef {
     let body = create_rigid_body_3d();
     let mut body_write = body.write().unwrap();
-    body_write.orientation_y = (std::f32::consts::PI / 4.0).sin();
-    body_write.orientation_w = (std::f32::consts::PI / 4.0).cos();
+    body_write.orientation_y = (std::f64::consts::PI / 4.0).sin();
+    body_write.orientation_w = (std::f64::consts::PI / 4.0).cos();
     drop(body_write);
     body
 }
@@ -266,7 +266,7 @@ mod update_physics_3d_collider_world_shape {
 
     #[test]
     fn composes_body_and_local_rotations() {
-        let half = (std::f32::consts::PI / 4.0).sin();
+        let half = (std::f64::consts::PI / 4.0).sin();
         let local = CollisionColliderShape3D::BuiltIn(CollisionShape3D::Box(CollisionBox3D {
             x: 0.0,
             y: 0.0,
@@ -539,8 +539,8 @@ mod write_physics_3d_collider_bounds {
         let body = create_rigid_body_3d();
         {
             let mut body = body.write().unwrap();
-            body.orientation_y = (std::f32::consts::PI / 8.0).sin();
-            body.orientation_w = (std::f32::consts::PI / 8.0).cos();
+            body.orientation_y = (std::f64::consts::PI / 8.0).sin();
+            body.orientation_w = (std::f64::consts::PI / 8.0).cos();
         }
         update_physics_3d_collider_world_shape(
             &mut collider.write().unwrap(),
@@ -550,8 +550,8 @@ mod write_physics_3d_collider_bounds {
 
         write_physics_3d_collider_bounds(&collider.read().unwrap(), &mut out);
 
-        assert!((out.max_x - std::f32::consts::SQRT_2).abs() < 1.0e-6);
-        assert!((out.max_z - std::f32::consts::SQRT_2).abs() < 1.0e-6);
+        assert!((out.max_x - std::f64::consts::SQRT_2).abs() < 1.0e-6);
+        assert!((out.max_z - std::f64::consts::SQRT_2).abs() < 1.0e-6);
         assert!((out.max_y - 1.0).abs() < 1.0e-6);
     }
 

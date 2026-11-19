@@ -18,7 +18,7 @@ const MATERIAL: Physics3DMaterial = Physics3DMaterial {
     restitution: 0.0,
 };
 
-fn box_shape(half_x: f32, half_y: f32, half_z: f32) -> CollisionColliderShape3D {
+fn box_shape(half_x: f64, half_y: f64, half_z: f64) -> CollisionColliderShape3D {
     CollisionColliderShape3D::BuiltIn(CollisionShape3D::Aabb(CollisionAabb3D {
         min_x: -half_x,
         min_y: -half_y,
@@ -33,12 +33,12 @@ fn box_shape(half_x: f32, half_y: f32, half_z: f32) -> CollisionColliderShape3D 
 fn add_cuboid(
     world: &mut Physics3DWorld,
     body_type: Physics3DBodyType,
-    x: f32,
-    y: f32,
-    z: f32,
-    half_x: f32,
-    half_y: f32,
-    half_z: f32,
+    x: f64,
+    y: f64,
+    z: f64,
+    half_x: f64,
+    half_y: f64,
+    half_z: f64,
     material: Physics3DMaterial,
 ) -> RigidBody3DRef {
     let body = rigid_body(body_type);
@@ -62,9 +62,9 @@ fn add_cuboid(
 fn add_box(
     world: &mut Physics3DWorld,
     body_type: Physics3DBodyType,
-    x: f32,
-    y: f32,
-    z: f32,
+    x: f64,
+    y: f64,
+    z: f64,
 ) -> RigidBody3DRef {
     add_cuboid(world, body_type, x, y, z, 0.5, 0.5, 0.5, MATERIAL)
 }
@@ -86,10 +86,10 @@ fn add_floor(world: &mut Physics3DWorld) {
 fn add_sphere(
     world: &mut Physics3DWorld,
     body_type: Physics3DBodyType,
-    x: f32,
-    y: f32,
-    z: f32,
-    radius: f32,
+    x: f64,
+    y: f64,
+    z: f64,
+    radius: f64,
     material: Physics3DMaterial,
 ) -> RigidBody3DRef {
     let body = rigid_body(body_type);
@@ -115,8 +115,8 @@ fn grid_triangle_mesh(columns: usize, rows: usize) -> CollisionColliderShape3D {
     for row in 0..rows {
         for column in 0..columns {
             let offset = (row * columns + column) * 3;
-            points[offset] = column as f32;
-            points[offset + 2] = row as f32;
+            points[offset] = column as f64;
+            points[offset + 2] = row as f64;
         }
     }
     let mut indices = Vec::new();
@@ -177,14 +177,14 @@ fn finite(body: &RigidBody3D) -> bool {
     .all(|value| value.is_finite())
 }
 
-fn snapshot(world: &Physics3DWorld) -> Vec<[f32; 16]> {
+fn snapshot(world: &Physics3DWorld) -> Vec<[f64; 16]> {
     world
         .bodies
         .iter()
         .map(|body| {
             let body = body.read().unwrap();
             [
-                body.index as f32,
+                body.index as f64,
                 body.x,
                 body.y,
                 body.z,
@@ -198,14 +198,14 @@ fn snapshot(world: &Physics3DWorld) -> Vec<[f32; 16]> {
                 body.angular_velocity_x,
                 body.angular_velocity_y,
                 body.angular_velocity_z,
-                u8::from(body.sleeping) as f32,
+                u8::from(body.sleeping) as f64,
                 body.sleep_timer,
             ]
         })
         .collect()
 }
 
-fn angular_momentum_magnitude(body: &RigidBody3D) -> f32 {
+fn angular_momentum_magnitude(body: &RigidBody3D) -> f64 {
     let qx = -body.orientation_x;
     let qy = -body.orientation_y;
     let qz = -body.orientation_z;
@@ -251,9 +251,9 @@ fn settles_a_distributed_load_across_mesh_and_heightfield_terrain() {
                 bodies.push(add_box(
                     &mut world,
                     Physics3DBodyType::Dynamic,
-                    2.25 + column as f32 * 3.5,
-                    2.0 + ((row + column) % 3) as f32,
-                    2.25 + row as f32 * 3.5,
+                    2.25 + column as f64 * 3.5,
+                    2.0 + ((row + column) % 3) as f64,
+                    2.25 + row as f64 * 3.5,
                 ));
             }
         }
@@ -307,7 +307,7 @@ fn keeps_a_tall_pile_finite_ordered_and_supported() {
             &mut world,
             Physics3DBodyType::Dynamic,
             0.0,
-            0.5 + i as f32,
+            0.5 + i as f64,
             0.0,
         ));
     }
@@ -360,7 +360,7 @@ fn converges_a_twelve_high_walled_pile_with_specialized_pair_tests() {
             &mut world,
             Physics3DBodyType::Dynamic,
             0.0,
-            0.5 + i as f32,
+            0.5 + i as f64,
             0.0,
         ));
     }
@@ -403,7 +403,7 @@ fn keeps_a_driven_ball_and_socket_chain_bounded() {
             &mut world,
             Physics3DBodyType::Dynamic,
             0.0,
-            8.0 - i as f32,
+            8.0 - i as f64,
             0.0,
             0.25,
             MATERIAL,
@@ -426,7 +426,7 @@ fn keeps_a_driven_ball_and_socket_chain_bounded() {
     for body in &links {
         assert!(finite(&body.read().unwrap()));
     }
-    let mut maximum_link_error = 0.0_f32;
+    let mut maximum_link_error = 0.0_f64;
     for pair in links.windows(2) {
         let first = pair[0].read().unwrap();
         let second = pair[1].read().unwrap();
@@ -442,7 +442,7 @@ fn keeps_a_driven_ball_and_socket_chain_bounded() {
 
 #[test]
 fn supports_ordinary_and_adversarial_mass_ratios() {
-    fn stacked_pair(ratio: f32, substeps: usize) -> (RigidBody3DRef, RigidBody3DRef) {
+    fn stacked_pair(ratio: f64, substeps: usize) -> (RigidBody3DRef, RigidBody3DRef) {
         let mut world = world();
         world.gravity_y = -10.0;
         world.config.substeps = substeps;
@@ -562,7 +562,7 @@ fn keeps_restitution_energy_and_centred_contact_torque_bounded() {
 
 #[test]
 fn makes_long_horizon_coulomb_friction_isotropic() {
-    fn slide(diagonal: bool) -> [f32; 3] {
+    fn slide(diagonal: bool) -> [f64; 3] {
         let mut world = world();
         world.gravity_y = -10.0;
         add_floor(&mut world);
@@ -571,7 +571,7 @@ fn makes_long_horizon_coulomb_friction_isotropic() {
         {
             let mut body = body.write().unwrap();
             let component = if diagonal {
-                5.0 / std::f32::consts::SQRT_2
+                5.0 / std::f64::consts::SQRT_2
             } else {
                 5.0
             };
@@ -632,7 +632,7 @@ fn produces_an_exact_repeat_trace_for_a_mixed_scene() {
 
 #[test]
 fn insertion_order_does_not_change_independent_pile_heights() {
-    fn scene(reversed: bool) -> Vec<f32> {
+    fn scene(reversed: bool) -> Vec<f64> {
         let mut world = world();
         world.gravity_y = -10.0;
         add_floor(&mut world);
@@ -644,13 +644,13 @@ fn insertion_order_does_not_change_independent_pile_heights() {
                     &mut world,
                     Physics3DBodyType::Dynamic,
                     x,
-                    0.5 + i as f32,
+                    0.5 + i as f64,
                     0.0,
                 ));
             }
         }
         run(&mut world, 300);
-        let mut positions: Vec<(i32, f32)> = tracked
+        let mut positions: Vec<(i32, f64)> = tracked
             .iter()
             .map(|body| {
                 let body = body.read().unwrap();

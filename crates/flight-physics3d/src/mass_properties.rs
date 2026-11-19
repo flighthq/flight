@@ -20,7 +20,7 @@ pub fn initialize_physics_3d_mass_data(out: &mut Physics3DMassData) {
     *out = Physics3DMassData::default();
 }
 
-fn align_axis_to_y(out: &mut Physics3DMassData, x: f32, y: f32, z: f32) {
+fn align_axis_to_y(out: &mut Physics3DMassData, x: f64, y: f64, z: f64) {
     let axial = out.inertia_yy;
     let transverse = out.inertia_xx;
     let difference = axial - transverse;
@@ -72,10 +72,10 @@ pub fn combine_physics_3d_mass_data(target: &mut Physics3DMassData, addend: &Phy
 }
 
 pub fn compute_physics_3d_box_mass_data(
-    half_extent_x: f32,
-    half_extent_y: f32,
-    half_extent_z: f32,
-    density: f32,
+    half_extent_x: f64,
+    half_extent_y: f64,
+    half_extent_z: f64,
+    density: f64,
     out: &mut Physics3DMassData,
 ) {
     let mass = 8.0 * half_extent_x * half_extent_y * half_extent_z * density;
@@ -89,15 +89,15 @@ pub fn compute_physics_3d_box_mass_data(
 }
 
 pub fn compute_physics_3d_capsule_mass_data(
-    radius: f32,
-    half_height: f32,
-    density: f32,
+    radius: f64,
+    half_height: f64,
+    density: f64,
     out: &mut Physics3DMassData,
 ) {
     let height = half_height + half_height;
     let radius2 = radius * radius;
-    let cylinder_mass = std::f32::consts::PI * radius2 * height * density;
-    let hemisphere_mass = (2.0 / 3.0) * std::f32::consts::PI * radius2 * radius * density;
+    let cylinder_mass = std::f64::consts::PI * radius2 * height * density;
+    let hemisphere_mass = (2.0 / 3.0) * std::f64::consts::PI * radius2 * radius * density;
     let mass = cylinder_mass + 2.0 * hemisphere_mass;
     let axial = 0.5 * cylinder_mass * radius2 + 2.0 * ((2.0 / 5.0) * hemisphere_mass * radius2);
     let center = half_height + 0.375 * radius;
@@ -207,20 +207,20 @@ pub fn compute_physics_3d_collider_mass_data(
 }
 
 pub fn compute_physics_3d_cone_mass_data(
-    radius: f32,
-    height: f32,
-    density: f32,
+    radius: f64,
+    height: f64,
+    density: f64,
     out: &mut Physics3DMassData,
 ) {
     let radius2 = radius * radius;
-    let mass = (std::f32::consts::PI / 3.0) * radius2 * height * density;
+    let mass = (std::f64::consts::PI / 3.0) * radius2 * height * density;
     let transverse = mass * ((3.0 / 20.0) * radius2 + (3.0 / 80.0) * height * height);
     write_diagonal(out, mass, transverse, 0.3 * mass * radius2, transverse);
 }
 
 pub fn compute_physics_3d_convex_hull_mass_data(
-    points: &Vec<f32>,
-    density: f32,
+    points: &Vec<f64>,
+    density: f64,
     out: &mut Physics3DMassData,
 ) {
     initialize_physics_3d_mass_data(out);
@@ -275,14 +275,14 @@ pub fn compute_physics_3d_convex_hull_mass_data(
 }
 
 pub fn compute_physics_3d_cylinder_mass_data(
-    radius: f32,
-    half_height: f32,
-    density: f32,
+    radius: f64,
+    half_height: f64,
+    density: f64,
     out: &mut Physics3DMassData,
 ) {
     let height = half_height + half_height;
     let radius2 = radius * radius;
-    let mass = std::f32::consts::PI * radius2 * height * density;
+    let mass = std::f64::consts::PI * radius2 * height * density;
     write_diagonal(
         out,
         mass,
@@ -292,17 +292,17 @@ pub fn compute_physics_3d_cylinder_mass_data(
     );
 }
 
-pub fn compute_physics_3d_sphere_mass_data(radius: f32, density: f32, out: &mut Physics3DMassData) {
-    let mass = (4.0 / 3.0) * std::f32::consts::PI * radius * radius * radius * density;
+pub fn compute_physics_3d_sphere_mass_data(radius: f64, density: f64, out: &mut Physics3DMassData) {
+    let mass = (4.0 / 3.0) * std::f64::consts::PI * radius * radius * radius * density;
     let moment = 0.4 * mass * radius * radius;
     write_diagonal(out, mass, moment, moment, moment);
 }
 
-fn length(v: [f32; 3]) -> f32 {
+fn length(v: [f64; 3]) -> f64 {
     return (v[0] * v[0] + v[1] * v[1] + v[2] * v[2]).sqrt();
 }
 
-fn read_tensor(d: &Physics3DMassData) -> [f32; 6] {
+fn read_tensor(d: &Physics3DMassData) -> [f64; 6] {
     return [
         d.inertia_xx,
         d.inertia_yy,
@@ -349,7 +349,7 @@ pub fn update_rigid_body_3d_mass_data(body: &mut RigidBody3D) {
     set_rigid_body_3d_mass_data(body, &total);
 }
 
-fn write_diagonal(out: &mut Physics3DMassData, mass: f32, xx: f32, yy: f32, zz: f32) {
+fn write_diagonal(out: &mut Physics3DMassData, mass: f64, xx: f64, yy: f64, zz: f64) {
     initialize_physics_3d_mass_data(out);
     out.mass = mass;
     out.inertia_xx = xx;
@@ -357,7 +357,7 @@ fn write_diagonal(out: &mut Physics3DMassData, mass: f32, xx: f32, yy: f32, zz: 
     out.inertia_zz = zz;
 }
 
-fn write_tensor(d: &mut Physics3DMassData, t: &[f32; 6]) {
+fn write_tensor(d: &mut Physics3DMassData, t: &[f64; 6]) {
     d.inertia_xx = t[0];
     d.inertia_yy = t[1];
     d.inertia_zz = t[2];

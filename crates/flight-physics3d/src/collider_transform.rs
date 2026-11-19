@@ -49,13 +49,13 @@ pub fn initialize_collision_box_3d(out: &mut CollisionBox3D) {
 
 pub fn initialize_collision_capsule_3d(
     out: &mut CollisionCapsule3D,
-    radius: f32,
-    x0: f32,
-    x1: f32,
-    y0: f32,
-    y1: f32,
-    z0: f32,
-    z1: f32,
+    radius: f64,
+    x0: f64,
+    x1: f64,
+    y0: f64,
+    y1: f64,
+    z0: f64,
+    z1: f64,
 ) {
     *out = CollisionCapsule3D {
         radius,
@@ -71,13 +71,13 @@ pub fn initialize_collision_capsule_3d(
 #[allow(clippy::too_many_arguments)]
 pub fn initialize_collision_cone_3d(
     out: &mut CollisionCone3D,
-    apex_x: f32,
-    apex_y: f32,
-    apex_z: f32,
-    base_x: f32,
-    base_y: f32,
-    base_z: f32,
-    radius: f32,
+    apex_x: f64,
+    apex_y: f64,
+    apex_z: f64,
+    base_x: f64,
+    base_y: f64,
+    base_z: f64,
+    radius: f64,
 ) {
     *out = CollisionCone3D {
         x0: apex_x,
@@ -90,20 +90,20 @@ pub fn initialize_collision_cone_3d(
     };
 }
 
-pub fn initialize_collision_convex_3d(out: &mut CollisionConvex3D, points: Vec<f32>) {
+pub fn initialize_collision_convex_3d(out: &mut CollisionConvex3D, points: Vec<f64>) {
     out.points = points;
 }
 
 #[allow(clippy::too_many_arguments)]
 pub fn initialize_collision_cylinder_3d(
     out: &mut CollisionCylinder3D,
-    radius: f32,
-    x0: f32,
-    x1: f32,
-    y0: f32,
-    y1: f32,
-    z0: f32,
-    z1: f32,
+    radius: f64,
+    x0: f64,
+    x1: f64,
+    y0: f64,
+    y1: f64,
+    z0: f64,
+    z1: f64,
 ) {
     *out = CollisionCylinder3D {
         radius,
@@ -118,16 +118,16 @@ pub fn initialize_collision_cylinder_3d(
 
 pub fn initialize_collision_sphere_3d(
     out: &mut CollisionSphere3D,
-    radius: f32,
-    x: f32,
-    y: f32,
-    z: f32,
+    radius: f64,
+    x: f64,
+    y: f64,
+    z: f64,
 ) {
     *out = CollisionSphere3D { radius, x, y, z };
 }
 
 #[allow(clippy::too_many_arguments)]
-fn compose_rotation(body: &RigidBody3D, lx: f32, ly: f32, lz: f32, lw: f32) -> [f32; 4] {
+fn compose_rotation(body: &RigidBody3D, lx: f64, ly: f64, lz: f64, lw: f64) -> [f64; 4] {
     let (qx, qy, qz, qw) = (
         body.orientation_x,
         body.orientation_y,
@@ -153,7 +153,7 @@ fn copy_collision_bounds(source: &CollisionAabb3D, out: &mut SpatialAabb3D) {
     };
 }
 
-fn disc_extent(x: f32, y: f32, z: f32, r: f32) -> [f32; 3] {
+fn disc_extent(x: f64, y: f64, z: f64, r: f64) -> [f64; 3] {
     let l = x * x + y * y + z * z;
     if l <= 0.0 {
         return [r, r, r];
@@ -167,7 +167,7 @@ fn disc_extent(x: f32, y: f32, z: f32, r: f32) -> [f32; 3] {
     ];
 }
 
-fn rotate_point(qx: f32, qy: f32, qz: f32, qw: f32, x: f32, y: f32, z: f32) -> [f32; 3] {
+fn rotate_point(qx: f64, qy: f64, qz: f64, qw: f64, x: f64, y: f64, z: f64) -> [f64; 3] {
     let tx = 2.0 * (qy * z - qz * y);
     let ty = 2.0 * (qz * x - qx * z);
     let tz = 2.0 * (qx * y - qy * x);
@@ -180,10 +180,10 @@ fn rotate_point(qx: f32, qy: f32, qz: f32, qw: f32, x: f32, y: f32, z: f32) -> [
 
 fn transform_cone(
     body: &RigidBody3D,
-    qx: f32,
-    qy: f32,
-    qz: f32,
-    qw: f32,
+    qx: f64,
+    qy: f64,
+    qz: f64,
+    qw: f64,
     local: &CollisionCone3D,
     world: &mut CollisionCone3D,
 ) {
@@ -202,10 +202,10 @@ fn transform_cone(
 
 fn transform_cylinder(
     body: &RigidBody3D,
-    qx: f32,
-    qy: f32,
-    qz: f32,
-    qw: f32,
+    qx: f64,
+    qy: f64,
+    qz: f64,
+    qw: f64,
     local: &CollisionCylinder3D,
     world: &mut CollisionCylinder3D,
 ) {
@@ -224,10 +224,10 @@ fn transform_cylinder(
 
 fn transform_segment_shape(
     body: &RigidBody3D,
-    qx: f32,
-    qy: f32,
-    qz: f32,
-    qw: f32,
+    qx: f64,
+    qy: f64,
+    qz: f64,
+    qw: f64,
     local: &CollisionCapsule3D,
     world: &mut CollisionCapsule3D,
 ) {
@@ -400,13 +400,13 @@ pub fn update_physics_3d_collider_world_shape(
 
 #[allow(clippy::too_many_arguments)]
 fn write_axial_bounds(
-    x0: f32,
-    y0: f32,
-    z0: f32,
-    x1: f32,
-    y1: f32,
-    z1: f32,
-    r: f32,
+    x0: f64,
+    y0: f64,
+    z0: f64,
+    x1: f64,
+    y1: f64,
+    z1: f64,
+    r: f64,
     cone: bool,
     out: &mut SpatialAabb3D,
 ) {
@@ -526,13 +526,13 @@ pub fn write_physics_3d_collider_bounds(collider: &Physics3DCollider, out: &mut 
 
 #[allow(clippy::too_many_arguments)]
 fn write_segment_bounds(
-    x0: f32,
-    y0: f32,
-    z0: f32,
-    x1: f32,
-    y1: f32,
-    z1: f32,
-    r: f32,
+    x0: f64,
+    y0: f64,
+    z0: f64,
+    x1: f64,
+    y1: f64,
+    z1: f64,
+    r: f64,
     out: &mut SpatialAabb3D,
 ) {
     *out = SpatialAabb3D {

@@ -12,7 +12,7 @@ pub fn clear_rigid_body_3d_forces(body: &mut RigidBody3D) {
     body.torque_z = 0.0;
 }
 
-pub fn integrate_rigid_body_3d_pose(body: &mut RigidBody3D, dt: f32) {
+pub fn integrate_rigid_body_3d_pose(body: &mut RigidBody3D, dt: f64) {
     if body.body_type == Physics3DBodyType::Static || body.sleeping {
         return;
     }
@@ -73,10 +73,10 @@ pub fn integrate_rigid_body_3d_pose(body: &mut RigidBody3D, dt: f32) {
 
 pub fn integrate_rigid_body_3d_velocity(
     body: &mut RigidBody3D,
-    gravity_x: f32,
-    gravity_y: f32,
-    gravity_z: f32,
-    dt: f32,
+    gravity_x: f64,
+    gravity_y: f64,
+    gravity_z: f64,
+    dt: f64,
 ) {
     if body.body_type != Physics3DBodyType::Dynamic || body.sleeping {
         return;

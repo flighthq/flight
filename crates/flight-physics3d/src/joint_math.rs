@@ -3,7 +3,7 @@
 // flight-lint: allow-file(conform-params) D9b: native writers keep outputs first and scalar component names compact
 use crate::*;
 
-fn add_skew(t: &[f32; 6], x: f32, y: f32, z: f32, out: &mut [f32; 6]) {
+fn add_skew(t: &[f64; 6], x: f64, y: f64, z: f64, out: &mut [f64; 6]) {
     let (mut r0, mut r1, mut r2) = ([0.0; 3], [0.0; 3], [0.0; 3]);
     apply_symmetric_tensor(&mut r0, t, 0.0, -z, y);
     apply_symmetric_tensor(&mut r1, t, z, 0.0, -x);
@@ -16,7 +16,7 @@ fn add_skew(t: &[f32; 6], x: f32, y: f32, z: f32, out: &mut [f32; 6]) {
     out[TENSOR_YZ] += z * r2[0] - x * r2[2];
 }
 
-fn apply_body_impulse(b: &mut RigidBody3D, rx: f32, ry: f32, rz: f32, x: f32, y: f32, z: f32) {
+fn apply_body_impulse(b: &mut RigidBody3D, rx: f64, ry: f64, rz: f64, x: f64, y: f64, z: f64) {
     b.velocity_x += x * b.inverse_mass;
     b.velocity_y += y * b.inverse_mass;
     b.velocity_z += z * b.inverse_mass;
@@ -36,9 +36,9 @@ fn apply_body_impulse(b: &mut RigidBody3D, rx: f32, ry: f32, rz: f32, x: f32, y:
 pub fn apply_physics_3d_joint_angular_impulse(
     a: &mut RigidBody3D,
     b: &mut RigidBody3D,
-    x: f32,
-    y: f32,
-    z: f32,
+    x: f64,
+    y: f64,
+    z: f64,
 ) {
     let mut v = [0.0; 3];
     apply_symmetric_tensor(&mut v, &inertia(a), x, y, z);
@@ -55,15 +55,15 @@ pub fn apply_physics_3d_joint_angular_impulse(
 pub fn apply_physics_3d_joint_impulse(
     a: &mut RigidBody3D,
     b: &mut RigidBody3D,
-    rax: f32,
-    ray: f32,
-    raz: f32,
-    rbx: f32,
-    rby: f32,
-    rbz: f32,
-    x: f32,
-    y: f32,
-    z: f32,
+    rax: f64,
+    ray: f64,
+    raz: f64,
+    rbx: f64,
+    rby: f64,
+    rbz: f64,
+    x: f64,
+    y: f64,
+    z: f64,
 ) {
     apply_body_impulse(a, rax, ray, raz, -x, -y, -z);
     apply_body_impulse(b, rbx, rby, rbz, x, y, z);
@@ -73,16 +73,16 @@ pub fn apply_physics_3d_joint_impulse(
 pub fn apply_physics_3d_joint_row_impulse(
     a: &mut RigidBody3D,
     b: &mut RigidBody3D,
-    dx: f32,
-    dy: f32,
-    dz: f32,
-    aax: f32,
-    aay: f32,
-    aaz: f32,
-    abx: f32,
-    aby: f32,
-    abz: f32,
-    impulse: f32,
+    dx: f64,
+    dy: f64,
+    dz: f64,
+    aax: f64,
+    aay: f64,
+    aaz: f64,
+    abx: f64,
+    aby: f64,
+    abz: f64,
+    impulse: f64,
 ) {
     a.velocity_x -= impulse * dx * a.inverse_mass;
     a.velocity_y -= impulse * dy * a.inverse_mass;
@@ -117,16 +117,16 @@ pub fn apply_physics_3d_joint_row_impulse(
 pub fn get_physics_3d_joint_row_mass(
     a: &RigidBody3D,
     b: &RigidBody3D,
-    dx: f32,
-    dy: f32,
-    dz: f32,
-    aax: f32,
-    aay: f32,
-    aaz: f32,
-    abx: f32,
-    aby: f32,
-    abz: f32,
-) -> f32 {
+    dx: f64,
+    dy: f64,
+    dz: f64,
+    aax: f64,
+    aay: f64,
+    aaz: f64,
+    abx: f64,
+    aby: f64,
+    abz: f64,
+) -> f64 {
     let mut denominator = (a.inverse_mass + b.inverse_mass) * (dx * dx + dy * dy + dz * dz);
     let mut v = [0.0; 3];
     apply_symmetric_tensor(&mut v, &inertia(a), aax, aay, aaz);
@@ -144,16 +144,16 @@ pub fn get_physics_3d_joint_row_mass(
 pub fn get_physics_3d_joint_row_velocity(
     a: &RigidBody3D,
     b: &RigidBody3D,
-    dx: f32,
-    dy: f32,
-    dz: f32,
-    aax: f32,
-    aay: f32,
-    aaz: f32,
-    abx: f32,
-    aby: f32,
-    abz: f32,
-) -> f32 {
+    dx: f64,
+    dy: f64,
+    dz: f64,
+    aax: f64,
+    aay: f64,
+    aaz: f64,
+    abx: f64,
+    aby: f64,
+    abz: f64,
+) -> f64 {
     return (b.velocity_x - a.velocity_x) * dx
         + (b.velocity_y - a.velocity_y) * dy
         + (b.velocity_z - a.velocity_z) * dz
@@ -165,7 +165,7 @@ pub fn get_physics_3d_joint_row_velocity(
         - a.angular_velocity_z * aaz;
 }
 
-fn inertia(b: &RigidBody3D) -> [f32; 6] {
+fn inertia(b: &RigidBody3D) -> [f64; 6] {
     return [
         b.inverse_inertia_world_xx,
         b.inverse_inertia_world_yy,
@@ -176,7 +176,7 @@ fn inertia(b: &RigidBody3D) -> [f32; 6] {
     ];
 }
 
-fn multiply(a: [f32; 4], b: [f32; 4]) -> [f32; 4] {
+fn multiply(a: [f64; 4], b: [f64; 4]) -> [f64; 4] {
     return [
         a[3] * b[0] + a[0] * b[3] + a[1] * b[2] - a[2] * b[1],
         a[3] * b[1] - a[0] * b[2] + a[1] * b[3] + a[2] * b[0],
@@ -185,7 +185,7 @@ fn multiply(a: [f32; 4], b: [f32; 4]) -> [f32; 4] {
     ];
 }
 
-fn rotate(q: [f32; 4], v: [f32; 3]) -> [f32; 3] {
+fn rotate(q: [f64; 4], v: [f64; 3]) -> [f64; 3] {
     let t = [
         q[1] * v[2] - q[2] * v[1] + q[3] * v[0],
         q[2] * v[0] - q[0] * v[2] + q[3] * v[1],
@@ -205,7 +205,7 @@ pub fn swap_physics_3d_joint_frames(frames: &mut Physics3DJointFrames) {
     std::mem::swap(&mut frames.local_rotation_aw, &mut frames.local_rotation_bw);
 }
 
-fn world_center(b: &RigidBody3D) -> [f32; 3] {
+fn world_center(b: &RigidBody3D) -> [f64; 3] {
     let c = rotate(
         [
             b.orientation_x,
@@ -219,7 +219,7 @@ fn world_center(b: &RigidBody3D) -> [f32; 3] {
 }
 
 pub fn write_physics_3d_joint_anchor_velocity(
-    out: &mut [f32; 3],
+    out: &mut [f64; 3],
     a: &RigidBody3D,
     b: &RigidBody3D,
     joint: &dyn Physics3DJoint,
@@ -275,7 +275,7 @@ pub fn write_physics_3d_joint_anchors(
     f.r_bz = rb[2];
 }
 
-pub fn write_physics_3d_joint_angular_mass(out: &mut [f32; 6], a: &RigidBody3D, b: &RigidBody3D) {
+pub fn write_physics_3d_joint_angular_mass(out: &mut [f64; 6], a: &RigidBody3D, b: &RigidBody3D) {
     let ia = inertia(a);
     let ib = inertia(b);
     for i in 0..6 {
@@ -285,12 +285,12 @@ pub fn write_physics_3d_joint_angular_mass(out: &mut [f32; 6], a: &RigidBody3D, 
 
 #[allow(clippy::too_many_arguments)]
 pub fn write_physics_3d_joint_frame_basis(
-    out: &mut [f32; 9],
+    out: &mut [f64; 9],
     body: &RigidBody3D,
-    x: f32,
-    y: f32,
-    z: f32,
-    w: f32,
+    x: f64,
+    y: f64,
+    z: f64,
+    w: f64,
 ) {
     let q = multiply(
         [
@@ -321,12 +321,12 @@ pub fn write_physics_3d_joint_frame_basis(
 
 #[allow(clippy::too_many_arguments)]
 pub fn write_physics_3d_joint_frame_rotation(
-    out: &mut [f32; 4],
+    out: &mut [f64; 4],
     body: &RigidBody3D,
-    x: f32,
-    y: f32,
-    z: f32,
-    w: f32,
+    x: f64,
+    y: f64,
+    z: f64,
+    w: f64,
 ) {
     *out = multiply(
         [
@@ -341,15 +341,15 @@ pub fn write_physics_3d_joint_frame_rotation(
 
 #[allow(clippy::too_many_arguments)]
 pub fn write_physics_3d_joint_point_mass(
-    out: &mut [f32; 6],
+    out: &mut [f64; 6],
     a: &RigidBody3D,
     b: &RigidBody3D,
-    rax: f32,
-    ray: f32,
-    raz: f32,
-    rbx: f32,
-    rby: f32,
-    rbz: f32,
+    rax: f64,
+    ray: f64,
+    raz: f64,
+    rbx: f64,
+    rby: f64,
+    rbz: f64,
 ) {
     let d = a.inverse_mass + b.inverse_mass;
     *out = [d, d, d, 0.0, 0.0, 0.0];
@@ -359,15 +359,15 @@ pub fn write_physics_3d_joint_point_mass(
 
 #[allow(clippy::too_many_arguments)]
 pub fn write_physics_3d_joint_relative_rotation(
-    out: &mut [f32; 4],
-    ax: f32,
-    ay: f32,
-    az: f32,
-    aw: f32,
-    bx: f32,
-    by: f32,
-    bz: f32,
-    bw: f32,
+    out: &mut [f64; 4],
+    ax: f64,
+    ay: f64,
+    az: f64,
+    aw: f64,
+    bx: f64,
+    by: f64,
+    bz: f64,
+    bw: f64,
 ) {
     *out = multiply([-ax, -ay, -az, aw], [bx, by, bz, bw]);
     if out[3] < 0.0 {
@@ -379,15 +379,15 @@ pub fn write_physics_3d_joint_relative_rotation(
 
 #[allow(clippy::too_many_arguments)]
 pub fn write_physics_3d_joint_rotation_error(
-    out: &mut [f32; 3],
-    ax: f32,
-    ay: f32,
-    az: f32,
-    aw: f32,
-    bx: f32,
-    by: f32,
-    bz: f32,
-    bw: f32,
+    out: &mut [f64; 3],
+    ax: f64,
+    ay: f64,
+    az: f64,
+    aw: f64,
+    bx: f64,
+    by: f64,
+    bz: f64,
+    bw: f64,
 ) {
     let mut relative = [0.0; 4];
     write_physics_3d_joint_relative_rotation(&mut relative, ax, ay, az, aw, bx, by, bz, bw);
@@ -409,7 +409,7 @@ pub fn write_physics_3d_joint_rotation_error(
 }
 
 pub fn write_physics_3d_joint_separation(
-    out: &mut [f32; 3],
+    out: &mut [f64; 3],
     a: &RigidBody3D,
     b: &RigidBody3D,
     joint: &dyn Physics3DJoint,

@@ -9,12 +9,12 @@ use super::*;
 use crate::common::*;
 
 fn aabb_shape(
-    min_x: f32,
-    min_y: f32,
-    min_z: f32,
-    max_x: f32,
-    max_y: f32,
-    max_z: f32,
+    min_x: f64,
+    min_y: f64,
+    min_z: f64,
+    max_x: f64,
+    max_y: f64,
+    max_z: f64,
 ) -> CollisionColliderShape3D {
     CollisionColliderShape3D::BuiltIn(CollisionShape3D::Aabb(CollisionAabb3D {
         min_x,
@@ -26,7 +26,7 @@ fn aabb_shape(
     }))
 }
 
-fn add_box_body(world: &mut Physics3DWorld, x: f32, y: f32, z: f32) -> RigidBody3DRef {
+fn add_box_body(world: &mut Physics3DWorld, x: f64, y: f64, z: f64) -> RigidBody3DRef {
     let body = create_rigid_body_3d();
     {
         let mut body_write = body.write().unwrap();
@@ -200,7 +200,7 @@ mod synchronize_physics_3d_broadphase {
         let mut world = world();
         add_box_body(&mut world, 0.0, 0.0, 0.0);
         let diverged = add_box_body(&mut world, 0.25, 0.0, 0.0);
-        diverged.write().unwrap().x = f32::NAN;
+        diverged.write().unwrap().x = f64::NAN;
 
         synchronize_physics_3d_broadphase(&mut world);
 

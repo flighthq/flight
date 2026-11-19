@@ -30,7 +30,7 @@ fn add_wall(world: &mut Physics3DWorld) -> RigidBody3DRef {
     wall
 }
 
-fn add_bullet(world: &mut Physics3DWorld, x: f32, speed: f32) -> RigidBody3DRef {
+fn add_bullet(world: &mut Physics3DWorld, x: f64, speed: f64) -> RigidBody3DRef {
     let bullet = add_body(world, Physics3DBodyType::Dynamic);
     {
         let mut bullet = bullet.write().unwrap();
@@ -47,9 +47,9 @@ fn add_bullet(world: &mut Physics3DWorld, x: f32, speed: f32) -> RigidBody3DRef 
 
 fn add_material_bullet(
     world: &mut Physics3DWorld,
-    x: f32,
-    speed_x: f32,
-    speed_y: f32,
+    x: f64,
+    speed_x: f64,
+    speed_y: f64,
     material: &Physics3DMaterial,
 ) -> RigidBody3DRef {
     let bullet = add_body(world, Physics3DBodyType::Dynamic);
@@ -292,7 +292,7 @@ mod integrate_physics_3d_continuous {
 
     #[test]
     fn applies_coulomb_friction_at_time_of_impact() {
-        fn run(friction: f32) -> f32 {
+        fn run(friction: f64) -> f64 {
             let mut world = continuous_world();
             let material = Physics3DMaterial {
                 density: 1.0,
@@ -653,8 +653,8 @@ mod integrate_physics_3d_continuous {
         let blade = add_body(&mut world, Physics3DBodyType::Dynamic);
         {
             let mut blade = blade.write().unwrap();
-            blade.orientation_z = -(std::f32::consts::PI / 8.0).sin();
-            blade.orientation_w = (std::f32::consts::PI / 8.0).cos();
+            blade.orientation_z = -(std::f64::consts::PI / 8.0).sin();
+            blade.orientation_w = (std::f64::consts::PI / 8.0).cos();
             blade.angular_velocity_z = 120.0;
             blade.gravity_scale = 0.0;
             blade.bullet = true;
@@ -688,8 +688,8 @@ mod integrate_physics_3d_continuous {
         let blade = add_body(&mut world, Physics3DBodyType::Dynamic);
         {
             let mut blade = blade.write().unwrap();
-            blade.orientation_z = -(std::f32::consts::PI / 8.0).sin();
-            blade.orientation_w = (std::f32::consts::PI / 8.0).cos();
+            blade.orientation_z = -(std::f64::consts::PI / 8.0).sin();
+            blade.orientation_w = (std::f64::consts::PI / 8.0).cos();
             blade.angular_velocity_z = 120.0;
             blade.gravity_scale = 0.0;
             blade.bullet = true;
@@ -769,7 +769,7 @@ mod write_physics_3d_rotational_ccd_envelope {
         ));
         assert!((out.angular_travel - 2.0).abs() < 1e-6);
         assert_eq!(out.sample_count, 115);
-        assert!(out.max_angular_increment <= std::f32::consts::PI / 180.0);
+        assert!(out.max_angular_increment <= std::f64::consts::PI / 180.0);
         assert!((out.max_point_arc_travel - (2.0 / 115.0) * 5.0).abs() < 1e-6);
         assert!(out.target_increment_met);
     }
@@ -792,8 +792,8 @@ mod write_physics_3d_rotational_ccd_envelope {
             0,
         ));
         assert_eq!(out.sample_count, 0);
-        assert_eq!(out.max_angular_increment, f32::INFINITY);
-        assert_eq!(out.max_point_arc_travel, f32::INFINITY);
+        assert_eq!(out.max_angular_increment, f64::INFINITY);
+        assert_eq!(out.max_point_arc_travel, f64::INFINITY);
         assert!(!out.target_increment_met);
         assert!(!write_physics_3d_rotational_ccd_envelope(
             &mut out,
@@ -805,7 +805,7 @@ mod write_physics_3d_rotational_ccd_envelope {
         assert_eq!(out, cleared);
         assert!(!write_physics_3d_rotational_ccd_envelope(
             &mut out,
-            f32::MAX,
+            f64::MAX,
             2.0,
             2.0,
             10,

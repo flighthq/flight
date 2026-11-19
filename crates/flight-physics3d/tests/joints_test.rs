@@ -11,7 +11,7 @@ struct Scene {
     body_b: RigidBody3DRef,
 }
 
-fn anchor_speed(scene: &Scene, joint: &Physics3DJointRef) -> f32 {
+fn anchor_speed(scene: &Scene, joint: &Physics3DJointRef) -> f64 {
     let body_a = scene.body_a.read().unwrap();
     let body_b = scene.body_b.read().unwrap();
     write_physics_3d_joint_anchors(&mut *joint.write().unwrap(), &body_a, &body_b);
@@ -70,7 +70,7 @@ fn make_static(world: &mut Physics3DWorld, body: &RigidBody3DRef) {
     refresh_rigid_body_3d_world_inertia(&mut body.write().unwrap());
 }
 
-fn separation_speed(scene: &Scene) -> f32 {
+fn separation_speed(scene: &Scene) -> f64 {
     let body_a = scene.body_a.read().unwrap();
     let body_b = scene.body_b.read().unwrap();
     let axis_x = body_b.x - body_a.x;
@@ -86,7 +86,7 @@ fn separation_speed(scene: &Scene) -> f32 {
         / length
 }
 
-fn set_axis_angle(body: &RigidBody3DRef, x: f32, y: f32, z: f32, angle: f32) {
+fn set_axis_angle(body: &RigidBody3DRef, x: f64, y: f64, z: f64, angle: f64) {
     let sine = (angle / 2.0).sin();
     let mut body = body.write().unwrap();
     body.orientation_x = x * sine;
@@ -101,7 +101,7 @@ fn solve_joint(
     joint: &Physics3DJointRef,
     solver: &Physics3DJointSolver,
     iterations: usize,
-    dt: f32,
+    dt: f64,
 ) {
     (solver.prepare)(world, joint, dt);
     if let Some(warm_start) = &solver.warm_start {
@@ -1082,7 +1082,7 @@ mod physics_3d_hinge_joint_solver {
     #[test]
     fn holds_the_hinge_line_even_when_the_frames_rotate_it_off_the_body_axes() {
         let mut scene = create_scene();
-        let half = std::f32::consts::FRAC_1_SQRT_2;
+        let half = std::f64::consts::FRAC_1_SQRT_2;
         let mut options = hinge_options(0, 1);
         options.frame.local_rotation_az = Some(half);
         options.frame.local_rotation_aw = Some(half);
@@ -1135,7 +1135,7 @@ mod physics_3d_hinge_joint_solver {
 
     #[test]
     fn bounds_the_motor_by_its_torque_budget_rather_than_by_the_iteration_count() {
-        fn run(iterations: usize) -> f32 {
+        fn run(iterations: usize) -> f64 {
             let mut scene = create_scene();
             let mut options = hinge_options(0, 1);
             options.enable_motor = Some(true);
@@ -1338,8 +1338,8 @@ mod physics_3d_joint_soft_limits {
 
     fn solve_loaded_stop(
         soft: bool,
-        frequency_hz: f32,
-        damping_ratio: f32,
+        frequency_hz: f64,
+        damping_ratio: f64,
     ) -> flight_entity::Ref<Physics3DHingeJoint> {
         let (mut scene, typed) = create_loaded_hinge_stop();
         {

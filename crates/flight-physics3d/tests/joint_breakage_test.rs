@@ -13,7 +13,7 @@ struct HangingScene {
     joint: Ref<Physics3DBallAndSocketJoint>,
 }
 
-fn create_hanging_scene(mass: f32, gravity: f32, break_force: f32) -> HangingScene {
+fn create_hanging_scene(mass: f64, gravity: f64, break_force: f64) -> HangingScene {
     let mut world = world();
     world.gravity_y = -gravity;
     register_built_in_physics_3d_joint_solvers(&mut world);
@@ -42,7 +42,7 @@ mod break_physics_3d_joint {
 
     #[test]
     fn leaves_the_joint_in_the_world_for_the_caller() {
-        let mut scene = create_hanging_scene(3.0, 10.0, f32::INFINITY);
+        let mut scene = create_hanging_scene(3.0, 10.0, f64::INFINITY);
         let erased: Physics3DJointRef = scene.joint.clone();
 
         break_physics_3d_joint(&mut scene.world, &erased);
@@ -58,7 +58,7 @@ mod break_physics_3d_joint {
 
     #[test]
     fn marks_the_joint_and_records_the_break() {
-        let mut scene = create_hanging_scene(3.0, 10.0, f32::INFINITY);
+        let mut scene = create_hanging_scene(3.0, 10.0, f64::INFINITY);
         let erased: Physics3DJointRef = scene.joint.clone();
 
         break_physics_3d_joint(&mut scene.world, &erased);
@@ -76,7 +76,7 @@ mod break_physics_3d_joint {
 
     #[test]
     fn reports_a_break_once() {
-        let mut scene = create_hanging_scene(3.0, 10.0, f32::INFINITY);
+        let mut scene = create_hanging_scene(3.0, 10.0, f64::INFINITY);
         let erased: Physics3DJointRef = scene.joint.clone();
 
         break_physics_3d_joint(&mut scene.world, &erased);
@@ -114,7 +114,7 @@ mod evaluate_physics_3d_joint_breakage {
 
     #[test]
     fn leaves_an_unbreakable_joint_alone() {
-        let mut scene = create_hanging_scene(1000.0, 10.0, f32::INFINITY);
+        let mut scene = create_hanging_scene(1000.0, 10.0, f64::INFINITY);
 
         step_scene(&mut scene);
 

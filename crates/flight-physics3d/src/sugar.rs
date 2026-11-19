@@ -442,15 +442,15 @@ impl Physics3DJointReaction {
         clear_physics_3d_joint_reaction(self)
     }
 
-    pub fn force(&self) -> f32 {
+    pub fn force(&self) -> f64 {
         return get_physics_3d_joint_reaction_force(self);
     }
 
-    pub fn torque(&self) -> f32 {
+    pub fn torque(&self) -> f64 {
         return get_physics_3d_joint_reaction_torque(self);
     }
 
-    pub fn write(&mut self, world: &Physics3DWorld, joint: &Physics3DJointRef, dt: f32) -> bool {
+    pub fn write(&mut self, world: &Physics3DWorld, joint: &Physics3DJointRef, dt: f64) -> bool {
         return write_physics_3d_joint_reaction(self, world, joint, dt);
     }
 }
@@ -486,9 +486,9 @@ impl Physics3DQueryResult {
     pub fn query_point(
         &mut self,
         world: &mut Physics3DWorld,
-        x: f32,
-        y: f32,
-        z: f32,
+        x: f64,
+        y: f64,
+        z: f64,
         filter: Option<&Physics3DQueryFilter>,
     ) {
         query_physics_3d_point(self, world, x, y, z, filter)
@@ -514,13 +514,13 @@ impl Physics3DRayResult {
     pub fn query_ray(
         &mut self,
         world: &mut Physics3DWorld,
-        origin_x: f32,
-        origin_y: f32,
-        origin_z: f32,
-        direction_x: f32,
-        direction_y: f32,
-        direction_z: f32,
-        max_fraction: Option<f32>,
+        origin_x: f64,
+        origin_y: f64,
+        origin_z: f64,
+        direction_x: f64,
+        direction_y: f64,
+        direction_z: f64,
+        max_fraction: Option<f64>,
         filter: Option<&Physics3DQueryFilter>,
     ) {
         query_physics_3d_ray(
@@ -541,13 +541,13 @@ impl Physics3DRayResult {
     pub fn query_ray_closest(
         &mut self,
         world: &mut Physics3DWorld,
-        origin_x: f32,
-        origin_y: f32,
-        origin_z: f32,
-        direction_x: f32,
-        direction_y: f32,
-        direction_z: f32,
-        max_fraction: Option<f32>,
+        origin_x: f64,
+        origin_y: f64,
+        origin_z: f64,
+        direction_x: f64,
+        direction_y: f64,
+        direction_z: f64,
+        max_fraction: Option<f64>,
         filter: Option<&Physics3DQueryFilter>,
     ) {
         query_physics_3d_ray_closest(
@@ -577,10 +577,10 @@ impl Physics3DShapeCastResult {
         world: &mut Physics3DWorld,
         registry: &CollisionRegistry3D,
         shape: &CollisionShape3D,
-        dx: f32,
-        dy: f32,
-        dz: f32,
-        max_fraction: Option<f32>,
+        dx: f64,
+        dy: f64,
+        dz: f64,
+        max_fraction: Option<f64>,
         filter: Option<&Physics3DQueryFilter>,
     ) {
         query_physics_3d_shape_cast(
@@ -656,7 +656,7 @@ impl Physics3DWorld {
         return out;
     }
 
-    pub fn explain_step(&self, dt: f32) -> Physics3DStepExplanation {
+    pub fn explain_step(&self, dt: f64) -> Physics3DStepExplanation {
         let mut out = Physics3DStepExplanation::default();
         explain_physics_3d_step(&mut out, self, dt);
         return out;
@@ -754,13 +754,13 @@ impl Physics3DWorld {
     pub fn set_body_transform(
         &mut self,
         body: &RigidBody3DRef,
-        x: f32,
-        y: f32,
-        z: f32,
-        orientation_x: f32,
-        orientation_y: f32,
-        orientation_z: f32,
-        orientation_w: f32,
+        x: f64,
+        y: f64,
+        z: f64,
+        orientation_x: f64,
+        orientation_y: f64,
+        orientation_z: f64,
+        orientation_w: f64,
     ) -> bool {
         return set_physics_3d_body_transform(
             self,
@@ -782,7 +782,7 @@ impl Physics3DWorld {
     pub fn step(
         &mut self,
         registry: &CollisionRegistry3D,
-        dt: f32,
+        dt: f64,
         guards: Option<&Physics3DGuardState>,
     ) {
         step_physics_3d(self, registry, dt, guards)
@@ -792,11 +792,11 @@ impl Physics3DWorld {
         synchronize_physics_3d_broadphase(self)
     }
 
-    pub fn synchronize_swept_broadphase(&mut self, dt: f32) {
+    pub fn synchronize_swept_broadphase(&mut self, dt: f64) {
         synchronize_physics_3d_swept_broadphase(self, dt)
     }
 
-    pub fn update_sleep(&mut self, dt: f32) {
+    pub fn update_sleep(&mut self, dt: f64) {
         update_physics_3d_sleep(self, dt)
     }
 }
@@ -815,11 +815,11 @@ impl RigidBody3D {
         clear_rigid_body_3d_forces(self)
     }
 
-    pub fn integrate_pose(&mut self, dt: f32) {
+    pub fn integrate_pose(&mut self, dt: f64) {
         integrate_rigid_body_3d_pose(self, dt)
     }
 
-    pub fn integrate_velocity(&mut self, gravity_x: f32, gravity_y: f32, gravity_z: f32, dt: f32) {
+    pub fn integrate_velocity(&mut self, gravity_x: f64, gravity_y: f64, gravity_z: f64, dt: f64) {
         integrate_rigid_body_3d_velocity(self, gravity_x, gravity_y, gravity_z, dt)
     }
 
@@ -839,7 +839,7 @@ impl RigidBody3D {
         update_rigid_body_3d_mass_data(self)
     }
 
-    pub fn write_world_center(&self, out: &mut [f32; 3]) {
+    pub fn write_world_center(&self, out: &mut [f64; 3]) {
         write_rigid_body_3d_world_center(self, out)
     }
 }

@@ -72,8 +72,8 @@ mod create_physics_3d_cone_twist_joint {
         let joint = joint.read().unwrap();
         assert_eq!(joint.joint.kind, PHYSICS_3D_CONE_TWIST_JOINT_KIND);
         assert!(joint.enable_swing_limit);
-        assert_eq!(joint.swing_limit_y, std::f32::consts::PI / 4.0);
-        assert_eq!(joint.swing_limit_z, std::f32::consts::PI / 4.0);
+        assert_eq!(joint.swing_limit_y, std::f64::consts::PI / 4.0);
+        assert_eq!(joint.swing_limit_z, std::f64::consts::PI / 4.0);
         assert!(!joint.enable_twist_limit);
     }
 
@@ -112,7 +112,7 @@ mod create_physics_3d_distance_joint {
         let joint = physics_3d_distance_joint(&distance_options(0, 1));
         let joint = joint.read().unwrap();
         assert_eq!(joint.min_length, 0.0);
-        assert_eq!(joint.max_length, f32::INFINITY);
+        assert_eq!(joint.max_length, f64::INFINITY);
     }
 
     #[test]
@@ -173,17 +173,17 @@ mod create_physics_3d_fixed_joint {
     #[test]
     fn carries_the_frames_it_was_given() {
         let mut options = frame_options(0, 1);
-        options.local_rotation_az = Some(std::f32::consts::FRAC_1_SQRT_2);
-        options.local_rotation_aw = Some(std::f32::consts::FRAC_1_SQRT_2);
+        options.local_rotation_az = Some(std::f64::consts::FRAC_1_SQRT_2);
+        options.local_rotation_aw = Some(std::f64::consts::FRAC_1_SQRT_2);
         let joint = physics_3d_fixed_joint(&options);
         let joint = joint.read().unwrap();
         assert_eq!(
             joint.frames.local_rotation_az,
-            std::f32::consts::FRAC_1_SQRT_2
+            std::f64::consts::FRAC_1_SQRT_2
         );
         assert_eq!(
             joint.frames.local_rotation_aw,
-            std::f32::consts::FRAC_1_SQRT_2
+            std::f64::consts::FRAC_1_SQRT_2
         );
     }
 }

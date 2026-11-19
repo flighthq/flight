@@ -38,7 +38,7 @@ pub fn initialize_physics_3d_debug_geometry(out: &mut Physics3DDebugGeometry) {
     out.sphere_count = 0;
 }
 
-fn body_point(body: &RigidBody3D, p: [f32; 3]) -> [f32; 3] {
+fn body_point(body: &RigidBody3D, p: [f64; 3]) -> [f64; 3] {
     let p = rotate(
         [
             body.orientation_x,
@@ -51,7 +51,7 @@ fn body_point(body: &RigidBody3D, p: [f32; 3]) -> [f32; 3] {
     return [body.x + p[0], body.y + p[1], body.z + p[2]];
 }
 
-fn cross(a: [f32; 3], b: [f32; 3]) -> [f32; 3] {
+fn cross(a: [f64; 3], b: [f64; 3]) -> [f64; 3] {
     return [
         a[1] * b[2] - a[2] * b[1],
         a[2] * b[0] - a[0] * b[2],
@@ -59,7 +59,7 @@ fn cross(a: [f32; 3], b: [f32; 3]) -> [f32; 3] {
     ];
 }
 
-fn rotate(q: [f32; 4], p: [f32; 3]) -> [f32; 3] {
+fn rotate(q: [f64; 4], p: [f64; 3]) -> [f64; 3] {
     let t = [
         2.0 * (q[1] * p[2] - q[2] * p[1]),
         2.0 * (q[2] * p[0] - q[0] * p[2]),
@@ -74,10 +74,10 @@ fn rotate(q: [f32; 4], p: [f32; 3]) -> [f32; 3] {
 
 fn surface_point(
     body: &RigidBody3D,
-    offset: [f32; 3],
-    rotation: [f32; 4],
-    point: [f32; 3],
-) -> [f32; 3] {
+    offset: [f64; 3],
+    rotation: [f64; 4],
+    point: [f64; 3],
+) -> [f64; 3] {
     let p = rotate(rotation, point);
     return body_point(body, [offset[0] + p[0], offset[1] + p[1], offset[2] + p[2]]);
 }
@@ -85,9 +85,9 @@ fn surface_point(
 fn write_box(
     out: &mut Physics3DDebugGeometry,
     body: &RigidBody3D,
-    center: [f32; 3],
-    half: [f32; 3],
-    rotation: [f32; 4],
+    center: [f64; 3],
+    half: [f64; 3],
+    rotation: [f64; 4],
 ) {
     let mut corners = [[0.0; 3]; 8];
     for (i, p) in corners.iter_mut().enumerate() {
@@ -266,9 +266,9 @@ fn write_collider(
                             [h.x, h.y, h.z],
                             [h.rotation_x, h.rotation_y, h.rotation_z, h.rotation_w],
                             [
-                                c as f32 * h.cell_size_x,
+                                c as f64 * h.cell_size_x,
                                 h.heights[r * h.columns + c],
-                                r as f32 * h.cell_size_z,
+                                r as f64 * h.cell_size_z,
                             ],
                         );
                     };
@@ -314,8 +314,8 @@ fn write_line(
     feature: Physics3DDebugFeature,
     body_a: i32,
     body_b: i32,
-    a: [f32; 3],
-    b: [f32; 3],
+    a: [f64; 3],
+    b: [f64; 3],
 ) {
     let value = Physics3DDebugLine {
         feature,
@@ -416,10 +416,10 @@ pub fn write_physics_3d_debug_geometry(
 fn write_ring(
     out: &mut Physics3DDebugGeometry,
     index: i32,
-    a: [f32; 3],
-    b: [f32; 3],
-    radius: f32,
-    t: f32,
+    a: [f64; 3],
+    b: [f64; 3],
+    radius: f64,
+    t: f64,
 ) {
     let axis = [b[0] - a[0], b[1] - a[1], b[2] - a[2]];
     let len = (axis[0] * axis[0] + axis[1] * axis[1] + axis[2] * axis[2]).sqrt();
@@ -445,7 +445,7 @@ fn write_ring(
         c[2] + u[2] * radius,
     ];
     for i in 1..=16 {
-        let angle = i as f32 / 16.0 * std::f32::consts::TAU;
+        let angle = i as f64 / 16.0 * std::f64::consts::TAU;
         let next = [
             c[0] + (u[0] * angle.cos() + v[0] * angle.sin()) * radius,
             c[1] + (u[1] * angle.cos() + v[1] * angle.sin()) * radius,
@@ -461,8 +461,8 @@ fn write_sphere(
     feature: Physics3DDebugFeature,
     body_a: i32,
     body_b: i32,
-    p: [f32; 3],
-    radius: f32,
+    p: [f64; 3],
+    radius: f64,
 ) {
     let value = Physics3DDebugSphere {
         feature,

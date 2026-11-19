@@ -33,11 +33,11 @@ mod is_physics_3d_body_state_valid {
             let world = test_world();
             let mut body = world.bodies[0].write().unwrap();
             match poison {
-                0 => body.z = f32::NAN,
-                1 => body.orientation_w = f32::NAN,
-                2 => body.angular_velocity_y = f32::NAN,
-                3 => body.torque_z = f32::NAN,
-                4 => body.center_x = f32::NAN,
+                0 => body.z = f64::NAN,
+                1 => body.orientation_w = f64::NAN,
+                2 => body.angular_velocity_y = f64::NAN,
+                3 => body.torque_z = f64::NAN,
+                4 => body.center_x = f64::NAN,
                 _ => unreachable!(),
             }
             drop(body);
@@ -48,7 +48,7 @@ mod is_physics_3d_body_state_valid {
     #[test]
     fn rejects_a_non_finite_world_inertia_tensor() {
         let world = test_world();
-        world.bodies[0].write().unwrap().inverse_inertia_world_xy = f32::INFINITY;
+        world.bodies[0].write().unwrap().inverse_inertia_world_xy = f64::INFINITY;
 
         assert!(!is_physics_3d_body_state_valid(&world));
     }
@@ -114,7 +114,7 @@ mod is_physics_3d_collider_state_valid {
 
         let mut material_world = test_world();
         let material_collider = add_sphere(&mut material_world);
-        material_collider.write().unwrap().material.friction = f32::NAN;
+        material_collider.write().unwrap().material.friction = f64::NAN;
         assert!(!is_physics_3d_collider_state_valid(&material_world));
     }
 
@@ -149,7 +149,7 @@ mod is_physics_3d_contact_state_valid {
         let mut world = test_world();
         world.contacts.push(physics_3d_contact(0, 1, None, None));
         let invalid = physics_3d_contact(0, 1, None, None);
-        invalid.write().unwrap().friction = f32::NAN;
+        invalid.write().unwrap().friction = f64::NAN;
         world.contacts.push(invalid);
 
         assert!(!is_physics_3d_contact_state_valid(&world));
@@ -188,7 +188,7 @@ mod is_physics_3d_contact_valid {
     fn rejects_a_non_finite_field_on_a_point_it_will_actually_read() {
         let contact = physics_3d_contact(0, 1, None, None);
         let mut point = create_physics_3d_contact_point();
-        point.r_bz = f32::NAN;
+        point.r_bz = f64::NAN;
         {
             let mut contact = contact.write().unwrap();
             contact.points.push(point);
@@ -202,7 +202,7 @@ mod is_physics_3d_contact_valid {
     fn ignores_a_point_beyond_the_count_which_the_solver_never_reads() {
         let contact = physics_3d_contact(0, 1, None, None);
         let mut point = create_physics_3d_contact_point();
-        point.depth = f32::NAN;
+        point.depth = f64::NAN;
         contact.write().unwrap().points.push(point);
 
         assert!(is_physics_3d_contact_valid(&contact.read().unwrap()));
@@ -219,9 +219,9 @@ mod is_physics_3d_gravity_valid {
         for axis in 0..3 {
             let mut world = test_world();
             match axis {
-                0 => world.gravity_x = f32::NAN,
-                1 => world.gravity_y = f32::NAN,
-                2 => world.gravity_z = f32::NAN,
+                0 => world.gravity_x = f64::NAN,
+                1 => world.gravity_y = f64::NAN,
+                2 => world.gravity_z = f64::NAN,
                 _ => unreachable!(),
             }
             assert!(!is_physics_3d_gravity_valid(&world));
@@ -250,7 +250,7 @@ mod is_physics_3d_joint_state_valid {
         let mut world = world();
         let joint = physics_3d_distance_joint(&distance_options(0, 1));
         add_physics_3d_joint(&mut world, &joint);
-        joint.write().unwrap().length = f32::NAN;
+        joint.write().unwrap().length = f64::NAN;
 
         assert!(!is_physics_3d_joint_state_valid(&world));
     }
@@ -342,8 +342,8 @@ mod is_physics_3d_timestep_valid {
         assert!(is_physics_3d_timestep_valid(1.0 / 60.0));
         assert!(!is_physics_3d_timestep_valid(0.0));
         assert!(!is_physics_3d_timestep_valid(-1.0));
-        assert!(!is_physics_3d_timestep_valid(f32::NAN));
-        assert!(!is_physics_3d_timestep_valid(f32::INFINITY));
+        assert!(!is_physics_3d_timestep_valid(f64::NAN));
+        assert!(!is_physics_3d_timestep_valid(f64::INFINITY));
     }
 }
 

@@ -53,13 +53,13 @@ pub fn collide_physics_3d_collider_shapes(
 pub fn raycast_physics_3d_collider_shape(
     out: &mut CollisionRaycastHit3D,
     shape: &CollisionColliderShape3D,
-    origin_x: f32,
-    origin_y: f32,
-    origin_z: f32,
-    direction_x: f32,
-    direction_y: f32,
-    direction_z: f32,
-    max_fraction: Option<f32>,
+    origin_x: f64,
+    origin_y: f64,
+    origin_z: f64,
+    direction_x: f64,
+    direction_y: f64,
+    direction_z: f64,
+    max_fraction: Option<f64>,
 ) -> bool {
     return match shape {
         CollisionColliderShape3D::BuiltIn(shape) => raycast_collision_shape3d(
@@ -115,14 +115,14 @@ pub fn sweep_physics_3d_collider_shapes(
     out: &mut CollisionTimeOfImpact3D,
     registry: &CollisionRegistry3D,
     shape_a: &CollisionColliderShape3D,
-    delta_ax: f32,
-    delta_ay: f32,
-    delta_az: f32,
+    delta_ax: f64,
+    delta_ay: f64,
+    delta_az: f64,
     shape_b: &CollisionColliderShape3D,
-    delta_bx: f32,
-    delta_by: f32,
-    delta_bz: f32,
-    max_fraction: Option<f32>,
+    delta_bx: f64,
+    delta_by: f64,
+    delta_bz: f64,
+    max_fraction: Option<f64>,
 ) -> bool {
     let hit = match (shape_a, shape_b) {
         (CollisionColliderShape3D::TriangleMesh(_), CollisionColliderShape3D::TriangleMesh(_))

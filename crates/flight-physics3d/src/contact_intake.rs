@@ -66,8 +66,8 @@ fn merge_contact(
     collider_b: usize,
     manifold: &CollisionContactManifold3D,
     sensor: bool,
-    friction: f32,
-    restitution: f32,
+    friction: f64,
+    restitution: f64,
     preserve_overrides: bool,
 ) {
     let existing = world
@@ -125,7 +125,7 @@ fn merge_contact(
 }
 
 // A missing body reads as the origin.
-fn read_physics_3d_body_world_center(world: &Physics3DWorld, body_index: i32) -> [f32; 3] {
+fn read_physics_3d_body_world_center(world: &Physics3DWorld, body_index: i32) -> [f64; 3] {
     let mut center = [0.0; 3];
     let Some(body) = world.body_by_index.get(&body_index) else {
         return center;

@@ -7,14 +7,14 @@ use flight_collision::{
     register_built_in_collision_face_queries3d, register_built_in_collision_supports3d,
 };
 
-fn assert_close(actual: f32, expected: f32) {
+fn assert_close(actual: f64, expected: f64) {
     assert!(
         (actual - expected).abs() < 1e-5,
         "expected {expected}, got {actual}"
     );
 }
 
-fn contact_point(feature_id: i64, depth: f32) -> Physics3DContactPoint {
+fn contact_point(feature_id: i64, depth: f64) -> Physics3DContactPoint {
     let mut point = create_physics_3d_contact_point();
     point.depth = depth;
     point.feature_id = feature_id;
@@ -90,7 +90,7 @@ fn two_dynamic_body_world() -> Physics3DWorld {
     world
 }
 
-fn overlapping_box_world(depth: f32) -> (Physics3DWorld, flight_collision::CollisionRegistry3D) {
+fn overlapping_box_world(depth: f64) -> (Physics3DWorld, flight_collision::CollisionRegistry3D) {
     let mut world = world();
     let upper = unit_box(&mut world);
     let lower = unit_box(&mut world);
@@ -564,8 +564,8 @@ mod solve_physics_3d_contact_velocities {
         diagonal.contacts[0].write().unwrap().friction = 0.3;
         {
             let mut body = diagonal.bodies[0].write().unwrap();
-            body.velocity_x = speed / std::f32::consts::SQRT_2;
-            body.velocity_z = speed / std::f32::consts::SQRT_2;
+            body.velocity_x = speed / std::f64::consts::SQRT_2;
+            body.velocity_z = speed / std::f64::consts::SQRT_2;
             body.velocity_y = -1.0;
         }
         prepare_physics_3d_contact_constraints(&mut diagonal);

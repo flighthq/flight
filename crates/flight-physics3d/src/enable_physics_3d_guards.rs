@@ -213,7 +213,7 @@ fn warn_spatial(log: &LogStateRef, now: f64, world: &Physics3DWorld) {
 }
 
 // flight-lint: allow(f64) D1: timestamp sampled from the caller's logging clock
-fn warn_step(log: &LogStateRef, now: f64, world: &Physics3DWorld, dt: f32) {
+fn warn_step(log: &LogStateRef, now: f64, world: &Physics3DWorld, dt: f64) {
     let mut e = Physics3DStepExplanation::default();
     explain_physics_3d_step(&mut e, world, dt);
     if e.status == Physics3DStepStatus::Ready {

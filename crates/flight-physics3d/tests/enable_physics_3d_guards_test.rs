@@ -116,7 +116,7 @@ fn record(entry: &LogEntry) -> &std::collections::HashMap<String, LogValue> {
     return data;
 }
 
-fn step(harness: &Harness, world: &mut Physics3DWorld, dt: f32) {
+fn step(harness: &Harness, world: &mut Physics3DWorld, dt: f64) {
     step_physics_3d(world, &harness.registry, dt, Some(&harness.guards));
 }
 
@@ -219,7 +219,7 @@ mod enable_physics_3d_guards {
         assert_eq!(repeated.len(), 1);
 
         let widened = capture_log(&harness, || {
-            world.gravity_z = f32::NAN;
+            world.gravity_z = f64::NAN;
             step(&harness, &mut world, 1.0 / 60.0);
         });
         assert_eq!(widened.len(), 1);
@@ -231,7 +231,7 @@ mod enable_physics_3d_guards {
         let mut harness = harness();
         enabled(&mut harness);
         let mut world = create_test_world();
-        world.gravity_y = f32::NAN;
+        world.gravity_y = f64::NAN;
         world.config.substeps = 0;
 
         let entries = capture_log(&harness, || step(&harness, &mut world, 0.0));
@@ -290,7 +290,7 @@ mod enable_physics_3d_guards {
         let collider = physics_3d_collider(&sphere_shape(1.0, 0.0, 0.0, 0.0), None, None, None);
         let body = world.bodies[0].clone();
         add_physics_3d_collider(&mut world, &body, &collider);
-        collider.write().unwrap().material.restitution = f32::NAN;
+        collider.write().unwrap().material.restitution = f64::NAN;
 
         let entries = capture_log(&harness, || step(&harness, &mut world, 1.0 / 60.0));
 

@@ -269,7 +269,7 @@ pub fn add_physics_3d_collider(
     }
 }
 
-pub fn apply_physics_3d_angular_impulse(body: &RigidBody3DRef, x: f32, y: f32, z: f32) -> bool {
+pub fn apply_physics_3d_angular_impulse(body: &RigidBody3DRef, x: f64, y: f64, z: f64) -> bool {
     let mut body = body.write().unwrap();
     assert_body_not_stepping_value(&body);
     if body.body_type != Physics3DBodyType::Dynamic
@@ -291,7 +291,7 @@ pub fn apply_physics_3d_angular_impulse(body: &RigidBody3DRef, x: f32, y: f32, z
     return true;
 }
 
-pub fn apply_physics_3d_force(body: &RigidBody3DRef, x: f32, y: f32, z: f32) -> bool {
+pub fn apply_physics_3d_force(body: &RigidBody3DRef, x: f64, y: f64, z: f64) -> bool {
     let mut body = body.write().unwrap();
     assert_body_not_stepping_value(&body);
     if body.body_type != Physics3DBodyType::Dynamic || !finite_vector(x, y, z) {
@@ -308,12 +308,12 @@ pub fn apply_physics_3d_force(body: &RigidBody3DRef, x: f32, y: f32, z: f32) -> 
 
 pub fn apply_physics_3d_force_at_point(
     body: &RigidBody3DRef,
-    x: f32,
-    y: f32,
-    z: f32,
-    point_x: f32,
-    point_y: f32,
-    point_z: f32,
+    x: f64,
+    y: f64,
+    z: f64,
+    point_x: f64,
+    point_y: f64,
+    point_z: f64,
 ) -> bool {
     let mut body = body.write().unwrap();
     assert_body_not_stepping_value(&body);
@@ -344,7 +344,7 @@ pub fn apply_physics_3d_force_at_point(
     return true;
 }
 
-pub fn apply_physics_3d_linear_impulse(body: &RigidBody3DRef, x: f32, y: f32, z: f32) -> bool {
+pub fn apply_physics_3d_linear_impulse(body: &RigidBody3DRef, x: f64, y: f64, z: f64) -> bool {
     let mut body = body.write().unwrap();
     assert_body_not_stepping_value(&body);
     if body.body_type != Physics3DBodyType::Dynamic || !finite_vector(x, y, z) {
@@ -361,12 +361,12 @@ pub fn apply_physics_3d_linear_impulse(body: &RigidBody3DRef, x: f32, y: f32, z:
 
 pub fn apply_physics_3d_linear_impulse_at_point(
     body: &RigidBody3DRef,
-    x: f32,
-    y: f32,
-    z: f32,
-    point_x: f32,
-    point_y: f32,
-    point_z: f32,
+    x: f64,
+    y: f64,
+    z: f64,
+    point_x: f64,
+    point_y: f64,
+    point_z: f64,
 ) -> bool {
     let mut body = body.write().unwrap();
     assert_body_not_stepping_value(&body);
@@ -407,7 +407,7 @@ pub fn apply_physics_3d_linear_impulse_at_point(
     return true;
 }
 
-pub fn apply_physics_3d_torque(body: &RigidBody3DRef, x: f32, y: f32, z: f32) -> bool {
+pub fn apply_physics_3d_torque(body: &RigidBody3DRef, x: f64, y: f64, z: f64) -> bool {
     let mut body = body.write().unwrap();
     assert_body_not_stepping_value(&body);
     if body.body_type != Physics3DBodyType::Dynamic
@@ -466,7 +466,7 @@ pub fn find_physics_3d_body(world: &Physics3DWorld, index: i32) -> Option<RigidB
     return world.body_by_index.get(&index).cloned();
 }
 
-fn finite_vector(x: f32, y: f32, z: f32) -> bool {
+fn finite_vector(x: f64, y: f64, z: f64) -> bool {
     return x.is_finite() && y.is_finite() && z.is_finite();
 }
 
@@ -814,13 +814,13 @@ pub fn set_physics_3d_body_sleep_enabled(body: &RigidBody3DRef, sleep_enabled: b
 pub fn set_physics_3d_body_transform(
     world: &mut Physics3DWorld,
     body: &RigidBody3DRef,
-    x: f32,
-    y: f32,
-    z: f32,
-    orientation_x: f32,
-    orientation_y: f32,
-    orientation_z: f32,
-    orientation_w: f32,
+    x: f64,
+    y: f64,
+    z: f64,
+    orientation_x: f64,
+    orientation_y: f64,
+    orientation_z: f64,
+    orientation_w: f64,
 ) -> bool {
     assert_physics_3d_world_not_stepping(world);
     let body_write = body.write().unwrap();
@@ -960,7 +960,7 @@ fn wake_physics_3d_body_value(body: &mut RigidBody3D) {
     body.sleep_timer = 0.0;
 }
 
-fn world_inverse_inertia(body: &RigidBody3D) -> [f32; 6] {
+fn world_inverse_inertia(body: &RigidBody3D) -> [f64; 6] {
     return [
         body.inverse_inertia_world_xx,
         body.inverse_inertia_world_yy,
@@ -971,7 +971,7 @@ fn world_inverse_inertia(body: &RigidBody3D) -> [f32; 6] {
     ];
 }
 
-pub fn write_rigid_body_3d_world_center(body: &RigidBody3D, out: &mut [f32; 3]) {
+pub fn write_rigid_body_3d_world_center(body: &RigidBody3D, out: &mut [f64; 3]) {
     let (cx, cy, cz) = (body.center_x, body.center_y, body.center_z);
     if cx == 0.0 && cy == 0.0 && cz == 0.0 {
         *out = [body.x, body.y, body.z];
