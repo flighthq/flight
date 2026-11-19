@@ -181,7 +181,11 @@ fn carrier_graph_preserves_thin_fat_raw_and_policy_distinctions() {
             name.starts_with("flight_get_node3d_") || name.starts_with("flight_set_node3d_")
         })
         .collect();
-    assert_eq!(node3d_accessors.len(), 24);
+    assert_eq!(
+        node3d_accessors.len(),
+        25,
+        "the canonical invalidating alpha setter and raw alpha field setter are distinct surfaces"
+    );
     assert!(node3d_accessors.iter().all(|(_, row)| {
         row.kind == "surface" && row.classification == "reachable" && row.blocker == "-"
     }));
