@@ -1,6 +1,7 @@
 //! flight-compiler: target-native
 
 use crate::bitmap::invalidate_bitmap;
+use crate::region_access::*;
 use crate::types::*;
 
 #[cfg(all(test, feature = "object-api"))]
@@ -15,7 +16,13 @@ mod sugar_tests {
     }
 
     fn test_region() -> BitmapRegion {
-        return create_bitmap_region(test_bitmap(), 0, 0, 4, 4);
+        return create_bitmap_region(
+            &std::sync::Arc::new(std::sync::RwLock::new(test_bitmap())),
+            0,
+            0,
+            4,
+            4,
+        );
     }
 
     #[test]
@@ -47,30 +54,31 @@ fn copy_mirrored(
     mirror_x: bool,
     mirror_y: bool,
 ) {
-    let sd = source.bitmap.data.clone();
-    let s_stride = source.bitmap.width as usize;
-    let d_stride = dest.bitmap.width as usize;
-    for py in 0..h {
-        let sy = source.y + (if mirror_y { h - 1 - py } else { py });
-        let dy = dest.y + py;
-        if sy < 0 || sy >= source.bitmap.height as i32 || dy < 0 || dy >= dest.bitmap.height as i32
-        {
-            continue;
-        }
-        for px in 0..w {
-            let sx = source.x + (if mirror_x { w - 1 - px } else { px });
-            let dx = dest.x + px;
-            if sx < 0 || sx >= s_stride as i32 || dx < 0 || dx >= d_stride as i32 {
+    return write_region_with_sources(dest, [source], |bitmap, [source_pixels]| {
+        let sd = &source_pixels;
+        let s_stride = source_pixels.width as usize;
+        let d_stride = bitmap.width as usize;
+        for py in 0..h {
+            let sy = source.y + (if mirror_y { h - 1 - py } else { py });
+            let dy = dest.y + py;
+            if sy < 0 || sy >= source_pixels.height as i32 || dy < 0 || dy >= bitmap.height as i32 {
                 continue;
             }
-            let si = (sy as usize * s_stride + sx as usize) * 4;
-            let di = (dy as usize * d_stride + dx as usize) * 4;
-            dest.bitmap.data[di] = sd[si];
-            dest.bitmap.data[di + 1] = sd[si + 1];
-            dest.bitmap.data[di + 2] = sd[si + 2];
-            dest.bitmap.data[di + 3] = sd[si + 3];
+            for px in 0..w {
+                let sx = source.x + (if mirror_x { w - 1 - px } else { px });
+                let dx = dest.x + px;
+                if sx < 0 || sx >= s_stride as i32 || dx < 0 || dx >= d_stride as i32 {
+                    continue;
+                }
+                let si = (sy as usize * s_stride + sx as usize) * 4;
+                let di = (dy as usize * d_stride + dx as usize) * 4;
+                bitmap.data[di] = sd[si];
+                bitmap.data[di + 1] = sd[si + 1];
+                bitmap.data[di + 2] = sd[si + 2];
+                bitmap.data[di + 3] = sd[si + 3];
+            }
         }
-    }
+    });
 }
 
 /// Mirrors source left-to-right into dest.
@@ -78,30 +86,32 @@ pub fn flip_bitmap_horizontal(dest: &mut BitmapRegion, source: &BitmapRegion) {
     let w = dest.width.min(source.width);
     let h = dest.height.min(source.height);
     if is_same_region(dest, source) {
-        let half = w / 2;
-        let stride = dest.bitmap.width as usize;
-        for py in 0..h {
-            let y = dest.y + py;
-            if y < 0 || y >= dest.bitmap.height as i32 {
-                continue;
-            }
-            for px in 0..half {
-                let xa = (dest.x + px) as usize;
-                let xb = (dest.x + w - 1 - px) as usize;
-                if xa >= stride || xb >= stride {
+        write_region_bitmap(dest, |bitmap| {
+            let half = w / 2;
+            let stride = bitmap.width as usize;
+            for py in 0..h {
+                let y = dest.y + py;
+                if y < 0 || y >= bitmap.height as i32 {
                     continue;
                 }
-                swap_pixels(
-                    &mut dest.bitmap.data,
-                    (y as usize * stride + xa) * 4,
-                    (y as usize * stride + xb) * 4,
-                );
+                for px in 0..half {
+                    let xa = (dest.x + px) as usize;
+                    let xb = (dest.x + w - 1 - px) as usize;
+                    if xa >= stride || xb >= stride {
+                        continue;
+                    }
+                    swap_pixels(
+                        &mut bitmap.data,
+                        (y as usize * stride + xa) * 4,
+                        (y as usize * stride + xb) * 4,
+                    );
+                }
             }
-        }
+        });
         return;
     }
     copy_mirrored(dest, source, w, h, true, false);
-    invalidate_bitmap(&mut dest.bitmap);
+    write_region_bitmap(dest, invalidate_bitmap);
 }
 
 /// Mirrors source top-to-bottom into dest.
@@ -109,34 +119,37 @@ pub fn flip_bitmap_vertical(dest: &mut BitmapRegion, source: &BitmapRegion) {
     let w = dest.width.min(source.width);
     let h = dest.height.min(source.height);
     if is_same_region(dest, source) {
-        let half = h / 2;
-        let stride = dest.bitmap.width as usize;
-        for py in 0..half {
-            let y_top = (dest.y + py) as usize;
-            let y_bottom = (dest.y + h - 1 - py) as usize;
-            if y_top >= dest.bitmap.height as usize || y_bottom >= dest.bitmap.height as usize {
-                continue;
-            }
-            for px in 0..w {
-                let x = (dest.x + px) as usize;
-                if x >= stride {
+        write_region_bitmap(dest, |bitmap| {
+            let half = h / 2;
+            let stride = bitmap.width as usize;
+            for py in 0..half {
+                let y_top = (dest.y + py) as usize;
+                let y_bottom = (dest.y + h - 1 - py) as usize;
+                if y_top >= bitmap.height as usize || y_bottom >= bitmap.height as usize {
                     continue;
                 }
-                swap_pixels(
-                    &mut dest.bitmap.data,
-                    (y_top * stride + x) * 4,
-                    (y_bottom * stride + x) * 4,
-                );
+                for px in 0..w {
+                    let x = (dest.x + px) as usize;
+                    if x >= stride {
+                        continue;
+                    }
+                    swap_pixels(
+                        &mut bitmap.data,
+                        (y_top * stride + x) * 4,
+                        (y_bottom * stride + x) * 4,
+                    );
+                }
             }
-        }
+        });
         return;
     }
     copy_mirrored(dest, source, w, h, false, true);
-    invalidate_bitmap(&mut dest.bitmap);
+    write_region_bitmap(dest, invalidate_bitmap);
 }
 
+// The same shared bitmap and the same rectangle (TS `isSameRegion`).
 fn is_same_region(a: &BitmapRegion, b: &BitmapRegion) -> bool {
-    std::ptr::eq(&a.bitmap as *const _, &b.bitmap as *const _)
+    std::sync::Arc::ptr_eq(&a.bitmap, &b.bitmap)
         && a.x == b.x
         && a.y == b.y
         && a.width == b.width

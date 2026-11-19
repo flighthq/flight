@@ -1128,7 +1128,8 @@ fn by_value_parameters_follow_rust_ownership() {
     assert!(!wrappers.contains("std::ptr::read("));
     for line in [
         "void flight_release_vector2(void * arg0 /* ownership transferred; do not use or free after call */);",
-        "void * flight_create_bitmap_region(void * arg0 /* ownership transferred; do not use or free after call */, int32_t arg1, int32_t arg2, int32_t arg3, int32_t arg4);",
+        "void * flight_share_bitmap(void * arg0 /* ownership transferred; do not use or free after call */);",
+        "void * flight_create_bitmap_region(void * arg0, int32_t arg1, int32_t arg2, int32_t arg3, int32_t arg4);",
         "void * flight_ease_invert(void * arg0 /* cloned; caller retains its handle */);",
         "void flight_register_particle_format(void * arg0, const char * arg1, void * arg2 /* cloned; caller retains its handle */);",
     ] {

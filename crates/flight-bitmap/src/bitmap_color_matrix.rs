@@ -1,5 +1,6 @@
 //! flight-compiler: target-native
 
+use crate::region_access::*;
 use crate::types::*;
 use flight_entity::Uint8Array;
 
@@ -121,37 +122,39 @@ fn clamp_byte(value: f32) -> u8 {
 
 /// Applies a 4x5 color matrix to source and writes into out.
 pub fn color_matrix_bitmap(out: &mut Uint8Array, source: &BitmapRegion, matrix: &[f32]) {
-    assert!(matrix.len() >= 20, "Color matrix filter requires 20 values");
-    for py in 0..source.height {
-        let source_y = source.y + py;
-        if source_y < 0 || source_y >= source.bitmap.height as i32 {
-            continue;
-        }
-        for px in 0..source.width {
-            let source_x = source.x + px;
-            if source_x < 0 || source_x >= source.bitmap.width as i32 {
+    return read_region_bitmap(source, |source_bitmap| {
+        assert!(matrix.len() >= 20, "Color matrix filter requires 20 values");
+        for py in 0..source.height {
+            let source_y = source.y + py;
+            if source_y < 0 || source_y >= source_bitmap.height as i32 {
                 continue;
             }
-            let si = (source_y as usize * source.bitmap.width as usize + source_x as usize) * 4;
-            let di = (py as usize * source.width as usize + px as usize) * 4;
-            let r = source.bitmap.data[si] as f32;
-            let g = source.bitmap.data[si + 1] as f32;
-            let b = source.bitmap.data[si + 2] as f32;
-            let a = source.bitmap.data[si + 3] as f32;
-            out[di] = clamp_byte(
-                r * matrix[0] + g * matrix[1] + b * matrix[2] + a * matrix[3] + matrix[4],
-            );
-            out[di + 1] = clamp_byte(
-                r * matrix[5] + g * matrix[6] + b * matrix[7] + a * matrix[8] + matrix[9],
-            );
-            out[di + 2] = clamp_byte(
-                r * matrix[10] + g * matrix[11] + b * matrix[12] + a * matrix[13] + matrix[14],
-            );
-            out[di + 3] = clamp_byte(
-                r * matrix[15] + g * matrix[16] + b * matrix[17] + a * matrix[18] + matrix[19],
-            );
+            for px in 0..source.width {
+                let source_x = source.x + px;
+                if source_x < 0 || source_x >= source_bitmap.width as i32 {
+                    continue;
+                }
+                let si = (source_y as usize * source_bitmap.width as usize + source_x as usize) * 4;
+                let di = (py as usize * source.width as usize + px as usize) * 4;
+                let r = source_bitmap.data[si] as f32;
+                let g = source_bitmap.data[si + 1] as f32;
+                let b = source_bitmap.data[si + 2] as f32;
+                let a = source_bitmap.data[si + 3] as f32;
+                out[di] = clamp_byte(
+                    r * matrix[0] + g * matrix[1] + b * matrix[2] + a * matrix[3] + matrix[4],
+                );
+                out[di + 1] = clamp_byte(
+                    r * matrix[5] + g * matrix[6] + b * matrix[7] + a * matrix[8] + matrix[9],
+                );
+                out[di + 2] = clamp_byte(
+                    r * matrix[10] + g * matrix[11] + b * matrix[12] + a * matrix[13] + matrix[14],
+                );
+                out[di + 3] = clamp_byte(
+                    r * matrix[15] + g * matrix[16] + b * matrix[17] + a * matrix[18] + matrix[19],
+                );
+            }
         }
-    }
+    });
 }
 
 /// Composes two 4x5 color matrices: result applies first, then second.

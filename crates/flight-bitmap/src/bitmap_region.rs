@@ -1,5 +1,7 @@
 //! flight-compiler: target-native
 
+use flight_entity::Ref;
+
 use crate::types::*;
 
 #[cfg(all(test, feature = "object-api"))]
@@ -14,13 +16,31 @@ mod sugar_tests {
     }
 
     fn test_region() -> BitmapRegion {
-        return create_bitmap_region(test_bitmap(), 0, 0, 4, 4);
+        return create_bitmap_region(
+            &std::sync::Arc::new(std::sync::RwLock::new(test_bitmap())),
+            0,
+            0,
+            4,
+            4,
+        );
     }
 
     #[test]
     fn bitmapregion_new_matches_create_bitmap_region() {
-        let a = BitmapRegion::new(test_bitmap(), 1, 1, 4, 4);
-        let b = create_bitmap_region(test_bitmap(), 1, 1, 4, 4);
+        let a = BitmapRegion::new(
+            &std::sync::Arc::new(std::sync::RwLock::new(test_bitmap())),
+            1,
+            1,
+            4,
+            4,
+        );
+        let b = create_bitmap_region(
+            &std::sync::Arc::new(std::sync::RwLock::new(test_bitmap())),
+            1,
+            1,
+            4,
+            4,
+        );
         assert_eq!(format!("{:?}", a), format!("{:?}", b));
     }
 
@@ -28,23 +48,36 @@ mod sugar_tests {
     fn bitmapregion_set_matches_set_bitmap_region() {
         let mut a = test_region();
         let mut b = test_region();
-        let ra = a.set(test_bitmap(), 1, 1, 4, 4);
-        let rb = set_bitmap_region(&mut b, test_bitmap(), 1, 1, 4, 4);
+        let ra = a.set(
+            &std::sync::Arc::new(std::sync::RwLock::new(test_bitmap())),
+            1,
+            1,
+            4,
+            4,
+        );
+        let rb = set_bitmap_region(
+            &mut b,
+            &std::sync::Arc::new(std::sync::RwLock::new(test_bitmap())),
+            1,
+            1,
+            4,
+            4,
+        );
         assert_eq!(format!("{:?}", ra), format!("{:?}", rb));
         assert_eq!(format!("{:?}", a), format!("{:?}", b));
     }
 }
 
-/// Creates a BitmapRegion covering the whole bitmap (or a specified sub-region).
+/// Creates a region on `bitmap`, sharing it: the caller keeps its handle and sees every write.
 pub fn create_bitmap_region(
-    bitmap: Bitmap,
+    bitmap: &Ref<Bitmap>,
     x: i32,
     y: i32,
     width: i32,
     height: i32,
 ) -> BitmapRegion {
     BitmapRegion {
-        bitmap,
+        bitmap: bitmap.clone(),
         x,
         y,
         width,
@@ -52,16 +85,16 @@ pub fn create_bitmap_region(
     }
 }
 
-/// Writes region fields into an existing `out` region without allocating.
+/// Writes region fields into an existing `out` region, sharing `bitmap` without allocating.
 pub fn set_bitmap_region(
     out: &mut BitmapRegion,
-    bitmap: Bitmap,
+    bitmap: &Ref<Bitmap>,
     x: i32,
     y: i32,
     width: i32,
     height: i32,
 ) {
-    out.bitmap = bitmap;
+    out.bitmap = bitmap.clone();
     out.x = x;
     out.y = y;
     out.width = width;
@@ -70,11 +103,11 @@ pub fn set_bitmap_region(
 
 #[cfg(feature = "object-api")]
 impl BitmapRegion {
-    pub fn new(bitmap: Bitmap, x: i32, y: i32, width: i32, height: i32) -> Self {
+    pub fn new(bitmap: &Ref<Bitmap>, x: i32, y: i32, width: i32, height: i32) -> Self {
         return create_bitmap_region(bitmap, x, y, width, height);
     }
 
-    pub fn set(&mut self, bitmap: Bitmap, x: i32, y: i32, width: i32, height: i32) {
+    pub fn set(&mut self, bitmap: &Ref<Bitmap>, x: i32, y: i32, width: i32, height: i32) {
         return set_bitmap_region(self, bitmap, x, y, width, height);
     }
 }

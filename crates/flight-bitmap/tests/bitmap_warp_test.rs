@@ -6,7 +6,7 @@ fn region(bmp: Bitmap) -> BitmapRegion {
     let w = bmp.width as i32;
     let h = bmp.height as i32;
     return BitmapRegion {
-        bitmap: bmp,
+        bitmap: std::sync::Arc::new(std::sync::RwLock::new(bmp)),
         x: 0,
         y: 0,
         width: w,
@@ -16,7 +16,7 @@ fn region(bmp: Bitmap) -> BitmapRegion {
 
 fn region_at(bmp: Bitmap, x: i32, y: i32, width: i32, height: i32) -> BitmapRegion {
     return BitmapRegion {
-        bitmap: bmp,
+        bitmap: std::sync::Arc::new(std::sync::RwLock::new(bmp)),
         x,
         y,
         width,
@@ -40,8 +40,14 @@ mod warp_bitmap {
             BitmapEdgeMode::Clamp,
             BitmapResizeMode::Nearest,
         );
-        assert_eq!(get_bitmap_pixel(&dr.bitmap, 0, 0), 0xff0000ff);
-        assert_eq!(get_bitmap_pixel(&dr.bitmap, 3, 3), 0xff0000ff);
+        assert_eq!(
+            get_bitmap_pixel(&dr.bitmap.read().unwrap(), 0, 0),
+            0xff0000ff
+        );
+        assert_eq!(
+            get_bitmap_pixel(&dr.bitmap.read().unwrap(), 3, 3),
+            0xff0000ff
+        );
     }
 
     #[test]
@@ -58,8 +64,14 @@ mod warp_bitmap {
             BitmapEdgeMode::Transparent,
             BitmapResizeMode::Nearest,
         );
-        assert_eq!(get_bitmap_pixel(&dr.bitmap, 1, 1), 0xff0000ff);
-        assert_eq!(get_bitmap_pixel(&dr.bitmap, 0, 0), 0x00000000);
+        assert_eq!(
+            get_bitmap_pixel(&dr.bitmap.read().unwrap(), 1, 1),
+            0xff0000ff
+        );
+        assert_eq!(
+            get_bitmap_pixel(&dr.bitmap.read().unwrap(), 0, 0),
+            0x00000000
+        );
     }
 
     #[test]
@@ -75,7 +87,10 @@ mod warp_bitmap {
             BitmapEdgeMode::Clamp,
             BitmapResizeMode::Nearest,
         );
-        assert_eq!(get_bitmap_pixel(&dr.bitmap, 0, 0), 0x00ff00ff);
+        assert_eq!(
+            get_bitmap_pixel(&dr.bitmap.read().unwrap(), 0, 0),
+            0x00ff00ff
+        );
     }
 
     #[test]
@@ -91,7 +106,10 @@ mod warp_bitmap {
             BitmapEdgeMode::Transparent,
             BitmapResizeMode::Nearest,
         );
-        assert_eq!(get_bitmap_pixel(&dr.bitmap, 0, 0), 0x00000000);
+        assert_eq!(
+            get_bitmap_pixel(&dr.bitmap.read().unwrap(), 0, 0),
+            0x00000000
+        );
     }
 
     #[test]
@@ -107,7 +125,10 @@ mod warp_bitmap {
             BitmapEdgeMode::Clamp,
             BitmapResizeMode::Nearest,
         );
-        assert_eq!(get_bitmap_pixel(&dr.bitmap, 0, 0), 0x00000000);
+        assert_eq!(
+            get_bitmap_pixel(&dr.bitmap.read().unwrap(), 0, 0),
+            0x00000000
+        );
     }
 
     #[test]
@@ -123,7 +144,7 @@ mod warp_bitmap {
             BitmapEdgeMode::Clamp,
             BitmapResizeMode::Nearest,
         );
-        assert_eq!(dr.bitmap.data[3], 0);
+        assert_eq!(dr.bitmap.read().unwrap().data[3], 0);
     }
 }
 
@@ -143,7 +164,10 @@ mod warp_bitmap_quad {
             BitmapEdgeMode::Transparent,
             BitmapResizeMode::Nearest,
         );
-        assert_eq!(get_bitmap_pixel(&dr.bitmap, 2, 2), 0x0000ffff);
+        assert_eq!(
+            get_bitmap_pixel(&dr.bitmap.read().unwrap(), 2, 2),
+            0x0000ffff
+        );
     }
 
     #[test]
@@ -183,7 +207,7 @@ mod warp_bitmap_quad {
             BitmapEdgeMode::Transparent,
             BitmapResizeMode::Nearest,
         );
-        let has_non_zero = dr.bitmap.data.iter().any(|&v| v != 0);
+        let has_non_zero = dr.bitmap.read().unwrap().data.iter().any(|&v| v != 0);
         assert!(has_non_zero);
     }
 
@@ -200,6 +224,9 @@ mod warp_bitmap_quad {
             BitmapEdgeMode::Transparent,
             BitmapResizeMode::Nearest,
         );
-        assert_eq!(get_bitmap_pixel(&dr.bitmap, 0, 0), 0x00000000);
+        assert_eq!(
+            get_bitmap_pixel(&dr.bitmap.read().unwrap(), 0, 0),
+            0x00000000
+        );
     }
 }

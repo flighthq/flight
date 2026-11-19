@@ -1,6 +1,7 @@
 //! flight-compiler: target-native
 
 use crate::bitmap::invalidate_bitmap;
+use crate::region_access::*;
 use crate::types::*;
 
 #[cfg(all(test, feature = "object-api"))]
@@ -15,7 +16,13 @@ mod sugar_tests {
     }
 
     fn test_region() -> BitmapRegion {
-        return create_bitmap_region(test_bitmap(), 0, 0, 4, 4);
+        return create_bitmap_region(
+            &std::sync::Arc::new(std::sync::RwLock::new(test_bitmap())),
+            0,
+            0,
+            4,
+            4,
+        );
     }
 
     #[test]
@@ -56,7 +63,7 @@ fn catmull_rom_weight(t: f64) -> f64 {
 fn sample_bicubic(
     dd: &mut [u8],
     di: usize,
-    sd: &[u8],
+    sd: &SourcePixels<'_>,
     sw: i32,
     sh: i32,
     origin_x: i32,
@@ -96,7 +103,7 @@ fn sample_bicubic(
 fn sample_bilinear(
     dd: &mut [u8],
     di: usize,
-    sd: &[u8],
+    sd: &SourcePixels<'_>,
     sw: i32,
     sh: i32,
     origin_x: i32,
@@ -149,7 +156,7 @@ fn sample_bilinear(
 fn sample_bitmap(
     dd: &mut [u8],
     di: usize,
-    sd: &[u8],
+    sd: &SourcePixels<'_>,
     sw: i32,
     sh: i32,
     origin_x: i32,
@@ -201,49 +208,51 @@ pub fn transform_bitmap(
     edge_mode: BitmapEdgeMode,
     sample_mode: BitmapResizeMode,
 ) {
-    let dw = dest.width;
-    let dh = dest.height;
-    let sw = source.width;
-    let sh = source.height;
-    if dw == 0 || dh == 0 || sw == 0 || sh == 0 {
-        return;
-    }
-    let [a, b, c, d, e, f] = *matrix;
-    let s_stride = source.bitmap.width as i32;
-    let d_stride = dest.bitmap.width as i32;
-    let s_data = source.bitmap.data.clone();
-
-    for dy in 0..dh {
-        let oy = dest.y + dy;
-        if oy < 0 || oy >= dest.bitmap.height as i32 {
-            continue;
+    return write_region_with_sources(dest, [source], |bitmap, [source_pixels]| {
+        let dw = dest.width;
+        let dh = dest.height;
+        let sw = source.width;
+        let sh = source.height;
+        if dw == 0 || dh == 0 || sw == 0 || sh == 0 {
+            return;
         }
-        for dx in 0..dw {
-            let ox = dest.x + dx;
-            if ox < 0 || ox >= d_stride {
+        let [a, b, c, d, e, f] = *matrix;
+        let s_stride = source_pixels.width as i32;
+        let d_stride = bitmap.width as i32;
+        let s_data = &source_pixels;
+
+        for dy in 0..dh {
+            let oy = dest.y + dy;
+            if oy < 0 || oy >= bitmap.height as i32 {
                 continue;
             }
-            let sx = a * dx as f64 + c * dy as f64 + e;
-            let sy = b * dx as f64 + d * dy as f64 + f;
-            let di = ((oy as usize) * (d_stride as usize) + (ox as usize)) * 4;
-            sample_bitmap(
-                &mut dest.bitmap.data,
-                di,
-                &s_data,
-                sw,
-                sh,
-                source.x,
-                source.y,
-                s_stride,
-                source.bitmap.height as i32,
-                sx,
-                sy,
-                sample_mode,
-                edge_mode,
-            );
+            for dx in 0..dw {
+                let ox = dest.x + dx;
+                if ox < 0 || ox >= d_stride {
+                    continue;
+                }
+                let sx = a * dx as f64 + c * dy as f64 + e;
+                let sy = b * dx as f64 + d * dy as f64 + f;
+                let di = ((oy as usize) * (d_stride as usize) + (ox as usize)) * 4;
+                sample_bitmap(
+                    &mut bitmap.data,
+                    di,
+                    &s_data,
+                    sw,
+                    sh,
+                    source.x,
+                    source.y,
+                    s_stride,
+                    source_pixels.height as i32,
+                    sx,
+                    sy,
+                    sample_mode,
+                    edge_mode,
+                );
+            }
         }
-    }
-    invalidate_bitmap(&mut dest.bitmap);
+        invalidate_bitmap(bitmap);
+    });
 }
 
 fn write_transparent(dd: &mut [u8], di: usize) {

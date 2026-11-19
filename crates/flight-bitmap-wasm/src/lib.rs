@@ -11,7 +11,7 @@ use flight_bitmap::{
     fill_bitmap_noise, fill_bitmap_perlin_noise, fill_bitmap_rectangle, fill_bitmap_turbulence,
     get_bitmap_color_bounds_rectangle, get_bitmap_coverage, get_bitmap_histogram,
     get_bitmap_mismatch, merge_bitmap_channels, multiply_bitmap_alpha, pixelate_bitmap,
-    premultiply_bitmap_pixels, set_bitmap_alpha, set_bitmap_color_matrix_identity,
+    premultiply_bitmap_pixels, set_bitmap_alpha, set_bitmap_color_matrix_identity, share_bitmap,
     unpremultiply_bitmap_pixels,
 };
 use wasm_bindgen::prelude::*;
@@ -43,7 +43,7 @@ pub fn apply_bitmap_curve_wasm(
         optional_u8_map(blue_lut),
         optional_u8_map(alpha_lut),
     );
-    copy_u8_output(dest_data, &dest.bitmap.data);
+    copy_u8_output(dest_data, &dest.bitmap.read().unwrap().data);
 }
 
 #[wasm_bindgen]
@@ -66,7 +66,7 @@ pub fn apply_bitmap_levels_wasm(
         white_point as f32,
         gamma as f32,
     );
-    copy_u8_output(dest_data, &dest.bitmap.data);
+    copy_u8_output(dest_data, &dest.bitmap.read().unwrap().data);
 }
 
 #[wasm_bindgen]
@@ -91,7 +91,7 @@ pub fn apply_bitmap_palette_map_wasm(
         optional_u8_map(blue_map),
         optional_u8_map(alpha_map),
     );
-    copy_u8_output(dest_data, &dest.bitmap.data);
+    copy_u8_output(dest_data, &dest.bitmap.read().unwrap().data);
 }
 
 fn bitmap_from_raw(data: &[u8], width: f64, height: f64) -> flight_bitmap::Bitmap {
@@ -226,7 +226,7 @@ pub fn copy_bitmap_alpha_wasm(
     let mut dest = region_from_raw(dest_data, dest_descriptor);
     let source = region_from_raw(source_data, source_descriptor);
     copy_bitmap_alpha(&mut dest, &source);
-    copy_u8_output(dest_data, &dest.bitmap.data);
+    copy_u8_output(dest_data, &dest.bitmap.read().unwrap().data);
 }
 
 #[wasm_bindgen]
@@ -240,7 +240,7 @@ pub fn copy_bitmap_pixels_wasm(
     let mut dest = region_from_raw(dest_data, dest_descriptor);
     let source = region_from_raw(source_data, source_descriptor);
     copy_bitmap_pixels(&mut dest, &source, composite);
-    copy_u8_output(dest_data, &dest.bitmap.data);
+    copy_u8_output(dest_data, &dest.bitmap.read().unwrap().data);
 }
 
 fn copy_u8_output(out: &mut [u8], source: &[u8]) {
@@ -301,7 +301,7 @@ pub fn fill_bitmap_noise_wasm(
 ) {
     let mut target = region_from_raw(data, descriptor);
     fill_bitmap_noise(&mut target, seed as u32, low as u8, high as u8, gray_scale);
-    copy_u8_output(data, &target.bitmap.data);
+    copy_u8_output(data, &target.bitmap.read().unwrap().data);
 }
 
 #[wasm_bindgen]
@@ -328,14 +328,14 @@ pub fn fill_bitmap_perlin_noise_wasm(
         stitch,
         channel_options as u32,
     );
-    copy_u8_output(data, &target.bitmap.data);
+    copy_u8_output(data, &target.bitmap.read().unwrap().data);
 }
 
 #[wasm_bindgen]
 pub fn fill_bitmap_rectangle_wasm(data: &mut [u8], descriptor: &[f64], color: f64) {
     let mut target = region_from_raw(data, descriptor);
     fill_bitmap_rectangle(&mut target, color as u32);
-    copy_u8_output(data, &target.bitmap.data);
+    copy_u8_output(data, &target.bitmap.read().unwrap().data);
 }
 
 #[wasm_bindgen]
@@ -362,7 +362,7 @@ pub fn fill_bitmap_turbulence_wasm(
         stitch,
         channel_options as u32,
     );
-    copy_u8_output(data, &target.bitmap.data);
+    copy_u8_output(data, &target.bitmap.read().unwrap().data);
 }
 
 fn fingerprint_from_raw(cells: &[u8], grid_size: f64) -> BitmapFingerprint {
@@ -482,14 +482,14 @@ pub fn merge_bitmap_channels_wasm(
     let blue = region_from_raw(blue_data, blue_descriptor);
     let alpha = region_from_raw(alpha_data, alpha_descriptor);
     merge_bitmap_channels(&mut out, &red, &green, &blue, &alpha);
-    copy_u8_output(out_data, &out.bitmap.data);
+    copy_u8_output(out_data, &out.bitmap.read().unwrap().data);
 }
 
 #[wasm_bindgen]
 pub fn multiply_bitmap_alpha_wasm(data: &mut [u8], descriptor: &[f64], factor: f64) {
     let mut target = region_from_raw(data, descriptor);
     multiply_bitmap_alpha(&mut target, factor as f32);
-    copy_u8_output(data, &target.bitmap.data);
+    copy_u8_output(data, &target.bitmap.read().unwrap().data);
 }
 
 fn optional_u8_map(values: &[u8]) -> Option<&[u8]> {
@@ -531,9 +531,11 @@ fn region_from_raw(data: &[u8], descriptor: &[f64]) -> flight_bitmap::BitmapRegi
         6,
         "bitmap region descriptor must contain [bitmapWidth, bitmapHeight, x, y, width, height]",
     );
-    let bitmap = bitmap_from_raw(data, descriptor[0], descriptor[1]);
+    // wasm-bindgen lends JS memory as a borrowed slice, while a region's bitmap is a shared
+    // `Ref<Bitmap>` that owns its pixels, so each call copies in here and copies back out after.
+    let bitmap = share_bitmap(bitmap_from_raw(data, descriptor[0], descriptor[1]));
     create_bitmap_region(
-        bitmap,
+        &bitmap,
         descriptor[2] as i32,
         descriptor[3] as i32,
         descriptor[4] as i32,
@@ -545,7 +547,7 @@ fn region_from_raw(data: &[u8], descriptor: &[f64]) -> flight_bitmap::BitmapRegi
 pub fn set_bitmap_alpha_wasm(data: &mut [u8], descriptor: &[f64], alpha: f64) {
     let mut target = region_from_raw(data, descriptor);
     set_bitmap_alpha(&mut target, alpha as f32);
-    copy_u8_output(data, &target.bitmap.data);
+    copy_u8_output(data, &target.bitmap.read().unwrap().data);
 }
 
 #[wasm_bindgen]

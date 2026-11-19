@@ -1,6 +1,7 @@
 //! flight-compiler: target-native
 
 use crate::bitmap::invalidate_bitmap;
+use crate::region_access::*;
 use crate::types::*;
 
 #[cfg(all(test, feature = "object-api"))]
@@ -15,7 +16,13 @@ mod sugar_tests {
     }
 
     fn test_region() -> BitmapRegion {
-        return create_bitmap_region(test_bitmap(), 0, 0, 4, 4);
+        return create_bitmap_region(
+            &std::sync::Arc::new(std::sync::RwLock::new(test_bitmap())),
+            0,
+            0,
+            4,
+            4,
+        );
     }
 
     fn test_lut() -> Vec<u8> {
@@ -65,36 +72,38 @@ pub fn apply_bitmap_curve(
     blue_lut: Option<&[u8]>,
     alpha_lut: Option<&[u8]>,
 ) {
-    let w = out.width.min(source.width);
-    let h = out.height.min(source.height);
-    let sd = source.bitmap.data.clone();
-    let s_bw = source.bitmap.width as i32;
-    let o_bw = out.bitmap.width as i32;
-    for py in 0..h {
-        let sy = source.y + py;
-        let oy = out.y + py;
-        if sy < 0 || sy >= source.bitmap.height as i32 || oy < 0 || oy >= out.bitmap.height as i32 {
-            continue;
-        }
-        for px in 0..w {
-            let sx = source.x + px;
-            let ox = out.x + px;
-            if sx < 0 || sx >= s_bw || ox < 0 || ox >= o_bw {
+    return write_region_with_sources(out, [source], |bitmap, [source_pixels]| {
+        let w = out.width.min(source.width);
+        let h = out.height.min(source.height);
+        let sd = &source_pixels;
+        let s_bw = source_pixels.width as i32;
+        let o_bw = bitmap.width as i32;
+        for py in 0..h {
+            let sy = source.y + py;
+            let oy = out.y + py;
+            if sy < 0 || sy >= source_pixels.height as i32 || oy < 0 || oy >= bitmap.height as i32 {
                 continue;
             }
-            let si = (sy as usize * s_bw as usize + sx as usize) * 4;
-            let oi = (oy as usize * o_bw as usize + ox as usize) * 4;
-            let r = sd[si];
-            let g = sd[si + 1];
-            let b = sd[si + 2];
-            let a = sd[si + 3];
-            out.bitmap.data[oi] = red_lut.map_or(r, |lut| lut[r as usize]);
-            out.bitmap.data[oi + 1] = green_lut.map_or(g, |lut| lut[g as usize]);
-            out.bitmap.data[oi + 2] = blue_lut.map_or(b, |lut| lut[b as usize]);
-            out.bitmap.data[oi + 3] = alpha_lut.map_or(a, |lut| lut[a as usize]);
+            for px in 0..w {
+                let sx = source.x + px;
+                let ox = out.x + px;
+                if sx < 0 || sx >= s_bw || ox < 0 || ox >= o_bw {
+                    continue;
+                }
+                let si = (sy as usize * s_bw as usize + sx as usize) * 4;
+                let oi = (oy as usize * o_bw as usize + ox as usize) * 4;
+                let r = sd[si];
+                let g = sd[si + 1];
+                let b = sd[si + 2];
+                let a = sd[si + 3];
+                bitmap.data[oi] = red_lut.map_or(r, |lut| lut[r as usize]);
+                bitmap.data[oi + 1] = green_lut.map_or(g, |lut| lut[g as usize]);
+                bitmap.data[oi + 2] = blue_lut.map_or(b, |lut| lut[b as usize]);
+                bitmap.data[oi + 3] = alpha_lut.map_or(a, |lut| lut[a as usize]);
+            }
         }
-    }
-    invalidate_bitmap(&mut out.bitmap);
+        invalidate_bitmap(bitmap);
+    });
 }
 
 /// Applies a levels adjustment to `out`.

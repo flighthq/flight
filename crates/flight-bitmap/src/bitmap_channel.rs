@@ -3,6 +3,7 @@
 use flight_entity::{Uint8Array, allocate_entity};
 
 use crate::bitmap::invalidate_bitmap;
+use crate::region_access::*;
 use crate::types::*;
 
 #[cfg(all(test, feature = "object-api"))]
@@ -17,7 +18,13 @@ mod sugar_tests {
     }
 
     fn test_region() -> BitmapRegion {
-        return create_bitmap_region(test_bitmap(), 0, 0, 4, 4);
+        return create_bitmap_region(
+            &std::sync::Arc::new(std::sync::RwLock::new(test_bitmap())),
+            0,
+            0,
+            4,
+            4,
+        );
     }
 
     #[test]
@@ -79,71 +86,77 @@ pub fn merge_bitmap_channels(
     b: &BitmapRegion,
     a: &BitmapRegion,
 ) {
-    let w = out
-        .width
-        .min(r.width)
-        .min(g.width)
-        .min(b.width)
-        .min(a.width);
-    let h = out
-        .height
-        .min(r.height)
-        .min(g.height)
-        .min(b.height)
-        .min(a.height);
-    let rd = r.bitmap.data.clone();
-    let gd = g.bitmap.data.clone();
-    let bd = b.bitmap.data.clone();
-    let ad = a.bitmap.data.clone();
-    for py in 0..h {
-        let oy = out.y + py;
-        let ry = r.y + py;
-        let gy = g.y + py;
-        let by = b.y + py;
-        let ay = a.y + py;
-        if oy < 0
-            || oy >= out.bitmap.height as i32
-            || ry < 0
-            || ry >= r.bitmap.height as i32
-            || gy < 0
-            || gy >= g.bitmap.height as i32
-            || by < 0
-            || by >= b.bitmap.height as i32
-            || ay < 0
-            || ay >= a.bitmap.height as i32
-        {
-            continue;
-        }
-        for px in 0..w {
-            let ox = out.x + px;
-            let rx = r.x + px;
-            let gx = g.x + px;
-            let bx = b.x + px;
-            let ax = a.x + px;
-            if ox < 0
-                || ox >= out.bitmap.width as i32
-                || rx < 0
-                || rx >= r.bitmap.width as i32
-                || gx < 0
-                || gx >= g.bitmap.width as i32
-                || bx < 0
-                || bx >= b.bitmap.width as i32
-                || ax < 0
-                || ax >= a.bitmap.width as i32
-            {
-                continue;
+    return write_region_with_sources(
+        out,
+        [r, g, b, a],
+        |bitmap, [r_pixels, g_pixels, b_pixels, a_pixels]| {
+            let w = out
+                .width
+                .min(r.width)
+                .min(g.width)
+                .min(b.width)
+                .min(a.width);
+            let h = out
+                .height
+                .min(r.height)
+                .min(g.height)
+                .min(b.height)
+                .min(a.height);
+            let rd = &r_pixels;
+            let gd = &g_pixels;
+            let bd = &b_pixels;
+            let ad = &a_pixels;
+            for py in 0..h {
+                let oy = out.y + py;
+                let ry = r.y + py;
+                let gy = g.y + py;
+                let by = b.y + py;
+                let ay = a.y + py;
+                if oy < 0
+                    || oy >= bitmap.height as i32
+                    || ry < 0
+                    || ry >= r_pixels.height as i32
+                    || gy < 0
+                    || gy >= g_pixels.height as i32
+                    || by < 0
+                    || by >= b_pixels.height as i32
+                    || ay < 0
+                    || ay >= a_pixels.height as i32
+                {
+                    continue;
+                }
+                for px in 0..w {
+                    let ox = out.x + px;
+                    let rx = r.x + px;
+                    let gx = g.x + px;
+                    let bx = b.x + px;
+                    let ax = a.x + px;
+                    if ox < 0
+                        || ox >= bitmap.width as i32
+                        || rx < 0
+                        || rx >= r_pixels.width as i32
+                        || gx < 0
+                        || gx >= g_pixels.width as i32
+                        || bx < 0
+                        || bx >= b_pixels.width as i32
+                        || ax < 0
+                        || ax >= a_pixels.width as i32
+                    {
+                        continue;
+                    }
+                    let di = (oy as usize * bitmap.width as usize + ox as usize) * 4;
+                    bitmap.data[di] = rd[(ry as usize * r_pixels.width as usize + rx as usize) * 4];
+                    bitmap.data[di + 1] =
+                        gd[(gy as usize * g_pixels.width as usize + gx as usize) * 4 + 1];
+                    bitmap.data[di + 2] =
+                        bd[(by as usize * b_pixels.width as usize + bx as usize) * 4 + 2];
+                    bitmap.data[di + 3] =
+                        ad[(ay as usize * a_pixels.width as usize + ax as usize) * 4 + 3];
+                }
             }
-            let di = (oy as usize * out.bitmap.width as usize + ox as usize) * 4;
-            out.bitmap.data[di] = rd[(ry as usize * r.bitmap.width as usize + rx as usize) * 4];
-            out.bitmap.data[di + 1] =
-                gd[(gy as usize * g.bitmap.width as usize + gx as usize) * 4 + 1];
-            out.bitmap.data[di + 2] =
-                bd[(by as usize * b.bitmap.width as usize + bx as usize) * 4 + 2];
-            out.bitmap.data[di + 3] =
-                ad[(ay as usize * a.bitmap.width as usize + ax as usize) * 4 + 3];
-        }
-    }
-    invalidate_bitmap(&mut out.bitmap);
+            invalidate_bitmap(bitmap);
+        },
+    );
 }
 
 /// Splits source into four single-channel grayscale bitmaps [R, G, B, A].

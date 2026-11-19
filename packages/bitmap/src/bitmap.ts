@@ -93,3 +93,9 @@ function initializeBitmap(out: EntityConstruction<Bitmap>, width: number, height
 export function invalidateBitmap(bitmap: Bitmap): void {
   bitmap.version = (bitmap.version + 1) >>> 0;
 }
+
+// Returns `bitmap` itself. A TypeScript bitmap is already a shared reference, so any number of
+// regions may hold it; the native lanes move an owned bitmap behind a shared handle here.
+export function shareBitmap(bitmap: Bitmap): Bitmap {
+  return bitmap;
+}

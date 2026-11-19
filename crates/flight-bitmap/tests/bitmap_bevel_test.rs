@@ -17,7 +17,7 @@ mod bevel_bitmap {
     fn highlights_the_light_facing_edge_and_shades_the_opposite_edge() {
         let source = edge_strip();
         let sr = BitmapRegion {
-            bitmap: source,
+            bitmap: std::sync::Arc::new(std::sync::RwLock::new(source)),
             x: 0,
             y: 0,
             width: 5,
@@ -51,7 +51,7 @@ mod bevel_bitmap {
     fn inner_type_clips_the_bevel_to_inside_the_shape() {
         let source = edge_strip();
         let sr = BitmapRegion {
-            bitmap: source,
+            bitmap: std::sync::Arc::new(std::sync::RwLock::new(source)),
             x: 0,
             y: 0,
             width: 5,

@@ -4,7 +4,7 @@ use std::fmt;
 use std::ops::{Deref, DerefMut};
 use std::sync::Arc;
 
-use flight_entity::{Entity, EntityRuntimeSlot, Uint8Array};
+use flight_entity::{Entity, EntityRuntimeSlot, Ref, Uint8Array};
 use flight_host::{HostImageSource, ProviderRef};
 pub(crate) use flight_texture::{AlphaType, PixelFormat, TextureGamut};
 use flight_texture::{TextureSource, TextureSourceFields};
@@ -178,13 +178,12 @@ pub struct Bitmap {
     pub format: PixelFormat,
 }
 
-/// A rectangular sub-region of a Bitmap, referencing the bitmap by index or
-/// carrying a clone depending on context. In the Rust-as-IR pattern we keep
-/// the bitmap inline so that free functions can mutate through the region.
+/// A rectangle into a shared bitmap (TS `BitmapRegion`). Any number of regions may reference one
+/// bitmap; a write through one region is visible to every holder of that bitmap.
 #[derive(Clone, Debug)]
 #[repr(C)]
 pub struct BitmapRegion {
-    pub bitmap: Bitmap,
+    pub bitmap: Ref<Bitmap>,
     pub x: i32,
     pub y: i32,
     pub width: i32,
@@ -548,7 +547,7 @@ impl TextureSource for Bitmap {
 impl Default for BitmapRegion {
     fn default() -> Self {
         BitmapRegion {
-            bitmap: Bitmap::default(),
+            bitmap: Ref::new(std::sync::RwLock::new(Bitmap::default())),
             x: 0,
             y: 0,
             width: 0,

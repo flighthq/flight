@@ -2,6 +2,7 @@
 
 use flight_geometry::{Rectangle, create_rectangle};
 
+use crate::region_access::*;
 use crate::types::*;
 
 #[cfg(all(test, feature = "object-api"))]
@@ -16,7 +17,13 @@ mod sugar_tests {
     }
 
     fn test_region() -> BitmapRegion {
-        return create_bitmap_region(test_bitmap(), 0, 0, 4, 4);
+        return create_bitmap_region(
+            &std::sync::Arc::new(std::sync::RwLock::new(test_bitmap())),
+            0,
+            0,
+            4,
+            4,
+        );
     }
 
     #[test]
@@ -37,58 +44,60 @@ pub fn get_bitmap_color_bounds_rectangle(
     color: u32,
     find_color: bool,
 ) -> Option<Rectangle> {
-    let data = &source.bitmap.data;
-    let bitmap_width = source.bitmap.width as i32;
-    let masked_color = color & mask;
-    let mut min_x = i32::MAX;
-    let mut min_y = i32::MAX;
-    let mut max_x = -1i32;
-    let mut max_y = -1i32;
+    return read_region_bitmap(source, |source_bitmap| {
+        let data = &source_bitmap.data;
+        let bitmap_width = source_bitmap.width as i32;
+        let masked_color = color & mask;
+        let mut min_x = i32::MAX;
+        let mut min_y = i32::MAX;
+        let mut max_x = -1i32;
+        let mut max_y = -1i32;
 
-    for py in 0..source.height {
-        let y = source.y + py;
-        if y < 0 || y >= source.bitmap.height as i32 {
-            continue;
-        }
-        for px in 0..source.width {
-            let x = source.x + px;
-            if x < 0 || x >= bitmap_width {
+        for py in 0..source.height {
+            let y = source.y + py;
+            if y < 0 || y >= source_bitmap.height as i32 {
                 continue;
             }
-            let i = (y as usize * bitmap_width as usize + x as usize) * 4;
-            let pixel = (((data[i] as u32) << 24)
-                | ((data[i + 1] as u32) << 16)
-                | ((data[i + 2] as u32) << 8)
-                | (data[i + 3] as u32))
-                & mask;
-            let matches = pixel == masked_color;
-            if matches == find_color {
-                if x < min_x {
-                    min_x = x;
+            for px in 0..source.width {
+                let x = source.x + px;
+                if x < 0 || x >= bitmap_width {
+                    continue;
                 }
-                if x > max_x {
-                    max_x = x;
-                }
-                if y < min_y {
-                    min_y = y;
-                }
-                if y > max_y {
-                    max_y = y;
+                let i = (y as usize * bitmap_width as usize + x as usize) * 4;
+                let pixel = (((data[i] as u32) << 24)
+                    | ((data[i + 1] as u32) << 16)
+                    | ((data[i + 2] as u32) << 8)
+                    | (data[i + 3] as u32))
+                    & mask;
+                let matches = pixel == masked_color;
+                if matches == find_color {
+                    if x < min_x {
+                        min_x = x;
+                    }
+                    if x > max_x {
+                        max_x = x;
+                    }
+                    if y < min_y {
+                        min_y = y;
+                    }
+                    if y > max_y {
+                        max_y = y;
+                    }
                 }
             }
         }
-    }
 
-    if max_x == -1 {
-        None
-    } else {
-        Some(create_rectangle(
-            min_x as f32,
-            min_y as f32,
-            (max_x - min_x + 1) as f32,
-            (max_y - min_y + 1) as f32,
-        ))
-    }
+        if max_x == -1 {
+            None
+        } else {
+            Some(create_rectangle(
+                min_x as f32,
+                min_y as f32,
+                (max_x - min_x + 1) as f32,
+                (max_y - min_y + 1) as f32,
+            ))
+        }
+    });
 }
 
 #[cfg(feature = "object-api")]

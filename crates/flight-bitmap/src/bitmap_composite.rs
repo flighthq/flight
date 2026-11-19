@@ -1,6 +1,7 @@
 //! flight-compiler: target-native
 
 use crate::bitmap::invalidate_bitmap;
+use crate::region_access::*;
 use crate::types::*;
 use flight_entity::Uint8Array;
 
@@ -16,7 +17,13 @@ mod sugar_tests {
     }
 
     fn test_region() -> BitmapRegion {
-        return create_bitmap_region(test_bitmap(), 0, 0, 4, 4);
+        return create_bitmap_region(
+            &std::sync::Arc::new(std::sync::RwLock::new(test_bitmap())),
+            0,
+            0,
+            4,
+            4,
+        );
     }
 
     #[test]
@@ -111,30 +118,32 @@ pub fn composite_bitmap_pixels(
     pixels: &Uint8Array,
     mode: BitmapCompositeMode,
 ) {
-    for py in 0..dest.height {
-        let y = dest.y + py;
-        if y < 0 || y >= dest.bitmap.height as i32 {
-            continue;
-        }
-        for px in 0..dest.width {
-            let x = dest.x + px;
-            if x < 0 || x >= dest.bitmap.width as i32 {
+    return write_region_bitmap(dest, |bitmap| {
+        for py in 0..dest.height {
+            let y = dest.y + py;
+            if y < 0 || y >= bitmap.height as i32 {
                 continue;
             }
-            let si = (py as usize * dest.width as usize + px as usize) * 4;
-            let di = (y as usize * dest.bitmap.width as usize + x as usize) * 4;
-            composite_pixel_into(
-                &mut dest.bitmap.data,
-                di,
-                pixels[si],
-                pixels[si + 1],
-                pixels[si + 2],
-                pixels[si + 3],
-                mode,
-            );
+            for px in 0..dest.width {
+                let x = dest.x + px;
+                if x < 0 || x >= bitmap.width as i32 {
+                    continue;
+                }
+                let si = (py as usize * dest.width as usize + px as usize) * 4;
+                let di = (y as usize * bitmap.width as usize + x as usize) * 4;
+                composite_pixel_into(
+                    &mut bitmap.data,
+                    di,
+                    pixels[si],
+                    pixels[si + 1],
+                    pixels[si + 2],
+                    pixels[si + 3],
+                    mode,
+                );
+            }
         }
-    }
-    invalidate_bitmap(&mut dest.bitmap);
+        invalidate_bitmap(bitmap);
+    });
 }
 
 /// Composites source region over dest region.
@@ -143,43 +152,45 @@ pub fn composite_bitmap_region(
     source: &BitmapRegion,
     mode: BitmapCompositeMode,
 ) {
-    let sw = dest.width.min(source.width);
-    let sh = dest.height.min(source.height);
-    let sd = source.bitmap.data.clone();
-    for py in 0..sh {
-        let source_y = source.y + py;
-        let y = dest.y + py;
-        if source_y < 0
-            || source_y >= source.bitmap.height as i32
-            || y < 0
-            || y >= dest.bitmap.height as i32
-        {
-            continue;
-        }
-        for px in 0..sw {
-            let source_x = source.x + px;
-            let x = dest.x + px;
-            if source_x < 0
-                || source_x >= source.bitmap.width as i32
-                || x < 0
-                || x >= dest.bitmap.width as i32
+    return write_region_with_sources(dest, [source], |bitmap, [source_pixels]| {
+        let sw = dest.width.min(source.width);
+        let sh = dest.height.min(source.height);
+        let sd = &source_pixels;
+        for py in 0..sh {
+            let source_y = source.y + py;
+            let y = dest.y + py;
+            if source_y < 0
+                || source_y >= source_pixels.height as i32
+                || y < 0
+                || y >= bitmap.height as i32
             {
                 continue;
             }
-            let si = (source_y as usize * source.bitmap.width as usize + source_x as usize) * 4;
-            let di = (y as usize * dest.bitmap.width as usize + x as usize) * 4;
-            composite_pixel_into(
-                &mut dest.bitmap.data,
-                di,
-                sd[si],
-                sd[si + 1],
-                sd[si + 2],
-                sd[si + 3],
-                mode,
-            );
+            for px in 0..sw {
+                let source_x = source.x + px;
+                let x = dest.x + px;
+                if source_x < 0
+                    || source_x >= source_pixels.width as i32
+                    || x < 0
+                    || x >= bitmap.width as i32
+                {
+                    continue;
+                }
+                let si = (source_y as usize * source_pixels.width as usize + source_x as usize) * 4;
+                let di = (y as usize * bitmap.width as usize + x as usize) * 4;
+                composite_pixel_into(
+                    &mut bitmap.data,
+                    di,
+                    sd[si],
+                    sd[si + 1],
+                    sd[si + 2],
+                    sd[si + 3],
+                    mode,
+                );
+            }
         }
-    }
-    invalidate_bitmap(&mut dest.bitmap);
+        invalidate_bitmap(bitmap);
+    });
 }
 
 fn composite_pixel_into(
@@ -217,46 +228,50 @@ fn composite_pixel_into(
 /// Extracts source region pixels into out buffer.
 // flight-lint: allow(conform-array) pixel ruling (agents/rust/ir-vocabulary.md): no clamped array in the IR; TS Uint8ClampedArray pixel buffers become Uint8Array, stores clamp explicitly
 pub fn extract_bitmap_pixels(out: &mut [u8], source: &BitmapRegion) {
-    for py in 0..source.height {
-        let source_y = source.y + py;
-        if source_y < 0 || source_y >= source.bitmap.height as i32 {
-            continue;
-        }
-        for px in 0..source.width {
-            let source_x = source.x + px;
-            if source_x < 0 || source_x >= source.bitmap.width as i32 {
+    return read_region_bitmap(source, |source_bitmap| {
+        for py in 0..source.height {
+            let source_y = source.y + py;
+            if source_y < 0 || source_y >= source_bitmap.height as i32 {
                 continue;
             }
-            let si = (source_y as usize * source.bitmap.width as usize + source_x as usize) * 4;
-            let di = (py as usize * source.width as usize + px as usize) * 4;
-            out[di] = source.bitmap.data[si];
-            out[di + 1] = source.bitmap.data[si + 1];
-            out[di + 2] = source.bitmap.data[si + 2];
-            out[di + 3] = source.bitmap.data[si + 3];
+            for px in 0..source.width {
+                let source_x = source.x + px;
+                if source_x < 0 || source_x >= source_bitmap.width as i32 {
+                    continue;
+                }
+                let si = (source_y as usize * source_bitmap.width as usize + source_x as usize) * 4;
+                let di = (py as usize * source.width as usize + px as usize) * 4;
+                out[di] = source_bitmap.data[si];
+                out[di + 1] = source_bitmap.data[si + 1];
+                out[di + 2] = source_bitmap.data[si + 2];
+                out[di + 3] = source_bitmap.data[si + 3];
+            }
         }
-    }
+    });
 }
 
 /// Extracts source region as packed 0xRRGGBBAA u32 values.
 pub fn extract_bitmap_pixels32(out: &mut [u32], source: &BitmapRegion) {
-    for py in 0..source.height {
-        let source_y = source.y + py;
-        if source_y < 0 || source_y >= source.bitmap.height as i32 {
-            continue;
-        }
-        for px in 0..source.width {
-            let source_x = source.x + px;
-            if source_x < 0 || source_x >= source.bitmap.width as i32 {
+    return read_region_bitmap(source, |source_bitmap| {
+        for py in 0..source.height {
+            let source_y = source.y + py;
+            if source_y < 0 || source_y >= source_bitmap.height as i32 {
                 continue;
             }
-            let si = (source_y as usize * source.bitmap.width as usize + source_x as usize) * 4;
-            let d = &source.bitmap.data;
-            out[py as usize * source.width as usize + px as usize] = ((d[si] as u32) << 24)
-                | ((d[si + 1] as u32) << 16)
-                | ((d[si + 2] as u32) << 8)
-                | (d[si + 3] as u32);
+            for px in 0..source.width {
+                let source_x = source.x + px;
+                if source_x < 0 || source_x >= source_bitmap.width as i32 {
+                    continue;
+                }
+                let si = (source_y as usize * source_bitmap.width as usize + source_x as usize) * 4;
+                let d = &source_bitmap.data;
+                out[py as usize * source.width as usize + px as usize] = ((d[si] as u32) << 24)
+                    | ((d[si + 1] as u32) << 16)
+                    | ((d[si + 2] as u32) << 8)
+                    | (d[si + 3] as u32);
+            }
         }
-    }
+    });
 }
 
 fn porter_duff_factors(mode: BitmapCompositeMode, src_a: f32, dst_a: f32) -> (f32, f32) {
@@ -294,48 +309,52 @@ fn soft_light_channel(cb: f32, cs: f32) -> f32 {
 /// Writes pixels into dest, overwriting content.
 // flight-lint: allow(conform-array) pixel ruling (agents/rust/ir-vocabulary.md): no clamped array in the IR; TS Uint8ClampedArray pixel buffers become Uint8Array, stores clamp explicitly
 pub fn write_bitmap_pixels(dest: &mut BitmapRegion, pixels: &Uint8Array) {
-    for py in 0..dest.height {
-        let y = dest.y + py;
-        if y < 0 || y >= dest.bitmap.height as i32 {
-            continue;
-        }
-        for px in 0..dest.width {
-            let x = dest.x + px;
-            if x < 0 || x >= dest.bitmap.width as i32 {
+    return write_region_bitmap(dest, |bitmap| {
+        for py in 0..dest.height {
+            let y = dest.y + py;
+            if y < 0 || y >= bitmap.height as i32 {
                 continue;
             }
-            let si = (py as usize * dest.width as usize + px as usize) * 4;
-            let di = (y as usize * dest.bitmap.width as usize + x as usize) * 4;
-            dest.bitmap.data[di] = pixels[si];
-            dest.bitmap.data[di + 1] = pixels[si + 1];
-            dest.bitmap.data[di + 2] = pixels[si + 2];
-            dest.bitmap.data[di + 3] = pixels[si + 3];
+            for px in 0..dest.width {
+                let x = dest.x + px;
+                if x < 0 || x >= bitmap.width as i32 {
+                    continue;
+                }
+                let si = (py as usize * dest.width as usize + px as usize) * 4;
+                let di = (y as usize * bitmap.width as usize + x as usize) * 4;
+                bitmap.data[di] = pixels[si];
+                bitmap.data[di + 1] = pixels[si + 1];
+                bitmap.data[di + 2] = pixels[si + 2];
+                bitmap.data[di + 3] = pixels[si + 3];
+            }
         }
-    }
-    invalidate_bitmap(&mut dest.bitmap);
+        invalidate_bitmap(bitmap);
+    });
 }
 
 /// Writes packed 0xRRGGBBAA pixels into dest.
 pub fn write_bitmap_pixels32(dest: &mut BitmapRegion, pixels: &[u32]) {
-    for py in 0..dest.height {
-        let y = dest.y + py;
-        if y < 0 || y >= dest.bitmap.height as i32 {
-            continue;
-        }
-        for px in 0..dest.width {
-            let x = dest.x + px;
-            if x < 0 || x >= dest.bitmap.width as i32 {
+    return write_region_bitmap(dest, |bitmap| {
+        for py in 0..dest.height {
+            let y = dest.y + py;
+            if y < 0 || y >= bitmap.height as i32 {
                 continue;
             }
-            let color = pixels[py as usize * dest.width as usize + px as usize];
-            let di = (y as usize * dest.bitmap.width as usize + x as usize) * 4;
-            dest.bitmap.data[di] = ((color >> 24) & 0xff) as u8;
-            dest.bitmap.data[di + 1] = ((color >> 16) & 0xff) as u8;
-            dest.bitmap.data[di + 2] = ((color >> 8) & 0xff) as u8;
-            dest.bitmap.data[di + 3] = (color & 0xff) as u8;
+            for px in 0..dest.width {
+                let x = dest.x + px;
+                if x < 0 || x >= bitmap.width as i32 {
+                    continue;
+                }
+                let color = pixels[py as usize * dest.width as usize + px as usize];
+                let di = (y as usize * bitmap.width as usize + x as usize) * 4;
+                bitmap.data[di] = ((color >> 24) & 0xff) as u8;
+                bitmap.data[di + 1] = ((color >> 16) & 0xff) as u8;
+                bitmap.data[di + 2] = ((color >> 8) & 0xff) as u8;
+                bitmap.data[di + 3] = (color & 0xff) as u8;
+            }
         }
-    }
-    invalidate_bitmap(&mut dest.bitmap);
+        invalidate_bitmap(bitmap);
+    });
 }
 
 #[cfg(feature = "object-api")]

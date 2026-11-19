@@ -6,7 +6,7 @@ fn region(bmp: Bitmap) -> BitmapRegion {
     let w = bmp.width as i32;
     let h = bmp.height as i32;
     return BitmapRegion {
-        bitmap: bmp,
+        bitmap: std::sync::Arc::new(std::sync::RwLock::new(bmp)),
         x: 0,
         y: 0,
         width: w,
@@ -107,7 +107,7 @@ mod gradient_glow_bitmap {
             radius_y: Some(0.0),
             passes: None,
         };
-        let mut data = r.bitmap.data.clone();
+        let mut data = r.bitmap.read().unwrap().data.clone();
         gradient_glow_bitmap(&mut data, &mut scratch, &r, &ramp, &opts);
         assert_eq!(data[1], 0xff);
         assert_eq!(data[3], 255);

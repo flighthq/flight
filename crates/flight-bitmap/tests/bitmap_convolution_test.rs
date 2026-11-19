@@ -6,7 +6,7 @@ fn region(bmp: Bitmap) -> BitmapRegion {
     let w = bmp.width as i32;
     let h = bmp.height as i32;
     return BitmapRegion {
-        bitmap: bmp,
+        bitmap: std::sync::Arc::new(std::sync::RwLock::new(bmp)),
         x: 0,
         y: 0,
         width: w,
@@ -25,7 +25,7 @@ mod convolve_bitmap {
         source.data[8] = 30;
         let mut out = vec![0u8; 4];
         let sr = BitmapRegion {
-            bitmap: source,
+            bitmap: std::sync::Arc::new(std::sync::RwLock::new(source)),
             x: 1,
             y: 0,
             width: 1,

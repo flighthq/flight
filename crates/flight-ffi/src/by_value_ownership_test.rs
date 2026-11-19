@@ -25,12 +25,24 @@ mod flight_create_bitmap_region {
     use super::*;
 
     #[test]
-    fn consumes_the_owned_bitmap_box() {
-        let bitmap = unsafe { flight_create_bitmap(2, 2, 0x11223344) };
-        let region = unsafe { flight_create_bitmap_region(bitmap, 0, 0, 1, 1) };
+    fn shares_the_bitmap_ref_without_consuming_the_caller_handle() {
+        let shared = unsafe { flight_share_bitmap(flight_create_bitmap(2, 2, 0x11223344)) }
+            as *mut flight_sdk::Ref<flight_sdk::Bitmap>;
+        let weak = Arc::downgrade(unsafe { &*shared });
+        let region = unsafe { flight_create_bitmap_region(shared as *const _, 0, 0, 1, 1) };
         assert!(!region.is_null());
-        // The bitmap now lives in the region; freeing the region releases it exactly once.
+        assert!(Arc::ptr_eq(unsafe { &(*region).bitmap }, unsafe {
+            &*shared
+        }));
+        assert_eq!(weak.strong_count(), 2);
+
         unsafe { flight_free_bitmap_region(region) };
+        // The caller's handle is still live and still owns the pixels.
+        assert_eq!(weak.strong_count(), 1);
+        assert_eq!(unsafe { (*shared).read().unwrap().data[0] }, 0x11);
+
+        unsafe { flight_free_bitmap_ref(shared) };
+        assert!(weak.upgrade().is_none());
     }
 }
 
@@ -130,5 +142,56 @@ mod flight_release_vector2 {
     #[ignore = "aborts by design; run only by rejects_null_as_a_precondition_violation"]
     fn null_probe() {
         unsafe { flight_release_vector2(std::ptr::null_mut()) };
+    }
+}
+
+mod flight_share_bitmap {
+    use super::*;
+
+    #[test]
+    fn consumes_the_owned_bitmap_box_into_one_shared_ref() {
+        let bitmap = unsafe { flight_create_bitmap(3, 1, 0xaabbccdd) };
+        let shared =
+            unsafe { flight_share_bitmap(bitmap) } as *mut flight_sdk::Ref<flight_sdk::Bitmap>;
+        assert!(!shared.is_null());
+        // The owned box moved into the Ref: same pixels, one holder, nothing left behind to free.
+        let weak = Arc::downgrade(unsafe { &*shared });
+        assert_eq!(weak.strong_count(), 1);
+        {
+            let pixels = unsafe { (*shared).read().unwrap() };
+            assert_eq!((pixels.width, pixels.height), (3, 1));
+            assert_eq!(&pixels.data[0..4], &[0xaa, 0xbb, 0xcc, 0xdd]);
+        }
+
+        unsafe { flight_free_bitmap_ref(shared) };
+        assert!(weak.upgrade().is_none());
+    }
+
+    #[test]
+    #[ignore = "aborts by design; run only by rejects_null_as_a_precondition_violation"]
+    fn null_probe() {
+        unsafe { flight_share_bitmap(std::ptr::null_mut()) };
+    }
+
+    #[test]
+    fn rejects_null_as_a_precondition_violation() {
+        // A NULL transfer is an assert inside an `extern "C"` wrapper, which aborts the process, so
+        // the check runs this module's probe in a child process.
+        let output = std::process::Command::new(std::env::current_exe().unwrap())
+            .args([
+                "--exact",
+                "by_value_ownership_test::flight_share_bitmap::null_probe",
+                "--ignored",
+                "--test-threads=1",
+                "--nocapture",
+            ])
+            .output()
+            .unwrap();
+        let stderr = String::from_utf8_lossy(&output.stderr);
+        assert!(!output.status.success(), "a NULL transfer must not return");
+        assert!(
+            stderr.contains("bitmap must be an owned Bitmap handle"),
+            "{stderr}"
+        );
     }
 }

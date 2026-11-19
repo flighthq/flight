@@ -6,7 +6,7 @@ fn region(bmp: Bitmap) -> BitmapRegion {
     let w = bmp.width as i32;
     let h = bmp.height as i32;
     return BitmapRegion {
-        bitmap: bmp,
+        bitmap: std::sync::Arc::new(std::sync::RwLock::new(bmp)),
         x: 0,
         y: 0,
         width: w,
@@ -26,6 +26,8 @@ mod dissolve_bitmap_pixels {
         dissolve_bitmap_pixels(&mut dr, &region(source), 0, 5, 0);
         let changed = dr
             .bitmap
+            .read()
+            .unwrap()
             .data
             .chunks(4)
             .zip(original.chunks(4))
@@ -52,7 +54,10 @@ mod dissolve_bitmap_pixels {
         for _ in 0..8 {
             seed = dissolve_bitmap_pixels(&mut dr, &sr, seed, 2, 0);
         }
-        assert_eq!(dr.bitmap.data, sr.bitmap.data);
+        assert_eq!(
+            dr.bitmap.read().unwrap().data,
+            sr.bitmap.read().unwrap().data
+        );
     }
 
     #[test]
@@ -66,7 +71,10 @@ mod dissolve_bitmap_pixels {
         dissolve_bitmap_pixels(&mut ar, &sr, 3, 7, 0);
         let sr2 = region(source);
         dissolve_bitmap_pixels(&mut br, &sr2, 3, 7, 0);
-        assert_eq!(ar.bitmap.data, br.bitmap.data);
+        assert_eq!(
+            ar.bitmap.read().unwrap().data,
+            br.bitmap.read().unwrap().data
+        );
     }
 
     #[test]
@@ -79,7 +87,10 @@ mod dissolve_bitmap_pixels {
         for _ in 0..16 {
             seed = dissolve_bitmap_pixels(&mut dr, &sr, seed, 1, 0);
         }
-        assert_eq!(dr.bitmap.data, sr.bitmap.data);
+        assert_eq!(
+            dr.bitmap.read().unwrap().data,
+            sr.bitmap.read().unwrap().data
+        );
         let after = dissolve_bitmap_pixels(&mut dr, &sr, seed, 4, 0);
         assert_eq!(after, seed);
     }
@@ -93,7 +104,7 @@ mod dissolve_bitmap_pixels {
         for _ in 0..4 {
             seed = dissolve_bitmap_pixels(&mut dr, &region(source.clone()), seed, 1, 0xffffffff);
         }
-        assert_eq!(dr.bitmap.data, source.data);
+        assert_eq!(dr.bitmap.read().unwrap().data, source.data);
     }
 
     #[test]
@@ -104,7 +115,7 @@ mod dissolve_bitmap_pixels {
         let mut dr = region(dest);
         let result = dissolve_bitmap_pixels(&mut dr, &region(source), 2, 0, 0);
         assert_eq!(result, 2);
-        assert_eq!(dr.bitmap.data, original);
+        assert_eq!(dr.bitmap.read().unwrap().data, original);
     }
 
     #[test]
@@ -112,7 +123,7 @@ mod dissolve_bitmap_pixels {
         let source = create_bitmap(4, 4, Some(0x112233ff));
         let dest = create_bitmap(4, 4, None);
         let mut dr = BitmapRegion {
-            bitmap: dest,
+            bitmap: std::sync::Arc::new(std::sync::RwLock::new(dest)),
             x: 0,
             y: 0,
             width: 0,

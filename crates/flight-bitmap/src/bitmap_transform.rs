@@ -3,6 +3,7 @@
 use flight_materials::ColorScaleBias;
 
 use crate::bitmap::invalidate_bitmap;
+use crate::region_access::*;
 use crate::types::*;
 
 #[cfg(all(test, feature = "object-api"))]
@@ -29,7 +30,13 @@ mod sugar_tests {
     }
 
     fn test_region() -> BitmapRegion {
-        return create_bitmap_region(test_bitmap(), 0, 0, 4, 4);
+        return create_bitmap_region(
+            &std::sync::Arc::new(std::sync::RwLock::new(test_bitmap())),
+            0,
+            0,
+            4,
+            4,
+        );
     }
 
     #[test]
@@ -94,49 +101,50 @@ pub fn apply_bitmap_color_scale_bias(
     source: &BitmapRegion,
     ct: &ColorScaleBias,
 ) {
-    let w = dest.width.min(source.width);
-    let h = dest.height.min(source.height);
-    let sd = source.bitmap.data.clone();
-    let s_bw = source.bitmap.width as i32;
-    let d_bw = dest.bitmap.width as i32;
-    for py in 0..h {
-        let sy = source.y + py;
-        let dy = dest.y + py;
-        if sy < 0 || sy >= source.bitmap.height as i32 || dy < 0 || dy >= dest.bitmap.height as i32
-        {
-            continue;
-        }
-        for px in 0..w {
-            let sx = source.x + px;
-            let dx = dest.x + px;
-            if sx < 0 || sx >= s_bw || dx < 0 || dx >= d_bw {
+    return write_region_with_sources(dest, [source], |bitmap, [source_pixels]| {
+        let w = dest.width.min(source.width);
+        let h = dest.height.min(source.height);
+        let sd = &source_pixels;
+        let s_bw = source_pixels.width as i32;
+        let d_bw = bitmap.width as i32;
+        for py in 0..h {
+            let sy = source.y + py;
+            let dy = dest.y + py;
+            if sy < 0 || sy >= source_pixels.height as i32 || dy < 0 || dy >= bitmap.height as i32 {
                 continue;
             }
-            let si = (sy as usize * s_bw as usize + sx as usize) * 4;
-            let di = (dy as usize * d_bw as usize + dx as usize) * 4;
-            let r = sd[si] as f32;
-            let g = sd[si + 1] as f32;
-            let b = sd[si + 2] as f32;
-            let a = sd[si + 3] as f32;
-            dest.bitmap.data[di] = (r * ct.red_scale + ct.red_bias * 255.0)
-                .round()
-                .max(0.0)
-                .min(255.0) as u8;
-            dest.bitmap.data[di + 1] = (g * ct.green_scale + ct.green_bias * 255.0)
-                .round()
-                .max(0.0)
-                .min(255.0) as u8;
-            dest.bitmap.data[di + 2] = (b * ct.blue_scale + ct.blue_bias * 255.0)
-                .round()
-                .max(0.0)
-                .min(255.0) as u8;
-            dest.bitmap.data[di + 3] = (a * ct.alpha_scale + ct.alpha_bias * 255.0)
-                .round()
-                .max(0.0)
-                .min(255.0) as u8;
+            for px in 0..w {
+                let sx = source.x + px;
+                let dx = dest.x + px;
+                if sx < 0 || sx >= s_bw || dx < 0 || dx >= d_bw {
+                    continue;
+                }
+                let si = (sy as usize * s_bw as usize + sx as usize) * 4;
+                let di = (dy as usize * d_bw as usize + dx as usize) * 4;
+                let r = sd[si] as f32;
+                let g = sd[si + 1] as f32;
+                let b = sd[si + 2] as f32;
+                let a = sd[si + 3] as f32;
+                bitmap.data[di] = (r * ct.red_scale + ct.red_bias * 255.0)
+                    .round()
+                    .max(0.0)
+                    .min(255.0) as u8;
+                bitmap.data[di + 1] = (g * ct.green_scale + ct.green_bias * 255.0)
+                    .round()
+                    .max(0.0)
+                    .min(255.0) as u8;
+                bitmap.data[di + 2] = (b * ct.blue_scale + ct.blue_bias * 255.0)
+                    .round()
+                    .max(0.0)
+                    .min(255.0) as u8;
+                bitmap.data[di + 3] = (a * ct.alpha_scale + ct.alpha_bias * 255.0)
+                    .round()
+                    .max(0.0)
+                    .min(255.0) as u8;
+            }
         }
-    }
-    invalidate_bitmap(&mut dest.bitmap);
+        invalidate_bitmap(bitmap);
+    });
 }
 
 /// Tests each pixel and writes `color` where the test passes.
@@ -149,49 +157,50 @@ pub fn apply_bitmap_threshold(
     mask: u32,
     copy_source: bool,
 ) -> u32 {
-    let w = dest.width.min(source.width);
-    let h = dest.height.min(source.height);
-    let sd = source.bitmap.data.clone();
-    let s_bw = source.bitmap.width as i32;
-    let d_bw = dest.bitmap.width as i32;
-    let mut changed = 0u32;
-    for py in 0..h {
-        let sy = source.y + py;
-        let dy = dest.y + py;
-        if sy < 0 || sy >= source.bitmap.height as i32 || dy < 0 || dy >= dest.bitmap.height as i32
-        {
-            continue;
-        }
-        for px in 0..w {
-            let sx = source.x + px;
-            let dx = dest.x + px;
-            if sx < 0 || sx >= s_bw || dx < 0 || dx >= d_bw {
+    return write_region_with_sources(dest, [source], |bitmap, [source_pixels]| {
+        let w = dest.width.min(source.width);
+        let h = dest.height.min(source.height);
+        let sd = &source_pixels;
+        let s_bw = source_pixels.width as i32;
+        let d_bw = bitmap.width as i32;
+        let mut changed = 0u32;
+        for py in 0..h {
+            let sy = source.y + py;
+            let dy = dest.y + py;
+            if sy < 0 || sy >= source_pixels.height as i32 || dy < 0 || dy >= bitmap.height as i32 {
                 continue;
             }
-            let si = (sy as usize * s_bw as usize + sx as usize) * 4;
-            let di = (dy as usize * d_bw as usize + dx as usize) * 4;
-            let pixel = (((sd[si] as u32) << 24)
-                | ((sd[si + 1] as u32) << 16)
-                | ((sd[si + 2] as u32) << 8)
-                | (sd[si + 3] as u32))
-                & mask;
-            let passes = compare(pixel, &operation, threshold_value);
-            if passes {
-                dest.bitmap.data[di] = ((color >> 24) & 0xff) as u8;
-                dest.bitmap.data[di + 1] = ((color >> 16) & 0xff) as u8;
-                dest.bitmap.data[di + 2] = ((color >> 8) & 0xff) as u8;
-                dest.bitmap.data[di + 3] = (color & 0xff) as u8;
-                changed += 1;
-            } else if copy_source {
-                dest.bitmap.data[di] = sd[si];
-                dest.bitmap.data[di + 1] = sd[si + 1];
-                dest.bitmap.data[di + 2] = sd[si + 2];
-                dest.bitmap.data[di + 3] = sd[si + 3];
+            for px in 0..w {
+                let sx = source.x + px;
+                let dx = dest.x + px;
+                if sx < 0 || sx >= s_bw || dx < 0 || dx >= d_bw {
+                    continue;
+                }
+                let si = (sy as usize * s_bw as usize + sx as usize) * 4;
+                let di = (dy as usize * d_bw as usize + dx as usize) * 4;
+                let pixel = (((sd[si] as u32) << 24)
+                    | ((sd[si + 1] as u32) << 16)
+                    | ((sd[si + 2] as u32) << 8)
+                    | (sd[si + 3] as u32))
+                    & mask;
+                let passes = compare(pixel, &operation, threshold_value);
+                if passes {
+                    bitmap.data[di] = ((color >> 24) & 0xff) as u8;
+                    bitmap.data[di + 1] = ((color >> 16) & 0xff) as u8;
+                    bitmap.data[di + 2] = ((color >> 8) & 0xff) as u8;
+                    bitmap.data[di + 3] = (color & 0xff) as u8;
+                    changed += 1;
+                } else if copy_source {
+                    bitmap.data[di] = sd[si];
+                    bitmap.data[di + 1] = sd[si + 1];
+                    bitmap.data[di + 2] = sd[si + 2];
+                    bitmap.data[di + 3] = sd[si + 3];
+                }
             }
         }
-    }
-    invalidate_bitmap(&mut dest.bitmap);
-    changed
+        invalidate_bitmap(bitmap);
+        changed
+    });
 }
 
 fn compare(a: u32, op: &ThresholdOperation, b: u32) -> bool {
@@ -214,41 +223,42 @@ pub fn merge_bitmap(
     blue_scale: f32,
     alpha_scale: f32,
 ) {
-    let w = dest.width.min(source.width);
-    let h = dest.height.min(source.height);
-    let sd = source.bitmap.data.clone();
-    let s_bw = source.bitmap.width as i32;
-    let d_bw = dest.bitmap.width as i32;
-    for py in 0..h {
-        let sy = source.y + py;
-        let dy = dest.y + py;
-        if sy < 0 || sy >= source.bitmap.height as i32 || dy < 0 || dy >= dest.bitmap.height as i32
-        {
-            continue;
-        }
-        for px in 0..w {
-            let sx = source.x + px;
-            let dx = dest.x + px;
-            if sx < 0 || sx >= s_bw || dx < 0 || dx >= d_bw {
+    return write_region_with_sources(dest, [source], |bitmap, [source_pixels]| {
+        let w = dest.width.min(source.width);
+        let h = dest.height.min(source.height);
+        let sd = &source_pixels;
+        let s_bw = source_pixels.width as i32;
+        let d_bw = bitmap.width as i32;
+        for py in 0..h {
+            let sy = source.y + py;
+            let dy = dest.y + py;
+            if sy < 0 || sy >= source_pixels.height as i32 || dy < 0 || dy >= bitmap.height as i32 {
                 continue;
             }
-            let si = (sy as usize * s_bw as usize + sx as usize) * 4;
-            let di = (dy as usize * d_bw as usize + dx as usize) * 4;
-            dest.bitmap.data[di] = (sd[si] as f32 * red_scale
-                + dest.bitmap.data[di] as f32 * (1.0 - red_scale))
-                .round() as u8;
-            dest.bitmap.data[di + 1] = (sd[si + 1] as f32 * green_scale
-                + dest.bitmap.data[di + 1] as f32 * (1.0 - green_scale))
-                .round() as u8;
-            dest.bitmap.data[di + 2] = (sd[si + 2] as f32 * blue_scale
-                + dest.bitmap.data[di + 2] as f32 * (1.0 - blue_scale))
-                .round() as u8;
-            dest.bitmap.data[di + 3] = (sd[si + 3] as f32 * alpha_scale
-                + dest.bitmap.data[di + 3] as f32 * (1.0 - alpha_scale))
-                .round() as u8;
+            for px in 0..w {
+                let sx = source.x + px;
+                let dx = dest.x + px;
+                if sx < 0 || sx >= s_bw || dx < 0 || dx >= d_bw {
+                    continue;
+                }
+                let si = (sy as usize * s_bw as usize + sx as usize) * 4;
+                let di = (dy as usize * d_bw as usize + dx as usize) * 4;
+                bitmap.data[di] = (sd[si] as f32 * red_scale
+                    + bitmap.data[di] as f32 * (1.0 - red_scale))
+                    .round() as u8;
+                bitmap.data[di + 1] = (sd[si + 1] as f32 * green_scale
+                    + bitmap.data[di + 1] as f32 * (1.0 - green_scale))
+                    .round() as u8;
+                bitmap.data[di + 2] = (sd[si + 2] as f32 * blue_scale
+                    + bitmap.data[di + 2] as f32 * (1.0 - blue_scale))
+                    .round() as u8;
+                bitmap.data[di + 3] = (sd[si + 3] as f32 * alpha_scale
+                    + bitmap.data[di + 3] as f32 * (1.0 - alpha_scale))
+                    .round() as u8;
+            }
         }
-    }
-    invalidate_bitmap(&mut dest.bitmap);
+        invalidate_bitmap(bitmap);
+    });
 }
 
 /// Scrolls the content of `out` by (dx, dy), wrapping at the edges.

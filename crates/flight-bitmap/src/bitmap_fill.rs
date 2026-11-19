@@ -1,6 +1,7 @@
 //! flight-compiler: target-native
 
 use crate::bitmap::invalidate_bitmap;
+use crate::region_access::*;
 use crate::types::*;
 
 #[cfg(all(test, feature = "object-api"))]
@@ -15,7 +16,13 @@ mod sugar_tests {
     }
 
     fn test_region() -> BitmapRegion {
-        return create_bitmap_region(test_bitmap(), 0, 0, 4, 4);
+        return create_bitmap_region(
+            &std::sync::Arc::new(std::sync::RwLock::new(test_bitmap())),
+            0,
+            0,
+            4,
+            4,
+        );
     }
 
     #[test]
@@ -41,29 +48,31 @@ mod sugar_tests {
 
 /// Fills the rectangular dest region with a packed RGBA color.
 pub fn fill_bitmap_rectangle(dest: &mut BitmapRegion, color: u32) {
-    let r = ((color >> 24) & 0xff) as u8;
-    let g = ((color >> 16) & 0xff) as u8;
-    let b = ((color >> 8) & 0xff) as u8;
-    let a = (color & 0xff) as u8;
-    let bw = dest.bitmap.width as i32;
-    for py in 0..dest.height {
-        let y = dest.y + py;
-        if y < 0 || y >= dest.bitmap.height as i32 {
-            continue;
-        }
-        for px in 0..dest.width {
-            let x = dest.x + px;
-            if x < 0 || x >= bw {
+    return write_region_bitmap(dest, |bitmap| {
+        let r = ((color >> 24) & 0xff) as u8;
+        let g = ((color >> 16) & 0xff) as u8;
+        let b = ((color >> 8) & 0xff) as u8;
+        let a = (color & 0xff) as u8;
+        let bw = bitmap.width as i32;
+        for py in 0..dest.height {
+            let y = dest.y + py;
+            if y < 0 || y >= bitmap.height as i32 {
                 continue;
             }
-            let i = (y as usize * bw as usize + x as usize) * 4;
-            dest.bitmap.data[i] = r;
-            dest.bitmap.data[i + 1] = g;
-            dest.bitmap.data[i + 2] = b;
-            dest.bitmap.data[i + 3] = a;
+            for px in 0..dest.width {
+                let x = dest.x + px;
+                if x < 0 || x >= bw {
+                    continue;
+                }
+                let i = (y as usize * bw as usize + x as usize) * 4;
+                bitmap.data[i] = r;
+                bitmap.data[i + 1] = g;
+                bitmap.data[i + 2] = b;
+                bitmap.data[i + 3] = a;
+            }
         }
-    }
-    invalidate_bitmap(&mut dest.bitmap);
+        invalidate_bitmap(bitmap);
+    });
 }
 
 /// Flood-fills a connected region of out starting at (x, y).

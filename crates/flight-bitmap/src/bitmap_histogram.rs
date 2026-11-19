@@ -2,6 +2,7 @@
 
 use crate::bitmap::invalidate_bitmap;
 use crate::bitmap_palette_map::apply_bitmap_palette_map;
+use crate::region_access::*;
 use crate::types::*;
 
 #[cfg(all(test, feature = "object-api"))]
@@ -16,7 +17,13 @@ mod sugar_tests {
     }
 
     fn test_region() -> BitmapRegion {
-        return create_bitmap_region(test_bitmap(), 0, 0, 4, 4);
+        return create_bitmap_region(
+            &std::sync::Arc::new(std::sync::RwLock::new(test_bitmap())),
+            0,
+            0,
+            4,
+            4,
+        );
     }
 
     #[test]
@@ -71,40 +78,42 @@ pub fn equalize_bitmap_histogram(dest: &mut BitmapRegion, source: &BitmapRegion)
         Some(&build_equalize_map(&histogram.blue, total)),
         None,
     );
-    invalidate_bitmap(&mut dest.bitmap);
+    write_region_bitmap(dest, invalidate_bitmap);
 }
 
 /// Counts how many pixels in the `source` region fall into each 0..255 value.
 pub fn get_bitmap_histogram(source: &BitmapRegion) -> BitmapHistogram {
-    let mut red = vec![0u32; 256];
-    let mut green = vec![0u32; 256];
-    let mut blue = vec![0u32; 256];
-    let mut alpha = vec![0u32; 256];
-    let data = &source.bitmap.data;
-    let bitmap_width = source.bitmap.width as i32;
-    for py in 0..source.height {
-        let y = source.y + py;
-        if y < 0 || y >= source.bitmap.height as i32 {
-            continue;
-        }
-        for px in 0..source.width {
-            let x = source.x + px;
-            if x < 0 || x >= bitmap_width {
+    return read_region_bitmap(source, |source_bitmap| {
+        let mut red = vec![0u32; 256];
+        let mut green = vec![0u32; 256];
+        let mut blue = vec![0u32; 256];
+        let mut alpha = vec![0u32; 256];
+        let data = &source_bitmap.data;
+        let bitmap_width = source_bitmap.width as i32;
+        for py in 0..source.height {
+            let y = source.y + py;
+            if y < 0 || y >= source_bitmap.height as i32 {
                 continue;
             }
-            let i = (y as usize * bitmap_width as usize + x as usize) * 4;
-            red[data[i] as usize] += 1;
-            green[data[i + 1] as usize] += 1;
-            blue[data[i + 2] as usize] += 1;
-            alpha[data[i + 3] as usize] += 1;
+            for px in 0..source.width {
+                let x = source.x + px;
+                if x < 0 || x >= bitmap_width {
+                    continue;
+                }
+                let i = (y as usize * bitmap_width as usize + x as usize) * 4;
+                red[data[i] as usize] += 1;
+                green[data[i + 1] as usize] += 1;
+                blue[data[i + 2] as usize] += 1;
+                alpha[data[i + 3] as usize] += 1;
+            }
         }
-    }
-    BitmapHistogram {
-        red,
-        green,
-        blue,
-        alpha,
-    }
+        BitmapHistogram {
+            red,
+            green,
+            blue,
+            alpha,
+        }
+    });
 }
 
 #[cfg(feature = "object-api")]

@@ -1,6 +1,7 @@
 //! flight-compiler: target-native
 
 use crate::bitmap_blur::{blur_bitmap_pixels_horizontal, blur_bitmap_pixels_vertical};
+use crate::region_access::*;
 use crate::types::*;
 
 fn apply_blur_passes(
@@ -55,43 +56,50 @@ fn apply_inner_effect(
     offset_x: i32,
     offset_y: i32,
 ) {
-    let w = source.width as usize;
-    let h = source.height as usize;
+    return read_region_bitmap(source, |source_bitmap| {
+        let w = source.width as usize;
+        let h = source.height as usize;
 
-    // Step 1: inverted alpha shifted by offset
-    for py in 0..h {
-        for px in 0..w {
-            let di = (py * w + px) * 4;
-            out[di] = 0;
-            out[di + 1] = 0;
-            out[di + 2] = 0;
-            out[di + 3] =
-                255 - read_source_alpha(source, px as i32 - offset_x, py as i32 - offset_y);
+        // Step 1: inverted alpha shifted by offset
+        for py in 0..h {
+            for px in 0..w {
+                let di = (py * w + px) * 4;
+                out[di] = 0;
+                out[di + 1] = 0;
+                out[di + 2] = 0;
+                out[di + 3] = 255
+                    - read_source_alpha(
+                        source_bitmap,
+                        source,
+                        px as i32 - offset_x,
+                        py as i32 - offset_y,
+                    );
+            }
         }
-    }
 
-    // Step 2: blur
-    apply_blur_passes(out, scratch, w, h, radius_x, radius_y, passes);
+        // Step 2: blur
+        apply_blur_passes(out, scratch, w, h, radius_x, radius_y, passes);
 
-    // Step 3: tint and clip
-    let cr = ((color >> 24) & 0xff) as u8;
-    let cg = ((color >> 16) & 0xff) as u8;
-    let cb = ((color >> 8) & 0xff) as u8;
-    let ca = (color & 0xff) as f32 / 255.0;
-    let scale = intensity.max(0.0) * ca;
-    for py in 0..h {
-        for px in 0..w {
-            let di = (py * w + px) * 4;
-            let blurred = out[di + 3];
-            let source_alpha = read_source_alpha(source, px as i32, py as i32);
-            out[di] = cr;
-            out[di + 1] = cg;
-            out[di + 2] = cb;
-            out[di + 3] = ((blurred as f32 * source_alpha as f32 * scale) / 255.0)
-                .round()
-                .min(255.0) as u8;
+        // Step 3: tint and clip
+        let cr = ((color >> 24) & 0xff) as u8;
+        let cg = ((color >> 16) & 0xff) as u8;
+        let cb = ((color >> 8) & 0xff) as u8;
+        let ca = (color & 0xff) as f32 / 255.0;
+        let scale = intensity.max(0.0) * ca;
+        for py in 0..h {
+            for px in 0..w {
+                let di = (py * w + px) * 4;
+                let blurred = out[di + 3];
+                let source_alpha = read_source_alpha(source_bitmap, source, px as i32, py as i32);
+                out[di] = cr;
+                out[di + 1] = cg;
+                out[di + 2] = cb;
+                out[di + 3] = ((blurred as f32 * source_alpha as f32 * scale) / 255.0)
+                    .round()
+                    .min(255.0) as u8;
+            }
         }
-    }
+    });
 }
 
 /// Produces the blurred shadow mask for a drop shadow effect.
@@ -188,39 +196,41 @@ pub fn inner_shadow_bitmap(
     );
 }
 
-fn read_source_alpha(source: &BitmapRegion, px: i32, py: i32) -> u8 {
+fn read_source_alpha(source_bitmap: &Bitmap, source: &BitmapRegion, px: i32, py: i32) -> u8 {
     let sx = source.x + px;
     let sy = source.y + py;
-    if sx < 0 || sx >= source.bitmap.width as i32 || sy < 0 || sy >= source.bitmap.height as i32 {
+    if sx < 0 || sx >= source_bitmap.width as i32 || sy < 0 || sy >= source_bitmap.height as i32 {
         return 0;
     }
-    source.bitmap.data[(sy as usize * source.bitmap.width as usize + sx as usize) * 4 + 3]
+    source_bitmap.data[(sy as usize * source_bitmap.width as usize + sx as usize) * 4 + 3]
 }
 
 fn tint_bitmap_alpha_mask(out: &mut [u8], source: &BitmapRegion, color: u32, intensity: f32) {
-    let cr = ((color >> 24) & 0xff) as u8;
-    let cg = ((color >> 16) & 0xff) as u8;
-    let cb = ((color >> 8) & 0xff) as u8;
-    let ca = (color & 0xff) as f32 / 255.0;
-    let alpha_scale = intensity.max(0.0) * ca;
-    for py in 0..source.height as usize {
-        let source_y = source.y + py as i32;
-        if source_y < 0 || source_y >= source.bitmap.height as i32 {
-            continue;
-        }
-        for px in 0..source.width as usize {
-            let source_x = source.x + px as i32;
-            if source_x < 0 || source_x >= source.bitmap.width as i32 {
+    return read_region_bitmap(source, |source_bitmap| {
+        let cr = ((color >> 24) & 0xff) as u8;
+        let cg = ((color >> 16) & 0xff) as u8;
+        let cb = ((color >> 8) & 0xff) as u8;
+        let ca = (color & 0xff) as f32 / 255.0;
+        let alpha_scale = intensity.max(0.0) * ca;
+        for py in 0..source.height as usize {
+            let source_y = source.y + py as i32;
+            if source_y < 0 || source_y >= source_bitmap.height as i32 {
                 continue;
             }
-            let si = (source_y as usize * source.bitmap.width as usize + source_x as usize) * 4;
-            let di = (py * source.width as usize + px) * 4;
-            out[di] = cr;
-            out[di + 1] = cg;
-            out[di + 2] = cb;
-            out[di + 3] = (source.bitmap.data[si + 3] as f32 * alpha_scale)
-                .round()
-                .min(255.0) as u8;
+            for px in 0..source.width as usize {
+                let source_x = source.x + px as i32;
+                if source_x < 0 || source_x >= source_bitmap.width as i32 {
+                    continue;
+                }
+                let si = (source_y as usize * source_bitmap.width as usize + source_x as usize) * 4;
+                let di = (py * source.width as usize + px) * 4;
+                out[di] = cr;
+                out[di + 1] = cg;
+                out[di + 2] = cb;
+                out[di + 3] = (source_bitmap.data[si + 3] as f32 * alpha_scale)
+                    .round()
+                    .min(255.0) as u8;
+            }
         }
-    }
+    });
 }

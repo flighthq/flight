@@ -6,7 +6,7 @@ fn region(bmp: Bitmap) -> BitmapRegion {
     let w = bmp.width as i32;
     let h = bmp.height as i32;
     return BitmapRegion {
-        bitmap: bmp,
+        bitmap: std::sync::Arc::new(std::sync::RwLock::new(bmp)),
         x: 0,
         y: 0,
         width: w,
@@ -14,9 +14,17 @@ fn region(bmp: Bitmap) -> BitmapRegion {
     };
 }
 
+fn shared_region(bitmap: &std::sync::Arc<std::sync::RwLock<Bitmap>>) -> BitmapRegion {
+    let (width, height) = {
+        let bitmap = bitmap.read().unwrap();
+        (bitmap.width as i32, bitmap.height as i32)
+    };
+    return create_bitmap_region(bitmap, 0, 0, width, height);
+}
+
 fn region_at(bmp: Bitmap, x: i32, y: i32, width: i32, height: i32) -> BitmapRegion {
     return BitmapRegion {
-        bitmap: bmp,
+        bitmap: std::sync::Arc::new(std::sync::RwLock::new(bmp)),
         x,
         y,
         width,
@@ -28,6 +36,18 @@ mod copy_bitmap_alpha {
     use super::*;
 
     #[test]
+    fn copies_alpha_between_disjoint_rectangles_of_one_shared_bitmap() {
+        let mut bmp = create_bitmap(2, 1, Some(0x112233ff));
+        set_bitmap_pixel(&mut bmp, 0, 0, 0x11223340);
+        let shared = share_bitmap(bmp);
+        let source = create_bitmap_region(&shared, 0, 0, 1, 1);
+        let mut dest = create_bitmap_region(&shared, 1, 0, 1, 1);
+        copy_bitmap_alpha(&mut dest, &source);
+        assert_eq!(get_bitmap_pixel(&shared.read().unwrap(), 1, 0) & 0xff, 0x40);
+        assert_eq!(get_bitmap_pixel(&shared.read().unwrap(), 0, 0) & 0xff, 0x40);
+    }
+
+    #[test]
     fn copies_alpha_from_source_to_dest_leaving_rgb_unchanged() {
         let mut src = create_bitmap(2, 1, None);
         set_bitmap_pixel(&mut src, 0, 0, 0x00000080);
@@ -36,18 +56,31 @@ mod copy_bitmap_alpha {
         let mut dr = region(dst);
         let sr = region(src);
         copy_bitmap_alpha(&mut dr, &sr);
-        assert_eq!((get_bitmap_pixel(&dr.bitmap, 0, 0) >> 24) & 0xff, 0xff);
-        assert_eq!(get_bitmap_pixel(&dr.bitmap, 0, 0) & 0xff, 0x80);
-        assert_eq!(get_bitmap_pixel(&dr.bitmap, 1, 0) & 0xff, 0xff);
+        assert_eq!(
+            (get_bitmap_pixel(&dr.bitmap.read().unwrap(), 0, 0) >> 24) & 0xff,
+            0xff
+        );
+        assert_eq!(
+            get_bitmap_pixel(&dr.bitmap.read().unwrap(), 0, 0) & 0xff,
+            0x80
+        );
+        assert_eq!(
+            get_bitmap_pixel(&dr.bitmap.read().unwrap(), 1, 0) & 0xff,
+            0xff
+        );
     }
 
     #[test]
     fn same_bitmap_region_is_a_noop_on_alpha() {
         let surf = create_bitmap(2, 1, Some(0x112233aa));
-        let mut dr = region(surf.clone());
-        let sr = region(surf);
+        let shared = share_bitmap(surf);
+        let mut dr = shared_region(&shared);
+        let sr = shared_region(&shared);
         copy_bitmap_alpha(&mut dr, &sr);
-        assert_eq!(get_bitmap_pixel(&dr.bitmap, 0, 0) & 0xff, 0xaa);
+        assert_eq!(
+            get_bitmap_pixel(&dr.bitmap.read().unwrap(), 0, 0) & 0xff,
+            0xaa
+        );
     }
 
     #[test]
@@ -57,8 +90,14 @@ mod copy_bitmap_alpha {
         let mut dr = region_at(dst, 0, 0, 1, 1);
         let sr = region_at(src, 0, 0, 1, 1);
         copy_bitmap_alpha(&mut dr, &sr);
-        assert_eq!(get_bitmap_pixel(&dr.bitmap, 0, 0) & 0xff, 0x80);
-        assert_eq!(get_bitmap_pixel(&dr.bitmap, 1, 0) & 0xff, 0x00);
+        assert_eq!(
+            get_bitmap_pixel(&dr.bitmap.read().unwrap(), 0, 0) & 0xff,
+            0x80
+        );
+        assert_eq!(
+            get_bitmap_pixel(&dr.bitmap.read().unwrap(), 1, 0) & 0xff,
+            0x00
+        );
     }
 }
 
@@ -70,8 +109,8 @@ mod multiply_bitmap_alpha {
         let surf = create_bitmap(2, 2, Some(0xff0000ff));
         let mut r = region(surf);
         multiply_bitmap_alpha(&mut r, 0.0);
-        assert_eq!(get_bitmap_pixel(&r.bitmap, 0, 0) & 0xff, 0);
-        assert_eq!(get_bitmap_pixel(&r.bitmap, 1, 1) & 0xff, 0);
+        assert_eq!(get_bitmap_pixel(&r.bitmap.read().unwrap(), 0, 0) & 0xff, 0);
+        assert_eq!(get_bitmap_pixel(&r.bitmap.read().unwrap(), 1, 1) & 0xff, 0);
     }
 
     #[test]
@@ -79,7 +118,10 @@ mod multiply_bitmap_alpha {
         let surf = create_bitmap(1, 1, Some(0xff0000ab));
         let mut r = region(surf);
         multiply_bitmap_alpha(&mut r, 1.0);
-        assert_eq!(get_bitmap_pixel(&r.bitmap, 0, 0) & 0xff, 0xab);
+        assert_eq!(
+            get_bitmap_pixel(&r.bitmap.read().unwrap(), 0, 0) & 0xff,
+            0xab
+        );
     }
 
     #[test]
@@ -87,7 +129,10 @@ mod multiply_bitmap_alpha {
         let surf = create_bitmap(1, 1, Some(0xff0000fe));
         let mut r = region(surf);
         multiply_bitmap_alpha(&mut r, 0.5);
-        assert_eq!(get_bitmap_pixel(&r.bitmap, 0, 0) & 0xff, 127);
+        assert_eq!(
+            get_bitmap_pixel(&r.bitmap.read().unwrap(), 0, 0) & 0xff,
+            127
+        );
     }
 
     #[test]
@@ -95,7 +140,10 @@ mod multiply_bitmap_alpha {
         let surf = create_bitmap(1, 1, Some(0xff0000aa));
         let mut r = region(surf);
         multiply_bitmap_alpha(&mut r, 2.0);
-        assert_eq!(get_bitmap_pixel(&r.bitmap, 0, 0) & 0xff, 0xaa);
+        assert_eq!(
+            get_bitmap_pixel(&r.bitmap.read().unwrap(), 0, 0) & 0xff,
+            0xaa
+        );
     }
 
     #[test]
@@ -103,7 +151,7 @@ mod multiply_bitmap_alpha {
         let surf = create_bitmap(1, 1, Some(0x123456ff));
         let mut r = region(surf);
         multiply_bitmap_alpha(&mut r, 0.5);
-        let p = get_bitmap_pixel(&r.bitmap, 0, 0);
+        let p = get_bitmap_pixel(&r.bitmap.read().unwrap(), 0, 0);
         assert_eq!((p >> 24) & 0xff, 0x12);
         assert_eq!((p >> 16) & 0xff, 0x34);
         assert_eq!((p >> 8) & 0xff, 0x56);
@@ -120,7 +168,10 @@ mod set_bitmap_alpha {
         set_bitmap_alpha(&mut r, 0x40 as f32);
         for y in 0..3 {
             for x in 0..3 {
-                assert_eq!(get_bitmap_pixel(&r.bitmap, x, y) & 0xff, 0x40);
+                assert_eq!(
+                    get_bitmap_pixel(&r.bitmap.read().unwrap(), x, y) & 0xff,
+                    0x40
+                );
             }
         }
     }
@@ -130,9 +181,12 @@ mod set_bitmap_alpha {
         let surf = create_bitmap(1, 1, Some(0xff0000ff));
         let mut r = region(surf);
         set_bitmap_alpha(&mut r, -10.0);
-        assert_eq!(get_bitmap_pixel(&r.bitmap, 0, 0) & 0xff, 0);
+        assert_eq!(get_bitmap_pixel(&r.bitmap.read().unwrap(), 0, 0) & 0xff, 0);
         set_bitmap_alpha(&mut r, 300.0);
-        assert_eq!(get_bitmap_pixel(&r.bitmap, 0, 0) & 0xff, 255);
+        assert_eq!(
+            get_bitmap_pixel(&r.bitmap.read().unwrap(), 0, 0) & 0xff,
+            255
+        );
     }
 
     #[test]
@@ -140,7 +194,7 @@ mod set_bitmap_alpha {
         let surf = create_bitmap(1, 1, Some(0x112233ff));
         let mut r = region(surf);
         set_bitmap_alpha(&mut r, 0x80 as f32);
-        let p = get_bitmap_pixel(&r.bitmap, 0, 0);
+        let p = get_bitmap_pixel(&r.bitmap.read().unwrap(), 0, 0);
         assert_eq!((p >> 24) & 0xff, 0x11);
         assert_eq!((p >> 16) & 0xff, 0x22);
         assert_eq!((p >> 8) & 0xff, 0x33);
@@ -152,9 +206,21 @@ mod set_bitmap_alpha {
         let surf = create_bitmap(4, 1, Some(0xff0000ff));
         let mut r = region_at(surf, 1, 0, 2, 1);
         set_bitmap_alpha(&mut r, 0.0);
-        assert_eq!(get_bitmap_pixel(&r.bitmap, 0, 0) & 0xff, 0xff);
-        assert_eq!(get_bitmap_pixel(&r.bitmap, 1, 0) & 0xff, 0x00);
-        assert_eq!(get_bitmap_pixel(&r.bitmap, 2, 0) & 0xff, 0x00);
-        assert_eq!(get_bitmap_pixel(&r.bitmap, 3, 0) & 0xff, 0xff);
+        assert_eq!(
+            get_bitmap_pixel(&r.bitmap.read().unwrap(), 0, 0) & 0xff,
+            0xff
+        );
+        assert_eq!(
+            get_bitmap_pixel(&r.bitmap.read().unwrap(), 1, 0) & 0xff,
+            0x00
+        );
+        assert_eq!(
+            get_bitmap_pixel(&r.bitmap.read().unwrap(), 2, 0) & 0xff,
+            0x00
+        );
+        assert_eq!(
+            get_bitmap_pixel(&r.bitmap.read().unwrap(), 3, 0) & 0xff,
+            0xff
+        );
     }
 }

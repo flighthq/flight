@@ -6,7 +6,7 @@ fn region(bmp: Bitmap) -> BitmapRegion {
     let w = bmp.width as i32;
     let h = bmp.height as i32;
     return BitmapRegion {
-        bitmap: bmp,
+        bitmap: std::sync::Arc::new(std::sync::RwLock::new(bmp)),
         x: 0,
         y: 0,
         width: w,
@@ -38,7 +38,7 @@ mod fill_bitmap_linear_gradient {
         let mut r = region(bmp);
         let ramp = build_two_stop_ramp(0xff0000ff, 0x0000ffff);
         fill_bitmap_linear_gradient(&mut r, &ramp, 0.0, 0.0, 3.0, 0.0, GradientSpread::Pad);
-        let pixel = get_bitmap_pixel(&r.bitmap, 0, 0);
+        let pixel = get_bitmap_pixel(&r.bitmap.read().unwrap(), 0, 0);
         assert!((((pixel >> 24) & 0xff) as i32 - 0xff).abs() < 5);
         assert!((((pixel >> 8) & 0xff) as i32 - 0x00).abs() < 5);
     }
@@ -49,7 +49,7 @@ mod fill_bitmap_linear_gradient {
         let mut r = region(bmp);
         let ramp = build_two_stop_ramp(0xff0000ff, 0x0000ffff);
         fill_bitmap_linear_gradient(&mut r, &ramp, 0.0, 0.0, 3.0, 0.0, GradientSpread::Pad);
-        let pixel = get_bitmap_pixel(&r.bitmap, 3, 0);
+        let pixel = get_bitmap_pixel(&r.bitmap.read().unwrap(), 3, 0);
         assert!((((pixel >> 24) & 0xff) as i32 - 0x00).abs() < 5);
         assert!((((pixel >> 8) & 0xff) as i32 - 0xff).abs() < 5);
     }
@@ -60,7 +60,7 @@ mod fill_bitmap_linear_gradient {
         let mut r = region(bmp);
         let ramp = build_two_stop_ramp(0x000000ff, 0xffffffff);
         fill_bitmap_linear_gradient(&mut r, &ramp, 0.0, 0.0, 2.0, 0.0, GradientSpread::Pad);
-        let mid = ((get_bitmap_pixel(&r.bitmap, 1, 0) >> 24) & 0xff) as u8;
+        let mid = ((get_bitmap_pixel(&r.bitmap.read().unwrap(), 1, 0) >> 24) & 0xff) as u8;
         assert!(mid > 0);
         assert!(mid < 255);
     }
@@ -71,10 +71,10 @@ mod fill_bitmap_linear_gradient {
         let mut r = region(bmp);
         let ramp = build_two_stop_ramp(0xff0000ff, 0x0000ffff);
         fill_bitmap_linear_gradient(&mut r, &ramp, 1.0, 0.0, 3.0, 0.0, GradientSpread::Pad);
-        let left = get_bitmap_pixel(&r.bitmap, 0, 0);
-        let left_boundary = get_bitmap_pixel(&r.bitmap, 1, 0);
-        let right = get_bitmap_pixel(&r.bitmap, 4, 0);
-        let right_boundary = get_bitmap_pixel(&r.bitmap, 3, 0);
+        let left = get_bitmap_pixel(&r.bitmap.read().unwrap(), 0, 0);
+        let left_boundary = get_bitmap_pixel(&r.bitmap.read().unwrap(), 1, 0);
+        let right = get_bitmap_pixel(&r.bitmap.read().unwrap(), 4, 0);
+        let right_boundary = get_bitmap_pixel(&r.bitmap.read().unwrap(), 3, 0);
         assert_eq!((left >> 24) & 0xff, (left_boundary >> 24) & 0xff);
         assert_eq!((right >> 8) & 0xff, (right_boundary >> 8) & 0xff);
     }
@@ -83,7 +83,7 @@ mod fill_bitmap_linear_gradient {
     fn skips_pixels_outside_bitmap_bounds() {
         let bmp = create_bitmap(2, 2, None);
         let mut r = BitmapRegion {
-            bitmap: bmp,
+            bitmap: std::sync::Arc::new(std::sync::RwLock::new(bmp)),
             x: -1,
             y: 0,
             width: 4,
@@ -99,8 +99,8 @@ mod fill_bitmap_linear_gradient {
         let mut r = region(bmp);
         let ramp = linear_ramp();
         fill_bitmap_linear_gradient(&mut r, &ramp, 0.0, 0.0, 9.0, 0.0, GradientSpread::Repeat);
-        let first_start = r.bitmap.data[0];
-        let second_start = r.bitmap.data[10 * 4];
+        let first_start = r.bitmap.read().unwrap().data[0];
+        let second_start = r.bitmap.read().unwrap().data[10 * 4];
         assert!((first_start as i32 - second_start as i32).abs() <= 30);
     }
 }
@@ -114,7 +114,7 @@ mod fill_bitmap_radial_gradient {
         let mut r = region(bmp);
         let ramp = build_two_stop_ramp(0xff0000ff, 0x0000ffff);
         fill_bitmap_radial_gradient(&mut r, &ramp, 2.0, 2.0, 2.0, 2.0, 2.0, GradientSpread::Pad);
-        let pixel = get_bitmap_pixel(&r.bitmap, 2, 2);
+        let pixel = get_bitmap_pixel(&r.bitmap.read().unwrap(), 2, 2);
         assert!((((pixel >> 24) & 0xff) as i32 - 0xff).abs() < 5);
     }
 
@@ -125,7 +125,7 @@ mod fill_bitmap_radial_gradient {
         let ramp = build_two_stop_ramp(0x000000ff, 0xffffffff);
         fill_bitmap_radial_gradient(&mut r, &ramp, 5.0, 5.0, 5.0, 5.0, 5.0, GradientSpread::Pad);
         let i = (5 * 11 + 10) * 4;
-        assert!(r.bitmap.data[i] >= 240);
+        assert!(r.bitmap.read().unwrap().data[i] >= 240);
     }
 
     #[test]
@@ -134,7 +134,7 @@ mod fill_bitmap_radial_gradient {
         let mut r = region(bmp);
         let ramp = build_two_stop_ramp(0xff0000ff, 0x0000ffff);
         fill_bitmap_radial_gradient(&mut r, &ramp, 4.0, 0.0, 2.0, 4.0, 0.0, GradientSpread::Pad);
-        let far = get_bitmap_pixel(&r.bitmap, 0, 0);
+        let far = get_bitmap_pixel(&r.bitmap.read().unwrap(), 0, 0);
         assert!((((far >> 8) & 0xff) as i32 - 0xff).abs() < 5);
     }
 
@@ -142,7 +142,7 @@ mod fill_bitmap_radial_gradient {
     fn skips_pixels_outside_bitmap_bounds() {
         let bmp = create_bitmap(2, 2, None);
         let mut r = BitmapRegion {
-            bitmap: bmp,
+            bitmap: std::sync::Arc::new(std::sync::RwLock::new(bmp)),
             x: -1,
             y: 0,
             width: 4,

@@ -6,12 +6,20 @@ fn region(bmp: Bitmap) -> BitmapRegion {
     let w = bmp.width as i32;
     let h = bmp.height as i32;
     return BitmapRegion {
-        bitmap: bmp,
+        bitmap: std::sync::Arc::new(std::sync::RwLock::new(bmp)),
         x: 0,
         y: 0,
         width: w,
         height: h,
     };
+}
+
+fn shared_region(bitmap: &std::sync::Arc<std::sync::RwLock<Bitmap>>) -> BitmapRegion {
+    let (width, height) = {
+        let bitmap = bitmap.read().unwrap();
+        (bitmap.width as i32, bitmap.height as i32)
+    };
+    return create_bitmap_region(bitmap, 0, 0, width, height);
 }
 
 mod apply_bitmap_curve {
@@ -33,7 +41,10 @@ mod apply_bitmap_curve {
         let sr = region(src);
         let mut dr = region(dest);
         apply_bitmap_curve(&mut dr, &sr, Some(&lut), Some(&lut), Some(&lut), Some(&lut));
-        assert_eq!(get_bitmap_pixel(&dr.bitmap, 0, 0), 0x11223344);
+        assert_eq!(
+            get_bitmap_pixel(&dr.bitmap.read().unwrap(), 0, 0),
+            0x11223344
+        );
     }
 
     #[test]
@@ -44,7 +55,7 @@ mod apply_bitmap_curve {
         let sr = region(src);
         let mut dr = region(dest);
         apply_bitmap_curve(&mut dr, &sr, Some(&lut), Some(&lut), Some(&lut), None);
-        let p = get_bitmap_pixel(&dr.bitmap, 0, 0);
+        let p = get_bitmap_pixel(&dr.bitmap.read().unwrap(), 0, 0);
         assert_eq!((p >> 24) & 0xff, 0xff);
         assert_eq!((p >> 16) & 0xff, 0x00);
         assert_eq!((p >> 8) & 0xff, 0x7f);
@@ -59,7 +70,7 @@ mod apply_bitmap_curve {
         let sr = region(src);
         let mut dr = region(dest);
         apply_bitmap_curve(&mut dr, &sr, Some(&lut), None, None, None);
-        let p = get_bitmap_pixel(&dr.bitmap, 0, 0);
+        let p = get_bitmap_pixel(&dr.bitmap.read().unwrap(), 0, 0);
         assert_eq!((p >> 24) & 0xff, 0x7f);
         assert_eq!((p >> 16) & 0xff, 0x80);
         assert_eq!((p >> 8) & 0xff, 0x80);
@@ -70,10 +81,11 @@ mod apply_bitmap_curve {
     fn is_alias_safe_when_out_aliases_source() {
         let lut = invert_lut();
         let surf = create_bitmap(2, 1, Some(0xff0000ff));
-        let sr = region(surf.clone());
-        let mut dr = region(surf);
+        let shared = share_bitmap(surf);
+        let sr = shared_region(&shared);
+        let mut dr = shared_region(&shared);
         apply_bitmap_curve(&mut dr, &sr, Some(&lut), None, None, None);
-        let p = get_bitmap_pixel(&dr.bitmap, 0, 0);
+        let p = get_bitmap_pixel(&dr.bitmap.read().unwrap(), 0, 0);
         assert_eq!((p >> 24) & 0xff, 0x00);
         assert_eq!((p >> 8) & 0xff, 0x00);
     }
@@ -89,7 +101,7 @@ mod apply_bitmap_levels {
         let sr = region(src);
         let mut dr = region(dest);
         apply_bitmap_levels(&mut dr, &sr, 0.0, 255.0, 1.0);
-        assert!((dr.bitmap.data[0] as i32 - 0x80).abs() <= 1);
+        assert!((dr.bitmap.read().unwrap().data[0] as i32 - 0x80).abs() <= 1);
     }
 
     #[test]
@@ -99,14 +111,14 @@ mod apply_bitmap_levels {
         let sr = region(src.clone());
         let mut dr = region(dest);
         apply_bitmap_levels(&mut dr, &sr, 0.0, 128.0, 1.0);
-        assert_eq!(dr.bitmap.data[0], 0);
+        assert_eq!(dr.bitmap.read().unwrap().data[0], 0);
 
         set_bitmap_pixel(&mut src, 0, 0, 0x808080ff);
         let sr2 = region(src);
         let dest2 = create_bitmap(1, 1, None);
         let mut dr2 = region(dest2);
         apply_bitmap_levels(&mut dr2, &sr2, 0.0, 128.0, 1.0);
-        assert_eq!(dr2.bitmap.data[0], 255);
+        assert_eq!(dr2.bitmap.read().unwrap().data[0], 255);
     }
 
     #[test]
@@ -116,7 +128,7 @@ mod apply_bitmap_levels {
         let sr = region(src);
         let mut dr = region(dest);
         apply_bitmap_levels(&mut dr, &sr, 0.0, 255.0, 0.5);
-        assert!(dr.bitmap.data[0] < 0x80);
+        assert!(dr.bitmap.read().unwrap().data[0] < 0x80);
     }
 
     #[test]
@@ -126,7 +138,7 @@ mod apply_bitmap_levels {
         let sr = region(src);
         let mut dr = region(dest);
         apply_bitmap_levels(&mut dr, &sr, 0.0, 255.0, 2.0);
-        assert!(dr.bitmap.data[0] > 0x80);
+        assert!(dr.bitmap.read().unwrap().data[0] > 0x80);
     }
 
     #[test]
@@ -136,6 +148,9 @@ mod apply_bitmap_levels {
         let sr = region(src);
         let mut dr = region(dest);
         apply_bitmap_levels(&mut dr, &sr, 0.0, 255.0, 1.0);
-        assert_eq!(get_bitmap_pixel(&dr.bitmap, 0, 0) & 0xff, 0xaa);
+        assert_eq!(
+            get_bitmap_pixel(&dr.bitmap.read().unwrap(), 0, 0) & 0xff,
+            0xaa
+        );
     }
 }

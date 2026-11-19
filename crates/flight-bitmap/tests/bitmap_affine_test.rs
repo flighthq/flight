@@ -6,7 +6,7 @@ fn region(bmp: Bitmap) -> BitmapRegion {
     let w = bmp.width as i32;
     let h = bmp.height as i32;
     return BitmapRegion {
-        bitmap: bmp,
+        bitmap: std::sync::Arc::new(std::sync::RwLock::new(bmp)),
         x: 0,
         y: 0,
         width: w,
@@ -31,7 +31,10 @@ mod transform_bitmap {
             BitmapEdgeMode::Transparent,
             BitmapResizeMode::Bilinear,
         );
-        assert_eq!(get_bitmap_pixel(&dr.bitmap, 1, 1), 0xff0000ff);
+        assert_eq!(
+            get_bitmap_pixel(&dr.bitmap.read().unwrap(), 1, 1),
+            0xff0000ff
+        );
     }
 
     #[test]
@@ -48,7 +51,10 @@ mod transform_bitmap {
             BitmapEdgeMode::Transparent,
             BitmapResizeMode::Bilinear,
         );
-        assert_eq!(get_bitmap_pixel(&dr.bitmap, 1, 1), 0xaabbccff);
+        assert_eq!(
+            get_bitmap_pixel(&dr.bitmap.read().unwrap(), 1, 1),
+            0xaabbccff
+        );
     }
 
     #[test]
@@ -64,7 +70,10 @@ mod transform_bitmap {
             BitmapEdgeMode::Transparent,
             BitmapResizeMode::Bilinear,
         );
-        assert_eq!(get_bitmap_pixel(&dr.bitmap, 3, 3), 0x00000000);
+        assert_eq!(
+            get_bitmap_pixel(&dr.bitmap.read().unwrap(), 3, 3),
+            0x00000000
+        );
     }
 
     #[test]
@@ -80,7 +89,10 @@ mod transform_bitmap {
             BitmapEdgeMode::Clamp,
             BitmapResizeMode::Bilinear,
         );
-        assert_eq!(get_bitmap_pixel(&dr.bitmap, 3, 3), 0x112233ff);
+        assert_eq!(
+            get_bitmap_pixel(&dr.bitmap.read().unwrap(), 3, 3),
+            0x112233ff
+        );
     }
 
     #[test]
@@ -97,7 +109,10 @@ mod transform_bitmap {
             BitmapEdgeMode::Wrap,
             BitmapResizeMode::Bilinear,
         );
-        assert_eq!(get_bitmap_pixel(&dr.bitmap, 2, 0), 0xffff00ff);
+        assert_eq!(
+            get_bitmap_pixel(&dr.bitmap.read().unwrap(), 2, 0),
+            0xffff00ff
+        );
     }
 
     #[test]
@@ -116,8 +131,14 @@ mod transform_bitmap {
             BitmapEdgeMode::Mirror,
             BitmapResizeMode::Bilinear,
         );
-        assert_eq!(get_bitmap_pixel(&dr.bitmap, 3, 0), 0x0000ffff);
-        assert_eq!(get_bitmap_pixel(&dr.bitmap, 4, 0), 0x00ff00ff);
+        assert_eq!(
+            get_bitmap_pixel(&dr.bitmap.read().unwrap(), 3, 0),
+            0x0000ffff
+        );
+        assert_eq!(
+            get_bitmap_pixel(&dr.bitmap.read().unwrap(), 4, 0),
+            0x00ff00ff
+        );
     }
 
     #[test]
@@ -135,8 +156,14 @@ mod transform_bitmap {
             BitmapEdgeMode::Transparent,
             BitmapResizeMode::Nearest,
         );
-        assert_eq!(get_bitmap_pixel(&dr.bitmap, 0, 0), 0xff0000ff);
-        assert_eq!(get_bitmap_pixel(&dr.bitmap, 1, 0), 0x0000ffff);
+        assert_eq!(
+            get_bitmap_pixel(&dr.bitmap.read().unwrap(), 0, 0),
+            0xff0000ff
+        );
+        assert_eq!(
+            get_bitmap_pixel(&dr.bitmap.read().unwrap(), 1, 0),
+            0x0000ffff
+        );
     }
 
     #[test]
@@ -145,7 +172,7 @@ mod transform_bitmap {
         let dst = create_bitmap(2, 2, None);
         let sr = region(src);
         let mut dr = BitmapRegion {
-            bitmap: dst,
+            bitmap: std::sync::Arc::new(std::sync::RwLock::new(dst)),
             x: 0,
             y: 0,
             width: 0,
@@ -173,6 +200,9 @@ mod transform_bitmap {
             BitmapEdgeMode::Transparent,
             BitmapResizeMode::Bilinear,
         );
-        assert_eq!(get_bitmap_pixel(&dr.bitmap, 0, 0), 0xabcdefff);
+        assert_eq!(
+            get_bitmap_pixel(&dr.bitmap.read().unwrap(), 0, 0),
+            0xabcdefff
+        );
     }
 }

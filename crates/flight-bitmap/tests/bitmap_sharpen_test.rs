@@ -6,7 +6,7 @@ fn region(bmp: Bitmap) -> BitmapRegion {
     let w = bmp.width as i32;
     let h = bmp.height as i32;
     return BitmapRegion {
-        bitmap: bmp,
+        bitmap: std::sync::Arc::new(std::sync::RwLock::new(bmp)),
         x: 0,
         y: 0,
         width: w,
@@ -90,7 +90,7 @@ mod sharpen_bitmap {
             bitmap.data[i * 4 + 3] = 255;
         }
         let region = BitmapRegion {
-            bitmap,
+            bitmap: share_bitmap(bitmap),
             x: 0,
             y: 0,
             width: w as i32,

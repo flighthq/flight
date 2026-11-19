@@ -6,7 +6,7 @@ fn region(bmp: Bitmap) -> BitmapRegion {
     let w = bmp.width as i32;
     let h = bmp.height as i32;
     return BitmapRegion {
-        bitmap: bmp,
+        bitmap: std::sync::Arc::new(std::sync::RwLock::new(bmp)),
         x: 0,
         y: 0,
         width: w,
@@ -53,16 +53,16 @@ mod drop_shadow_bitmap {
         let offset_x = (angle.cos() * 1.0).round() as i32;
         let offset_y = (angle.sin() * 1.0).round() as i32;
         let mut dr = BitmapRegion {
-            bitmap: dest,
+            bitmap: std::sync::Arc::new(std::sync::RwLock::new(dest)),
             x: 1 + offset_x,
             y: 1 + offset_y,
             width: 1,
             height: 1,
         };
         composite_bitmap_pixels(&mut dr, &out, BitmapCompositeMode::Normal);
-        let i = (1 * dr.bitmap.width as usize + 2) * 4;
-        assert_eq!(dr.bitmap.data[i + 2], 0xff);
-        assert_eq!(dr.bitmap.data[i + 3], 0xff);
+        let i = (1 * dr.bitmap.read().unwrap().width as usize + 2) * 4;
+        assert_eq!(dr.bitmap.read().unwrap().data[i + 2], 0xff);
+        assert_eq!(dr.bitmap.read().unwrap().data[i + 3], 0xff);
     }
 
     #[test]
@@ -80,7 +80,7 @@ mod drop_shadow_bitmap {
         };
         drop_shadow_bitmap(&mut out, &mut scratch, &region(source.clone()), &opts);
         let mut dest_r1 = BitmapRegion {
-            bitmap: dest,
+            bitmap: std::sync::Arc::new(std::sync::RwLock::new(dest)),
             x: 1,
             y: 0,
             width: 1,
@@ -88,15 +88,15 @@ mod drop_shadow_bitmap {
         };
         composite_bitmap_pixels(&mut dest_r1, &out, BitmapCompositeMode::Normal);
         let mut dest_r0 = BitmapRegion {
-            bitmap: dest_r1.bitmap,
+            bitmap: dest_r1.bitmap.clone(),
             x: 0,
             y: 0,
             width: 1,
             height: 1,
         };
         composite_bitmap_region(&mut dest_r0, &region(source), BitmapCompositeMode::Normal);
-        assert_eq!(dest_r0.bitmap.data[0], 0xff);
-        assert_eq!(dest_r0.bitmap.data[3], 0xff);
+        assert_eq!(dest_r0.bitmap.read().unwrap().data[0], 0xff);
+        assert_eq!(dest_r0.bitmap.read().unwrap().data[3], 0xff);
     }
 
     #[test]
@@ -111,7 +111,7 @@ mod drop_shadow_bitmap {
             passes: Some(1),
         };
         let r = region(bitmap);
-        let mut data = r.bitmap.data.clone();
+        let mut data = r.bitmap.read().unwrap().data.clone();
         drop_shadow_bitmap(&mut data, &mut scratch, &r, &opts);
         assert_eq!(data[2], 0xff);
         assert_eq!(data[3], 0xff);
@@ -154,8 +154,8 @@ mod glow_bitmap {
         glow_bitmap(&mut out, &mut scratch, &region(source), &opts);
         let mut dr = region(dest);
         composite_bitmap_pixels(&mut dr, &out, BitmapCompositeMode::Normal);
-        assert_eq!(dr.bitmap.data[1], 0xff);
-        assert_eq!(dr.bitmap.data[3], 0xff);
+        assert_eq!(dr.bitmap.read().unwrap().data[1], 0xff);
+        assert_eq!(dr.bitmap.read().unwrap().data[3], 0xff);
     }
 
     #[test]
@@ -175,8 +175,8 @@ mod glow_bitmap {
         let mut dr = region(dest);
         composite_bitmap_pixels(&mut dr, &out, BitmapCompositeMode::Normal);
         composite_bitmap_region(&mut dr, &region(source), BitmapCompositeMode::Normal);
-        assert_eq!(dr.bitmap.data[0], 0xff);
-        assert_eq!(dr.bitmap.data[3], 0xff);
+        assert_eq!(dr.bitmap.read().unwrap().data[0], 0xff);
+        assert_eq!(dr.bitmap.read().unwrap().data[3], 0xff);
     }
 
     #[test]
@@ -191,7 +191,7 @@ mod glow_bitmap {
             passes: Some(1),
         };
         let r = region(bitmap);
-        let mut data = r.bitmap.data.clone();
+        let mut data = r.bitmap.read().unwrap().data.clone();
         glow_bitmap(&mut data, &mut scratch, &r, &opts);
         assert_eq!(data[1], 0xff);
         assert_eq!(data[3], 0xff);

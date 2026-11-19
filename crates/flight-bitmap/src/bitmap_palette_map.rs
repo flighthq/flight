@@ -1,6 +1,7 @@
 //! flight-compiler: target-native
 
 use crate::bitmap::invalidate_bitmap;
+use crate::region_access::*;
 use crate::types::*;
 
 #[cfg(all(test, feature = "object-api"))]
@@ -15,7 +16,13 @@ mod sugar_tests {
     }
 
     fn test_region() -> BitmapRegion {
-        return create_bitmap_region(test_bitmap(), 0, 0, 4, 4);
+        return create_bitmap_region(
+            &std::sync::Arc::new(std::sync::RwLock::new(test_bitmap())),
+            0,
+            0,
+            4,
+            4,
+        );
     }
 
     fn test_lut() -> Vec<u8> {
@@ -56,37 +63,38 @@ pub fn apply_bitmap_palette_map(
     blue_map: Option<&[u8]>,
     alpha_map: Option<&[u8]>,
 ) {
-    let w = dest.width.min(source.width);
-    let h = dest.height.min(source.height);
-    let sd = source.bitmap.data.clone();
-    let s_bw = source.bitmap.width as i32;
-    let d_bw = dest.bitmap.width as i32;
-    for py in 0..h {
-        let sy = source.y + py;
-        let dy = dest.y + py;
-        if sy < 0 || sy >= source.bitmap.height as i32 || dy < 0 || dy >= dest.bitmap.height as i32
-        {
-            continue;
-        }
-        for px in 0..w {
-            let sx = source.x + px;
-            let dx = dest.x + px;
-            if sx < 0 || sx >= s_bw || dx < 0 || dx >= d_bw {
+    return write_region_with_sources(dest, [source], |bitmap, [source_pixels]| {
+        let w = dest.width.min(source.width);
+        let h = dest.height.min(source.height);
+        let sd = &source_pixels;
+        let s_bw = source_pixels.width as i32;
+        let d_bw = bitmap.width as i32;
+        for py in 0..h {
+            let sy = source.y + py;
+            let dy = dest.y + py;
+            if sy < 0 || sy >= source_pixels.height as i32 || dy < 0 || dy >= bitmap.height as i32 {
                 continue;
             }
-            let si = (sy as usize * s_bw as usize + sx as usize) * 4;
-            let di = (dy as usize * d_bw as usize + dx as usize) * 4;
-            let r = sd[si];
-            let g = sd[si + 1];
-            let b = sd[si + 2];
-            let a = sd[si + 3];
-            dest.bitmap.data[di] = red_map.map_or(r, |m| m[r as usize]);
-            dest.bitmap.data[di + 1] = green_map.map_or(g, |m| m[g as usize]);
-            dest.bitmap.data[di + 2] = blue_map.map_or(b, |m| m[b as usize]);
-            dest.bitmap.data[di + 3] = alpha_map.map_or(a, |m| m[a as usize]);
+            for px in 0..w {
+                let sx = source.x + px;
+                let dx = dest.x + px;
+                if sx < 0 || sx >= s_bw || dx < 0 || dx >= d_bw {
+                    continue;
+                }
+                let si = (sy as usize * s_bw as usize + sx as usize) * 4;
+                let di = (dy as usize * d_bw as usize + dx as usize) * 4;
+                let r = sd[si];
+                let g = sd[si + 1];
+                let b = sd[si + 2];
+                let a = sd[si + 3];
+                bitmap.data[di] = red_map.map_or(r, |m| m[r as usize]);
+                bitmap.data[di + 1] = green_map.map_or(g, |m| m[g as usize]);
+                bitmap.data[di + 2] = blue_map.map_or(b, |m| m[b as usize]);
+                bitmap.data[di + 3] = alpha_map.map_or(a, |m| m[a as usize]);
+            }
         }
-    }
-    invalidate_bitmap(&mut dest.bitmap);
+        invalidate_bitmap(bitmap);
+    });
 }
 
 #[cfg(feature = "object-api")]

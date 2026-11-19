@@ -8,7 +8,7 @@ fn region(bmp: Bitmap) -> BitmapRegion {
     let w = bmp.width as i32;
     let h = bmp.height as i32;
     return BitmapRegion {
-        bitmap: bmp,
+        bitmap: std::sync::Arc::new(std::sync::RwLock::new(bmp)),
         x: 0,
         y: 0,
         width: w,
@@ -18,7 +18,7 @@ fn region(bmp: Bitmap) -> BitmapRegion {
 
 fn region_at(bmp: Bitmap, x: i32, y: i32, width: i32, height: i32) -> BitmapRegion {
     return BitmapRegion {
-        bitmap: bmp,
+        bitmap: std::sync::Arc::new(std::sync::RwLock::new(bmp)),
         x,
         y,
         width,
@@ -75,7 +75,10 @@ mod merge_bitmap_channels {
             &region(b_surf),
             &region(a_surf),
         );
-        assert_eq!(get_bitmap_pixel(&or_.bitmap, 0, 0), 0xffffffff);
+        assert_eq!(
+            get_bitmap_pixel(&or_.bitmap.read().unwrap(), 0, 0),
+            0xffffffff
+        );
     }
 
     #[test]
@@ -93,8 +96,14 @@ mod merge_bitmap_channels {
             &region(b),
             &region(a),
         );
-        assert_eq!((get_bitmap_pixel(&or_.bitmap, 0, 0) >> 24) & 0xff, 0xff);
-        assert_eq!(get_bitmap_pixel(&or_.bitmap, 1, 0), 0x00000000);
+        assert_eq!(
+            (get_bitmap_pixel(&or_.bitmap.read().unwrap(), 0, 0) >> 24) & 0xff,
+            0xff
+        );
+        assert_eq!(
+            get_bitmap_pixel(&or_.bitmap.read().unwrap(), 1, 0),
+            0x00000000
+        );
     }
 }
 
@@ -136,8 +145,14 @@ mod split_bitmap_channels {
         let out = create_bitmap(2, 2, None);
         let mut or_ = region(out);
         merge_bitmap_channels(&mut or_, &region(r), &region(g), &region(b), &region(a));
-        assert_eq!(get_bitmap_pixel(&or_.bitmap, 0, 0), 0xaabbccdd);
-        assert_eq!(get_bitmap_pixel(&or_.bitmap, 1, 0), 0x11223344);
+        assert_eq!(
+            get_bitmap_pixel(&or_.bitmap.read().unwrap(), 0, 0),
+            0xaabbccdd
+        );
+        assert_eq!(
+            get_bitmap_pixel(&or_.bitmap.read().unwrap(), 1, 0),
+            0x11223344
+        );
     }
 
     #[test]

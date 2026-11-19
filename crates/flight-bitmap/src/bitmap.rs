@@ -1,6 +1,8 @@
 //! flight-compiler: target-native
 
-use flight_entity::allocate_entity;
+use std::sync::{Arc, RwLock};
+
+use flight_entity::{Ref, allocate_entity};
 
 use crate::types::*;
 
@@ -141,6 +143,13 @@ pub fn convert_bitmap_alpha_type(out: &mut Bitmap, target: AlphaType) {
 /// Bumps the bitmap version with wrapping.
 pub fn invalidate_bitmap(bitmap: &mut Bitmap) {
     bitmap.version = bitmap.version.wrapping_add(1);
+}
+
+/// Moves an owned bitmap behind a shared handle that any number of regions can reference (TS
+/// `shareBitmap`, an identity there because TypeScript bitmaps are already shared references).
+/// The owned bitmap is consumed; release the handle when every region on it is done.
+pub fn share_bitmap(bitmap: Bitmap) -> Ref<Bitmap> {
+    return Arc::new(RwLock::new(bitmap));
 }
 
 #[cfg(feature = "object-api")]

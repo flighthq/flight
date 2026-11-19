@@ -6,7 +6,7 @@ fn region(bmp: Bitmap) -> BitmapRegion {
     let w = bmp.width as i32;
     let h = bmp.height as i32;
     return BitmapRegion {
-        bitmap: bmp,
+        bitmap: std::sync::Arc::new(std::sync::RwLock::new(bmp)),
         x: 0,
         y: 0,
         width: w,
@@ -16,7 +16,7 @@ fn region(bmp: Bitmap) -> BitmapRegion {
 
 fn region_at(bmp: Bitmap, x: i32, y: i32, width: i32, height: i32) -> BitmapRegion {
     return BitmapRegion {
-        bitmap: bmp,
+        bitmap: std::sync::Arc::new(std::sync::RwLock::new(bmp)),
         x,
         y,
         width,
@@ -185,7 +185,7 @@ mod color_matrix_bitmap {
             0.0, 1.0, 0.0,
         ];
         let r = region(bitmap);
-        let mut data = r.bitmap.data.clone();
+        let mut data = r.bitmap.read().unwrap().data.clone();
         color_matrix_bitmap(&mut data, &r, &m);
         assert_eq!(data[0], 11);
         assert_eq!(data[1], 22);

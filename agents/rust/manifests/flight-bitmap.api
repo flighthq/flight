@@ -7,6 +7,7 @@ src/bitmap.rs: pub fn convert_bitmap_alpha_type(out: &mut Bitmap, target: AlphaT
 src/bitmap.rs: pub fn create_bitmap(width: u32, height: u32, color: Option<u32>) -> Bitmap
 src/bitmap.rs: pub fn invalidate_bitmap(bitmap: &mut Bitmap)
 src/bitmap_affine.rs: impl BitmapRegion :: fn transform(&mut self, source: &BitmapRegion, matrix: &[f64; 6], edge_mode: BitmapEdgeMode, sample_mode: BitmapResizeMode)
+src/bitmap.rs: pub fn share_bitmap(bitmap: Bitmap) -> Ref<Bitmap>
 src/bitmap_affine.rs: pub fn transform_bitmap(dest: &mut BitmapRegion, source: &BitmapRegion, matrix: &[f64; 6], edge_mode: BitmapEdgeMode, sample_mode: BitmapResizeMode,)
 src/bitmap_alpha.rs: impl BitmapRegion :: fn copy_alpha(&mut self, source: &BitmapRegion)
 src/bitmap_alpha.rs: impl BitmapRegion :: fn multiply_alpha(&mut self, factor: f32)
@@ -137,10 +138,10 @@ src/bitmap_pixelate.rs: pub fn pixelate_bitmap(out: &mut [u8], source: &BitmapRe
 src/bitmap_query.rs: impl BitmapRegion :: fn color_bounds_rectangle(&self, mask: u32, color: u32, find_color: bool) -> Option<RectangleLike>
 src/bitmap_query.rs: pub fn get_bitmap_color_bounds_rectangle(source: &BitmapRegion, mask: u32, color: u32, find_color: bool,) -> Option<RectangleLike>
 src/bitmap_readback_resolver.rs: pub fn resolve_bitmap_readback(host_bitmap_readback: &HostBitmapReadbackCapability, source: &Arc<HostImageSource>, width: u32, height: u32, mode: BitmapReadbackMode,) -> BitmapReadbackResolution
-src/bitmap_region.rs: impl BitmapRegion :: fn new(bitmap: Bitmap, x: i32, y: i32, width: i32, height: i32) -> Self
-src/bitmap_region.rs: impl BitmapRegion :: fn set(&mut self, bitmap: Bitmap, x: i32, y: i32, width: i32, height: i32)
-src/bitmap_region.rs: pub fn create_bitmap_region(bitmap: Bitmap, x: i32, y: i32, width: i32, height: i32,) -> BitmapRegion
-src/bitmap_region.rs: pub fn set_bitmap_region(out: &mut BitmapRegion, bitmap: Bitmap, x: i32, y: i32, width: i32, height: i32,)
+src/bitmap_region.rs: impl BitmapRegion :: fn new(bitmap: &Ref<Bitmap>, x: i32, y: i32, width: i32, height: i32) -> Self
+src/bitmap_region.rs: impl BitmapRegion :: fn set(&mut self, bitmap: &Ref<Bitmap>, x: i32, y: i32, width: i32, height: i32)
+src/bitmap_region.rs: pub fn create_bitmap_region(bitmap: &Ref<Bitmap>, x: i32, y: i32, width: i32, height: i32,) -> BitmapRegion
+src/bitmap_region.rs: pub fn set_bitmap_region(out: &mut BitmapRegion, bitmap: &Ref<Bitmap>, x: i32, y: i32, width: i32, height: i32,)
 src/bitmap_resize.rs: impl BitmapRegion :: fn resize(&mut self, source: &BitmapRegion, mode: BitmapResizeMode, edge_mode: BitmapEdgeMode, premultiplied: bool)
 src/bitmap_resize.rs: pub fn resize_bitmap(dest: &mut BitmapRegion, source: &BitmapRegion, mode: BitmapResizeMode, edge_mode: BitmapEdgeMode, premultiplied: bool,)
 src/bitmap_rotate.rs: impl BitmapRegion :: fn rotate(&mut self, source: &BitmapRegion, angle: f64, pivot_x: f64, pivot_y: f64, edge_mode: BitmapEdgeMode, sample_mode: BitmapResizeMode)
@@ -356,6 +357,7 @@ src/lib.rs: pub use contract::set_bitmap_color_matrix_identity;
 src/lib.rs: pub use contract::set_bitmap_pixel;
 src/lib.rs: pub use contract::set_bitmap_pixel_rgb;
 src/lib.rs: pub use contract::set_bitmap_region;
+src/lib.rs: pub use contract::share_bitmap;
 src/lib.rs: pub use contract::sharpen_bitmap;
 src/lib.rs: pub use contract::split_bitmap_channels;
 src/lib.rs: pub use contract::to_clamped_u8;
@@ -366,6 +368,8 @@ src/lib.rs: pub use contract::warp_bitmap;
 src/lib.rs: pub use contract::warp_bitmap_quad;
 src/lib.rs: pub use contract::write_bitmap_pixels32;
 src/lib.rs: pub use contract::write_bitmap_pixels;
+src/region_access.rs: impl Index<usize> for SourcePixels<'_>
+src/region_access.rs: impl Index<usize> for SourcePixels<'_> :: fn index(&self, index: usize) -> &u8
 src/types.rs: #[derive(Clone)] pub struct HostBitmapEncodeCapability { pub provider: ProviderRef, pub encode_bitmap: Arc<dyn Fn(&Bitmap, ImageFormat, f32) -> Box<Uint8Array> + Send + Sync>, pub supported_formats: Vec<ImageFormat>, }
 src/types.rs: #[derive(Clone)] pub struct HostBitmapReadbackCapability { pub provider: ProviderRef, pub read_bitmap: Arc<dyn Fn(&Arc<HostImageSource>, u32, u32, BitmapReadbackMode) -> BitmapReadbackOutcome + Send + Sync,>, }
 src/types.rs: #[derive(Clone, Copy, Debug, PartialEq)] #[repr(u8)] pub enum BitmapCompositeMode { Normal = 0, Multiply = 1, Screen = 2, Add = 3, Subtract = 4, Darken = 5, Lighten = 6, Difference = 7, Exclusion = 8, Overlay = 9, HardLight = 10, SoftLight = 11, ColorDodge = 12, ColorBurn = 13, Invert = 14, SourceOver = 15, DestinationOver = 16, SourceIn = 17, DestinationIn = 18, SourceOut = 19, DestinationOut = 20, SourceAtop = 21, DestinationAtop = 22, Xor = 23, Copy = 24, Clear = 25, }
@@ -392,7 +396,7 @@ src/types.rs: #[derive(Clone, Debug)] pub struct BitmapHistogram { pub red: Vec<
 src/types.rs: #[derive(Clone, Debug)] pub struct BitmapReadbackExplanation { pub readable: bool, pub reason: BitmapReadbackBlockReason, }
 src/types.rs: #[derive(Clone, Debug)] pub struct BitmapReadbackOutcome { pub bitmap: Option<Bitmap>, pub reason: BitmapReadbackBackendReason, }
 src/types.rs: #[derive(Clone, Debug)] pub struct BitmapReadbackResolution { pub bitmap: Option<Bitmap>, pub reason: BitmapReadbackBlockReason, }
-src/types.rs: #[derive(Clone, Debug)] pub struct BitmapRegion { pub bitmap: Bitmap, pub x: i32, pub y: i32, pub width: i32, pub height: i32, }
+src/types.rs: #[derive(Clone, Debug)] pub struct BitmapRegion { pub bitmap: Ref<Bitmap>, pub x: i32, pub y: i32, pub width: i32, pub height: i32, }
 src/types.rs: #[derive(Clone, Debug)] pub struct BitmapResizeOptions { pub mode: Option<BitmapResizeMode>, pub edge_mode: Option<BitmapEdgeMode>, pub premultiplied: Option<bool>, }
 src/types.rs: #[derive(Clone, Debug, Default)] pub struct BitmapDropShadowOptions { pub color: Option<u32>, pub intensity: Option<f32>, pub radius_x: Option<f32>, pub radius_y: Option<f32>, pub passes: Option<i32>, }
 src/types.rs: #[derive(Clone, Debug, Default)] pub struct BitmapGlowOptions { pub color: Option<u32>, pub intensity: Option<f32>, pub radius_x: Option<f32>, pub radius_y: Option<f32>, pub passes: Option<i32>, }

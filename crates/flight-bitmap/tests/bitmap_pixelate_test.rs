@@ -6,7 +6,7 @@ fn region(bmp: Bitmap) -> BitmapRegion {
     let w = bmp.width as i32;
     let h = bmp.height as i32;
     return BitmapRegion {
-        bitmap: bmp,
+        bitmap: std::sync::Arc::new(std::sync::RwLock::new(bmp)),
         x: 0,
         y: 0,
         width: w,
@@ -47,7 +47,7 @@ mod pixelate_bitmap {
         bmp.data[0] = 0;
         bmp.data[4] = 80;
         let r = region(bmp);
-        let mut data = r.bitmap.data.clone();
+        let mut data = r.bitmap.read().unwrap().data.clone();
         pixelate_bitmap(&mut data, &r, 2);
         assert_eq!(data[0], 40);
         assert_eq!(data[4], 40);

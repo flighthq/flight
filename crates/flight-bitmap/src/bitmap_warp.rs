@@ -1,6 +1,7 @@
 //! flight-compiler: target-native
 
 use crate::bitmap::invalidate_bitmap;
+use crate::region_access::*;
 use crate::types::*;
 
 #[cfg(all(test, feature = "object-api"))]
@@ -15,7 +16,13 @@ mod sugar_tests {
     }
 
     fn test_region() -> BitmapRegion {
-        return create_bitmap_region(test_bitmap(), 0, 0, 4, 4);
+        return create_bitmap_region(
+            &std::sync::Arc::new(std::sync::RwLock::new(test_bitmap())),
+            0,
+            0,
+            4,
+            4,
+        );
     }
 
     #[test]
@@ -166,58 +173,60 @@ pub fn warp_bitmap(
     edge_mode: BitmapEdgeMode,
     sample_mode: BitmapResizeMode,
 ) {
-    let dw = dest.width as usize;
-    let dh = dest.height as usize;
-    let sw = source.width as usize;
-    let sh = source.height as usize;
-    if dw == 0 || dh == 0 || sw == 0 || sh == 0 {
-        return;
-    }
-    let [m0, m1, m2, m3, m4, m5, m6, m7, m8] = matrix;
-    let sd = source.bitmap.data.clone();
-    let d_stride = dest.bitmap.width as usize;
-    let s_stride = source.bitmap.width as usize;
-    let s_origin_x = source.x as usize;
-    let s_origin_y = source.y as usize;
-    for dy in 0..dh {
-        let oy = (dest.y + dy as i32) as usize;
-        if oy >= dest.bitmap.height as usize {
-            continue;
+    return write_region_with_sources(dest, [source], |bitmap, [source_pixels]| {
+        let dw = dest.width as usize;
+        let dh = dest.height as usize;
+        let sw = source.width as usize;
+        let sh = source.height as usize;
+        if dw == 0 || dh == 0 || sw == 0 || sh == 0 {
+            return;
         }
-        for dx in 0..dw {
-            let ox = (dest.x + dx as i32) as usize;
-            if ox >= d_stride {
+        let [m0, m1, m2, m3, m4, m5, m6, m7, m8] = matrix;
+        let sd = &source_pixels;
+        let d_stride = bitmap.width as usize;
+        let s_stride = source_pixels.width as usize;
+        let s_origin_x = source.x as usize;
+        let s_origin_y = source.y as usize;
+        for dy in 0..dh {
+            let oy = (dest.y + dy as i32) as usize;
+            if oy >= bitmap.height as usize {
                 continue;
             }
-            let w = m6 * dx as f64 + m7 * dy as f64 + m8;
-            let di = (oy * d_stride + ox) * 4;
-            if w.abs() < 1e-10 {
-                dest.bitmap.data[di] = 0;
-                dest.bitmap.data[di + 1] = 0;
-                dest.bitmap.data[di + 2] = 0;
-                dest.bitmap.data[di + 3] = 0;
-                continue;
+            for dx in 0..dw {
+                let ox = (dest.x + dx as i32) as usize;
+                if ox >= d_stride {
+                    continue;
+                }
+                let w = m6 * dx as f64 + m7 * dy as f64 + m8;
+                let di = (oy * d_stride + ox) * 4;
+                if w.abs() < 1e-10 {
+                    bitmap.data[di] = 0;
+                    bitmap.data[di + 1] = 0;
+                    bitmap.data[di + 2] = 0;
+                    bitmap.data[di + 3] = 0;
+                    continue;
+                }
+                let inv_w = 1.0 / w;
+                let sx = (m0 * dx as f64 + m1 * dy as f64 + m2) * inv_w;
+                let sy = (m3 * dx as f64 + m4 * dy as f64 + m5) * inv_w;
+                warp_sample_bitmap(
+                    &mut bitmap.data,
+                    di,
+                    &sd,
+                    sw,
+                    sh,
+                    s_origin_x,
+                    s_origin_y,
+                    s_stride,
+                    sx,
+                    sy,
+                    sample_mode,
+                    edge_mode,
+                );
             }
-            let inv_w = 1.0 / w;
-            let sx = (m0 * dx as f64 + m1 * dy as f64 + m2) * inv_w;
-            let sy = (m3 * dx as f64 + m4 * dy as f64 + m5) * inv_w;
-            warp_sample_bitmap(
-                &mut dest.bitmap.data,
-                di,
-                &sd,
-                sw,
-                sh,
-                s_origin_x,
-                s_origin_y,
-                s_stride,
-                sx,
-                sy,
-                sample_mode,
-                edge_mode,
-            );
         }
-    }
-    invalidate_bitmap(&mut dest.bitmap);
+        invalidate_bitmap(bitmap);
+    });
 }
 
 /// Warps `source` into `dest` by mapping its four corners to the four corners of `dst_quad`.
@@ -273,7 +282,7 @@ fn warp_resolve_edge(v: i32, size: i32, mode: BitmapEdgeMode) -> Option<i32> {
 fn warp_sample_bicubic(
     dd: &mut [u8],
     di: usize,
-    sd: &[u8],
+    sd: &SourcePixels<'_>,
     sw: usize,
     sh: usize,
     origin_x: usize,
@@ -313,7 +322,7 @@ fn warp_sample_bicubic(
 fn warp_sample_bilinear(
     dd: &mut [u8],
     di: usize,
-    sd: &[u8],
+    sd: &SourcePixels<'_>,
     sw: usize,
     sh: usize,
     origin_x: usize,
@@ -366,7 +375,7 @@ fn warp_sample_bilinear(
 fn warp_sample_bitmap(
     dd: &mut [u8],
     di: usize,
-    sd: &[u8],
+    sd: &SourcePixels<'_>,
     sw: usize,
     sh: usize,
     origin_x: usize,

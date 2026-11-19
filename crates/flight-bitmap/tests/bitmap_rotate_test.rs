@@ -6,12 +6,20 @@ fn region(bmp: Bitmap) -> BitmapRegion {
     let w = bmp.width as i32;
     let h = bmp.height as i32;
     return BitmapRegion {
-        bitmap: bmp,
+        bitmap: std::sync::Arc::new(std::sync::RwLock::new(bmp)),
         x: 0,
         y: 0,
         width: w,
         height: h,
     };
+}
+
+fn shared_region(bitmap: &std::sync::Arc<std::sync::RwLock<Bitmap>>) -> BitmapRegion {
+    let (width, height) = {
+        let bitmap = bitmap.read().unwrap();
+        (bitmap.width as i32, bitmap.height as i32)
+    };
+    return create_bitmap_region(bitmap, 0, 0, width, height);
 }
 
 mod rotate_bitmap {
@@ -32,8 +40,8 @@ mod rotate_bitmap {
             BitmapEdgeMode::Clamp,
             BitmapResizeMode::Bilinear,
         );
-        assert_eq!(dr.bitmap.data[0], 0xff);
-        assert_eq!(dr.bitmap.data[3], 0xff);
+        assert_eq!(dr.bitmap.read().unwrap().data[0], 0xff);
+        assert_eq!(dr.bitmap.read().unwrap().data[3], 0xff);
     }
 
     #[test]
@@ -55,7 +63,7 @@ mod rotate_bitmap {
             BitmapEdgeMode::Clamp,
             BitmapResizeMode::Bilinear,
         );
-        assert!(dr.bitmap.data[0] > dr.bitmap.data[4]);
+        assert!(dr.bitmap.read().unwrap().data[0] > dr.bitmap.read().unwrap().data[4]);
     }
 
     #[test]
@@ -73,8 +81,8 @@ mod rotate_bitmap {
             BitmapEdgeMode::Clamp,
             BitmapResizeMode::Bilinear,
         );
-        assert_eq!(dr.bitmap.data[(0 * 5 + 0) * 4 + 3], 0xff);
-        assert_eq!(dr.bitmap.data[(2 * 5 + 2) * 4 + 3], 0xff);
+        assert_eq!(dr.bitmap.read().unwrap().data[(0 * 5 + 0) * 4 + 3], 0xff);
+        assert_eq!(dr.bitmap.read().unwrap().data[(2 * 5 + 2) * 4 + 3], 0xff);
     }
 
     #[test]
@@ -92,8 +100,8 @@ mod rotate_bitmap {
             BitmapEdgeMode::Transparent,
             BitmapResizeMode::Bilinear,
         );
-        assert_eq!(dr.bitmap.data[(0 * 5 + 0) * 4 + 3], 0);
-        assert_eq!(dr.bitmap.data[(2 * 5 + 2) * 4 + 3], 0xff);
+        assert_eq!(dr.bitmap.read().unwrap().data[(0 * 5 + 0) * 4 + 3], 0);
+        assert_eq!(dr.bitmap.read().unwrap().data[(2 * 5 + 2) * 4 + 3], 0xff);
     }
 
     #[test]
@@ -111,8 +119,8 @@ mod rotate_bitmap {
             BitmapEdgeMode::Wrap,
             BitmapResizeMode::Bilinear,
         );
-        assert_eq!(dr.bitmap.data[3], 0xff);
-        assert_eq!(dr.bitmap.data[(3 * 4 + 3) * 4 + 3], 0xff);
+        assert_eq!(dr.bitmap.read().unwrap().data[3], 0xff);
+        assert_eq!(dr.bitmap.read().unwrap().data[(3 * 4 + 3) * 4 + 3], 0xff);
     }
 
     #[test]
@@ -138,8 +146,8 @@ mod rotate_bitmap {
             BitmapEdgeMode::Clamp,
             BitmapResizeMode::Nearest,
         );
-        assert_eq!(dr.bitmap.data[0], 0);
-        assert_eq!(dr.bitmap.data[4], 200);
+        assert_eq!(dr.bitmap.read().unwrap().data[0], 0);
+        assert_eq!(dr.bitmap.read().unwrap().data[4], 200);
     }
 }
 
@@ -157,8 +165,8 @@ mod rotate_bitmap_180 {
         let sr = region(src);
         let mut dr = region(dest);
         rotate_bitmap_180(&mut dr, &sr);
-        assert_eq!(dr.bitmap.data[0], 0xb0);
-        assert_eq!(dr.bitmap.data[4], 0xa0);
+        assert_eq!(dr.bitmap.read().unwrap().data[0], 0xb0);
+        assert_eq!(dr.bitmap.read().unwrap().data[4], 0xa0);
     }
 
     #[test]
@@ -168,11 +176,12 @@ mod rotate_bitmap_180 {
         bmp.data[3] = 255;
         bmp.data[4] = 0xb0;
         bmp.data[7] = 255;
-        let sr = region(bmp.clone());
-        let mut dr = region(bmp);
+        let shared = share_bitmap(bmp);
+        let sr = shared_region(&shared);
+        let mut dr = shared_region(&shared);
         rotate_bitmap_180(&mut dr, &sr);
-        assert_eq!(dr.bitmap.data[0], 0xb0);
-        assert_eq!(dr.bitmap.data[4], 0xa0);
+        assert_eq!(dr.bitmap.read().unwrap().data[0], 0xb0);
+        assert_eq!(dr.bitmap.read().unwrap().data[4], 0xa0);
     }
 }
 
@@ -189,12 +198,12 @@ mod rotate_bitmap_clockwise {
         let mut dr = region(dest);
         rotate_bitmap_clockwise(&mut dr, &sr);
         assert_eq!(
-            get_bitmap_pixel(&dr.bitmap, 0, 0),
-            get_bitmap_pixel(&sr.bitmap, 0, 0)
+            get_bitmap_pixel(&dr.bitmap.read().unwrap(), 0, 0),
+            get_bitmap_pixel(&sr.bitmap.read().unwrap(), 0, 0)
         );
         assert_eq!(
-            get_bitmap_pixel(&dr.bitmap, 0, 1),
-            get_bitmap_pixel(&sr.bitmap, 1, 0)
+            get_bitmap_pixel(&dr.bitmap.read().unwrap(), 0, 1),
+            get_bitmap_pixel(&sr.bitmap.read().unwrap(), 1, 0)
         );
     }
 }
@@ -212,12 +221,12 @@ mod rotate_bitmap_counter_clockwise {
         let mut dr = region(dest);
         rotate_bitmap_counter_clockwise(&mut dr, &sr);
         assert_eq!(
-            get_bitmap_pixel(&dr.bitmap, 0, 0),
-            get_bitmap_pixel(&sr.bitmap, 1, 0)
+            get_bitmap_pixel(&dr.bitmap.read().unwrap(), 0, 0),
+            get_bitmap_pixel(&sr.bitmap.read().unwrap(), 1, 0)
         );
         assert_eq!(
-            get_bitmap_pixel(&dr.bitmap, 0, 1),
-            get_bitmap_pixel(&sr.bitmap, 0, 0)
+            get_bitmap_pixel(&dr.bitmap.read().unwrap(), 0, 1),
+            get_bitmap_pixel(&sr.bitmap.read().unwrap(), 0, 0)
         );
     }
 }

@@ -30,7 +30,7 @@ fn region(bmp: Bitmap) -> BitmapRegion {
     let w = bmp.width as i32;
     let h = bmp.height as i32;
     return BitmapRegion {
-        bitmap: bmp,
+        bitmap: std::sync::Arc::new(std::sync::RwLock::new(bmp)),
         x: 0,
         y: 0,
         width: w,
@@ -40,7 +40,7 @@ fn region(bmp: Bitmap) -> BitmapRegion {
 
 fn region_at(bmp: Bitmap, x: i32, y: i32, width: i32, height: i32) -> BitmapRegion {
     return BitmapRegion {
-        bitmap: bmp,
+        bitmap: std::sync::Arc::new(std::sync::RwLock::new(bmp)),
         x,
         y,
         width,
@@ -58,8 +58,8 @@ mod apply_bitmap_color_scale_bias {
         let mut dr = region(src);
         let ct = scale_bias(0.0, 1.0, 1.0, 1.0, 0.0, 0.0, 0.0, 0.0);
         apply_bitmap_color_scale_bias(&mut dr, &sr, &ct);
-        assert_eq!(dr.bitmap.data[0], 0);
-        assert_eq!(dr.bitmap.data[1], 0x80);
+        assert_eq!(dr.bitmap.read().unwrap().data[0], 0);
+        assert_eq!(dr.bitmap.read().unwrap().data[1], 0x80);
     }
 
     #[test]
@@ -70,7 +70,7 @@ mod apply_bitmap_color_scale_bias {
         let mut dr = region(src);
         let ct = scale_bias(1.0, 1.0, 1.0, 1.0, 100.0 / 255.0, 0.0, 0.0, 0.0);
         apply_bitmap_color_scale_bias(&mut dr, &sr, &ct);
-        assert_eq!(dr.bitmap.data[0], 100);
+        assert_eq!(dr.bitmap.read().unwrap().data[0], 100);
     }
 
     #[test]
@@ -80,7 +80,7 @@ mod apply_bitmap_color_scale_bias {
         let mut dr = region(src);
         let ct = scale_bias(10.0, 1.0, 1.0, 1.0, 100.0 / 255.0, 0.0, 0.0, 0.0);
         apply_bitmap_color_scale_bias(&mut dr, &sr, &ct);
-        assert_eq!(dr.bitmap.data[0], 255);
+        assert_eq!(dr.bitmap.read().unwrap().data[0], 255);
     }
 
     #[test]
@@ -90,8 +90,8 @@ mod apply_bitmap_color_scale_bias {
         let mut dr = region_at(src, 0, 0, 1, 1);
         let ct = scale_bias(0.0, 1.0, 1.0, 1.0, 0.0, 0.0, 0.0, 0.0);
         apply_bitmap_color_scale_bias(&mut dr, &sr, &ct);
-        assert_eq!(dr.bitmap.data[0], 0);
-        assert_eq!(dr.bitmap.data[4], 0x80);
+        assert_eq!(dr.bitmap.read().unwrap().data[0], 0);
+        assert_eq!(dr.bitmap.read().unwrap().data[4], 0x80);
     }
 
     #[test]
@@ -102,9 +102,9 @@ mod apply_bitmap_color_scale_bias {
         let mut dr = region(out);
         let ct = scale_bias(0.0, 1.0, 1.0, 1.0, 0.0, 0.0, 0.0, 0.0);
         apply_bitmap_color_scale_bias(&mut dr, &sr, &ct);
-        assert_eq!(dr.bitmap.data[0], 0);
-        assert_eq!(dr.bitmap.data[1], 0x80);
-        assert_eq!(sr.bitmap.data[0], 0x80);
+        assert_eq!(dr.bitmap.read().unwrap().data[0], 0);
+        assert_eq!(dr.bitmap.read().unwrap().data[1], 0x80);
+        assert_eq!(sr.bitmap.read().unwrap().data[0], 0x80);
     }
 }
 
@@ -129,8 +129,14 @@ mod apply_bitmap_threshold {
             false,
         );
         assert_eq!(count, 1);
-        assert_eq!(get_bitmap_pixel(&dr.bitmap, 0, 0), 0xffffffff);
-        assert_eq!(get_bitmap_pixel(&dr.bitmap, 1, 0), 0x00000000);
+        assert_eq!(
+            get_bitmap_pixel(&dr.bitmap.read().unwrap(), 0, 0),
+            0xffffffff
+        );
+        assert_eq!(
+            get_bitmap_pixel(&dr.bitmap.read().unwrap(), 1, 0),
+            0x00000000
+        );
     }
 
     #[test]
@@ -148,7 +154,10 @@ mod apply_bitmap_threshold {
             0xffffffff,
             true,
         );
-        assert_eq!(get_bitmap_pixel(&dr.bitmap, 0, 0), 0x112233ff);
+        assert_eq!(
+            get_bitmap_pixel(&dr.bitmap.read().unwrap(), 0, 0),
+            0x112233ff
+        );
     }
 
     #[test]
@@ -180,8 +189,8 @@ mod merge_bitmap {
         let sr = region(src);
         let mut dr = region(dest);
         merge_bitmap(&mut dr, &sr, 1.0, 1.0, 1.0, 1.0);
-        assert_eq!(dr.bitmap.data[0], 0xff);
-        assert_eq!(dr.bitmap.data[2], 0x00);
+        assert_eq!(dr.bitmap.read().unwrap().data[0], 0xff);
+        assert_eq!(dr.bitmap.read().unwrap().data[2], 0x00);
     }
 
     #[test]
@@ -191,8 +200,8 @@ mod merge_bitmap {
         let sr = region(src);
         let mut dr = region(dest);
         merge_bitmap(&mut dr, &sr, 0.0, 0.0, 0.0, 0.0);
-        assert_eq!(dr.bitmap.data[0], 0x00);
-        assert_eq!(dr.bitmap.data[2], 0xff);
+        assert_eq!(dr.bitmap.read().unwrap().data[0], 0x00);
+        assert_eq!(dr.bitmap.read().unwrap().data[2], 0xff);
     }
 
     #[test]
@@ -202,8 +211,8 @@ mod merge_bitmap {
         let sr = region(src);
         let mut dr = region(dest);
         merge_bitmap(&mut dr, &sr, 0.5, 0.0, 0.5, 0.0);
-        assert_eq!(dr.bitmap.data[0], 16);
-        assert_eq!(dr.bitmap.data[2], 16);
+        assert_eq!(dr.bitmap.read().unwrap().data[0], 16);
+        assert_eq!(dr.bitmap.read().unwrap().data[2], 16);
     }
 }
 

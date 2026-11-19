@@ -4,7 +4,7 @@ use flight_bitmap::contract::*;
 
 fn region_at(bmp: Bitmap, x: i32, y: i32, width: i32, height: i32) -> BitmapRegion {
     return BitmapRegion {
-        bitmap: bmp,
+        bitmap: std::sync::Arc::new(std::sync::RwLock::new(bmp)),
         x,
         y,
         width,
@@ -20,8 +20,14 @@ mod fill_bitmap_rectangle {
         let img = create_bitmap(4, 4, None);
         let mut r = region_at(img, 1, 1, 2, 2);
         fill_bitmap_rectangle(&mut r, 0xaabbccff);
-        assert_eq!(get_bitmap_pixel(&r.bitmap, 1, 1), 0xaabbccff);
-        assert_eq!(get_bitmap_pixel(&r.bitmap, 2, 2), 0xaabbccff);
+        assert_eq!(
+            get_bitmap_pixel(&r.bitmap.read().unwrap(), 1, 1),
+            0xaabbccff
+        );
+        assert_eq!(
+            get_bitmap_pixel(&r.bitmap.read().unwrap(), 2, 2),
+            0xaabbccff
+        );
     }
 
     #[test]
@@ -30,7 +36,7 @@ mod fill_bitmap_rectangle {
         let before = img.version;
         let mut r = region_at(img, 1, 1, 2, 2);
         fill_bitmap_rectangle(&mut r, 0xaabbccff);
-        assert_eq!(r.bitmap.version, before + 1);
+        assert_eq!(r.bitmap.read().unwrap().version, before + 1);
     }
 
     #[test]
@@ -38,8 +44,14 @@ mod fill_bitmap_rectangle {
         let img = create_bitmap(4, 4, None);
         let mut r = region_at(img, 1, 1, 2, 2);
         fill_bitmap_rectangle(&mut r, 0xaabbccff);
-        assert_eq!(get_bitmap_pixel(&r.bitmap, 0, 0), 0x00000000);
-        assert_eq!(get_bitmap_pixel(&r.bitmap, 3, 3), 0x00000000);
+        assert_eq!(
+            get_bitmap_pixel(&r.bitmap.read().unwrap(), 0, 0),
+            0x00000000
+        );
+        assert_eq!(
+            get_bitmap_pixel(&r.bitmap.read().unwrap(), 3, 3),
+            0x00000000
+        );
     }
 
     #[test]
@@ -47,8 +59,14 @@ mod fill_bitmap_rectangle {
         let img = create_bitmap(2, 2, Some(0x000000ff));
         let mut r = region_at(img, -1, -1, 4, 4);
         fill_bitmap_rectangle(&mut r, 0xffffffff);
-        assert_eq!(get_bitmap_pixel(&r.bitmap, 0, 0), 0xffffffff);
-        assert_eq!(get_bitmap_pixel(&r.bitmap, 1, 1), 0xffffffff);
+        assert_eq!(
+            get_bitmap_pixel(&r.bitmap.read().unwrap(), 0, 0),
+            0xffffffff
+        );
+        assert_eq!(
+            get_bitmap_pixel(&r.bitmap.read().unwrap(), 1, 1),
+            0xffffffff
+        );
     }
 }
 

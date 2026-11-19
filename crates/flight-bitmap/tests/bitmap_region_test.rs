@@ -6,9 +6,28 @@ mod create_bitmap_region {
     use super::*;
 
     #[test]
+    fn shares_the_bitmap_with_the_caller() {
+        let shared = share_bitmap(create_bitmap(4, 4, None));
+        let r = create_bitmap_region(&shared, 0, 0, 4, 4);
+        assert!(std::sync::Arc::ptr_eq(&r.bitmap, &shared));
+        assert_eq!(std::sync::Arc::strong_count(&shared), 2);
+    }
+
+    #[test]
+    fn makes_a_write_through_one_region_visible_through_another() {
+        let shared = share_bitmap(create_bitmap(2, 1, None));
+        let whole = create_bitmap_region(&shared, 0, 0, 2, 1);
+        let mut right = create_bitmap_region(&shared, 1, 0, 1, 1);
+        fill_bitmap_rectangle(&mut right, 0xff8000ff);
+        let mut pixels = vec![0u8; 8];
+        extract_bitmap_pixels(&mut pixels, &whole);
+        assert_eq!(pixels, [0, 0, 0, 0, 0xff, 0x80, 0x00, 0xff]);
+    }
+
+    #[test]
     fn covers_the_whole_bitmap_with_default_bounds() {
         let bmp = create_bitmap(7, 5, None);
-        let r = create_bitmap_region(bmp, 0, 0, 7, 5);
+        let r = create_bitmap_region(&share_bitmap(bmp), 0, 0, 7, 5);
         assert_eq!(r.x, 0);
         assert_eq!(r.y, 0);
         assert_eq!(r.width, 7);
@@ -18,12 +37,12 @@ mod create_bitmap_region {
     #[test]
     fn uses_the_supplied_bounds() {
         let bmp = create_bitmap(8, 8, None);
-        let r = create_bitmap_region(bmp, 1, 2, 3, 4);
+        let r = create_bitmap_region(&share_bitmap(bmp), 1, 2, 3, 4);
         assert_eq!(r.x, 1);
         assert_eq!(r.y, 2);
         assert_eq!(r.width, 3);
         assert_eq!(r.height, 4);
-        assert_eq!(r.bitmap.width, 8);
+        assert_eq!(r.bitmap.read().unwrap().width, 8);
     }
 }
 
@@ -33,29 +52,29 @@ mod set_bitmap_region {
     #[test]
     fn mutates_the_existing_region() {
         let mut r = BitmapRegion {
-            bitmap: create_bitmap(0, 0, None),
+            bitmap: share_bitmap(create_bitmap(0, 0, None)),
             x: 0,
             y: 0,
             width: 0,
             height: 0,
         };
         let bmp = create_bitmap(8, 8, None);
-        set_bitmap_region(&mut r, bmp, 2, 3, 4, 5);
+        set_bitmap_region(&mut r, &share_bitmap(bmp), 2, 3, 4, 5);
         assert_eq!(r.x, 2);
         assert_eq!(r.y, 3);
         assert_eq!(r.width, 4);
         assert_eq!(r.height, 5);
-        assert_eq!(r.bitmap.width, 8);
+        assert_eq!(r.bitmap.read().unwrap().width, 8);
     }
 
     #[test]
     fn covers_the_whole_bitmap_with_full_dimensions() {
         let a = create_bitmap(2, 2, None);
         let b = create_bitmap(6, 9, None);
-        let mut r = create_bitmap_region(a, 0, 0, 2, 2);
-        set_bitmap_region(&mut r, b, 0, 0, 6, 9);
-        assert_eq!(r.bitmap.width, 6);
-        assert_eq!(r.bitmap.height, 9);
+        let mut r = create_bitmap_region(&share_bitmap(a), 0, 0, 2, 2);
+        set_bitmap_region(&mut r, &share_bitmap(b), 0, 0, 6, 9);
+        assert_eq!(r.bitmap.read().unwrap().width, 6);
+        assert_eq!(r.bitmap.read().unwrap().height, 9);
         assert_eq!(r.width, 6);
         assert_eq!(r.height, 9);
     }

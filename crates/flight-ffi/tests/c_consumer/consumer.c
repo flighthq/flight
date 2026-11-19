@@ -392,10 +392,41 @@ static void check_by_value_ownership(void) {
   expect(reused != NULL, "acquire_vector2 returns a vector after a release");
   flight_free_vector2(reused);
 
+  /* share_bitmap consumes the owned bitmap; only the returned Ref handle is freed afterwards. */
   void *bitmap = flight_create_bitmap(2, 2, 0x11223344);
-  void *region = flight_create_bitmap_region(bitmap, 0, 0, 1, 1);
-  expect(region != NULL, "create_bitmap_region takes ownership of the bitmap");
+  void *shared = flight_share_bitmap(bitmap);
+  expect(shared != NULL, "share_bitmap returns an owned Ref handle");
+  void *region = flight_create_bitmap_region(shared, 0, 0, 1, 1);
+  expect(region != NULL, "create_bitmap_region shares the Ref without consuming it");
   flight_free_bitmap_region(region);
+  flight_free_bitmap_ref(shared);
+}
+
+/* G5: one shared bitmap seen through two regions, written through one and read through the other,
+   then flipped in place; regions are freed before the Ref, and the consumed bitmap is never freed. */
+static void check_shared_bitmap_regions(void) {
+  void *bitmap = flight_create_bitmap(2, 1, 0x000000ff);
+  void *shared = flight_share_bitmap(bitmap);
+  void *writer = flight_create_bitmap_region(shared, 1, 0, 1, 1);
+  void *reader = flight_create_bitmap_region(shared, 0, 0, 2, 1);
+  expect(writer != NULL && reader != NULL, "two regions share one bitmap");
+
+  flight_fill_bitmap_rectangle(writer, 0xff8000ff);
+  uint8_t pixels[8] = {0};
+  flight_extract_bitmap_pixels(pixels, sizeof pixels, reader);
+  expect(pixels[0] == 0x00 && pixels[3] == 0xff, "a fill through one region leaves the rest untouched");
+  expect(pixels[4] == 0xff && pixels[5] == 0x80 && pixels[6] == 0x00 && pixels[7] == 0xff,
+         "a fill through one region is read through the other");
+
+  flight_set_bitmap_region(writer, shared, 0, 0, 2, 1);
+  flight_flip_bitmap_horizontal(writer, reader);
+  flight_extract_bitmap_pixels(pixels, sizeof pixels, reader);
+  expect(pixels[0] == 0xff && pixels[1] == 0x80 && pixels[4] == 0x00 && pixels[7] == 0xff,
+         "flip with identical rectangles on one bitmap mirrors in place");
+
+  flight_free_bitmap_region(writer);
+  flight_free_bitmap_region(reader);
+  flight_free_bitmap_ref(shared);
 }
 
 static void check_enum_parameters(void) {
@@ -676,6 +707,7 @@ int main(void) {
   check_string_maps();
   check_task_k_opaque_ownership();
   check_by_value_ownership();
+  check_shared_bitmap_regions();
   check_enum_parameters();
   check_optional_texture_variants();
   check_optional_tuples();

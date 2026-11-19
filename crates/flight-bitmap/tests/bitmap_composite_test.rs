@@ -6,7 +6,7 @@ fn region(bmp: Bitmap) -> BitmapRegion {
     let w = bmp.width as i32;
     let h = bmp.height as i32;
     return BitmapRegion {
-        bitmap: bmp,
+        bitmap: std::sync::Arc::new(std::sync::RwLock::new(bmp)),
         x: 0,
         y: 0,
         width: w,
@@ -16,7 +16,7 @@ fn region(bmp: Bitmap) -> BitmapRegion {
 
 fn region_at(bmp: Bitmap, x: i32, y: i32, width: i32, height: i32) -> BitmapRegion {
     return BitmapRegion {
-        bitmap: bmp,
+        bitmap: std::sync::Arc::new(std::sync::RwLock::new(bmp)),
         x,
         y,
         width,
@@ -33,9 +33,9 @@ mod composite_bitmap_pixels {
         let pixels: Vec<u8> = vec![0xff, 0, 0, 0xff];
         let mut dr = region(dest);
         composite_bitmap_pixels(&mut dr, &pixels, BitmapCompositeMode::Normal);
-        assert_eq!(dr.bitmap.data[0], 0xff);
-        assert_eq!(dr.bitmap.data[2], 0);
-        assert_eq!(dr.bitmap.data[3], 0xff);
+        assert_eq!(dr.bitmap.read().unwrap().data[0], 0xff);
+        assert_eq!(dr.bitmap.read().unwrap().data[2], 0);
+        assert_eq!(dr.bitmap.read().unwrap().data[3], 0xff);
     }
 
     #[test]
@@ -44,9 +44,9 @@ mod composite_bitmap_pixels {
         let pixels: Vec<u8> = vec![0xff, 0xff, 0xff, 0x80];
         let mut dr = region(dest);
         composite_bitmap_pixels(&mut dr, &pixels, BitmapCompositeMode::Normal);
-        assert!(dr.bitmap.data[0] > 0);
-        assert!(dr.bitmap.data[0] < 0xff);
-        assert_eq!(dr.bitmap.data[3], 0xff);
+        assert!(dr.bitmap.read().unwrap().data[0] > 0);
+        assert!(dr.bitmap.read().unwrap().data[0] < 0xff);
+        assert_eq!(dr.bitmap.read().unwrap().data[3], 0xff);
     }
 
     #[test]
@@ -55,7 +55,7 @@ mod composite_bitmap_pixels {
         let pixels: Vec<u8> = vec![0xff, 0xff, 0xff, 0xff];
         let mut dr = region_at(dest, 5, 5, 1, 1);
         composite_bitmap_pixels(&mut dr, &pixels, BitmapCompositeMode::Normal);
-        assert_eq!(dr.bitmap.data[3], 0);
+        assert_eq!(dr.bitmap.read().unwrap().data[3], 0);
     }
 
     #[test]
@@ -64,8 +64,8 @@ mod composite_bitmap_pixels {
         let pixels: Vec<u8> = vec![128, 128, 128, 255];
         let mut dr = region(dest);
         composite_bitmap_pixels(&mut dr, &pixels, BitmapCompositeMode::Multiply);
-        assert_eq!(dr.bitmap.data[0], 128);
-        assert_eq!(dr.bitmap.data[1], 0);
+        assert_eq!(dr.bitmap.read().unwrap().data[0], 128);
+        assert_eq!(dr.bitmap.read().unwrap().data[1], 0);
     }
 
     #[test]
@@ -74,7 +74,7 @@ mod composite_bitmap_pixels {
         let pixels: Vec<u8> = vec![200, 0, 0, 255];
         let mut dr = region(dest);
         composite_bitmap_pixels(&mut dr, &pixels, BitmapCompositeMode::Add);
-        assert_eq!(dr.bitmap.data[0], 255);
+        assert_eq!(dr.bitmap.read().unwrap().data[0], 255);
     }
 
     #[test]
@@ -83,8 +83,8 @@ mod composite_bitmap_pixels {
         let pixels: Vec<u8> = vec![0, 0, 255, 255];
         let mut dr = region(dest);
         composite_bitmap_pixels(&mut dr, &pixels, BitmapCompositeMode::Normal);
-        assert_eq!(dr.bitmap.data[0], 0);
-        assert_eq!(dr.bitmap.data[2], 255);
+        assert_eq!(dr.bitmap.read().unwrap().data[0], 0);
+        assert_eq!(dr.bitmap.read().unwrap().data[2], 255);
     }
 
     #[test]
@@ -93,7 +93,7 @@ mod composite_bitmap_pixels {
         let pixels: Vec<u8> = vec![200, 0, 0, 255];
         let mut dr = region(dest);
         composite_bitmap_pixels(&mut dr, &pixels, BitmapCompositeMode::Overlay);
-        assert_eq!(dr.bitmap.data[0], 100);
+        assert_eq!(dr.bitmap.read().unwrap().data[0], 100);
     }
 
     #[test]
@@ -102,7 +102,7 @@ mod composite_bitmap_pixels {
         let pixels: Vec<u8> = vec![64, 0, 0, 255];
         let mut dr = region(dest);
         composite_bitmap_pixels(&mut dr, &pixels, BitmapCompositeMode::HardLight);
-        assert_eq!(dr.bitmap.data[0], 100);
+        assert_eq!(dr.bitmap.read().unwrap().data[0], 100);
     }
 
     #[test]
@@ -111,7 +111,7 @@ mod composite_bitmap_pixels {
         let pixels: Vec<u8> = vec![0, 0, 0, 255];
         let mut dr = region(dest);
         composite_bitmap_pixels(&mut dr, &pixels, BitmapCompositeMode::Invert);
-        assert_eq!(dr.bitmap.data[0], 55);
+        assert_eq!(dr.bitmap.read().unwrap().data[0], 55);
     }
 
     #[test]
@@ -120,8 +120,8 @@ mod composite_bitmap_pixels {
         let pixels: Vec<u8> = vec![0, 0, 0, 128];
         let mut dr = region(dest);
         composite_bitmap_pixels(&mut dr, &pixels, BitmapCompositeMode::DestinationOut);
-        assert_eq!(dr.bitmap.data[0], 255);
-        assert_eq!(dr.bitmap.data[3], 127);
+        assert_eq!(dr.bitmap.read().unwrap().data[0], 255);
+        assert_eq!(dr.bitmap.read().unwrap().data[3], 127);
     }
 
     #[test]
@@ -130,8 +130,8 @@ mod composite_bitmap_pixels {
         let pixels: Vec<u8> = vec![0, 0, 0, 128];
         let mut dr = region(dest);
         composite_bitmap_pixels(&mut dr, &pixels, BitmapCompositeMode::DestinationIn);
-        assert_eq!(dr.bitmap.data[0], 255);
-        assert_eq!(dr.bitmap.data[3], 128);
+        assert_eq!(dr.bitmap.read().unwrap().data[0], 255);
+        assert_eq!(dr.bitmap.read().unwrap().data[3], 128);
     }
 
     #[test]
@@ -140,8 +140,8 @@ mod composite_bitmap_pixels {
         let pixels: Vec<u8> = vec![0, 0, 255, 128];
         let mut dr = region(dest);
         composite_bitmap_pixels(&mut dr, &pixels, BitmapCompositeMode::Copy);
-        assert_eq!(dr.bitmap.data[2], 255);
-        assert_eq!(dr.bitmap.data[3], 128);
+        assert_eq!(dr.bitmap.read().unwrap().data[2], 255);
+        assert_eq!(dr.bitmap.read().unwrap().data[3], 128);
     }
 }
 
@@ -154,8 +154,8 @@ mod composite_bitmap_region {
         let dest = create_bitmap(1, 1, Some(0x0000ffff));
         let mut dr = region(dest);
         composite_bitmap_region(&mut dr, &region(source), BitmapCompositeMode::Normal);
-        assert_eq!(dr.bitmap.data[0], 0xff);
-        assert_eq!(dr.bitmap.data[2], 0);
+        assert_eq!(dr.bitmap.read().unwrap().data[0], 0xff);
+        assert_eq!(dr.bitmap.read().unwrap().data[2], 0);
     }
 
     #[test]
@@ -164,8 +164,8 @@ mod composite_bitmap_region {
         let dest = create_bitmap(3, 3, None);
         let mut dr = region_at(dest, 1, 1, 2, 2);
         composite_bitmap_region(&mut dr, &region(source), BitmapCompositeMode::Normal);
-        assert_eq!(dr.bitmap.data[(1 * 3 + 1) * 4], 0xff);
-        assert_eq!(dr.bitmap.data[(1 * 3 + 2) * 4], 0);
+        assert_eq!(dr.bitmap.read().unwrap().data[(1 * 3 + 1) * 4], 0xff);
+        assert_eq!(dr.bitmap.read().unwrap().data[(1 * 3 + 2) * 4], 0);
     }
 
     #[test]
@@ -174,8 +174,8 @@ mod composite_bitmap_region {
         let dest = create_bitmap(1, 1, Some(0xff0000ff));
         let mut dr = region(dest);
         composite_bitmap_region(&mut dr, &region(source), BitmapCompositeMode::Multiply);
-        assert_eq!(dr.bitmap.data[0], 128);
-        assert_eq!(dr.bitmap.data[1], 0);
+        assert_eq!(dr.bitmap.read().unwrap().data[0], 128);
+        assert_eq!(dr.bitmap.read().unwrap().data[1], 0);
     }
 }
 
@@ -190,7 +190,7 @@ mod extract_bitmap_pixels {
         source.data[i + 3] = 0xff;
         let mut out = vec![0u8; 4];
         let sr = BitmapRegion {
-            bitmap: source,
+            bitmap: std::sync::Arc::new(std::sync::RwLock::new(source)),
             x: 1,
             y: 1,
             width: 1,
@@ -206,7 +206,7 @@ mod extract_bitmap_pixels {
         let source = create_bitmap(1, 1, Some(0xffffffff));
         let mut out = vec![0u8; 4 * 4];
         let sr = BitmapRegion {
-            bitmap: source,
+            bitmap: std::sync::Arc::new(std::sync::RwLock::new(source)),
             x: -1,
             y: -1,
             width: 2,
@@ -243,7 +243,7 @@ mod extract_bitmap_pixels32 {
         source.data[i + 3] = 0x44;
         let mut out = vec![0u32; 1];
         let sr = BitmapRegion {
-            bitmap: source,
+            bitmap: std::sync::Arc::new(std::sync::RwLock::new(source)),
             x: 1,
             y: 1,
             width: 1,
@@ -269,7 +269,10 @@ mod extract_bitmap_pixels32 {
         let dest = create_bitmap(3, 2, None);
         let mut dr = region(dest);
         write_bitmap_pixels32(&mut dr, &packed);
-        assert_eq!(dr.bitmap.data, sr.bitmap.data);
+        assert_eq!(
+            dr.bitmap.read().unwrap().data,
+            sr.bitmap.read().unwrap().data
+        );
     }
 
     #[test]
@@ -277,7 +280,7 @@ mod extract_bitmap_pixels32 {
         let source = create_bitmap(1, 1, Some(0xffffffff));
         let mut out = vec![0u32; 4];
         let sr = BitmapRegion {
-            bitmap: source,
+            bitmap: std::sync::Arc::new(std::sync::RwLock::new(source)),
             x: -1,
             y: -1,
             width: 2,
@@ -297,7 +300,7 @@ mod write_bitmap_pixels {
         let dest = create_bitmap(3, 3, None);
         let pixels: Vec<u8> = vec![0x33, 0x66, 0x99, 0xff];
         let mut dr = BitmapRegion {
-            bitmap: dest,
+            bitmap: std::sync::Arc::new(std::sync::RwLock::new(dest)),
             x: 1,
             y: 1,
             width: 1,
@@ -305,8 +308,8 @@ mod write_bitmap_pixels {
         };
         write_bitmap_pixels(&mut dr, &pixels);
         let i = (1 * 3 + 1) * 4;
-        assert_eq!(dr.bitmap.data[i], 0x33);
-        assert_eq!(dr.bitmap.data[i + 3], 0xff);
+        assert_eq!(dr.bitmap.read().unwrap().data[i], 0x33);
+        assert_eq!(dr.bitmap.read().unwrap().data[i + 3], 0xff);
     }
 
     #[test]
@@ -315,8 +318,8 @@ mod write_bitmap_pixels {
         let pixels: Vec<u8> = vec![0xff, 0, 0, 0xff];
         let mut dr = region(dest);
         write_bitmap_pixels(&mut dr, &pixels);
-        assert_eq!(dr.bitmap.data[2], 0);
-        assert_eq!(dr.bitmap.data[0], 0xff);
+        assert_eq!(dr.bitmap.read().unwrap().data[2], 0);
+        assert_eq!(dr.bitmap.read().unwrap().data[0], 0xff);
     }
 
     #[test]
@@ -325,7 +328,7 @@ mod write_bitmap_pixels {
         let pixels: Vec<u8> = vec![0xff, 0xff, 0xff, 0xff];
         let mut dr = region_at(dest, 5, 5, 1, 1);
         write_bitmap_pixels(&mut dr, &pixels);
-        assert_eq!(dr.bitmap.data[3], 0);
+        assert_eq!(dr.bitmap.read().unwrap().data[3], 0);
     }
 }
 
@@ -336,7 +339,7 @@ mod write_bitmap_pixels32 {
     fn unpacks_each_rgba_entry_into_destination_region() {
         let dest = create_bitmap(3, 3, None);
         let mut dr = BitmapRegion {
-            bitmap: dest,
+            bitmap: std::sync::Arc::new(std::sync::RwLock::new(dest)),
             x: 1,
             y: 1,
             width: 1,
@@ -344,10 +347,10 @@ mod write_bitmap_pixels32 {
         };
         write_bitmap_pixels32(&mut dr, &[0x336699ff]);
         let i = (1 * 3 + 1) * 4;
-        assert_eq!(dr.bitmap.data[i], 0x33);
-        assert_eq!(dr.bitmap.data[i + 1], 0x66);
-        assert_eq!(dr.bitmap.data[i + 2], 0x99);
-        assert_eq!(dr.bitmap.data[i + 3], 0xff);
+        assert_eq!(dr.bitmap.read().unwrap().data[i], 0x33);
+        assert_eq!(dr.bitmap.read().unwrap().data[i + 1], 0x66);
+        assert_eq!(dr.bitmap.read().unwrap().data[i + 2], 0x99);
+        assert_eq!(dr.bitmap.read().unwrap().data[i + 3], 0xff);
     }
 
     #[test]
@@ -355,8 +358,8 @@ mod write_bitmap_pixels32 {
         let dest = create_bitmap(1, 1, Some(0x0000ffff));
         let mut dr = region(dest);
         write_bitmap_pixels32(&mut dr, &[0xff0000ff]);
-        assert_eq!(dr.bitmap.data[0], 0xff);
-        assert_eq!(dr.bitmap.data[2], 0);
+        assert_eq!(dr.bitmap.read().unwrap().data[0], 0xff);
+        assert_eq!(dr.bitmap.read().unwrap().data[2], 0);
     }
 
     #[test]
@@ -364,6 +367,6 @@ mod write_bitmap_pixels32 {
         let dest = create_bitmap(1, 1, None);
         let mut dr = region_at(dest, 5, 5, 1, 1);
         write_bitmap_pixels32(&mut dr, &[0xffffffff]);
-        assert_eq!(dr.bitmap.data[3], 0);
+        assert_eq!(dr.bitmap.read().unwrap().data[3], 0);
     }
 }

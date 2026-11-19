@@ -1,4 +1,6 @@
-import { cloneBitmap, convertBitmapAlphaType, createBitmap, invalidateBitmap } from './bitmap.ts';
+import { cloneBitmap, convertBitmapAlphaType, createBitmap, invalidateBitmap, shareBitmap } from './bitmap.ts';
+import { fillBitmapRectangle } from './bitmapFill.ts';
+import { createBitmapRegion } from './bitmapRegion.ts';
 
 describe('cloneBitmap', () => {
   it('produces identical values', () => {
@@ -85,5 +87,16 @@ describe('invalidateBitmap', () => {
     invalidateBitmap(bitmap);
     expect(bitmap.version).toBe(1);
     expect(bitmap.data).toBe(data);
+  });
+});
+
+describe('shareBitmap', () => {
+  it('returns the same bitmap so writes through one region are visible through another', () => {
+    const bitmap = createBitmap(2, 1);
+    const shared = shareBitmap(bitmap);
+    expect(shared).toBe(bitmap);
+    fillBitmapRectangle(createBitmapRegion(shared, 1, 0, 1, 1), 0xff8000ff);
+    expect(createBitmapRegion(shared).bitmap.data[4]).toBe(0xff);
+    expect(bitmap.data[5]).toBe(0x80);
   });
 });

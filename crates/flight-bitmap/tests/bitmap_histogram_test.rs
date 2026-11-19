@@ -6,7 +6,7 @@ fn region(bmp: Bitmap) -> BitmapRegion {
     let w = bmp.width as i32;
     let h = bmp.height as i32;
     return BitmapRegion {
-        bitmap: bmp,
+        bitmap: std::sync::Arc::new(std::sync::RwLock::new(bmp)),
         x: 0,
         y: 0,
         width: w,
@@ -14,9 +14,17 @@ fn region(bmp: Bitmap) -> BitmapRegion {
     };
 }
 
+fn shared_region(bitmap: &std::sync::Arc<std::sync::RwLock<Bitmap>>) -> BitmapRegion {
+    let (width, height) = {
+        let bitmap = bitmap.read().unwrap();
+        (bitmap.width as i32, bitmap.height as i32)
+    };
+    return create_bitmap_region(bitmap, 0, 0, width, height);
+}
+
 fn region_at(bmp: Bitmap, x: i32, y: i32, width: i32, height: i32) -> BitmapRegion {
     return BitmapRegion {
-        bitmap: bmp,
+        bitmap: std::sync::Arc::new(std::sync::RwLock::new(bmp)),
         x,
         y,
         width,
@@ -36,8 +44,8 @@ mod equalize_bitmap_histogram {
         let sr = region(src);
         let mut dr = region(dest);
         equalize_bitmap_histogram(&mut dr, &sr);
-        assert_eq!(dr.bitmap.data[0], 0);
-        assert_eq!(dr.bitmap.data[4], 255);
+        assert_eq!(dr.bitmap.read().unwrap().data[0], 0);
+        assert_eq!(dr.bitmap.read().unwrap().data[4], 255);
     }
 
     #[test]
@@ -45,9 +53,13 @@ mod equalize_bitmap_histogram {
         let mut bmp = create_bitmap(2, 1, None);
         set_bitmap_pixel(&mut bmp, 0, 0, 0x000000ff);
         set_bitmap_pixel(&mut bmp, 1, 0, 0xff0000ff);
-        let sr = region(bmp.clone());
-        let mut dr = region(bmp);
+        let shared = share_bitmap(bmp);
+        let sr = shared_region(&shared);
+        let mut dr = shared_region(&shared);
         equalize_bitmap_histogram(&mut dr, &sr);
+        let bitmap = shared.read().unwrap();
+        assert_eq!(bitmap.data[0], 0);
+        assert_eq!(bitmap.data[4], 255);
     }
 
     #[test]
@@ -57,7 +69,7 @@ mod equalize_bitmap_histogram {
         let sr = region(src);
         let mut dr = region(dest);
         equalize_bitmap_histogram(&mut dr, &sr);
-        assert_eq!(dr.bitmap.data[3], 0x80);
+        assert_eq!(dr.bitmap.read().unwrap().data[3], 0x80);
     }
 }
 

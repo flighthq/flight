@@ -182,3 +182,24 @@ mod invalidate_bitmap {
         assert_eq!(bmp.data.as_ptr(), data);
     }
 }
+
+mod share_bitmap {
+    use super::*;
+
+    #[test]
+    fn moves_the_bitmap_behind_one_shared_handle() {
+        let shared = share_bitmap(create_bitmap(2, 1, Some(0x11223344)));
+        assert_eq!(Arc::strong_count(&shared), 1);
+        let bitmap = shared.read().unwrap();
+        assert_eq!((bitmap.width, bitmap.height), (2, 1));
+        assert_eq!(&bitmap.data[0..4], &[0x11, 0x22, 0x33, 0x44]);
+    }
+
+    #[test]
+    fn lets_regions_share_the_same_pixels() {
+        let shared = share_bitmap(create_bitmap(1, 1, None));
+        let mut region = create_bitmap_region(&shared, 0, 0, 1, 1);
+        fill_bitmap_rectangle(&mut region, 0xff0000ff);
+        assert_eq!(get_bitmap_pixel(&shared.read().unwrap(), 0, 0), 0xff0000ff);
+    }
+}

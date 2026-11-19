@@ -1,6 +1,7 @@
 //! flight-compiler: target-native
 
 use crate::bitmap::invalidate_bitmap;
+use crate::region_access::*;
 use crate::types::*;
 
 #[cfg(all(test, feature = "object-api"))]
@@ -15,7 +16,13 @@ mod sugar_tests {
     }
 
     fn test_region() -> BitmapRegion {
-        return create_bitmap_region(test_bitmap(), 0, 0, 4, 4);
+        return create_bitmap_region(
+            &std::sync::Arc::new(std::sync::RwLock::new(test_bitmap())),
+            0,
+            0,
+            4,
+            4,
+        );
     }
 
     #[test]
@@ -58,35 +65,37 @@ pub const BITMAP_NOISE_CHANNEL_R: u32 = 0x1;
 /// derived deterministically from `seed`.
 // flight-lint: allow(f64) value/Perlin lattice hashing and octave sums in double to reproduce TS noise bytes; f32 sufficiency not yet confirmed (D1)
 pub fn fill_bitmap_noise(dest: &mut BitmapRegion, seed: u32, low: u8, high: u8, gray_scale: bool) {
-    let mut state = if seed == 0 { 1u32 } else { seed };
-    let lo = low.max(0) as f32;
-    let span = high.max(low) as f32 - lo;
-    let bitmap_width = dest.bitmap.width as i32;
-    for py in 0..dest.height {
-        let y = dest.y + py;
-        for px in 0..dest.width {
-            state = next_random_state(state);
-            let r = lo + (state as f64 / 0x100000000u64 as f64) as f32 * span;
-            let mut g = r;
-            let mut b = r;
-            if !gray_scale {
+    return write_region_bitmap(dest, |bitmap| {
+        let mut state = if seed == 0 { 1u32 } else { seed };
+        let lo = low.max(0) as f32;
+        let span = high.max(low) as f32 - lo;
+        let bitmap_width = bitmap.width as i32;
+        for py in 0..dest.height {
+            let y = dest.y + py;
+            for px in 0..dest.width {
                 state = next_random_state(state);
-                g = lo + (state as f64 / 0x100000000u64 as f64) as f32 * span;
-                state = next_random_state(state);
-                b = lo + (state as f64 / 0x100000000u64 as f64) as f32 * span;
+                let r = lo + (state as f64 / 0x100000000u64 as f64) as f32 * span;
+                let mut g = r;
+                let mut b = r;
+                if !gray_scale {
+                    state = next_random_state(state);
+                    g = lo + (state as f64 / 0x100000000u64 as f64) as f32 * span;
+                    state = next_random_state(state);
+                    b = lo + (state as f64 / 0x100000000u64 as f64) as f32 * span;
+                }
+                let x = dest.x + px;
+                if y < 0 || y >= bitmap.height as i32 || x < 0 || x >= bitmap_width {
+                    continue;
+                }
+                let i = (y as usize * bitmap_width as usize + x as usize) * 4;
+                bitmap.data[i] = r.round() as u8;
+                bitmap.data[i + 1] = g.round() as u8;
+                bitmap.data[i + 2] = b.round() as u8;
+                bitmap.data[i + 3] = 255;
             }
-            let x = dest.x + px;
-            if y < 0 || y >= dest.bitmap.height as i32 || x < 0 || x >= bitmap_width {
-                continue;
-            }
-            let i = (y as usize * bitmap_width as usize + x as usize) * 4;
-            dest.bitmap.data[i] = r.round() as u8;
-            dest.bitmap.data[i + 1] = g.round() as u8;
-            dest.bitmap.data[i + 2] = b.round() as u8;
-            dest.bitmap.data[i + 3] = 255;
         }
-    }
-    invalidate_bitmap(&mut dest.bitmap);
+        invalidate_bitmap(bitmap);
+    });
 }
 
 /// Fills `dest` with fractal value noise summed over `octaves`.
@@ -101,82 +110,87 @@ pub fn fill_bitmap_perlin_noise(
     stitch: bool,
     channel_options: u32,
 ) {
-    let fx0 = if base_x > 0.0 { 1.0 / base_x } else { 0.0 };
-    let fy0 = if base_y > 0.0 { 1.0 / base_y } else { 0.0 };
-    let passes = octaves.max(1) as usize;
-    let bitmap_width = dest.bitmap.width as i32;
-    let w = dest.width as f64;
-    let h = dest.height as f64;
-    for py in 0..dest.height {
-        let y = dest.y + py;
-        if y < 0 || y >= dest.bitmap.height as i32 {
-            continue;
-        }
-        for px in 0..dest.width {
-            let x = dest.x + px;
-            if x < 0 || x >= bitmap_width {
+    return write_region_bitmap(dest, |bitmap| {
+        let fx0 = if base_x > 0.0 { 1.0 / base_x } else { 0.0 };
+        let fy0 = if base_y > 0.0 { 1.0 / base_y } else { 0.0 };
+        let passes = octaves.max(1) as usize;
+        let bitmap_width = bitmap.width as i32;
+        let w = dest.width as f64;
+        let h = dest.height as f64;
+        for py in 0..dest.height {
+            let y = dest.y + py;
+            if y < 0 || y >= bitmap.height as i32 {
                 continue;
             }
-            let di = (y as usize * bitmap_width as usize + x as usize) * 4;
+            for px in 0..dest.width {
+                let x = dest.x + px;
+                if x < 0 || x >= bitmap_width {
+                    continue;
+                }
+                let di = (y as usize * bitmap_width as usize + x as usize) * 4;
 
-            let nx = if stitch {
-                stitched_coord(px as f64 * fx0, w * fx0)
-            } else {
-                px as f64 * fx0
-            };
-            let ny = if stitch {
-                stitched_coord(py as f64 * fy0, h * fy0)
-            } else {
-                py as f64 * fy0
-            };
+                let nx = if stitch {
+                    stitched_coord(px as f64 * fx0, w * fx0)
+                } else {
+                    px as f64 * fx0
+                };
+                let ny = if stitch {
+                    stitched_coord(py as f64 * fy0, h * fy0)
+                } else {
+                    py as f64 * fy0
+                };
 
-            if gray_scale {
-                let value = fractal_value_noise(nx, ny, passes, seed);
-                let byte = (value * 255.0).round() as u8;
-                if channel_options & BITMAP_NOISE_CHANNEL_R != 0 {
-                    dest.bitmap.data[di] = byte;
+                if gray_scale {
+                    let value = fractal_value_noise(nx, ny, passes, seed);
+                    let byte = (value * 255.0).round() as u8;
+                    if channel_options & BITMAP_NOISE_CHANNEL_R != 0 {
+                        bitmap.data[di] = byte;
+                    }
+                    if channel_options & BITMAP_NOISE_CHANNEL_G != 0 {
+                        bitmap.data[di + 1] = byte;
+                    }
+                    if channel_options & BITMAP_NOISE_CHANNEL_B != 0 {
+                        bitmap.data[di + 2] = byte;
+                    }
+                } else {
+                    if channel_options & BITMAP_NOISE_CHANNEL_R != 0 {
+                        bitmap.data[di] =
+                            (fractal_value_noise(nx, ny, passes, seed) * 255.0).round() as u8;
+                    }
+                    if channel_options & BITMAP_NOISE_CHANNEL_G != 0 {
+                        bitmap.data[di + 1] = (fractal_value_noise(
+                            nx,
+                            ny,
+                            passes,
+                            seed.wrapping_add(0x9e3779b1u32 as i32),
+                        ) * 255.0)
+                            .round() as u8;
+                    }
+                    if channel_options & BITMAP_NOISE_CHANNEL_B != 0 {
+                        bitmap.data[di + 2] = (fractal_value_noise(
+                            nx,
+                            ny,
+                            passes,
+                            seed.wrapping_add(0x9e3779b2u32 as i32),
+                        ) * 255.0)
+                            .round() as u8;
+                    }
                 }
-                if channel_options & BITMAP_NOISE_CHANNEL_G != 0 {
-                    dest.bitmap.data[di + 1] = byte;
-                }
-                if channel_options & BITMAP_NOISE_CHANNEL_B != 0 {
-                    dest.bitmap.data[di + 2] = byte;
-                }
-            } else {
-                if channel_options & BITMAP_NOISE_CHANNEL_R != 0 {
-                    dest.bitmap.data[di] =
-                        (fractal_value_noise(nx, ny, passes, seed) * 255.0).round() as u8;
-                }
-                if channel_options & BITMAP_NOISE_CHANNEL_G != 0 {
-                    dest.bitmap.data[di + 1] = (fractal_value_noise(
+                if channel_options & BITMAP_NOISE_CHANNEL_A != 0 {
+                    bitmap.data[di + 3] = (fractal_value_noise(
                         nx,
                         ny,
                         passes,
-                        seed.wrapping_add(0x9e3779b1u32 as i32),
+                        seed.wrapping_add(0x9e3779b3u32 as i32),
                     ) * 255.0)
                         .round() as u8;
+                } else {
+                    bitmap.data[di + 3] = 255;
                 }
-                if channel_options & BITMAP_NOISE_CHANNEL_B != 0 {
-                    dest.bitmap.data[di + 2] = (fractal_value_noise(
-                        nx,
-                        ny,
-                        passes,
-                        seed.wrapping_add(0x9e3779b2u32 as i32),
-                    ) * 255.0)
-                        .round() as u8;
-                }
-            }
-            if channel_options & BITMAP_NOISE_CHANNEL_A != 0 {
-                dest.bitmap.data[di + 3] =
-                    (fractal_value_noise(nx, ny, passes, seed.wrapping_add(0x9e3779b3u32 as i32))
-                        * 255.0)
-                        .round() as u8;
-            } else {
-                dest.bitmap.data[di + 3] = 255;
             }
         }
-    }
-    invalidate_bitmap(&mut dest.bitmap);
+        invalidate_bitmap(bitmap);
+    });
 }
 
 /// Fills `dest` with fractal turbulence (absolute-value fBm) value noise.
@@ -191,76 +205,84 @@ pub fn fill_bitmap_turbulence(
     stitch: bool,
     channel_options: u32,
 ) {
-    let fx0 = if base_x > 0.0 { 1.0 / base_x } else { 0.0 };
-    let fy0 = if base_y > 0.0 { 1.0 / base_y } else { 0.0 };
-    let passes = octaves.max(1) as usize;
-    let bitmap_width = dest.bitmap.width as i32;
-    let w = dest.width as f64;
-    let h = dest.height as f64;
-    for py in 0..dest.height {
-        let y = dest.y + py;
-        if y < 0 || y >= dest.bitmap.height as i32 {
-            continue;
-        }
-        for px in 0..dest.width {
-            let x = dest.x + px;
-            if x < 0 || x >= bitmap_width {
+    return write_region_bitmap(dest, |bitmap| {
+        let fx0 = if base_x > 0.0 { 1.0 / base_x } else { 0.0 };
+        let fy0 = if base_y > 0.0 { 1.0 / base_y } else { 0.0 };
+        let passes = octaves.max(1) as usize;
+        let bitmap_width = bitmap.width as i32;
+        let w = dest.width as f64;
+        let h = dest.height as f64;
+        for py in 0..dest.height {
+            let y = dest.y + py;
+            if y < 0 || y >= bitmap.height as i32 {
                 continue;
             }
-            let di = (y as usize * bitmap_width as usize + x as usize) * 4;
+            for px in 0..dest.width {
+                let x = dest.x + px;
+                if x < 0 || x >= bitmap_width {
+                    continue;
+                }
+                let di = (y as usize * bitmap_width as usize + x as usize) * 4;
 
-            let nx = if stitch {
-                stitched_coord(px as f64 * fx0, w * fx0)
-            } else {
-                px as f64 * fx0
-            };
-            let ny = if stitch {
-                stitched_coord(py as f64 * fy0, h * fy0)
-            } else {
-                py as f64 * fy0
-            };
+                let nx = if stitch {
+                    stitched_coord(px as f64 * fx0, w * fx0)
+                } else {
+                    px as f64 * fx0
+                };
+                let ny = if stitch {
+                    stitched_coord(py as f64 * fy0, h * fy0)
+                } else {
+                    py as f64 * fy0
+                };
 
-            if gray_scale {
-                let value = turbulence_noise(nx, ny, passes, seed);
-                let byte = (value * 255.0).round() as u8;
-                if channel_options & BITMAP_NOISE_CHANNEL_R != 0 {
-                    dest.bitmap.data[di] = byte;
+                if gray_scale {
+                    let value = turbulence_noise(nx, ny, passes, seed);
+                    let byte = (value * 255.0).round() as u8;
+                    if channel_options & BITMAP_NOISE_CHANNEL_R != 0 {
+                        bitmap.data[di] = byte;
+                    }
+                    if channel_options & BITMAP_NOISE_CHANNEL_G != 0 {
+                        bitmap.data[di + 1] = byte;
+                    }
+                    if channel_options & BITMAP_NOISE_CHANNEL_B != 0 {
+                        bitmap.data[di + 2] = byte;
+                    }
+                } else {
+                    if channel_options & BITMAP_NOISE_CHANNEL_R != 0 {
+                        bitmap.data[di] =
+                            (turbulence_noise(nx, ny, passes, seed) * 255.0).round() as u8;
+                    }
+                    if channel_options & BITMAP_NOISE_CHANNEL_G != 0 {
+                        bitmap.data[di + 1] = (turbulence_noise(
+                            nx,
+                            ny,
+                            passes,
+                            seed.wrapping_add(0x9e3779b1u32 as i32),
+                        ) * 255.0)
+                            .round() as u8;
+                    }
+                    if channel_options & BITMAP_NOISE_CHANNEL_B != 0 {
+                        bitmap.data[di + 2] = (turbulence_noise(
+                            nx,
+                            ny,
+                            passes,
+                            seed.wrapping_add(0x9e3779b2u32 as i32),
+                        ) * 255.0)
+                            .round() as u8;
+                    }
                 }
-                if channel_options & BITMAP_NOISE_CHANNEL_G != 0 {
-                    dest.bitmap.data[di + 1] = byte;
-                }
-                if channel_options & BITMAP_NOISE_CHANNEL_B != 0 {
-                    dest.bitmap.data[di + 2] = byte;
-                }
-            } else {
-                if channel_options & BITMAP_NOISE_CHANNEL_R != 0 {
-                    dest.bitmap.data[di] =
-                        (turbulence_noise(nx, ny, passes, seed) * 255.0).round() as u8;
-                }
-                if channel_options & BITMAP_NOISE_CHANNEL_G != 0 {
-                    dest.bitmap.data[di + 1] =
-                        (turbulence_noise(nx, ny, passes, seed.wrapping_add(0x9e3779b1u32 as i32))
+                if channel_options & BITMAP_NOISE_CHANNEL_A != 0 {
+                    bitmap.data[di + 3] =
+                        (turbulence_noise(nx, ny, passes, seed.wrapping_add(0x9e3779b3u32 as i32))
                             * 255.0)
                             .round() as u8;
+                } else {
+                    bitmap.data[di + 3] = 255;
                 }
-                if channel_options & BITMAP_NOISE_CHANNEL_B != 0 {
-                    dest.bitmap.data[di + 2] =
-                        (turbulence_noise(nx, ny, passes, seed.wrapping_add(0x9e3779b2u32 as i32))
-                            * 255.0)
-                            .round() as u8;
-                }
-            }
-            if channel_options & BITMAP_NOISE_CHANNEL_A != 0 {
-                dest.bitmap.data[di + 3] =
-                    (turbulence_noise(nx, ny, passes, seed.wrapping_add(0x9e3779b3u32 as i32))
-                        * 255.0)
-                        .round() as u8;
-            } else {
-                dest.bitmap.data[di + 3] = 255;
             }
         }
-    }
-    invalidate_bitmap(&mut dest.bitmap);
+        invalidate_bitmap(bitmap);
+    });
 }
 
 // flight-lint: allow(f64) value/Perlin lattice hashing and octave sums in double to reproduce TS noise bytes; f32 sufficiency not yet confirmed (D1)

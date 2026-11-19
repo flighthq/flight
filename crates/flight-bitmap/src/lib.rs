@@ -44,6 +44,7 @@ mod bitmap_transform;
 mod bitmap_warp;
 mod explain_bitmap_readback;
 mod host_explain;
+mod region_access;
 mod types;
 
 pub mod contract;
@@ -186,6 +187,7 @@ pub use contract::set_bitmap_color_matrix_identity;
 pub use contract::set_bitmap_pixel;
 pub use contract::set_bitmap_pixel_rgb;
 pub use contract::set_bitmap_region;
+pub use contract::share_bitmap;
 pub use contract::sharpen_bitmap;
 pub use contract::split_bitmap_channels;
 pub use contract::to_clamped_u8;

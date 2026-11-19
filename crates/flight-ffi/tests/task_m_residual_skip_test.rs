@@ -445,6 +445,9 @@ const PRE_M_SKIPPED_SOURCES: usize = 707;
 const PRE_M_PUBLIC_SOURCES: usize = 3488;
 const PRE_M_NON_PUBLIC_SOURCES: usize = 595;
 const MONOMORPHIZED_EXTRAS: usize = 97;
+// Item D adds one TypeScript-public source, `share_bitmap`, which generates. It is added to the
+// totals here so the pre-M baseline and Task M's own delta stay exactly as recorded.
+const ITEM_D_GENERATED_SOURCES: usize = 1;
 
 fn outcome(candidate: &Candidate) -> Outcome {
     if candidate.function == "enable_scene3d_resource_failure_guards" {
@@ -727,21 +730,21 @@ fn task_m_pre_m_census_has_no_undocumented_public_gap() {
         .iter()
         .filter(|candidate| outcome(candidate) == Outcome::Generated)
         .count();
-    let final_generated = PRE_M_GENERATED_SOURCES + generated_additions;
+    let total = PRE_M_TOTAL_SOURCES + ITEM_D_GENERATED_SOURCES;
+    let baseline_generated = PRE_M_GENERATED_SOURCES + ITEM_D_GENERATED_SOURCES;
+    let final_generated = baseline_generated + generated_additions;
     let final_skipped = PRE_M_SKIPPED_SOURCES - generated_additions;
     assert!(
-        source
-            == (
-                PRE_M_TOTAL_SOURCES,
-                PRE_M_GENERATED_SOURCES,
-                PRE_M_SKIPPED_SOURCES
-            )
-            || source == (PRE_M_TOTAL_SOURCES, final_generated, final_skipped),
+        source == (total, baseline_generated, PRE_M_SKIPPED_SOURCES)
+            || source == (total, final_generated, final_skipped),
         "Task M census drifted to an undeclared intermediate state: {source:?}"
     );
     assert_eq!(
         public_census(stats),
-        (PRE_M_PUBLIC_SOURCES, PRE_M_NON_PUBLIC_SOURCES)
+        (
+            PRE_M_PUBLIC_SOURCES + ITEM_D_GENERATED_SOURCES,
+            PRE_M_NON_PUBLIC_SOURCES
+        )
     );
 
     let skips = skip_counts(stats);
@@ -762,7 +765,7 @@ fn task_m_pre_m_census_has_no_undocumented_public_gap() {
         4
     );
     let actionable = actual_actionable_reasons(stats);
-    if source.1 == PRE_M_GENERATED_SOURCES {
+    if source.1 == baseline_generated {
         assert_eq!(policy_decisions(stats), baseline_policy_decisions());
         assert_eq!(actionable, expected_actionable_reasons());
         assert_eq!(actionable.values().sum::<usize>(), 52);
@@ -784,11 +787,16 @@ fn task_m_final_public_skip_set_is_only_named_policy() {
         .iter()
         .filter(|candidate| outcome(candidate) == Outcome::Generated)
         .count();
-    let expected_generated = PRE_M_GENERATED_SOURCES + generated_additions;
+    let expected_generated =
+        PRE_M_GENERATED_SOURCES + ITEM_D_GENERATED_SOURCES + generated_additions;
     let expected_skipped = PRE_M_SKIPPED_SOURCES - generated_additions;
     assert_eq!(
         source_census(stats),
-        (PRE_M_TOTAL_SOURCES, expected_generated, expected_skipped),
+        (
+            PRE_M_TOTAL_SOURCES + ITEM_D_GENERATED_SOURCES,
+            expected_generated,
+            expected_skipped
+        ),
         "EXPECTED PRE-M TASK M ACCEPTANCE FAILURE: all 11 actionable carriers must generate"
     );
     assert_eq!(

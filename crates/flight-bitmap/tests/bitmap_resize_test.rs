@@ -6,7 +6,7 @@ fn region(bmp: Bitmap) -> BitmapRegion {
     let w = bmp.width as i32;
     let h = bmp.height as i32;
     return BitmapRegion {
-        bitmap: bmp,
+        bitmap: std::sync::Arc::new(std::sync::RwLock::new(bmp)),
         x: 0,
         y: 0,
         width: w,
@@ -16,7 +16,7 @@ fn region(bmp: Bitmap) -> BitmapRegion {
 
 fn region_at(bmp: Bitmap, x: i32, y: i32, width: i32, height: i32) -> BitmapRegion {
     return BitmapRegion {
-        bitmap: bmp,
+        bitmap: std::sync::Arc::new(std::sync::RwLock::new(bmp)),
         x,
         y,
         width,
@@ -49,20 +49,20 @@ mod resize_bitmap {
             false,
         );
         assert_eq!(
-            get_bitmap_pixel(&dr.bitmap, 0, 0),
-            get_bitmap_pixel(&sr.bitmap, 0, 0)
+            get_bitmap_pixel(&dr.bitmap.read().unwrap(), 0, 0),
+            get_bitmap_pixel(&sr.bitmap.read().unwrap(), 0, 0)
         );
         assert_eq!(
-            get_bitmap_pixel(&dr.bitmap, 1, 0),
-            get_bitmap_pixel(&sr.bitmap, 0, 0)
+            get_bitmap_pixel(&dr.bitmap.read().unwrap(), 1, 0),
+            get_bitmap_pixel(&sr.bitmap.read().unwrap(), 0, 0)
         );
         assert_eq!(
-            get_bitmap_pixel(&dr.bitmap, 2, 0),
-            get_bitmap_pixel(&sr.bitmap, 1, 0)
+            get_bitmap_pixel(&dr.bitmap.read().unwrap(), 2, 0),
+            get_bitmap_pixel(&sr.bitmap.read().unwrap(), 1, 0)
         );
         assert_eq!(
-            get_bitmap_pixel(&dr.bitmap, 3, 0),
-            get_bitmap_pixel(&sr.bitmap, 1, 0)
+            get_bitmap_pixel(&dr.bitmap.read().unwrap(), 3, 0),
+            get_bitmap_pixel(&sr.bitmap.read().unwrap(), 1, 0)
         );
     }
 
@@ -87,10 +87,10 @@ mod resize_bitmap {
             BitmapEdgeMode::Clamp,
             false,
         );
-        assert_eq!(dr.bitmap.data[0], 0);
-        assert!(dr.bitmap.data[4] >= dr.bitmap.data[0]);
-        assert!(dr.bitmap.data[8] > dr.bitmap.data[4]);
-        assert_eq!(dr.bitmap.data[12], 100);
+        assert_eq!(dr.bitmap.read().unwrap().data[0], 0);
+        assert!(dr.bitmap.read().unwrap().data[4] >= dr.bitmap.read().unwrap().data[0]);
+        assert!(dr.bitmap.read().unwrap().data[8] > dr.bitmap.read().unwrap().data[4]);
+        assert_eq!(dr.bitmap.read().unwrap().data[12], 100);
     }
 
     #[test]
@@ -114,9 +114,9 @@ mod resize_bitmap {
             BitmapEdgeMode::Clamp,
             false,
         );
-        assert!(dr.bitmap.data[4] >= dr.bitmap.data[0]);
-        assert!(dr.bitmap.data[8] >= dr.bitmap.data[4]);
-        assert!(dr.bitmap.data[12] >= dr.bitmap.data[8]);
+        assert!(dr.bitmap.read().unwrap().data[4] >= dr.bitmap.read().unwrap().data[0]);
+        assert!(dr.bitmap.read().unwrap().data[8] >= dr.bitmap.read().unwrap().data[4]);
+        assert!(dr.bitmap.read().unwrap().data[12] >= dr.bitmap.read().unwrap().data[8]);
     }
 
     #[test]
@@ -132,9 +132,9 @@ mod resize_bitmap {
             BitmapEdgeMode::Clamp,
             false,
         );
-        assert_eq!(dr.bitmap.data[0], 0x40);
-        assert_eq!(dr.bitmap.data[1], 0x60);
-        assert_eq!(dr.bitmap.data[2], 0x80);
+        assert_eq!(dr.bitmap.read().unwrap().data[0], 0x40);
+        assert_eq!(dr.bitmap.read().unwrap().data[1], 0x60);
+        assert_eq!(dr.bitmap.read().unwrap().data[2], 0x80);
     }
 
     #[test]
@@ -152,9 +152,9 @@ mod resize_bitmap {
             BitmapEdgeMode::Clamp,
             false,
         );
-        assert_eq!(dr.bitmap.data[0], 10);
-        assert_eq!(dr.bitmap.data[4], 10);
-        assert_eq!(dr.bitmap.data[8], 0);
+        assert_eq!(dr.bitmap.read().unwrap().data[0], 10);
+        assert_eq!(dr.bitmap.read().unwrap().data[4], 10);
+        assert_eq!(dr.bitmap.read().unwrap().data[8], 0);
     }
 
     #[test]
@@ -188,7 +188,10 @@ mod resize_bitmap {
             BitmapEdgeMode::Wrap,
             false,
         );
-        assert_ne!(dr_c.bitmap.data[12], dr_w.bitmap.data[12]);
+        assert_ne!(
+            dr_c.bitmap.read().unwrap().data[12],
+            dr_w.bitmap.read().unwrap().data[12]
+        );
     }
 
     #[test]
@@ -204,7 +207,7 @@ mod resize_bitmap {
             BitmapEdgeMode::Transparent,
             false,
         );
-        assert!(dr.bitmap.data[12 + 3] < 255);
+        assert!(dr.bitmap.read().unwrap().data[12 + 3] < 255);
     }
 
     #[test]
@@ -253,6 +256,6 @@ mod resize_bitmap {
             BitmapEdgeMode::Clamp,
             true,
         );
-        assert!(dr_p.bitmap.data[4] >= dr_s.bitmap.data[4]);
+        assert!(dr_p.bitmap.read().unwrap().data[4] >= dr_s.bitmap.read().unwrap().data[4]);
     }
 }
