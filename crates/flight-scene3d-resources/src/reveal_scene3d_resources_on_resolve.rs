@@ -10,7 +10,7 @@ use flight_resource::ResourceResolutionState;
 use flight_scene3d::{Node3D, Node3DRef, Scene3D, as_node3d_ref};
 use flight_signals::{connect_signal, disconnect_signal};
 use flight_texture::{Texture, has_texture_source};
-use flight_tween::{TweenManager, TweenOptions, create_tween, tween_with};
+use flight_tween::{TweenManager, TweenOptions, create_tween, tween_with_f32};
 
 use crate::get_scene3d_resource_textures::{
     get_scene3d_texture_resource_reference, get_texture_identity,
@@ -163,7 +163,7 @@ pub fn reveal_scene3d_resources_on_resolve(
                     &manager,
                     &node,
                     fade_seconds,
-                    &[tween_with::<dyn Node3D>(
+                    &[tween_with_f32::<dyn Node3D>(
                         |node| &mut node.node3d_fields_mut().alpha,
                         "alpha",
                         1.0,

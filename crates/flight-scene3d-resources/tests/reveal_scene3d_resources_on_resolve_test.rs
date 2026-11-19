@@ -58,11 +58,16 @@ fn scene_with_pending_texture() -> PendingScene {
     };
 }
 
+// flight-lint: allow(f32) easing over bounded 0-1 progress (flight-easing contract)
+fn linear_ease(t: f32) -> f32 {
+    return t;
+}
+
 fn resolver(host: &MockHost) -> Ref<Scene3DResourceResolver> {
     return create_built_in_scene3d_resource_resolver(&host_image(), None, &context(host));
 }
 
-fn fade(seconds: f32) -> Scene3DResourceRevealOptions {
+fn fade(seconds: f64) -> Scene3DResourceRevealOptions {
     return Scene3DResourceRevealOptions {
         fade_seconds: Some(seconds),
         ease: None,
@@ -133,6 +138,32 @@ mod reveal_scene3d_resources_on_resolve {
         );
         // D1 f32 bound (TS: toBeCloseTo(0.2), 0.005)
         assert!((alpha(&pending.mesh) - 0.2).abs() <= 0.005);
+    }
+
+    #[test]
+    fn times_the_fade_with_an_f64_duration_and_lands_on_full_opacity() {
+        // 0.3 s has no f32 value: halfway (0.15 s) the f64 duration gives progress exactly 0.5,
+        // while an f32 duration (0.30000001192) gives 0.49999997. The 1.0 endpoint is then written
+        // narrowed once into the f32 alpha lane.
+        let host = MockHost::new();
+        let pending = scene_with_pending_texture();
+        let resolver = resolver(&host);
+        let manager = create_tween_manager(None);
+        reveal_scene3d_resources_on_resolve(
+            &resolver,
+            &pending.scene.read().unwrap(),
+            &manager,
+            Some(&Scene3DResourceRevealOptions {
+                ease: Some(linear_ease),
+                fade_seconds: Some(0.3),
+                from: None,
+            }),
+        );
+        emit(&resolver, true, &pending.reference, &pending.texture);
+        update_tweens(&manager, 0.15);
+        assert_eq!(alpha(&pending.mesh), 0.5);
+        update_tweens(&manager, 0.15);
+        assert_eq!(alpha(&pending.mesh), 1.0);
     }
 
     #[test]

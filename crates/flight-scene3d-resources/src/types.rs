@@ -191,10 +191,11 @@ pub struct Scene3DResources {
 }
 
 /// Optional controls for the streamed-texture fade-in.
+// flight-lint: allow(f64) fade_seconds is an f64 duration (TS number, foreman-8dd43e2e); from stays the f32 alpha lane
 #[derive(Clone, Default)]
 pub struct Scene3DResourceRevealOptions {
     pub ease: Option<EasingFunction>,
-    pub fade_seconds: Option<f32>,
+    pub fade_seconds: Option<f64>,
     pub from: Option<f32>,
 }
 
