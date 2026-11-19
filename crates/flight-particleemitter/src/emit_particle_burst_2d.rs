@@ -21,6 +21,7 @@ fn clamp01(v: f32) -> f32 {
     return v;
 }
 
+// flight-lint: allow(f64) spawn draws and emitter transforms combine in f64; each f32 state and data store narrows once
 pub(crate) fn emit_particle_burst_2d_impl(
     data: &mut ParticleEmitterData,
     state: &mut ParticleEmitterState,
@@ -58,10 +59,11 @@ pub(crate) fn emit_particle_burst_2d_impl(
     let has_alpha_curve = alpha_curve.map_or(false, |c| !c.is_empty());
     let has_color_curve = color_curve.map_or(false, |c| c.len() >= 3);
     let has_scale_curve = scale_curve.map_or(false, |c| !c.is_empty());
-    let base_angle = config.direction_y.atan2(config.direction_x);
-    let region_range = config.region_id_max - config.region_id_min;
-    let region_id_min = config.region_id_min;
-    let rot_speed_range = config.rotation_speed_max - config.rotation_speed_min;
+    let base_angle = f64::from(config.direction_y).atan2(f64::from(config.direction_x));
+    let region_range = f64::from(config.region_id_max) - f64::from(config.region_id_min);
+    let region_id_min = f64::from(config.region_id_min);
+    let rot_speed_range =
+        f64::from(config.rotation_speed_max) - f64::from(config.rotation_speed_min);
     let has_rot_speed = config.rotation_speed_min != 0.0 || config.rotation_speed_max != 0.0;
     let random = &state.random;
 
@@ -93,31 +95,35 @@ pub(crate) fn emit_particle_burst_2d_impl(
     for s_idx in 0..to_spawn {
         let idx = live_count + s_idx;
 
-        let lifetime = config.lifetime_min + random() * (config.lifetime_max - config.lifetime_min);
+        let lifetime = f64::from(config.lifetime_min)
+            + random() * (f64::from(config.lifetime_max) - f64::from(config.lifetime_min));
         let lt = idx * 2;
         state.lifetimes[lt] = 0.0;
-        state.lifetimes[lt + 1] = lifetime;
+        state.lifetimes[lt + 1] = (lifetime) as f32;
 
-        let angle = base_angle + (random() - 0.5) * 2.0 * config.spread;
-        let speed = config.speed_min + random() * (config.speed_max - config.speed_min);
+        let angle = base_angle + (random() - 0.5) * 2.0 * f64::from(config.spread);
+        let speed = f64::from(config.speed_min)
+            + random() * (f64::from(config.speed_max) - f64::from(config.speed_min));
         let vt = idx * PARTICLE_VELOCITY_STRIDE;
-        state.velocities[vt] = angle.cos() * speed;
-        state.velocities[vt + 1] = angle.sin() * speed;
+        state.velocities[vt] = (angle.cos() * speed) as f32;
+        state.velocities[vt + 1] = (angle.sin() * speed) as f32;
         state.velocities[vt + 2] = 0.0;
 
-        let mut spawn_x = x;
-        let mut spawn_y = y;
+        let mut spawn_x = f64::from(x);
+        let mut spawn_y = f64::from(y);
         write_particle_spawn_offset(&mut spawn_offset, 0, config, &**random);
-        spawn_x += spawn_offset[0];
-        spawn_y += spawn_offset[1];
+        spawn_x += f64::from(spawn_offset[0]);
+        spawn_y += f64::from(spawn_offset[1]);
 
-        let spawn_scale = config.scale_min + random() * (config.scale_max - config.scale_min);
+        let spawn_scale = (f64::from(config.scale_min)
+            + random() * (f64::from(config.scale_max) - f64::from(config.scale_min)))
+            as f32;
         state.scales[idx] = spawn_scale;
 
         let tt = idx * PARTICLE_TRANSFORM_STRIDE;
-        data.transforms[tt] = spawn_x;
-        data.transforms[tt + 1] = spawn_y;
-        data.transforms[tt + 2] = angle;
+        data.transforms[tt] = spawn_x as f32;
+        data.transforms[tt + 1] = spawn_y as f32;
+        data.transforms[tt + 2] = (angle) as f32;
         data.transforms[tt + 3] = if has_scale_curve {
             spawn_scale * sample_particle_curve(scale_curve.unwrap(), 0.0)
         } else {
@@ -135,20 +141,35 @@ pub(crate) fn emit_particle_burst_2d_impl(
             sample_particle_color_curve(&mut data.colors, ct, color_curve.unwrap(), 0.0);
         } else if has_color_variance {
             let r0 = clamp01(
-                config.color_start_r + (random() - 0.5) * 2.0 * config.color_start_variance_r,
+                (f64::from(config.color_start_r)
+                    + (random() - 0.5) * 2.0 * f64::from(config.color_start_variance_r))
+                    as f32,
             );
             let g0 = clamp01(
-                config.color_start_g + (random() - 0.5) * 2.0 * config.color_start_variance_g,
+                (f64::from(config.color_start_g)
+                    + (random() - 0.5) * 2.0 * f64::from(config.color_start_variance_g))
+                    as f32,
             );
             let b0 = clamp01(
-                config.color_start_b + (random() - 0.5) * 2.0 * config.color_start_variance_b,
+                (f64::from(config.color_start_b)
+                    + (random() - 0.5) * 2.0 * f64::from(config.color_start_variance_b))
+                    as f32,
             );
-            let r1 =
-                clamp01(config.color_end_r + (random() - 0.5) * 2.0 * config.color_end_variance_r);
-            let g1 =
-                clamp01(config.color_end_g + (random() - 0.5) * 2.0 * config.color_end_variance_g);
-            let b1 =
-                clamp01(config.color_end_b + (random() - 0.5) * 2.0 * config.color_end_variance_b);
+            let r1 = clamp01(
+                (f64::from(config.color_end_r)
+                    + (random() - 0.5) * 2.0 * f64::from(config.color_end_variance_r))
+                    as f32,
+            );
+            let g1 = clamp01(
+                (f64::from(config.color_end_g)
+                    + (random() - 0.5) * 2.0 * f64::from(config.color_end_variance_g))
+                    as f32,
+            );
+            let b1 = clamp01(
+                (f64::from(config.color_end_b)
+                    + (random() - 0.5) * 2.0 * f64::from(config.color_end_variance_b))
+                    as f32,
+            );
             state.color_birth[ct] = r0;
             state.color_birth[ct + 1] = g0;
             state.color_birth[ct + 2] = b0;
@@ -188,7 +209,7 @@ pub(crate) fn emit_particle_burst_2d_impl(
                 0.0
             }) as u16;
         state.rotation_speeds[idx] = if has_rot_speed {
-            config.rotation_speed_min + random() * rot_speed_range
+            (f64::from(config.rotation_speed_min) + random() * rot_speed_range) as f32
         } else {
             0.0
         };

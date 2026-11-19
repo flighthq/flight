@@ -114,8 +114,8 @@ src/particle_emitter_3d.rs: pub fn set_particle_emitter_3d_particle(target: &Ref
 src/particle_emitter_3d.rs: pub fn set_particle_emitter_3d_particle_alpha(target: &Ref<ParticleEmitter3D>, index: usize, alpha: f32,)
 src/particle_emitter_3d.rs: pub fn set_particle_emitter_3d_particle_color(target: &Ref<ParticleEmitter3D>, index: usize, r: f32, g: f32, b: f32,)
 src/particle_emitter_3d.rs: pub fn set_particle_emitter_3d_particle_velocity(target: &Ref<ParticleEmitter3D>, index: usize, vx: f32, vy: f32, vz: f32,)
-src/particle_emitter_3d.rs: pub fn sort_particle_emitter_3d_by_view_depth(emitter: &Ref<ParticleEmitter3D>, view_matrix: &[f32; 16],)
-src/particle_emitter_3d.rs: pub fn sort_particle_emitter_3d_indices_by_view_depth(out_indices: &mut [u32], out_view_depths: &mut [f64], source: &Ref<ParticleEmitter3D>, position_to_view: &[f32; 16],) -> bool
+src/particle_emitter_3d.rs: pub fn sort_particle_emitter_3d_by_view_depth(emitter: &Ref<ParticleEmitter3D>, view_matrix: &[f64; 16],)
+src/particle_emitter_3d.rs: pub fn sort_particle_emitter_3d_indices_by_view_depth(out_indices: &mut [u32], out_view_depths: &mut [f64], source: &Ref<ParticleEmitter3D>, position_to_view: &[f64; 16],) -> bool
 src/prewarm_particle_emitter_2d.rs: pub fn prewarm_particle_emitter_2d(emitter: &Ref<ParticleEmitter2D>, state: &mut ParticleEmitterState, config: &ParticleEmitterConfig, duration: f32, step_delta_time: f32, callbacks: Option<&ParticleEmitterCallbacks>,)
 src/prewarm_particle_emitter_3d.rs: pub fn prewarm_particle_emitter_3d(emitter: &Ref<ParticleEmitter3D>, state: &mut ParticleEmitterState, config: &ParticleEmitterConfig, duration: f32, step_delta_time: f32, callbacks: Option<&ParticleEmitterCallbacks>,)
 src/step_particle_emitter_2d.rs: pub fn step_particle_emitter_2d(emitter: &Ref<ParticleEmitter2D>, state: &mut ParticleEmitterState, config: &ParticleEmitterConfig, delta_time: f32, forces: Option<&[ParticleForce]>, colliders: Option<&[ParticleCollider]>, callbacks: Option<&ParticleEmitterCallbacks>,)

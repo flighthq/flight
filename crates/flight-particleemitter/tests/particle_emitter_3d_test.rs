@@ -145,7 +145,7 @@ mod compute_particle_emitter_3d_local_bounds_aabb {
         append_particle_emitter_3d_particle(&emitter, 2, 10.0, -4.0, 6.0, 0.0, 2.0);
         let mut out = create_aabb(0.0, 0.0, 0.0, 0.0, 0.0, 0.0);
         compute_particle_emitter_3d_local_bounds_aabb(&mut out, &emitter);
-        let r = std::f32::consts::FRAC_1_SQRT_2 * 2.0;
+        let r = f64::from(std::f32::consts::FRAC_1_SQRT_2 * 2.0);
         assert!((out.min.x - (-r)).abs() < 1e-5);
         assert!((out.min.y - (-4.0 - r)).abs() < 1e-5);
         assert!((out.min.z - (-r)).abs() < 1e-5);

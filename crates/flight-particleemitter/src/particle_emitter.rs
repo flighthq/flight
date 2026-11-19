@@ -115,6 +115,7 @@ pub(crate) fn compact_particle_emitter_2d_impl(data: &mut ParticleEmitterData) {
     data.particle_count = write;
 }
 
+// flight-lint: allow(f64) f32 particle positions widen into the f64 geometry bounds
 pub fn compute_particle_emitter_2d_local_bounds_rectangle(
     out: &mut Rectangle,
     source: &crate::types::ParticleEmitter2D,
@@ -187,10 +188,11 @@ pub fn compute_particle_emitter_2d_local_bounds_rectangle(
         out.width = 0.0;
         out.height = 0.0;
     } else {
-        out.x = min_x;
-        out.y = min_y;
-        out.width = max_x - min_x;
-        out.height = max_y - min_y;
+        // Particle positions are the f32 transform lane; the bounds widen into the f64 Rectangle.
+        out.x = f64::from(min_x);
+        out.y = f64::from(min_y);
+        out.width = f64::from(max_x) - f64::from(min_x);
+        out.height = f64::from(max_y) - f64::from(min_y);
     }
 }
 
@@ -223,6 +225,7 @@ pub(crate) fn get_particle_emitter_2d_particle_id_impl(
     return data.ids[index] as i32;
 }
 
+// flight-lint: allow(f64) the f32 velocity lane widens into the f64 Vector2 readout
 pub(crate) fn get_particle_emitter_2d_particle_velocity_impl(
     out: &mut flight_geometry::Vector2,
     data: &ParticleEmitterData,
@@ -232,8 +235,8 @@ pub(crate) fn get_particle_emitter_2d_particle_velocity_impl(
         return false;
     }
     let vt = index * PARTICLE_VELOCITY_STRIDE_2D;
-    out.x = data.velocities[vt];
-    out.y = data.velocities[vt + 1];
+    out.x = f64::from(data.velocities[vt]);
+    out.y = f64::from(data.velocities[vt + 1]);
     return true;
 }
 

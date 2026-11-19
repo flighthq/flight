@@ -18,7 +18,8 @@ use crate::types::{
     PARTICLE_TRANSFORM_STRIDE, ParticleEmitter2D, ParticleEmitterCallbacks, ParticleEmitterData,
 };
 
-const TWO_PI: f32 = std::f32::consts::PI * 2.0;
+// flight-lint: allow(f64) spawn-direction math runs in f64 alongside the f64 RandomSource draws
+const TWO_PI: f64 = std::f64::consts::PI * 2.0;
 
 fn clamp01(v: f32) -> f32 {
     if v < 0.0 {
@@ -45,7 +46,8 @@ pub fn is_particle_emitter_2d_complete(
     return state.emitter_age >= config.duration && emitter.data.particle_count == 0;
 }
 
-fn rotate_to_direction(lx: f32, ly: f32, lz: f32, dx: f32, dy: f32, dz: f32) -> [f32; 3] {
+// flight-lint: allow(f64) spawn-direction math runs in f64 alongside the f64 RandomSource draws
+fn rotate_to_direction(lx: f64, ly: f64, lz: f64, dx: f64, dy: f64, dz: f64) -> [f64; 3] {
     let kx = -dy;
     let ky = dx;
     let sin_angle = (kx * kx + ky * ky).sqrt();
@@ -145,6 +147,7 @@ pub fn update_particle_emitter_2d(
     invalidate_node_local_bounds(&node_ref);
 }
 
+// flight-lint: allow(f64) spawn draws and emitter transforms combine in f64; each f32 state and data store narrows once
 fn update_particle_emitter_2d_impl(
     data: &mut ParticleEmitterData,
     state: &mut ParticleEmitterState,
@@ -152,9 +155,9 @@ fn update_particle_emitter_2d_impl(
     delta_time: f32,
     collect_deaths: bool,
     collect_spawns: bool,
-    world_transform: Option<&[f32; 6]>,
-    local_x: f32,
-    local_y: f32,
+    world_transform: Option<&[f64; 6]>,
+    local_x: f64,
+    local_y: f64,
 ) -> (Vec<ParticleDeathEvent>, Vec<ParticleSpawnEvent>) {
     data.world_space = world_transform.is_some();
 
@@ -177,11 +180,11 @@ fn update_particle_emitter_2d_impl(
         local_y
     };
     let has_vel_inherit = config.velocity_inheritance != 0.0;
-    let mut emitter_vel_x = 0.0f32;
-    let mut emitter_vel_y = 0.0f32;
+    let mut emitter_vel_x = 0.0f64;
+    let mut emitter_vel_y = 0.0f64;
     if !state.prev_x.is_nan() {
-        emitter_vel_x = (track_x - state.prev_x) / delta_time;
-        emitter_vel_y = (track_y - state.prev_y) / delta_time;
+        emitter_vel_x = (track_x - f64::from(state.prev_x)) / f64::from(delta_time);
+        emitter_vel_y = (track_y - f64::from(state.prev_y)) / f64::from(delta_time);
     }
 
     // ── Phase 1: age all live particles, compact dead ones ──────────────────
@@ -367,33 +370,42 @@ fn update_particle_emitter_2d_impl(
         let new_count = live_count + to_spawn;
         reserve_particle_emitter_2d(data, new_count);
         ensure_particle_emitter_state_capacity(state, new_count, has_color_variance);
-        let base_angle = config.direction_y.atan2(config.direction_x);
-        let region_range = config.region_id_max - config.region_id_min;
-        let region_id_min = config.region_id_min;
-        let rot_speed_range = config.rotation_speed_max - config.rotation_speed_min;
+        let base_angle = f64::from(config.direction_y).atan2(f64::from(config.direction_x));
+        let region_range = f64::from(config.region_id_max) - f64::from(config.region_id_min);
+        let region_id_min = f64::from(config.region_id_min);
+        let rot_speed_range =
+            f64::from(config.rotation_speed_max) - f64::from(config.rotation_speed_min);
         let has_rot_speed = config.rotation_speed_min != 0.0 || config.rotation_speed_max != 0.0;
         let random = &state.random;
 
         let do_trail = world_transform.is_some() && !state.prev_x.is_nan();
-        let prev_path_x = if do_trail { state.prev_x } else { track_x };
-        let prev_path_y = if do_trail { state.prev_y } else { track_y };
+        let prev_path_x = if do_trail {
+            f64::from(state.prev_x)
+        } else {
+            track_x
+        };
+        let prev_path_y = if do_trail {
+            f64::from(state.prev_y)
+        } else {
+            track_y
+        };
 
-        let dir_len = (config.direction_x * config.direction_x
-            + config.direction_y * config.direction_y
-            + config.direction_z * config.direction_z)
-            .sqrt();
+        let dir_len = (f64::from(config.direction_x) * f64::from(config.direction_x)
+            + f64::from(config.direction_y) * f64::from(config.direction_y)
+            + f64::from(config.direction_z) * f64::from(config.direction_z))
+        .sqrt();
         let dir_nx = if dir_len > 1e-6 {
-            config.direction_x / dir_len
+            f64::from(config.direction_x) / dir_len
         } else {
             0.0
         };
         let dir_ny = if dir_len > 1e-6 {
-            config.direction_y / dir_len
+            f64::from(config.direction_y) / dir_len
         } else {
             -1.0
         };
         let dir_nz = if dir_len > 1e-6 {
-            config.direction_z / dir_len
+            f64::from(config.direction_z) / dir_len
         } else {
             0.0
         };
@@ -403,28 +415,29 @@ fn update_particle_emitter_2d_impl(
         for s_idx in 0..to_spawn {
             let idx = live_count + s_idx;
 
-            let lifetime =
-                config.lifetime_min + random() * (config.lifetime_max - config.lifetime_min);
+            let lifetime = f64::from(config.lifetime_min)
+                + random() * (f64::from(config.lifetime_max) - f64::from(config.lifetime_min));
             let lt = idx * 2;
             state.lifetimes[lt] = 0.0;
-            state.lifetimes[lt + 1] = lifetime;
+            state.lifetimes[lt + 1] = (lifetime) as f32;
 
-            let speed = config.speed_min + random() * (config.speed_max - config.speed_min);
-            let mut vx: f32;
-            let mut vy: f32;
-            let vz: f32;
+            let speed = f64::from(config.speed_min)
+                + random() * (f64::from(config.speed_max) - f64::from(config.speed_min));
+            let mut vx: f64;
+            let mut vy: f64;
+            let vz: f64;
 
-            let mut spawn_x = 0.0f32;
-            let mut spawn_y = 0.0f32;
-            let mut spawn_z = 0.0f32;
+            let mut spawn_x = 0.0f64;
+            let mut spawn_y = 0.0f64;
+            let mut spawn_z = 0.0f64;
 
             let shape = config.emitter_shape;
             if shape == EmitterShape::Sphere || shape == EmitterShape::Cone3D {
-                let sx: f32;
-                let sy: f32;
-                let sz: f32;
+                let sx: f64;
+                let sy: f64;
+                let sz: f64;
                 if shape == EmitterShape::Cone3D && config.emitter_cone_angle > 0.0 {
-                    let cone_half = config.emitter_cone_angle / 2.0;
+                    let cone_half = f64::from(config.emitter_cone_angle) / 2.0;
                     let cos_theta = 1.0 - random() * (1.0 - cone_half.cos());
                     let sin_theta = (1.0 - cos_theta * cos_theta).sqrt();
                     let phi = random() * TWO_PI;
@@ -454,7 +467,7 @@ fn update_particle_emitter_2d_impl(
                 vz = sz * speed;
 
                 if config.emitter_radius > 0.0 {
-                    let r = random().cbrt() * config.emitter_radius;
+                    let r = random().cbrt() * f64::from(config.emitter_radius);
                     let (pu, pv, ps2) = loop {
                         let pu = random() * 2.0 - 1.0;
                         let pv = random() * 2.0 - 1.0;
@@ -469,27 +482,28 @@ fn update_particle_emitter_2d_impl(
                     spawn_z += (1.0 - 2.0 * ps2) * r;
                 }
             } else if shape == EmitterShape::Box {
-                let angle = base_angle + (random() - 0.5) * 2.0 * config.spread;
+                let angle = base_angle + (random() - 0.5) * 2.0 * f64::from(config.spread);
                 vx = angle.cos() * speed;
                 vy = angle.sin() * speed;
-                vz = (config.direction_z * speed) / if dir_len > 1e-6 { dir_len } else { 1.0 };
-                spawn_x = (random() - 0.5) * config.emitter_width;
-                spawn_y = (random() - 0.5) * config.emitter_height;
-                spawn_z = (random() - 0.5) * config.emitter_depth;
+                vz = (f64::from(config.direction_z) * speed)
+                    / if dir_len > 1e-6 { dir_len } else { 1.0 };
+                spawn_x = (random() - 0.5) * f64::from(config.emitter_width);
+                spawn_y = (random() - 0.5) * f64::from(config.emitter_height);
+                spawn_z = (random() - 0.5) * f64::from(config.emitter_depth);
             } else {
-                let angle = base_angle + (random() - 0.5) * 2.0 * config.spread;
+                let angle = base_angle + (random() - 0.5) * 2.0 * f64::from(config.spread);
                 vx = angle.cos() * speed;
                 vy = angle.sin() * speed;
                 vz = 0.0;
 
                 write_particle_spawn_offset(&mut spawn_offset, 0, config, &**random);
-                spawn_x = spawn_offset[0];
-                spawn_y = spawn_offset[1];
+                spawn_x = f64::from(spawn_offset[0]);
+                spawn_y = f64::from(spawn_offset[1]);
             }
 
             if let Some(wt) = world_transform {
                 let t = if to_spawn > 1 {
-                    s_idx as f32 / (to_spawn as f32 - 1.0)
+                    s_idx as f64 / (to_spawn as f64 - 1.0)
                 } else {
                     1.0
                 };
@@ -506,40 +520,42 @@ fn update_particle_emitter_2d_impl(
             }
 
             if has_vel_inherit && !state.prev_x.is_nan() {
-                vx += emitter_vel_x * config.velocity_inheritance;
-                vy += emitter_vel_y * config.velocity_inheritance;
+                vx += emitter_vel_x * f64::from(config.velocity_inheritance);
+                vy += emitter_vel_y * f64::from(config.velocity_inheritance);
             }
 
             let vt = idx * PARTICLE_VELOCITY_STRIDE;
-            state.velocities[vt] = vx;
-            state.velocities[vt + 1] = vy;
-            state.velocities[vt + 2] = vz;
+            state.velocities[vt] = vx as f32;
+            state.velocities[vt + 1] = vy as f32;
+            state.velocities[vt + 2] = vz as f32;
 
-            let spawn_scale = config.scale_min + random() * (config.scale_max - config.scale_min);
+            let spawn_scale = (f64::from(config.scale_min)
+                + random() * (f64::from(config.scale_max) - f64::from(config.scale_min)))
+                as f32;
             state.scales[idx] = spawn_scale;
 
             let tt = idx * PARTICLE_TRANSFORM_STRIDE;
-            data.transforms[tt] = spawn_x;
-            data.transforms[tt + 1] = spawn_y;
+            data.transforms[tt] = spawn_x as f32;
+            data.transforms[tt + 1] = spawn_y as f32;
             let spawn_angle = if shape == EmitterShape::Sphere || shape == EmitterShape::Cone3D {
                 base_angle
             } else {
-                base_angle + (random() - 0.5) * 2.0 * config.spread
+                base_angle + (random() - 0.5) * 2.0 * f64::from(config.spread)
             };
             data.transforms[tt + 2] = if shape == EmitterShape::Sphere
                 || shape == EmitterShape::Cone3D
                 || shape == EmitterShape::Box
             {
-                vy.atan2(vx)
+                vy.atan2(vx) as f32
             } else {
-                spawn_angle
+                spawn_angle as f32
             };
             data.transforms[tt + 3] = if has_scale_curve {
                 spawn_scale * sample_particle_curve(scale_curve.unwrap(), 0.0)
             } else {
                 spawn_scale
             };
-            data.positions_z[idx] = spawn_z;
+            data.positions_z[idx] = spawn_z as f32;
             data.alphas[idx] = if has_alpha_curve {
                 sample_particle_curve(alpha_curve.unwrap(), 0.0)
             } else {
@@ -550,18 +566,36 @@ fn update_particle_emitter_2d_impl(
             if has_color_curve {
                 sample_particle_color_curve(&mut data.colors, ct, color_curve.unwrap(), 0.0);
             } else if has_color_variance {
-                let r0 =
-                    clamp01(color_start_r + (random() - 0.5) * 2.0 * config.color_start_variance_r);
-                let g0 =
-                    clamp01(color_start_g + (random() - 0.5) * 2.0 * config.color_start_variance_g);
-                let b0 =
-                    clamp01(color_start_b + (random() - 0.5) * 2.0 * config.color_start_variance_b);
-                let r1 =
-                    clamp01(color_end_r + (random() - 0.5) * 2.0 * config.color_end_variance_r);
-                let g1 =
-                    clamp01(color_end_g + (random() - 0.5) * 2.0 * config.color_end_variance_g);
-                let b1 =
-                    clamp01(color_end_b + (random() - 0.5) * 2.0 * config.color_end_variance_b);
+                let r0 = clamp01(
+                    (f64::from(color_start_r)
+                        + (random() - 0.5) * 2.0 * f64::from(config.color_start_variance_r))
+                        as f32,
+                );
+                let g0 = clamp01(
+                    (f64::from(color_start_g)
+                        + (random() - 0.5) * 2.0 * f64::from(config.color_start_variance_g))
+                        as f32,
+                );
+                let b0 = clamp01(
+                    (f64::from(color_start_b)
+                        + (random() - 0.5) * 2.0 * f64::from(config.color_start_variance_b))
+                        as f32,
+                );
+                let r1 = clamp01(
+                    (f64::from(color_end_r)
+                        + (random() - 0.5) * 2.0 * f64::from(config.color_end_variance_r))
+                        as f32,
+                );
+                let g1 = clamp01(
+                    (f64::from(color_end_g)
+                        + (random() - 0.5) * 2.0 * f64::from(config.color_end_variance_g))
+                        as f32,
+                );
+                let b1 = clamp01(
+                    (f64::from(color_end_b)
+                        + (random() - 0.5) * 2.0 * f64::from(config.color_end_variance_b))
+                        as f32,
+                );
                 state.color_birth[ct] = r0;
                 state.color_birth[ct + 1] = g0;
                 state.color_birth[ct + 2] = b0;
@@ -586,15 +620,15 @@ fn update_particle_emitter_2d_impl(
                     0.0
                 }) as u16;
             state.rotation_speeds[idx] = if has_rot_speed {
-                config.rotation_speed_min + random() * rot_speed_range
+                (f64::from(config.rotation_speed_min) + random() * rot_speed_range) as f32
             } else {
                 0.0
             };
 
             if collect_spawns {
                 spawn_events.push(ParticleSpawnEvent {
-                    x: spawn_x,
-                    y: spawn_y,
+                    x: spawn_x as f32,
+                    y: spawn_y as f32,
                     z: 0.0,
                     vx: state.velocities[vt],
                     vy: state.velocities[vt + 1],
@@ -605,8 +639,8 @@ fn update_particle_emitter_2d_impl(
         data.particle_count = new_count;
     }
 
-    state.prev_x = track_x;
-    state.prev_y = track_y;
+    state.prev_x = track_x as f32;
+    state.prev_y = track_y as f32;
 
     let live_count_final = data.particle_count;
     let live_render_velocity_count = live_count_final * 2;

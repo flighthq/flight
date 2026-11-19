@@ -8,6 +8,27 @@ mod emit_particle_burst_2d {
     use super::*;
 
     #[test]
+    fn combines_burst_angle_and_speed_in_f64_before_the_f32_velocity_store() {
+        // Draws: lifetime, angle, speed. Narrowing angle and speed to f32 before the trig gives
+        // 5.81939697265625; keeping them f64 until the velocity store gives 5.819386959075928.
+        let emitter = create_particle_emitter_2d();
+        let mut state = create_particle_emitter_state();
+        let draws = [0.5, 0.23645552527159452, 0.3692706737201661];
+        let index = std::sync::Arc::new(std::sync::atomic::AtomicUsize::new(0));
+        state.random = std::sync::Arc::new(move || {
+            let i = index.fetch_add(1, std::sync::atomic::Ordering::Relaxed);
+            return draws[i.min(draws.len() - 1)];
+        });
+        let config = create_particle_emitter_config(None);
+        assert_eq!(
+            emit_particle_burst_2d(&emitter, &mut state, &config, 1.0, 0.0, 0.0, None),
+            1
+        );
+        assert_eq!(state.velocities[1], 5.819_386_959_075_928_f32);
+        assert_ne!(state.velocities[1], 5.819_396_972_656_25_f32);
+    }
+
+    #[test]
     fn spawns_the_requested_count_at_the_given_point() {
         let emitter = create_particle_emitter_2d();
         let mut state = create_particle_emitter_state();

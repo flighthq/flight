@@ -11,7 +11,8 @@ use flight_particles::{
 use crate::particle_emitter_3d::reserve_particle_emitter_3d_impl as reserve_particle_emitter_3d;
 use crate::types::{PARTICLE_TRANSFORM_STRIDE, ParticleEmitterData};
 
-const TWO_PI: f32 = std::f32::consts::PI * 2.0;
+// flight-lint: allow(f64) spawn-direction math runs in f64 alongside the f64 RandomSource draws
+const TWO_PI: f64 = std::f64::consts::PI * 2.0;
 
 fn clamp01(v: f32) -> f32 {
     if v < 0.0 {
@@ -23,6 +24,7 @@ fn clamp01(v: f32) -> f32 {
     return v;
 }
 
+// flight-lint: allow(f64) spawn draws and emitter transforms combine in f64; each f32 state and data store narrows once
 pub(crate) fn emit_particle_burst_3d_impl(
     data: &mut ParticleEmitterData,
     state: &mut ParticleEmitterState,
@@ -61,9 +63,10 @@ pub(crate) fn emit_particle_burst_3d_impl(
     let has_alpha_curve = alpha_curve.map_or(false, |c| !c.is_empty());
     let has_color_curve = color_curve.map_or(false, |c| c.len() >= 3);
     let has_scale_curve = scale_curve.map_or(false, |c| !c.is_empty());
-    let region_range = config.region_id_max - config.region_id_min;
-    let region_id_min = config.region_id_min;
-    let rot_speed_range = config.rotation_speed_max - config.rotation_speed_min;
+    let region_range = f64::from(config.region_id_max) - f64::from(config.region_id_min);
+    let region_id_min = f64::from(config.region_id_min);
+    let rot_speed_range =
+        f64::from(config.rotation_speed_max) - f64::from(config.rotation_speed_min);
     let has_rot_speed = config.rotation_speed_min != 0.0 || config.rotation_speed_max != 0.0;
     let random = &state.random;
 
@@ -90,22 +93,22 @@ pub(crate) fn emit_particle_burst_3d_impl(
         1.0
     };
 
-    let dir_len = (config.direction_x * config.direction_x
-        + config.direction_y * config.direction_y
-        + config.direction_z * config.direction_z)
-        .sqrt();
+    let dir_len = (f64::from(config.direction_x) * f64::from(config.direction_x)
+        + f64::from(config.direction_y) * f64::from(config.direction_y)
+        + f64::from(config.direction_z) * f64::from(config.direction_z))
+    .sqrt();
     let dir_nx = if dir_len > 1e-6 {
-        config.direction_x / dir_len
+        f64::from(config.direction_x) / dir_len
     } else {
         0.0
     };
     let dir_ny = if dir_len > 1e-6 {
-        config.direction_y / dir_len
+        f64::from(config.direction_y) / dir_len
     } else {
         -1.0
     };
     let dir_nz = if dir_len > 1e-6 {
-        config.direction_z / dir_len
+        f64::from(config.direction_z) / dir_len
     } else {
         0.0
     };
@@ -115,27 +118,29 @@ pub(crate) fn emit_particle_burst_3d_impl(
     for s_idx in 0..to_spawn {
         let idx = live_count + s_idx;
 
-        let lifetime = config.lifetime_min + random() * (config.lifetime_max - config.lifetime_min);
+        let lifetime = f64::from(config.lifetime_min)
+            + random() * (f64::from(config.lifetime_max) - f64::from(config.lifetime_min));
         let lt = idx * 2;
         state.lifetimes[lt] = 0.0;
-        state.lifetimes[lt + 1] = lifetime;
+        state.lifetimes[lt + 1] = (lifetime) as f32;
 
-        let speed = config.speed_min + random() * (config.speed_max - config.speed_min);
-        let vx: f32;
-        let vy: f32;
-        let vz: f32;
+        let speed = f64::from(config.speed_min)
+            + random() * (f64::from(config.speed_max) - f64::from(config.speed_min));
+        let vx: f64;
+        let vy: f64;
+        let vz: f64;
 
-        let mut spawn_x = x;
-        let mut spawn_y = y;
-        let mut spawn_z = z;
+        let mut spawn_x = f64::from(x);
+        let mut spawn_y = f64::from(y);
+        let mut spawn_z = f64::from(z);
 
         let shape = config.emitter_shape;
         if shape == EmitterShape::Sphere || shape == EmitterShape::Cone3D {
-            let sx: f32;
-            let sy: f32;
-            let sz: f32;
+            let sx: f64;
+            let sy: f64;
+            let sz: f64;
             if shape == EmitterShape::Cone3D && config.emitter_cone_angle > 0.0 {
-                let cone_half = config.emitter_cone_angle / 2.0;
+                let cone_half = f64::from(config.emitter_cone_angle) / 2.0;
                 let cos_theta = 1.0 - random() * (1.0 - cone_half.cos());
                 let sin_theta = (1.0 - cos_theta * cos_theta).sqrt();
                 let phi = random() * TWO_PI;
@@ -165,7 +170,7 @@ pub(crate) fn emit_particle_burst_3d_impl(
             vz = sz * speed;
 
             if config.emitter_radius > 0.0 {
-                let r = random().cbrt() * config.emitter_radius;
+                let r = random().cbrt() * f64::from(config.emitter_radius);
                 let (pu, pv, ps2) = loop {
                     let pu = random() * 2.0 - 1.0;
                     let pv = random() * 2.0 - 1.0;
@@ -180,41 +185,44 @@ pub(crate) fn emit_particle_burst_3d_impl(
                 spawn_z += (1.0 - 2.0 * ps2) * r;
             }
         } else {
-            let base_angle = config.direction_y.atan2(config.direction_x);
-            let angle = base_angle + (random() - 0.5) * 2.0 * config.spread;
+            let base_angle = f64::from(config.direction_y).atan2(f64::from(config.direction_x));
+            let angle = base_angle + (random() - 0.5) * 2.0 * f64::from(config.spread);
             vx = angle.cos() * speed;
             vy = angle.sin() * speed;
-            vz = (config.direction_z * speed) / if dir_len > 1e-6 { dir_len } else { 1.0 };
+            vz = (f64::from(config.direction_z) * speed)
+                / if dir_len > 1e-6 { dir_len } else { 1.0 };
 
             if shape == EmitterShape::Box {
-                spawn_x += (random() - 0.5) * config.emitter_width;
-                spawn_y += (random() - 0.5) * config.emitter_height;
-                spawn_z += (random() - 0.5) * config.emitter_depth;
+                spawn_x += (random() - 0.5) * f64::from(config.emitter_width);
+                spawn_y += (random() - 0.5) * f64::from(config.emitter_height);
+                spawn_z += (random() - 0.5) * f64::from(config.emitter_depth);
             } else {
                 write_particle_spawn_offset(&mut spawn_offset, 0, config, &**random);
-                spawn_x += spawn_offset[0];
-                spawn_y += spawn_offset[1];
+                spawn_x += f64::from(spawn_offset[0]);
+                spawn_y += f64::from(spawn_offset[1]);
             }
         }
 
         let vt = idx * PARTICLE_VELOCITY_STRIDE;
-        state.velocities[vt] = vx;
-        state.velocities[vt + 1] = vy;
-        state.velocities[vt + 2] = vz;
+        state.velocities[vt] = vx as f32;
+        state.velocities[vt + 1] = vy as f32;
+        state.velocities[vt + 2] = vz as f32;
 
-        let spawn_scale = config.scale_min + random() * (config.scale_max - config.scale_min);
+        let spawn_scale = (f64::from(config.scale_min)
+            + random() * (f64::from(config.scale_max) - f64::from(config.scale_min)))
+            as f32;
         state.scales[idx] = spawn_scale;
 
         let tt = idx * PARTICLE_TRANSFORM_STRIDE;
-        data.transforms[tt] = spawn_x;
-        data.transforms[tt + 1] = spawn_y;
-        data.transforms[tt + 2] = vy.atan2(vx);
+        data.transforms[tt] = spawn_x as f32;
+        data.transforms[tt + 1] = spawn_y as f32;
+        data.transforms[tt + 2] = vy.atan2(vx) as f32;
         data.transforms[tt + 3] = if has_scale_curve {
             spawn_scale * sample_particle_curve(scale_curve.unwrap(), 0.0)
         } else {
             spawn_scale
         };
-        data.positions_z[idx] = spawn_z;
+        data.positions_z[idx] = spawn_z as f32;
         data.alphas[idx] = if has_alpha_curve {
             sample_particle_curve(alpha_curve.unwrap(), 0.0)
         } else {
@@ -226,20 +234,35 @@ pub(crate) fn emit_particle_burst_3d_impl(
             sample_particle_color_curve(&mut data.colors, ct, color_curve.unwrap(), 0.0);
         } else if has_color_variance {
             let r0 = clamp01(
-                config.color_start_r + (random() - 0.5) * 2.0 * config.color_start_variance_r,
+                (f64::from(config.color_start_r)
+                    + (random() - 0.5) * 2.0 * f64::from(config.color_start_variance_r))
+                    as f32,
             );
             let g0 = clamp01(
-                config.color_start_g + (random() - 0.5) * 2.0 * config.color_start_variance_g,
+                (f64::from(config.color_start_g)
+                    + (random() - 0.5) * 2.0 * f64::from(config.color_start_variance_g))
+                    as f32,
             );
             let b0 = clamp01(
-                config.color_start_b + (random() - 0.5) * 2.0 * config.color_start_variance_b,
+                (f64::from(config.color_start_b)
+                    + (random() - 0.5) * 2.0 * f64::from(config.color_start_variance_b))
+                    as f32,
             );
-            let r1 =
-                clamp01(config.color_end_r + (random() - 0.5) * 2.0 * config.color_end_variance_r);
-            let g1 =
-                clamp01(config.color_end_g + (random() - 0.5) * 2.0 * config.color_end_variance_g);
-            let b1 =
-                clamp01(config.color_end_b + (random() - 0.5) * 2.0 * config.color_end_variance_b);
+            let r1 = clamp01(
+                (f64::from(config.color_end_r)
+                    + (random() - 0.5) * 2.0 * f64::from(config.color_end_variance_r))
+                    as f32,
+            );
+            let g1 = clamp01(
+                (f64::from(config.color_end_g)
+                    + (random() - 0.5) * 2.0 * f64::from(config.color_end_variance_g))
+                    as f32,
+            );
+            let b1 = clamp01(
+                (f64::from(config.color_end_b)
+                    + (random() - 0.5) * 2.0 * f64::from(config.color_end_variance_b))
+                    as f32,
+            );
             state.color_birth[ct] = r0;
             state.color_birth[ct + 1] = g0;
             state.color_birth[ct + 2] = b0;
@@ -279,7 +302,7 @@ pub(crate) fn emit_particle_burst_3d_impl(
                 0.0
             }) as u16;
         state.rotation_speeds[idx] = if has_rot_speed {
-            config.rotation_speed_min + random() * rot_speed_range
+            (f64::from(config.rotation_speed_min) + random() * rot_speed_range) as f32
         } else {
             0.0
         };
@@ -289,7 +312,8 @@ pub(crate) fn emit_particle_burst_3d_impl(
     return to_spawn;
 }
 
-fn rotate_to_direction(lx: f32, ly: f32, lz: f32, dx: f32, dy: f32, dz: f32) -> [f32; 3] {
+// flight-lint: allow(f64) spawn-direction math runs in f64 alongside the f64 RandomSource draws
+fn rotate_to_direction(lx: f64, ly: f64, lz: f64, dx: f64, dy: f64, dz: f64) -> [f64; 3] {
     let kx = -dy;
     let ky = dx;
     let sin_angle = (kx * kx + ky * ky).sqrt();

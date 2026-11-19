@@ -115,6 +115,7 @@ pub fn compute_particle_emitter_3d_local_bounds_aabb(
     compute_particle_emitter_3d_local_bounds_aabb_impl(out, &guard.data);
 }
 
+// flight-lint: allow(f64) f32 particle positions widen into the f64 geometry bounds
 pub(crate) fn compute_particle_emitter_3d_local_bounds_aabb_impl(
     out: &mut Aabb,
     data: &ParticleEmitterData,
@@ -160,12 +161,13 @@ pub(crate) fn compute_particle_emitter_3d_local_bounds_aabb_impl(
             max_z = pz + r;
         }
     }
-    out.min.x = min_x;
-    out.min.y = min_y;
-    out.min.z = min_z;
-    out.max.x = max_x;
-    out.max.y = max_y;
-    out.max.z = max_z;
+    // Particle positions are the f32 transform lane; the bounds widen into the f64 Aabb.
+    out.min.x = f64::from(min_x);
+    out.min.y = f64::from(min_y);
+    out.min.z = f64::from(min_z);
+    out.max.x = f64::from(max_x);
+    out.max.y = f64::from(max_y);
+    out.max.z = f64::from(max_z);
 }
 
 pub fn emit_particle_burst_3d(
@@ -455,18 +457,20 @@ fn sift_max_heap(indices: &mut [u32], depths: &[f64], start: usize, count: usize
 }
 
 // flight-lint: allow(conform-extra) D16: Rust convenience wrapper; TS only has indices-based sort
+// flight-lint: allow(f64) camera view matrices are f64; f32 particle positions widen for the depth key
 pub fn sort_particle_emitter_3d_by_view_depth(
     emitter: &Ref<ParticleEmitter3D>,
-    view_matrix: &[f32; 16],
+    view_matrix: &[f64; 16],
 ) {
     let mut guard = emitter.write().unwrap();
     sort_particle_emitter_3d_by_view_depth_impl(&mut guard.data, view_matrix);
 }
 
 // flight-lint: allow(conform-extra) D16: Rust convenience wrapper; TS only has indices-based sort
+// flight-lint: allow(f64) camera view matrices are f64; f32 particle positions widen for the depth key
 pub(crate) fn sort_particle_emitter_3d_by_view_depth_impl(
     data: &mut ParticleEmitterData,
-    view_matrix: &[f32; 16],
+    view_matrix: &[f64; 16],
 ) {
     let count = data.particle_count;
     if count <= 1 {
@@ -480,10 +484,12 @@ pub(crate) fn sort_particle_emitter_3d_by_view_depth_impl(
     indices.sort_by(|&a, &b| {
         let ta = a * PARTICLE_TRANSFORM_STRIDE;
         let tb = b * PARTICLE_TRANSFORM_STRIDE;
-        let depth_a =
-            data.transforms[ta] * m02 + data.transforms[ta + 1] * m12 + data.positions_z[a] * m22;
-        let depth_b =
-            data.transforms[tb] * m02 + data.transforms[tb + 1] * m12 + data.positions_z[b] * m22;
+        let depth_a = f64::from(data.transforms[ta]) * m02
+            + f64::from(data.transforms[ta + 1]) * m12
+            + f64::from(data.positions_z[a]) * m22;
+        let depth_b = f64::from(data.transforms[tb]) * m02
+            + f64::from(data.transforms[tb + 1]) * m12
+            + f64::from(data.positions_z[b]) * m22;
         depth_a
             .partial_cmp(&depth_b)
             .unwrap_or(std::cmp::Ordering::Equal)
@@ -524,7 +530,7 @@ pub fn sort_particle_emitter_3d_indices_by_view_depth(
     out_indices: &mut [u32],
     out_view_depths: &mut [f64],
     source: &Ref<ParticleEmitter3D>,
-    position_to_view: &[f32; 16],
+    position_to_view: &[f64; 16],
 ) -> bool {
     let guard = source.read().unwrap();
     return sort_particle_emitter_3d_indices_by_view_depth_impl(
@@ -540,7 +546,7 @@ pub(crate) fn sort_particle_emitter_3d_indices_by_view_depth_impl(
     out_indices: &mut [u32],
     out_view_depths: &mut [f64],
     data: &ParticleEmitterData,
-    position_to_view: &[f32; 16],
+    position_to_view: &[f64; 16],
 ) -> bool {
     let count = data.particle_count;
     if get_particle_emitter_3d_capacity_impl(data) < count
@@ -558,10 +564,10 @@ pub(crate) fn sort_particle_emitter_3d_indices_by_view_depth_impl(
         let y = transforms[tt + 1] as f64;
         let z = positions_z[index] as f64;
         out_indices[index] = index as u32;
-        out_view_depths[index] = position_to_view[2] as f64 * x
-            + position_to_view[6] as f64 * y
-            + position_to_view[10] as f64 * z
-            + position_to_view[14] as f64;
+        out_view_depths[index] = position_to_view[2] * x
+            + position_to_view[6] * y
+            + position_to_view[10] * z
+            + position_to_view[14];
     }
 
     let n = count;
