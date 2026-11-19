@@ -16,9 +16,9 @@ use flight_signals::{Signal, connect_signal, emit_signal};
 #[derive(Clone)]
 struct TestNodeFeatures {
     bounds: Rectangle,
-    origin_x: f32,
-    origin_y: f32,
-    rotation: f32,
+    origin_x: f64,
+    origin_y: f64,
+    rotation: f64,
 }
 
 type FeatureMap = Arc<RwLock<Vec<(NodeRef, TestNodeFeatures)>>>;
@@ -33,16 +33,16 @@ struct TestContext {
 
 #[derive(Clone, Copy)]
 struct NodeTransform {
-    pivot_x: f32,
-    pivot_y: f32,
-    rotation: f32,
-    scale_x: f32,
-    scale_y: f32,
-    skew_x: f32,
-    skew_y: f32,
+    pivot_x: f64,
+    pivot_y: f64,
+    rotation: f64,
+    scale_x: f64,
+    scale_y: f64,
+    skew_x: f64,
+    skew_y: f64,
     visible: bool,
-    x: f32,
-    y: f32,
+    x: f64,
+    y: f64,
 }
 
 mod create_gizmo_state {
@@ -230,6 +230,21 @@ mod set_gizmo_custom_pivot {
         assert_eq!(transform.x, 90.0);
         assert_eq!(transform.y, 70.0);
     }
+
+    #[test]
+    fn places_the_handles_at_an_exact_double_custom_pivot() {
+        // 0.1 has no exact f32 and f32 spacing at 1e9 is 64: both survive only as doubles.
+        let context = create_test_context(&[create_test_node()]);
+        set_gizmo_mode(&context.state, GizmoMode::Scale);
+        set_gizmo_pivot(&context.state, GizmoPivot::Custom);
+        set_gizmo_custom_pivot(&context.state, 0.1, 1_000_000_000.5);
+        update_gizmo(&context.state);
+
+        let handle_root = child(&get_gizmo_root(&context.overlay), "GizmoHandleRoot");
+        let transform = node_transform(&handle_root);
+        assert_eq!(transform.x, 100.0 + 0.1);
+        assert_eq!(transform.y, 50.0 + 1_000_000_000.5);
+    }
 }
 
 mod set_gizmo_mode {
@@ -316,9 +331,9 @@ mod set_gizmo_snap_rotation {
         let context = create_test_context(&[create_test_node()]);
         set_gizmo_mode(&context.state, GizmoMode::Rotate);
         set_gizmo_snap_rotation(&context.state, 15.0);
-        assert_f32_close(rotation_delta(&context, 22.0), 15.0);
+        assert_close(rotation_delta(&context, 22.0), 15.0);
         set_gizmo_snap_rotation(&context.state, 0.0);
-        assert_f32_close(rotation_delta(&context, 22.0), 22.0);
+        assert_close(rotation_delta(&context, 22.0), 22.0);
     }
 }
 
@@ -330,9 +345,9 @@ mod set_gizmo_snap_scale {
         let context = create_test_context(&[create_test_node()]);
         set_gizmo_mode(&context.state, GizmoMode::Scale);
         set_gizmo_snap_scale(&context.state, 0.25);
-        assert_f32_close(scale_delta(&context, 1.4), 1.5);
+        assert_close(scale_delta(&context, 1.4), 1.5);
         set_gizmo_snap_scale(&context.state, 0.0);
-        assert_f32_close(scale_delta(&context, 1.4), 1.4);
+        assert_close(scale_delta(&context, 1.4), 1.4);
     }
 }
 
@@ -343,17 +358,17 @@ mod set_gizmo_snap_translate {
     fn sets_world_unit_translation_snapping_and_accepts_zero_as_off() {
         let context = create_test_context(&[create_test_node()]);
         set_gizmo_snap_translate(&context.state, 10.0);
-        assert_f32_close(translation_delta(&context, 13.0), 10.0);
+        assert_close(translation_delta(&context, 13.0), 10.0);
         set_gizmo_snap_translate(&context.state, 0.0);
-        assert_f32_close(translation_delta(&context, 13.0), 13.0);
+        assert_close(translation_delta(&context, 13.0), 13.0);
     }
 
     #[test]
     fn treats_invalid_grid_increments_as_disabled() {
-        for step in [-10.0, f32::NAN, f32::INFINITY] {
+        for step in [-10.0, f64::NAN, f64::INFINITY] {
             let context = create_test_context(&[create_test_node()]);
             set_gizmo_snap_translate(&context.state, step);
-            assert_f32_close(translation_delta(&context, -5.0), -5.0);
+            assert_close(translation_delta(&context, -5.0), -5.0);
         }
     }
 }
@@ -390,8 +405,8 @@ mod update_gizmo {
         update_gizmo(&context.state);
         let handle_root = child(&get_gizmo_root(&context.overlay), "GizmoHandleRoot");
         let transform = node_transform(&handle_root);
-        assert_f32_close(transform.x, 115.0);
-        assert_f32_close(transform.y, 65.0);
+        assert_close(transform.x, 115.0);
+        assert_close(transform.y, 65.0);
 
         context.camera.write().unwrap().zoom = 2.0;
         update_gizmo(&context.state);
@@ -477,12 +492,12 @@ mod update_gizmo {
     fn normalizes_rotation_across_the_negative_positive_angle_seam() {
         let context = create_test_context(&[create_test_node()]);
         set_gizmo_mode(&context.state, GizmoMode::Rotate);
-        let values = Arc::new(Mutex::new(Vec::<f32>::new()));
+        let values = Arc::new(Mutex::new(Vec::<f64>::new()));
         connect_values(&get_gizmo_signals(&context.state).on_rotate, &values);
         let handle = get_gizmo_handle(&context.overlay, "GizmoRotateHandle");
         let radius = 52.0;
-        let start = 170.0 * std::f32::consts::PI / 180.0;
-        let current = -170.0 * std::f32::consts::PI / 180.0;
+        let start = 170.0 * std::f64::consts::PI / 180.0;
+        let current = -170.0 * std::f64::consts::PI / 180.0;
         emit_pointer(
             &handle,
             PointerSignal::Down,
@@ -503,7 +518,7 @@ mod update_gizmo {
                 false,
             ),
         );
-        assert_f32_close_steps(*values.lock().unwrap().last().unwrap(), 20.0, 16.0);
+        assert_close(*values.lock().unwrap().last().unwrap(), 20.0);
     }
 
     #[test]
@@ -520,14 +535,14 @@ mod update_gizmo {
                 rotation: 30.0,
             },
         );
-        context.camera.write().unwrap().rotation = 10.0 * std::f32::consts::PI / 180.0;
+        context.camera.write().unwrap().rotation = 10.0 * std::f64::consts::PI / 180.0;
         let handle_root = child(&get_gizmo_root(&context.overlay), "GizmoHandleRoot");
         set_gizmo_space(&context.state, GizmoSpace::World);
         update_gizmo(&context.state);
         assert_eq!(node_transform(&handle_root).rotation, 0.0);
         set_gizmo_space(&context.state, GizmoSpace::Local);
         update_gizmo(&context.state);
-        assert_f32_close(node_transform(&handle_root).rotation, 20.0);
+        assert_close(node_transform(&handle_root).rotation, 20.0);
     }
 
     #[test]
@@ -551,8 +566,8 @@ mod update_gizmo {
             ("GizmoScaleSouthwestHandle", -20.0, 10.0),
         ] {
             let transform = node_transform(&get_gizmo_handle(&context.overlay, name));
-            assert_f32_close(transform.x, x);
-            assert_f32_close(transform.y, y);
+            assert_close(transform.x, x);
+            assert_close(transform.y, y);
         }
     }
 
@@ -593,7 +608,7 @@ mod update_gizmo {
     fn supports_axis_uniform_and_degenerate_scale_gestures() {
         let context = create_test_context(&[create_test_node()]);
         set_gizmo_mode(&context.state, GizmoMode::Scale);
-        let values = Arc::new(Mutex::new(Vec::<(f32, f32)>::new()));
+        let values = Arc::new(Mutex::new(Vec::<(f64, f64)>::new()));
         connect_pairs(&get_gizmo_signals(&context.state).on_scale, &values);
         let x_handle = get_gizmo_handle(&context.overlay, "GizmoScaleEastHandle");
         emit_pointer(
@@ -637,7 +652,7 @@ mod update_gizmo {
     #[test]
     fn supports_free_and_axis_translation_and_ignores_other_pointer_ids() {
         let context = create_test_context(&[create_test_node()]);
-        let values = Arc::new(Mutex::new(Vec::<(f32, f32)>::new()));
+        let values = Arc::new(Mutex::new(Vec::<(f64, f64)>::new()));
         connect_pairs(&get_gizmo_signals(&context.state).on_translate, &values);
         let y_handle = get_gizmo_handle(&context.overlay, "GizmoTranslateYHandle");
         emit_pointer(
@@ -696,7 +711,7 @@ mod update_gizmo {
         let context = create_test_context(&[create_test_node()]);
         set_gizmo_mode(&context.state, GizmoMode::Rotate);
         set_gizmo_snap_rotation(&context.state, 15.0);
-        let values = Arc::new(Mutex::new(Vec::<f32>::new()));
+        let values = Arc::new(Mutex::new(Vec::<f64>::new()));
         connect_values(&get_gizmo_signals(&context.state).on_rotate, &values);
         let handle = get_gizmo_handle(&context.overlay, "GizmoRotateHandle");
         emit_pointer(&handle, PointerSignal::Down, pointer(152.0, 50.0, 1, false));
@@ -705,7 +720,7 @@ mod update_gizmo {
             PointerSignal::Move,
             pointer(100.0, 102.0, 1, false),
         );
-        assert_f32_close(*values.lock().unwrap().last().unwrap(), 90.0);
+        assert_close(*values.lock().unwrap().last().unwrap(), 90.0);
     }
 
     #[test]
@@ -724,7 +739,7 @@ mod update_gizmo {
         );
         set_gizmo_snap_translate(&context.state, 10.0);
         update_gizmo(&context.state);
-        let values = Arc::new(Mutex::new(Vec::<(f32, f32)>::new()));
+        let values = Arc::new(Mutex::new(Vec::<(f64, f64)>::new()));
         connect_pairs(&get_gizmo_signals(&context.state).on_translate, &values);
         let handle = get_gizmo_handle(&context.overlay, "GizmoTranslateXHandle");
 
@@ -751,9 +766,9 @@ mod update_gizmo {
     #[test]
     fn keeps_world_space_handles_screen_aligned_while_emitting_document_world_deltas() {
         let context = create_test_context(&[create_test_node()]);
-        context.camera.write().unwrap().rotation = std::f32::consts::PI * 0.5;
+        context.camera.write().unwrap().rotation = std::f64::consts::PI * 0.5;
         update_gizmo(&context.state);
-        let values = Arc::new(Mutex::new(Vec::<(f32, f32)>::new()));
+        let values = Arc::new(Mutex::new(Vec::<(f64, f64)>::new()));
         connect_pairs(&get_gizmo_signals(&context.state).on_translate, &values);
         let handle = get_gizmo_handle(&context.overlay, "GizmoTranslateXHandle");
 
@@ -819,7 +834,7 @@ mod update_gizmo {
             camera.zoom = 2.5;
         }
         update_gizmo(&context.state);
-        let values = Arc::new(Mutex::new(Vec::<(f32, f32)>::new()));
+        let values = Arc::new(Mutex::new(Vec::<(f64, f64)>::new()));
         connect_pairs(&get_gizmo_signals(&context.state).on_translate, &values);
         let xy_handle = get_gizmo_handle(&context.overlay, "GizmoTranslateXYHandle");
         emit_pointer(
@@ -940,7 +955,7 @@ mod update_gizmo {
     fn supports_y_axis_scale_and_ignores_pointer_traffic_from_another_identity() {
         let context = create_test_context(&[create_test_node()]);
         set_gizmo_mode(&context.state, GizmoMode::Scale);
-        let values = Arc::new(Mutex::new(Vec::<(f32, f32)>::new()));
+        let values = Arc::new(Mutex::new(Vec::<(f64, f64)>::new()));
         connect_pairs(&get_gizmo_signals(&context.state).on_scale, &values);
         let handle = get_gizmo_handle(&context.overlay, "GizmoScaleNorthHandle");
         emit_pointer(
@@ -970,36 +985,24 @@ enum PointerSignal {
     Up,
 }
 
-fn assert_f32_close(actual: f32, expected: f32) {
-    // The pinned source uses toBeCloseTo(..., 8), whose original absolute bound is 5e-9.
-    let bound = 5e-9_f32.max(4.0 * f32::EPSILON * expected.abs().max(1.0));
+fn assert_close(actual: f64, expected: f64) {
+    // TS: toBeCloseTo(..., 8), an absolute bound of 5e-9.
     assert!(
-        (actual - expected).abs() <= bound,
-        "{actual} != {expected} within {bound}"
+        (actual - expected).abs() <= 5e-9,
+        "{actual} != {expected} within 5e-9"
     );
 }
 
-fn assert_f32_close_steps(actual: f32, expected: f32, operation_count: f32) {
-    // The pinned source uses toBeCloseTo(..., 8), whose original absolute bound is 5e-9. This
-    // angle-seam path accumulates sixteen public-f32 projection/trigonometry operations.
-    let bound = 5e-9_f32.max(operation_count * f32::EPSILON * expected.abs().max(1.0));
-    assert!(
-        (actual - expected).abs() <= bound,
-        "{actual} != {expected} within {bound}"
-    );
+fn assert_pair_close(actual: (f64, f64), expected: (f64, f64)) {
+    assert_close(actual.0, expected.0);
+    assert_close(actual.1, expected.1);
 }
 
-fn assert_pair_close(actual: (f32, f32), expected: (f32, f32)) {
-    assert_f32_close(actual.0, expected.0);
-    assert_f32_close(actual.1, expected.1);
-}
-
-fn assert_vec_close(actual: &[f32], expected: &[f32]) {
+fn assert_vec_close(actual: &[f64], expected: &[f64]) {
     assert_eq!(actual.len(), expected.len());
     for (actual, expected) in actual.iter().zip(expected) {
-        // The pinned source rounds the transform parity values to eight decimal places. The
-        // projected gesture path accumulates at most thirty-two public-f32 matrix/trig operations.
-        assert_f32_close_steps(*actual, *expected, 32.0);
+        // The pinned source rounds the transform parity values to eight decimal places.
+        assert_close(*actual, *expected);
     }
 }
 
@@ -1028,20 +1031,20 @@ fn connect_count(signal: &Signal<()>, count: &Arc<Mutex<usize>>) {
     );
 }
 
-fn connect_pairs(signal: &Signal<(f32, f32)>, values: &Arc<Mutex<Vec<(f32, f32)>>>) {
+fn connect_pairs(signal: &Signal<(f64, f64)>, values: &Arc<Mutex<Vec<(f64, f64)>>>) {
     let values = values.clone();
     connect_signal(
         signal,
-        Arc::new(move |value: &(f32, f32)| values.lock().unwrap().push(*value)),
+        Arc::new(move |value: &(f64, f64)| values.lock().unwrap().push(*value)),
         None,
     );
 }
 
-fn connect_values(signal: &Signal<f32>, values: &Arc<Mutex<Vec<f32>>>) {
+fn connect_values(signal: &Signal<f64>, values: &Arc<Mutex<Vec<f64>>>) {
     let values = values.clone();
     connect_signal(
         signal,
-        Arc::new(move |value: &f32| values.lock().unwrap().push(*value)),
+        Arc::new(move |value: &f64| values.lock().unwrap().push(*value)),
         None,
     );
 }
@@ -1129,7 +1132,7 @@ fn emit_pointer(node: &NodeRef, signal: PointerSignal, data: PointerEventData) {
     emit_signal(&signal, &data);
 }
 
-fn features(x: f32, y: f32, width: f32, height: f32) -> TestNodeFeatures {
+fn features(x: f64, y: f64, width: f64, height: f64) -> TestNodeFeatures {
     return TestNodeFeatures {
         bounds: create_rectangle(x, y, width, height),
         origin_x: x + width * 0.5,
@@ -1166,7 +1169,7 @@ fn node_transform(node: &NodeRef) -> NodeTransform {
     };
 }
 
-fn pointer(x: f32, y: f32, pointer_id: i32, shift_key: bool) -> PointerEventData {
+fn pointer(x: f64, y: f64, pointer_id: i32, shift_key: bool) -> PointerEventData {
     return PointerEventData {
         buttons: 1,
         local_x: x,
@@ -1181,7 +1184,7 @@ fn pointer(x: f32, y: f32, pointer_id: i32, shift_key: bool) -> PointerEventData
     };
 }
 
-fn projected_pointer(camera: &Ref<Camera2D>, world_x: f32, world_y: f32) -> PointerEventData {
+fn projected_pointer(camera: &Ref<Camera2D>, world_x: f64, world_y: f64) -> PointerEventData {
     let mut overlay = flight_geometry::create_vector2(0.0, 0.0);
     project_camera_2d_point(
         &camera.read().unwrap(),
@@ -1203,11 +1206,11 @@ fn remove_features(map: &FeatureMap, node: &NodeRef) {
         .retain(|(candidate, _)| !Arc::ptr_eq(candidate, node));
 }
 
-fn rotation_delta(context: &TestContext, degrees: f32) -> f32 {
-    let values = Arc::new(Mutex::new(Vec::<f32>::new()));
+fn rotation_delta(context: &TestContext, degrees: f64) -> f64 {
+    let values = Arc::new(Mutex::new(Vec::<f64>::new()));
     connect_values(&get_gizmo_signals(&context.state).on_rotate, &values);
     let handle = get_gizmo_handle(&context.overlay, "GizmoRotateHandle");
-    let radians = degrees * std::f32::consts::PI / 180.0;
+    let radians = degrees * std::f64::consts::PI / 180.0;
     emit_pointer(&handle, PointerSignal::Down, pointer(152.0, 50.0, 1, false));
     emit_pointer(
         &handle,
@@ -1227,10 +1230,10 @@ fn rotation_delta(context: &TestContext, degrees: f32) -> f32 {
 fn run_world_gesture(
     mode: GizmoMode,
     handle_name: &str,
-    start: (f32, f32),
-    end: (f32, f32),
+    start: (f64, f64),
+    end: (f64, f64),
     transformed_camera: bool,
-) -> Vec<f32> {
+) -> Vec<f64> {
     let node = create_test_node();
     let context = create_test_context(&[node.clone()]);
     set_gizmo_mode(&context.state, mode);
@@ -1239,7 +1242,7 @@ fn run_world_gesture(
         camera.x = 12.0;
         camera.y = -7.0;
         camera.zoom = 2.25;
-        camera.rotation = 35.0 * std::f32::consts::PI / 180.0;
+        camera.rotation = 35.0 * std::f64::consts::PI / 180.0;
         drop(camera);
         update_gizmo(&context.state);
     }
@@ -1248,8 +1251,8 @@ fn run_world_gesture(
     let signals = get_gizmo_signals(&context.state);
     connect_count(&signals.on_transform_begin, &began);
     connect_count(&signals.on_transform_end, &ended);
-    let one = Arc::new(Mutex::new(Vec::<f32>::new()));
-    let two = Arc::new(Mutex::new(Vec::<(f32, f32)>::new()));
+    let one = Arc::new(Mutex::new(Vec::<f64>::new()));
+    let two = Arc::new(Mutex::new(Vec::<(f64, f64)>::new()));
     match mode {
         GizmoMode::Translate => connect_pairs(&signals.on_translate, &two),
         GizmoMode::Rotate => connect_values(&signals.on_rotate, &one),
@@ -1288,8 +1291,8 @@ fn run_world_gesture(
     return result;
 }
 
-fn scale_delta(context: &TestContext, scale: f32) -> f32 {
-    let values = Arc::new(Mutex::new(Vec::<(f32, f32)>::new()));
+fn scale_delta(context: &TestContext, scale: f64) -> f64 {
+    let values = Arc::new(Mutex::new(Vec::<(f64, f64)>::new()));
     connect_pairs(&get_gizmo_signals(&context.state).on_scale, &values);
     let handle = get_gizmo_handle(&context.overlay, "GizmoScaleEastHandle");
     emit_pointer(&handle, PointerSignal::Down, pointer(110.0, 50.0, 1, false));
@@ -1325,8 +1328,8 @@ fn shape_contains_number(node: &NodeRef, expected: f64) -> bool {
         .any(|token| matches!(token, ShapeCommandToken::Number(value) if *value == expected));
 }
 
-fn translation_delta(context: &TestContext, delta_x: f32) -> f32 {
-    let values = Arc::new(Mutex::new(Vec::<(f32, f32)>::new()));
+fn translation_delta(context: &TestContext, delta_x: f64) -> f64 {
+    let values = Arc::new(Mutex::new(Vec::<(f64, f64)>::new()));
     connect_pairs(&get_gizmo_signals(&context.state).on_translate, &values);
     let handle = get_gizmo_handle(&context.overlay, "GizmoTranslateXHandle");
     emit_pointer(&handle, PointerSignal::Down, pointer(172.0, 50.0, 1, false));

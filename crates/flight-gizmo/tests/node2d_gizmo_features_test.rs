@@ -57,7 +57,7 @@ mod create_node2d_gizmo_features {
 
         assert!(bounds.width > 0.0);
         assert!(bounds.height > 0.0);
-        let radians = std::f32::consts::PI / 12.0;
+        let radians = std::f64::consts::PI / 12.0;
         assert_f32_close(origin.x, 10.0 + 8.0 * radians.cos() - 9.0 * radians.sin());
         assert_f32_close(origin.y, 20.0 + 8.0 * radians.sin() + 9.0 * radians.cos());
         assert_f32_close((features.get_world_rotation)(&node_ref), 45.0);
@@ -76,9 +76,9 @@ mod create_node2d_gizmo_features {
     }
 }
 
-fn assert_f32_close(actual: f32, expected: f32) {
+fn assert_f32_close(actual: f64, expected: f64) {
     // The pinned source uses toBeCloseTo(..., 8), whose original absolute bound is 5e-9.
-    let bound = 5e-9_f32.max(4.0 * f32::EPSILON * expected.abs().max(1.0));
+    let bound = 5e-9_f64.max(4.0 * f64::EPSILON * expected.abs().max(1.0));
     assert!(
         (actual - expected).abs() <= bound,
         "{actual} != {expected} within {bound}"

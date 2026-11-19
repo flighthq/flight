@@ -11,7 +11,7 @@ use crate::types::{GizmoAlignment, GizmoSmartGuideResult};
 /// Writes interleaved world- or local-space translation deltas that align all bounds to their
 /// combined edge or center (TS `computeGizmoAlignmentDeltas`).
 pub fn compute_gizmo_alignment_deltas(
-    out: &mut Vec<f32>,
+    out: &mut Vec<f64>,
     bounds: &[Rectangle],
     alignment: GizmoAlignment,
 ) {
@@ -24,8 +24,8 @@ pub fn compute_gizmo_alignment_deltas(
         alignment,
         GizmoAlignment::HorizontalCenter | GizmoAlignment::Left | GizmoAlignment::Right
     );
-    let mut minimum = f32::INFINITY;
-    let mut maximum = f32::NEG_INFINITY;
+    let mut minimum = f64::INFINITY;
+    let mut maximum = f64::NEG_INFINITY;
     for source in bounds {
         let start = if horizontal {
             get_rectangle_min_x(source)
@@ -78,7 +78,7 @@ pub fn find_gizmo_smart_guides(
     out: &mut GizmoSmartGuideResult,
     moving_bounds: &Rectangle,
     candidate_bounds: &[Rectangle],
-    threshold: f32,
+    threshold: f64,
 ) -> bool {
     out.delta_x = 0.0;
     out.delta_y = 0.0;
@@ -109,15 +109,15 @@ pub fn find_gizmo_smart_guides(
 
 fn find_gizmo_smart_guides_axis(
     out: &mut GizmoSmartGuideResult,
-    moving_start: f32,
-    moving_end: f32,
+    moving_start: f64,
+    moving_end: f64,
     candidate_bounds: &[Rectangle],
-    threshold: f32,
+    threshold: f64,
     horizontal: bool,
 ) -> bool {
     let moving_center = (moving_start + moving_end) * 0.5;
     let moving_anchors = [moving_start, moving_center, moving_end];
-    let mut best_distance = f32::INFINITY;
+    let mut best_distance = f64::INFINITY;
     let mut best_delta = 0.0;
     let mut best_guide = 0.0;
     for candidate in candidate_bounds {
@@ -149,7 +149,7 @@ fn find_gizmo_smart_guides_axis(
             }
         }
     }
-    if best_distance == f32::INFINITY {
+    if best_distance == f64::INFINITY {
         return false;
     }
     if horizontal {

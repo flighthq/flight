@@ -42,6 +42,20 @@ mod compute_gizmo_alignment_deltas {
     }
 
     #[test]
+    fn writes_a_delta_of_one_billion_and_a_half_as_an_exact_double() {
+        // f32 spacing at 1e9 is 64: an f32 delta store would round this to -1e9.
+        let mut out = Vec::new();
+        let bounds = [
+            create_rectangle(0.0, 0.0, 1.0, 1.0),
+            create_rectangle(1_000_000_000.5, 0.0, 1.0, 1.0),
+        ];
+
+        compute_gizmo_alignment_deltas(&mut out, &bounds, GizmoAlignment::Left);
+
+        assert_eq!(out, vec![0.0, 0.0, -1_000_000_000.5, 0.0]);
+    }
+
+    #[test]
     fn clears_stale_output_for_an_empty_selection() {
         let mut out = vec![1.0, 2.0, 3.0, 4.0];
 
@@ -53,6 +67,22 @@ mod compute_gizmo_alignment_deltas {
 
 mod find_gizmo_smart_guides {
     use super::*;
+
+    #[test]
+    fn writes_a_guide_delta_as_an_exact_double() {
+        // 0.1 has no exact f32: an f32 delta store would read back 0.10000000149011612.
+        let mut out = GizmoSmartGuideResult {
+            delta_x: 99.0,
+            delta_y: 99.0,
+            guide_x: None,
+            guide_y: None,
+        };
+        let moving = create_rectangle(0.0, 0.0, 10.0, 10.0);
+        let candidates = [create_rectangle(0.1, 500.0, 20.0, 10.0)];
+
+        assert!(find_gizmo_smart_guides(&mut out, &moving, &candidates, 1.0));
+        assert_eq!((out.delta_x, out.guide_x), (0.1, Some(0.1)));
+    }
 
     #[test]
     fn chooses_the_closest_edge_or_center_independently_on_each_axis() {
@@ -110,7 +140,7 @@ mod find_gizmo_smart_guides {
             &mut out,
             &moving,
             &candidates,
-            f32::INFINITY
+            f64::INFINITY
         ));
     }
 

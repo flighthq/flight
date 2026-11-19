@@ -1,7 +1,6 @@
 //! flight-compiler: target-native
 
 //! Interactive 2D transform gizmo state and retained overlay assembly (TS `gizmoState.ts`).
-// flight-lint: allow-file(f64) Shape commands use their canonical f64 path-coordinate lane; gizmo public values remain f32
 
 use std::sync::Arc;
 
@@ -48,19 +47,19 @@ enum GizmoHandlePlacement {
 
 #[derive(Clone, Copy)]
 struct GizmoDrag {
-    axis_rotation: f32,
+    axis_rotation: f64,
     handle: GizmoHandleKind,
     mode: GizmoTransformMode,
-    pivot_world_x: f32,
-    pivot_world_y: f32,
-    pivot_screen_x: f32,
-    pivot_screen_y: f32,
+    pivot_world_x: f64,
+    pivot_world_y: f64,
+    pivot_screen_x: f64,
+    pivot_screen_y: f64,
     pointer_id: i32,
-    screen_rotation: f32,
-    start_screen_x: f32,
-    start_screen_y: f32,
-    start_world_x: f32,
-    start_world_y: f32,
+    screen_rotation: f64,
+    start_screen_x: f64,
+    start_screen_y: f64,
+    start_world_x: f64,
+    start_world_y: f64,
 }
 
 struct GizmoHandle {
@@ -82,8 +81,8 @@ pub(crate) struct GizmoRuntime {
     bounds: Rectangle,
     camera: Option<Ref<flight_camera::Camera2D>>,
     connections: Vec<GizmoHandleConnection>,
-    custom_pivot_x: f32,
-    custom_pivot_y: f32,
+    custom_pivot_x: f64,
+    custom_pivot_y: f64,
     disposed: bool,
     drag: Option<GizmoDrag>,
     features: Option<GizmoNode2DFeatures>,
@@ -94,7 +93,7 @@ pub(crate) struct GizmoRuntime {
     outline: Ref<Shape>,
     outline_color: u32,
     outline_enabled: bool,
-    outline_points: [f32; 8],
+    outline_points: [f64; 8],
     overlay: Option<Ref<Scene2D>>,
     overlay_root: Node2DRef,
     pivot: GizmoPivot,
@@ -104,20 +103,20 @@ pub(crate) struct GizmoRuntime {
     selected_nodes: Vec<NodeRef>,
     selection: Option<Ref<flight_selection::SelectionState>>,
     signals: GizmoSignals,
-    snap_rotation: f32,
-    snap_scale: f32,
-    snap_translate: f32,
+    snap_rotation: f64,
+    snap_scale: f64,
+    snap_translate: f64,
     space: GizmoSpace,
-    viewport_height: f32,
-    viewport_width: f32,
+    viewport_height: f64,
+    viewport_width: f64,
 }
 
 enum GizmoEmission {
     Begin(Signal<()>),
     End(Signal<()>),
-    Rotate(Signal<f32>, f32),
-    Scale(Signal<(f32, f32)>, (f32, f32)),
-    Translate(Signal<(f32, f32)>, (f32, f32)),
+    Rotate(Signal<f64>, f64),
+    Scale(Signal<(f64, f64)>, (f64, f64)),
+    Translate(Signal<(f64, f64)>, (f64, f64)),
 }
 
 fn create_gizmo_named_shape(name: &str) -> Ref<Shape> {
@@ -225,7 +224,7 @@ pub fn initialize_gizmo_state(out: &mut GizmoState, options: &GizmoCreateOptions
         outline: outline.clone(),
         outline_color: DEFAULT_OUTLINE_COLOR,
         outline_enabled: true,
-        outline_points: [f32::NAN; 8],
+        outline_points: [f64::NAN; 8],
         overlay: Some(options.overlay_scene.clone()),
         overlay_root: overlay_root.clone(),
         pivot: GizmoPivot::Center,
@@ -268,10 +267,10 @@ fn compute_gizmo_bounds(runtime: &mut GizmoRuntime, selected: &[NodeRef]) -> boo
         .expect("live gizmo features")
         .clone();
     let mut found = false;
-    let mut min_x = f32::INFINITY;
-    let mut min_y = f32::INFINITY;
-    let mut max_x = f32::NEG_INFINITY;
-    let mut max_y = f32::NEG_INFINITY;
+    let mut min_x = f64::INFINITY;
+    let mut min_y = f64::INFINITY;
+    let mut max_x = f64::NEG_INFINITY;
+    let mut max_y = f64::NEG_INFINITY;
     for node in selected {
         if !(features.get_world_bounds_rectangle)(&mut runtime.node_bounds, node) {
             continue;
@@ -656,7 +655,7 @@ fn is_gizmo_mode_transform(mode: GizmoMode, transform: GizmoTransformMode) -> bo
     );
 }
 
-fn normalize_degrees(degrees: f32) -> f32 {
+fn normalize_degrees(degrees: f64) -> f64 {
     let mut value = degrees % 360.0;
     if value > 180.0 {
         value -= 360.0;
@@ -666,7 +665,7 @@ fn normalize_degrees(degrees: f32) -> f32 {
     return value;
 }
 
-fn normalize_gizmo_snap(value: f32) -> f32 {
+fn normalize_gizmo_snap(value: f64) -> f64 {
     return if value > 0.0 && value.is_finite() {
         value
     } else {
@@ -698,7 +697,7 @@ fn resolve_gizmo_pivot(runtime: &mut GizmoRuntime) {
     set_gizmo_pivot_to_bounds_center(runtime);
 }
 
-fn resolve_gizmo_screen_rotation(runtime: &GizmoRuntime) -> f32 {
+fn resolve_gizmo_screen_rotation(runtime: &GizmoRuntime) -> f64 {
     if runtime.space == GizmoSpace::World {
         return 0.0;
     }
@@ -721,7 +720,7 @@ fn resolve_gizmo_screen_rotation(runtime: &GizmoRuntime) -> f32 {
 }
 
 /// Sets the custom pivot in document world coordinates (TS `setGizmoCustomPivot`).
-pub fn set_gizmo_custom_pivot(state: &GizmoState, x: f32, y: f32) {
+pub fn set_gizmo_custom_pivot(state: &GizmoState, x: f64, y: f64) {
     let runtime_ref = get_gizmo_runtime(state);
     let mut runtime = runtime_ref.write().unwrap();
     runtime.custom_pivot_x = x;
@@ -746,7 +745,7 @@ pub fn set_gizmo_mode(state: &GizmoState, mode: GizmoMode) {
     }
 }
 
-fn set_gizmo_node_transform(node: &Node2DRef, x: f32, y: f32, rotation: f32) {
+fn set_gizmo_node_transform(node: &Node2DRef, x: f64, y: f64, rotation: f64) {
     let changed = {
         let mut node = node.write().unwrap();
         let fields = node.node2d_fields_mut();
@@ -804,17 +803,17 @@ pub fn set_gizmo_selection_outline_enabled(state: &GizmoState, enabled: bool) {
 }
 
 /// Sets rotation snapping in authoring-layer degrees (TS `setGizmoSnapRotation`).
-pub fn set_gizmo_snap_rotation(state: &GizmoState, degrees: f32) {
+pub fn set_gizmo_snap_rotation(state: &GizmoState, degrees: f64) {
     get_gizmo_runtime(state).write().unwrap().snap_rotation = normalize_gizmo_snap(degrees);
 }
 
 /// Sets multiplier snapping (TS `setGizmoSnapScale`).
-pub fn set_gizmo_snap_scale(state: &GizmoState, step: f32) {
+pub fn set_gizmo_snap_scale(state: &GizmoState, step: f64) {
     get_gizmo_runtime(state).write().unwrap().snap_scale = normalize_gizmo_snap(step);
 }
 
 /// Sets document-world translation snapping (TS `setGizmoSnapTranslate`).
-pub fn set_gizmo_snap_translate(state: &GizmoState, world_units: f32) {
+pub fn set_gizmo_snap_translate(state: &GizmoState, world_units: f64) {
     get_gizmo_runtime(state).write().unwrap().snap_translate = normalize_gizmo_snap(world_units);
 }
 
@@ -827,16 +826,11 @@ fn set_shape_hit_area(shape: &Ref<Shape>, x: f64, y: f64, width: f64, height: f6
     let node: NodeRef = shape.clone();
     set_node_hit_area(
         &node,
-        Some(HitArea::Rect(create_rectangle(
-            x as f32,
-            y as f32,
-            width as f32,
-            height as f32,
-        ))),
+        Some(HitArea::Rect(create_rectangle(x, y, width, height))),
     );
 }
 
-fn snap_gizmo_delta(value: f32, step: f32) -> f32 {
+fn snap_gizmo_delta(value: f64, step: f64) -> f64 {
     return if step == 0.0 {
         value
     } else {
@@ -844,7 +838,7 @@ fn snap_gizmo_delta(value: f32, step: f32) -> f32 {
     };
 }
 
-fn snap_gizmo_scale(value: f32, step: f32) -> f32 {
+fn snap_gizmo_scale(value: f64, step: f64) -> f64 {
     return if step == 0.0 {
         value
     } else {
@@ -985,10 +979,10 @@ fn update_gizmo_handle_layout(runtime: &GizmoRuntime) {
     let radians = runtime.handle_root.read().unwrap().node2d_fields().rotation * DEG_TO_RAD;
     let cos = radians.cos();
     let sin = radians.sin();
-    let mut min_x = f32::INFINITY;
-    let mut min_y = f32::INFINITY;
-    let mut max_x = f32::NEG_INFINITY;
-    let mut max_y = f32::NEG_INFINITY;
+    let mut min_x = f64::INFINITY;
+    let mut min_y = f64::INFINITY;
+    let mut max_x = f64::NEG_INFINITY;
+    let mut max_y = f64::NEG_INFINITY;
     for point in runtime.outline_points.chunks_exact(2) {
         let delta_x = point[0] - runtime.pivot_screen.x;
         let delta_y = point[1] - runtime.pivot_screen.y;
@@ -1001,7 +995,7 @@ fn update_gizmo_handle_layout(runtime: &GizmoRuntime) {
     }
     let center_x = (min_x + max_x) * 0.5;
     let center_y = (min_y + max_y) * 0.5;
-    let rotate_radius = MINIMUM_ROTATE_RADIUS_F32.max(
+    let rotate_radius = MINIMUM_ROTATE_RADIUS.max(
         max_x
             .abs()
             .max(min_x.abs())
@@ -1011,9 +1005,7 @@ fn update_gizmo_handle_layout(runtime: &GizmoRuntime) {
     for handle in &runtime.handles {
         let node: Node2DRef = handle.node.clone();
         match handle.placement {
-            GizmoHandlePlacement::Rotate => {
-                draw_gizmo_rotate_handle(&handle.node, rotate_radius as f64)
-            }
+            GizmoHandlePlacement::Rotate => draw_gizmo_rotate_handle(&handle.node, rotate_radius),
             GizmoHandlePlacement::ScaleEast => {
                 set_gizmo_node_transform(&node, max_x, center_y, 0.0)
             }
@@ -1097,14 +1089,14 @@ fn update_gizmo_outline(runtime: &mut GizmoRuntime) {
     );
     append_shape_move_to(
         &runtime.outline,
-        runtime.outline_points[0] as f64,
-        runtime.outline_points[1] as f64,
+        runtime.outline_points[0],
+        runtime.outline_points[1],
     );
     for index in [2usize, 4, 6, 0] {
         append_shape_line_to(
             &runtime.outline,
-            runtime.outline_points[index] as f64,
-            runtime.outline_points[index + 1] as f64,
+            runtime.outline_points[index],
+            runtime.outline_points[index + 1],
         );
     }
 }
@@ -1112,10 +1104,10 @@ fn update_gizmo_outline(runtime: &mut GizmoRuntime) {
 fn update_gizmo_scale(
     runtime: &GizmoRuntime,
     drag: &GizmoDrag,
-    screen_x: f32,
-    screen_y: f32,
+    screen_x: f64,
+    screen_y: f64,
     uniform: bool,
-) -> (f32, f32) {
+) -> (f64, f64) {
     let cos = drag.screen_rotation.cos();
     let sin = drag.screen_rotation.sin();
     let start_x = drag.start_screen_x - drag.pivot_screen_x;
@@ -1129,14 +1121,14 @@ fn update_gizmo_scale(
     let mut scale_x = 1.0;
     let mut scale_y = 1.0;
     if drag.handle == GizmoHandleKind::ScaleX {
-        if start_local_x.abs() > f32::EPSILON {
+        if start_local_x.abs() > f64::EPSILON {
             scale_x = current_local_x / start_local_x;
         }
         if uniform {
             scale_y = scale_x;
         }
     } else if drag.handle == GizmoHandleKind::ScaleY {
-        if start_local_y.abs() > f32::EPSILON {
+        if start_local_y.abs() > f64::EPSILON {
             scale_y = current_local_y / start_local_y;
         }
         if uniform {
@@ -1145,7 +1137,7 @@ fn update_gizmo_scale(
     } else {
         let start_length = start_local_x.hypot(start_local_y);
         let current_length = current_local_x.hypot(current_local_y);
-        let uniform_scale = if start_length > f32::EPSILON {
+        let uniform_scale = if start_length > f64::EPSILON {
             current_length / start_length
         } else {
             1.0
@@ -1198,9 +1190,9 @@ fn update_gizmo_transform(
 fn update_gizmo_translation(
     runtime: &mut GizmoRuntime,
     drag: &GizmoDrag,
-    screen_x: f32,
-    screen_y: f32,
-) -> (f32, f32) {
+    screen_x: f64,
+    screen_y: f64,
+) -> (f64, f64) {
     {
         let camera = runtime
             .camera
@@ -1249,9 +1241,8 @@ const HANDLE_CENTER_SIZE: f64 = 7.0;
 const HANDLE_LENGTH: f64 = 72.0;
 const HIT_THICKNESS: f64 = 9.0;
 const MINIMUM_ROTATE_RADIUS: f64 = 52.0;
-const MINIMUM_ROTATE_RADIUS_F32: f32 = 52.0;
 const ROTATE_COLOR: u32 = 0xffca28;
-const ROTATE_PADDING: f32 = 20.0;
+const ROTATE_PADDING: f64 = 20.0;
 const SCALE_BOX_SIZE: f64 = 11.0;
 const X_AXIS_COLOR: u32 = 0xef5350;
 const Y_AXIS_COLOR: u32 = 0x66bb6a;

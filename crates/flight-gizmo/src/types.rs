@@ -25,10 +25,10 @@ pub enum GizmoAlignment {
 /// The closest vertical and horizontal smart guides for one moving bounds rectangle.
 #[derive(Clone, Copy, Debug, Default, PartialEq)]
 pub struct GizmoSmartGuideResult {
-    pub delta_x: f32,
-    pub delta_y: f32,
-    pub guide_x: Option<f32>,
-    pub guide_y: Option<f32>,
+    pub delta_x: f64,
+    pub delta_y: f64,
+    pub guide_x: Option<f64>,
+    pub guide_y: Option<f64>,
 }
 
 /// Projects graph features required by the 2D gizmo without narrowing selection identity to one
@@ -38,7 +38,7 @@ pub struct GizmoSmartGuideResult {
 pub struct GizmoNode2DFeatures {
     pub get_world_bounds_rectangle: Arc<dyn Fn(&mut Rectangle, &NodeRef) -> bool + Send + Sync>,
     pub get_world_origin: Arc<dyn Fn(&mut Vector2, &NodeRef) + Send + Sync>,
-    pub get_world_rotation: Arc<dyn Fn(&NodeRef) -> f32 + Send + Sync>,
+    pub get_world_rotation: Arc<dyn Fn(&NodeRef) -> f64 + Send + Sync>,
 }
 
 /// Semantic identity of one interactive gizmo handle (TS `GizmoHandleKind`).
@@ -99,18 +99,18 @@ pub struct GizmoCreateOptions {
     pub features: GizmoNode2DFeatures,
     pub overlay_scene: Ref<Scene2D>,
     pub selection: Ref<SelectionState>,
-    pub viewport_height: f32,
-    pub viewport_width: f32,
+    pub viewport_height: f64,
+    pub viewport_width: f64,
 }
 
 /// Transform command signals emitted by the gizmo controller (TS `GizmoSignals`).
 #[derive(Clone)]
 pub struct GizmoSignals {
-    pub on_rotate: Signal<f32>,
-    pub on_scale: Signal<(f32, f32)>,
+    pub on_rotate: Signal<f64>,
+    pub on_scale: Signal<(f64, f64)>,
     pub on_transform_begin: Signal<()>,
     pub on_transform_end: Signal<()>,
-    pub on_translate: Signal<(f32, f32)>,
+    pub on_translate: Signal<(f64, f64)>,
 }
 
 /// Opaque gizmo controller state. Configure it through setters and call `update_gizmo` while
