@@ -14,7 +14,7 @@ fn node(parent_index: i32, item_style: Option<AnchorLayoutItemStyle>) -> LayoutN
     }
 }
 
-fn resolve(nodes: Vec<LayoutNode>, intrinsic_sizes: &[f32], width: f32, height: f32) -> Vec<f32> {
+fn resolve(nodes: Vec<LayoutNode>, intrinsic_sizes: &[f64], width: f64, height: f64) -> Vec<f32> {
     let mut out = vec![0.0_f32; nodes.len() * 4];
     let mut state = create_layout_state();
     register_anchor_layout_resolver(&mut state);
@@ -35,7 +35,7 @@ mod register_anchor_layout_resolver {
 
     #[test]
     fn aligns_a_natural_size_child_to_each_position() {
-        let cases: &[(&str, ViewportAlign, f32, f32)] = &[
+        let cases: &[(&str, ViewportAlign, f64, f64)] = &[
             ("top", ViewportAlign::Top, 87.0, 0.0),
             ("bottom", ViewportAlign::Bottom, 87.0, 108.0),
             ("left", ViewportAlign::Left, 0.0, 54.0),
@@ -66,7 +66,12 @@ mod register_anchor_layout_resolver {
                 211.0,
                 127.0,
             );
-            assert_eq!(out[4..], [x, y, 37.0, 19.0], "align {}", label);
+            assert_eq!(
+                out[4..],
+                [x as f32, y as f32, 37.0, 19.0],
+                "align {}",
+                label
+            );
         }
     }
 
@@ -147,7 +152,7 @@ mod register_anchor_layout_resolver {
     fn normalizes_invalid_intrinsic_sizes_for_a_null_item_style() {
         let out = resolve(
             vec![node(-1, None), node(0, None)],
-            &[0.0, 0.0, f32::NAN, -1.0],
+            &[0.0, 0.0, f64::NAN, -1.0],
             211.0,
             127.0,
         );

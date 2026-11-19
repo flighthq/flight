@@ -47,7 +47,7 @@ src/lib.rs: pub use contract::register_grid_layout_resolver;
 src/lib.rs: pub use contract::register_layout_resolver;
 src/lib.rs: pub use contract::resolve_layout_tree;
 src/resolve_layout_tree.rs: pub fn explain_layout_resolution(state: &LayoutState, tree: &LayoutTree, node_index: i32,) -> Option<LayoutResolutionExplanation>
-src/resolve_layout_tree.rs: pub fn resolve_layout_tree(out: &mut [f32], state: &mut LayoutState, tree: &LayoutTree, intrinsic_sizes: &[f32], available_width: f32, available_height: f32,) -> bool
+src/resolve_layout_tree.rs: pub fn resolve_layout_tree(out: &mut [f32], state: &mut LayoutState, tree: &LayoutTree, intrinsic_sizes: &[f64], available_width: f64, available_height: f64,) -> bool
 src/types.rs: #[derive(Clone, Copy, Debug, PartialEq)] #[repr(u8)] pub enum FlexLayoutAlign { Center, End, Start, Stretch, }
 src/types.rs: #[derive(Clone, Copy, Debug, PartialEq)] #[repr(u8)] pub enum FlexLayoutDirection { Column, ColumnReverse, Row, RowReverse, }
 src/types.rs: #[derive(Clone, Copy, Debug, PartialEq)] #[repr(u8)] pub enum FlexLayoutJustify { Center, End, SpaceAround, SpaceBetween, SpaceEvenly, Start, }
@@ -55,16 +55,16 @@ src/types.rs: #[derive(Clone, Copy, Debug, PartialEq)] #[repr(u8)] pub enum Flex
 src/types.rs: #[derive(Clone, Copy, Debug, PartialEq)] #[repr(u8)] pub enum LayoutResolutionFailureKind { InvalidContainerStyle, InvalidHierarchy, InvalidItemStyle, IntrinsicSizesTooSmall, OutputTooSmall, UnregisteredKind, }
 src/types.rs: #[derive(Clone, Copy, Debug, PartialEq)] #[repr(u8)] pub enum ViewportAlign { Bottom, BottomLeft, BottomRight, Left, Right, Top, TopLeft, TopRight, }
 src/types.rs: #[derive(Clone, Copy, Debug, PartialEq)] pub enum FlexAlignSelf { Auto, Align(FlexLayoutAlign), }
-src/types.rs: #[derive(Clone, Copy, Debug, PartialEq)] pub enum FlexBasis { Auto, Fixed(f32), }
 src/types.rs: #[derive(Clone, Debug)] pub enum ContainerStyle { None, Flex(FlexLayoutContainerStyle), Grid(GridLayoutContainerStyle), Invalid, }
-src/types.rs: #[derive(Clone, Debug)] pub enum GridLayoutTrack { Auto, Fixed { size: f32 }, Fraction { fraction: f32 }, }
+src/types.rs: #[derive(Clone, Debug)] pub enum GridLayoutTrack { Auto, Fixed { size: f64 }, Fraction { fraction: f64 }, }
 src/types.rs: #[derive(Clone, Debug)] pub enum ItemStyle { None, Anchor(AnchorLayoutItemStyle), Flex(FlexLayoutItemStyle), Grid(GridLayoutItemStyle), Invalid, }
+src/types.rs: #[derive(Clone, Copy, Debug, PartialEq)] pub enum FlexBasis { Auto, Fixed(f64), }
 src/types.rs: #[derive(Clone, Debug)] pub struct LayoutNode { pub container_style: ContainerStyle, pub item_style: ItemStyle, pub kind: String, pub parent_index: i32, }
 src/types.rs: #[derive(Clone, Debug)] pub struct LayoutTree { pub nodes: Vec<LayoutNode>, }
-src/types.rs: #[derive(Clone, Debug, Default)] pub struct AnchorLayoutItemStyle { pub align: Option<ViewportAlign>, pub bottom: Option<f32>, pub height: Option<f32>, pub left: Option<f32>, pub right: Option<f32>, pub top: Option<f32>, pub width: Option<f32>, }
-src/types.rs: #[derive(Clone, Debug, Default)] pub struct FlexLayoutContainerStyle { pub align: Option<FlexLayoutAlign>, pub direction: Option<FlexLayoutDirection>, pub gap: Option<f32>, pub justify: Option<FlexLayoutJustify>, pub padding_bottom: Option<f32>, pub padding_left: Option<f32>, pub padding_right: Option<f32>, pub padding_top: Option<f32>, pub wrap: Option<FlexLayoutWrap>, }
-src/types.rs: #[derive(Clone, Debug, Default)] pub struct FlexLayoutItemStyle { pub align_self: Option<FlexAlignSelf>, pub basis: Option<FlexBasis>, pub grow: Option<f32>, pub shrink: Option<f32>, }
-src/types.rs: #[derive(Clone, Debug, Default)] pub struct GridLayoutContainerStyle { pub column_gap: Option<f32>, pub columns: Vec<GridLayoutTrack>, pub padding_bottom: Option<f32>, pub padding_left: Option<f32>, pub padding_right: Option<f32>, pub padding_top: Option<f32>, pub row_gap: Option<f32>, pub rows: Vec<GridLayoutTrack>, }
+src/types.rs: #[derive(Clone, Debug, Default)] pub struct AnchorLayoutItemStyle { pub align: Option<ViewportAlign>, pub bottom: Option<f64>, pub height: Option<f64>, pub left: Option<f64>, pub right: Option<f64>, pub top: Option<f64>, pub width: Option<f64>, }
+src/types.rs: #[derive(Clone, Debug, Default)] pub struct FlexLayoutContainerStyle { pub align: Option<FlexLayoutAlign>, pub direction: Option<FlexLayoutDirection>, pub gap: Option<f64>, pub justify: Option<FlexLayoutJustify>, pub padding_bottom: Option<f64>, pub padding_left: Option<f64>, pub padding_right: Option<f64>, pub padding_top: Option<f64>, pub wrap: Option<FlexLayoutWrap>, }
+src/types.rs: #[derive(Clone, Debug, Default)] pub struct FlexLayoutItemStyle { pub align_self: Option<FlexAlignSelf>, pub basis: Option<FlexBasis>, pub grow: Option<f64>, pub shrink: Option<f64>, }
+src/types.rs: #[derive(Clone, Debug, Default)] pub struct GridLayoutContainerStyle { pub column_gap: Option<f64>, pub columns: Vec<GridLayoutTrack>, pub padding_bottom: Option<f64>, pub padding_left: Option<f64>, pub padding_right: Option<f64>, pub padding_top: Option<f64>, pub row_gap: Option<f64>, pub rows: Vec<GridLayoutTrack>, }
 src/types.rs: #[derive(Clone, Debug, Default)] pub struct GridLayoutItemStyle { pub column: Option<i32>, pub column_span: Option<i32>, pub row: Option<i32>, pub row_span: Option<i32>, }
 src/types.rs: #[derive(Clone, Debug, PartialEq)] pub struct LayoutResolutionExplanation { pub actual_length: i32, pub kind: LayoutResolutionFailureKind, pub node_index: i32, pub parent_index: i32, pub required_length: i32, pub resolver_kind: Option<String>, }
 src/types.rs: #[derive(Default)] pub struct LayoutState { runtime: EntityRuntimeSlot, pub guard: Option<LayoutResolutionGuard>, pub last_failure_actual_length: i32, pub last_failure_kind: Option<LayoutResolutionFailureKind>, pub last_failure_node_index: i32, pub last_failure_parent_index: i32, pub last_failure_required_length: i32, pub last_failure_resolver_kind: Option<String>, pub resolvers: HashMap<String, LayoutResolver>, }
@@ -91,4 +91,4 @@ src/types.rs: pub fn parse_flex_layout_wrap(value: &str) -> Option<FlexLayoutWra
 src/types.rs: pub fn parse_layout_resolution_failure_kind(value: &str) -> Option<LayoutResolutionFailureKind>
 src/types.rs: pub fn parse_viewport_align(value: &str) -> Option<ViewportAlign>
 src/types.rs: pub type LayoutResolutionGuard = fn(&LayoutResolutionExplanation);
-src/types.rs: pub type LayoutResolver = fn(out: &mut [f32], tree: &LayoutTree, intrinsic_sizes: &[f32], parent_index: usize, child_index: usize,) -> Option<LayoutResolutionFailureKind>;
+src/types.rs: pub type LayoutResolver = fn(out: &mut [f32], tree: &LayoutTree, intrinsic_sizes: &[f64], parent_index: usize, child_index: usize,) -> Option<LayoutResolutionFailureKind>;

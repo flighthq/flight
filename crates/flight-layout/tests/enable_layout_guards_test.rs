@@ -28,7 +28,7 @@ mod enable_layout_guards {
         };
         let tree = LayoutTree { nodes: vec![root] };
         let mut out = vec![0.0_f32; 3];
-        resolve_layout_tree(&mut out, &mut state, &tree, &[0.0_f32; 2], 100.0, 100.0);
+        resolve_layout_tree(&mut out, &mut state, &tree, &[0.0_f64; 2], 100.0, 100.0);
         GUARD_CALLS.with(|c| {
             let calls = c.borrow();
             assert_eq!(calls.len(), 1);

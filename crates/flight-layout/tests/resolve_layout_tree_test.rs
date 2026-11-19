@@ -39,7 +39,7 @@ struct FlightDocumentLayoutBinding {
 fn custom_resolver(
     out: &mut [f32],
     _tree: &LayoutTree,
-    _sizes: &[f32],
+    _sizes: &[f64],
     _parent: usize,
     child_index: usize,
 ) -> Option<LayoutResolutionFailureKind> {
@@ -54,7 +54,7 @@ fn custom_resolver(
 fn failing_resolver(
     _out: &mut [f32],
     _tree: &LayoutTree,
-    _sizes: &[f32],
+    _sizes: &[f64],
     _parent: usize,
     _child: usize,
 ) -> Option<LayoutResolutionFailureKind> {
@@ -237,7 +237,7 @@ mod resolve_layout_tree {
             &mut state,
             &tree(vec![make_root()]),
             &[0.0; 2],
-            f32::NAN,
+            f64::NAN,
             -1.0,
         ));
         assert_eq!(&out, &[0.0, 0.0, 0.0, 0.0]);

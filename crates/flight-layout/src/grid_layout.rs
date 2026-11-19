@@ -3,7 +3,7 @@
 use crate::layout_state::register_layout_resolver;
 use crate::types::*;
 
-fn finite_size(value: f32) -> f32 {
+fn finite_size(value: f64) -> f64 {
     return if value.is_finite() && value > 0.0 {
         value
     } else {
@@ -13,18 +13,18 @@ fn finite_size(value: f32) -> f32 {
 
 fn get_grid_auto_track_size(
     tree: &LayoutTree,
-    intrinsic_sizes: &[f32],
+    intrinsic_sizes: &[f64],
     parent_index: usize,
     container: &GridLayoutContainerStyle,
     columns: bool,
     track_index: usize,
-) -> f32 {
+) -> f64 {
     let tracks = if columns {
         &container.columns
     } else {
         &container.rows
     };
-    let mut size: f32 = 0.0;
+    let mut size: f64 = 0.0;
     for i in 0..tree.nodes.len() {
         let node = &tree.nodes[i];
         if node.parent_index != parent_index as i32 || !is_grid_item_style_valid(&node.item_style) {
@@ -62,15 +62,15 @@ fn get_grid_auto_track_size(
             } else {
                 container.row_gap.unwrap_or(0.0)
             };
-            remaining_intrinsic -= gap * f32::max(0.0, (span - 1) as f32);
+            remaining_intrinsic -= gap * f64::max(0.0, (span - 1) as f64);
             for j in (start as usize)..end {
                 if let GridLayoutTrack::Fixed { size: s } = &tracks[j] {
                     remaining_intrinsic -= s;
                 }
             }
-            size = f32::max(
+            size = f64::max(
                 size,
-                f32::max(0.0, remaining_intrinsic) / auto_tracks_in_span as f32,
+                f64::max(0.0, remaining_intrinsic) / auto_tracks_in_span as f64,
             );
         }
     }
@@ -122,14 +122,14 @@ fn get_grid_row(
 #[allow(clippy::too_many_arguments)]
 fn get_grid_track_size(
     tree: &LayoutTree,
-    intrinsic_sizes: &[f32],
+    intrinsic_sizes: &[f64],
     parent_index: usize,
     container: &GridLayoutContainerStyle,
     columns: bool,
     track_index: usize,
-    available_size: f32,
-    gap: f32,
-) -> f32 {
+    available_size: f64,
+    gap: f64,
+) -> f64 {
     let tracks = if columns {
         &container.columns
     } else {
@@ -149,8 +149,8 @@ fn get_grid_track_size(
             );
         }
         GridLayoutTrack::Fraction { fraction } => {
-            let mut occupied = gap * f32::max(0.0, (tracks.len() as i32 - 1) as f32);
-            let mut total_fraction: f32 = 0.0;
+            let mut occupied = gap * f64::max(0.0, (tracks.len() as i32 - 1) as f64);
+            let mut total_fraction: f64 = 0.0;
             for i in 0..tracks.len() {
                 match &tracks[i] {
                     GridLayoutTrack::Fixed { size } => occupied += size,
@@ -172,16 +172,17 @@ fn get_grid_track_size(
             return if total_fraction == 0.0 {
                 0.0
             } else {
-                (f32::max(0.0, available_size - occupied) * fraction) / total_fraction
+                (f64::max(0.0, available_size - occupied) * fraction) / total_fraction
             };
         }
     }
 }
 
+// flight-lint: allow(f32) the layout output is TS's Float32Array storage lane: computed in f64, narrowed once per write and widened when read back
 fn grid_layout_resolver(
     out: &mut [f32],
     tree: &LayoutTree,
-    intrinsic_sizes: &[f32],
+    intrinsic_sizes: &[f64],
     parent_index: usize,
     child_index: usize,
 ) -> Option<LayoutResolutionFailureKind> {
@@ -219,10 +220,16 @@ fn grid_layout_resolver(
     let padding_bottom = container.padding_bottom.unwrap_or(0.0);
     let column_gap = container.column_gap.unwrap_or(0.0);
     let row_gap = container.row_gap.unwrap_or(0.0);
-    let available_width = f32::max(0.0, out[parent_offset + 2] - padding_left - padding_right);
-    let available_height = f32::max(0.0, out[parent_offset + 3] - padding_top - padding_bottom);
+    let available_width = f64::max(
+        0.0,
+        f64::from(out[parent_offset + 2]) - padding_left - padding_right,
+    );
+    let available_height = f64::max(
+        0.0,
+        f64::from(out[parent_offset + 3]) - padding_top - padding_bottom,
+    );
 
-    let mut x = out[parent_offset] + padding_left;
+    let mut x = f64::from(out[parent_offset]) + padding_left;
     for i in 0..(column as usize) {
         x += get_grid_track_size(
             tree,
@@ -236,7 +243,7 @@ fn grid_layout_resolver(
         );
         x += column_gap;
     }
-    let mut width = column_gap * f32::max(0.0, (column_span - 1) as f32);
+    let mut width = column_gap * f64::max(0.0, (column_span - 1) as f64);
     for i in (column as usize)..((column + column_span) as usize) {
         width += get_grid_track_size(
             tree,
@@ -250,7 +257,7 @@ fn grid_layout_resolver(
         );
     }
 
-    let mut y = out[parent_offset + 1] + padding_top;
+    let mut y = f64::from(out[parent_offset + 1]) + padding_top;
     for i in 0..(row as usize) {
         y += get_grid_track_size(
             tree,
@@ -264,7 +271,7 @@ fn grid_layout_resolver(
         );
         y += row_gap;
     }
-    let mut height = row_gap * f32::max(0.0, (row_span - 1) as f32);
+    let mut height = row_gap * f64::max(0.0, (row_span - 1) as f64);
     for i in (row as usize)..((row + row_span) as usize) {
         height += get_grid_track_size(
             tree,
@@ -279,10 +286,10 @@ fn grid_layout_resolver(
     }
 
     let child_offset = child_index * 4;
-    out[child_offset] = x;
-    out[child_offset + 1] = y;
-    out[child_offset + 2] = width;
-    out[child_offset + 3] = height;
+    out[child_offset] = (x) as f32;
+    out[child_offset + 1] = (y) as f32;
+    out[child_offset + 2] = (width) as f32;
+    out[child_offset + 3] = (height) as f32;
     return None;
 }
 
@@ -294,7 +301,7 @@ fn is_grid_item_style_valid(item_style: &ItemStyle) -> bool {
     };
 }
 
-fn is_non_negative_optional(value: Option<f32>) -> bool {
+fn is_non_negative_optional(value: Option<f64>) -> bool {
     return match value {
         None => true,
         Some(v) => v.is_finite() && v >= 0.0,

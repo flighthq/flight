@@ -26,7 +26,7 @@ fn child(item_style: Option<FlexLayoutItemStyle>) -> LayoutNode {
     }
 }
 
-fn resolve(nodes: Vec<LayoutNode>, intrinsic_sizes: &[f32], width: f32, height: f32) -> Vec<f32> {
+fn resolve(nodes: Vec<LayoutNode>, intrinsic_sizes: &[f64], width: f64, height: f64) -> Vec<f32> {
     let mut out = vec![0.0_f32; nodes.len() * 4];
     let mut state = create_layout_state();
     register_flex_layout_resolver(&mut state);
@@ -43,27 +43,14 @@ fn resolve(nodes: Vec<LayoutNode>, intrinsic_sizes: &[f32], width: f32, height: 
 }
 
 // TS `toBeCloseTo(expected)` (default 2 digits): abs diff < 0.5e-2.
-fn assert_approx(actual: f32, expected: f32, label: &str) {
+fn assert_approx(actual: impl Into<f64>, expected: f64, label: &str) {
+    let actual: f64 = actual.into();
     assert!(
         (actual - expected).abs() < 0.005,
         "{}: expected {}, got {}",
         label,
         expected,
         actual,
-    );
-}
-
-// D1 single-evaluation bound at a public f32 (Principal 192423ac):
-// |actual - expected| <= max(ts_bound, 4 * f32::EPSILON * max(1, |expected|)).
-fn assert_f32_single(actual: f32, expected: f32, ts_bound: f32, label: &str) {
-    let bound = ts_bound.max(4.0 * f32::EPSILON * expected.abs().max(1.0));
-    assert!(
-        (actual - expected).abs() <= bound,
-        "{}: expected {}, got {} (bound {})",
-        label,
-        expected,
-        actual,
-        bound,
     );
 }
 
@@ -104,8 +91,8 @@ mod register_flex_layout_resolver {
         );
         assert_eq!(out[4], 0.0);
         assert_eq!(out[5], 0.0);
-        // D1 f32 bound (TS: 0)
-        assert_f32_single(out[6], 73.33333587646484, 0.0, "width1");
+        // TS: exact Float32Array value of the f64 share 220 / 3.
+        assert_eq!(out[6], 73.333_336_f32, "width1");
         assert_eq!(out[7], 10.0);
         assert_approx(out[8], 73.3333, "x2");
         assert_approx(out[10], 126.6667, "width2");
@@ -451,7 +438,7 @@ mod register_flex_layout_resolver {
                 })),
                 child(None),
             ],
-            &[0.0, 0.0, f32::NAN, -1.0],
+            &[0.0, 0.0, f64::NAN, -1.0],
             137.0,
             83.0,
         );
@@ -460,7 +447,7 @@ mod register_flex_layout_resolver {
 
     #[test]
     fn applies_main_axis_justification() {
-        let cases: &[(FlexLayoutJustify, f32, f32)] = &[
+        let cases: &[(FlexLayoutJustify, f64, f64)] = &[
             (FlexLayoutJustify::Start, 0.0, 10.0),
             (FlexLayoutJustify::End, 70.0, 80.0),
             (FlexLayoutJustify::Center, 35.0, 45.0),
@@ -502,6 +489,65 @@ mod register_flex_layout_resolver {
             assert_approx(out[4], first_x, &format!("{:?} first_x", justify));
             assert_approx(out[8], second_x, &format!("{:?} second_x", justify));
         }
+    }
+
+    #[test]
+    fn computes_padding_gap_basis_and_grow_in_f64_before_the_f32_output() {
+        // TS computes in Number and stores into a Float32Array. Near 2^24 the f32 spacing is 2, so
+        // an f32 intermediate changes the stored second-item position in each case.
+        let second_x = |padding_left: f64, gap: f64, basis: FlexBasis, grow: f64, width: f64| {
+            let out = resolve(
+                vec![
+                    root(Some(FlexLayoutContainerStyle {
+                        align: None,
+                        gap: Some(gap),
+                        justify: None,
+                        padding_bottom: None,
+                        padding_left: Some(padding_left),
+                        padding_right: None,
+                        padding_top: None,
+                        direction: None,
+                        wrap: None,
+                    })),
+                    child(Some(FlexLayoutItemStyle {
+                        align_self: None,
+                        basis: Some(basis),
+                        grow: Some(grow),
+                        shrink: Some(0.0),
+                    })),
+                    child(Some(FlexLayoutItemStyle {
+                        align_self: None,
+                        basis: Some(FlexBasis::Fixed(0.0)),
+                        grow: Some(0.0),
+                        shrink: Some(0.0),
+                    })),
+                ],
+                &[0.0; 6],
+                width,
+                10.0,
+            );
+            return out[8];
+        };
+        // padding 16777217 + 1 + 1 = 16777219, stored as 16777220 (f32 padding: 16777218).
+        assert_eq!(
+            second_x(16_777_217.0, 1.0, FlexBasis::Fixed(1.0), 0.0, 1.0e8),
+            16_777_220.0
+        );
+        // 0 + 1 + gap 16777217 = 16777218 (f32 gap: 16777216).
+        assert_eq!(
+            second_x(0.0, 16_777_217.0, FlexBasis::Fixed(1.0), 0.0, 1.0e8),
+            16_777_218.0
+        );
+        // basis 16777217 + gap 1 = 16777218 (f32 basis: 16777216).
+        assert_eq!(
+            second_x(0.0, 1.0, FlexBasis::Fixed(16_777_217.0), 0.0, 1.0e8),
+            16_777_218.0
+        );
+        // padding 1 + grown 16777217 = 16777218 (f32 grow share: 16777216).
+        assert_eq!(
+            second_x(1.0, 0.0, FlexBasis::Fixed(0.0), 1.0, 16_777_218.0),
+            16_777_218.0
+        );
     }
 
     #[test]
@@ -1199,7 +1245,7 @@ mod register_flex_layout_resolver {
             }),
             ContainerStyle::Invalid, // { justify: 'edges' }
             ContainerStyle::Flex(FlexLayoutContainerStyle {
-                padding_bottom: Some(f32::INFINITY),
+                padding_bottom: Some(f64::INFINITY),
                 align: None,
                 direction: None,
                 gap: None,
@@ -1259,7 +1305,7 @@ mod register_flex_layout_resolver {
                 shrink: None,
             }),
             ItemStyle::Flex(FlexLayoutItemStyle {
-                shrink: Some(f32::NAN),
+                shrink: Some(f64::NAN),
                 align_self: None,
                 basis: None,
                 grow: None,
@@ -1313,7 +1359,7 @@ mod register_flex_layout_resolver {
                 })),
                 child(None),
             ],
-            &[0.0, 0.0, f32::INFINITY, 17.0],
+            &[0.0, 0.0, f64::INFINITY, 17.0],
             100.0,
             70.0,
         );

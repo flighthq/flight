@@ -23,7 +23,7 @@ fn child(item_style: Option<GridLayoutItemStyle>) -> LayoutNode {
     }
 }
 
-fn resolve(nodes: Vec<LayoutNode>, intrinsic_sizes: &[f32], width: f32, height: f32) -> Vec<f32> {
+fn resolve(nodes: Vec<LayoutNode>, intrinsic_sizes: &[f64], width: f64, height: f64) -> Vec<f32> {
     let mut out = vec![0.0_f32; nodes.len() * 4];
     let mut state = create_layout_state();
     register_grid_layout_resolver(&mut state);
@@ -363,7 +363,7 @@ mod register_grid_layout_resolver {
                 }),
                 child(None),
             ],
-            &[0.0, 0.0, f32::NAN, -1.0],
+            &[0.0, 0.0, f64::NAN, -1.0],
             173.0,
             119.0,
         );
@@ -386,7 +386,7 @@ mod register_grid_layout_resolver {
                 }),
                 child(None),
             ],
-            &[0.0, 0.0, f32::INFINITY, f32::INFINITY],
+            &[0.0, 0.0, f64::INFINITY, f64::INFINITY],
             173.0,
             119.0,
         );
@@ -618,7 +618,7 @@ mod register_grid_layout_resolver {
             }),
             ContainerStyle::Grid(GridLayoutContainerStyle {
                 columns: vec![GridLayoutTrack::Auto],
-                padding_left: Some(f32::INFINITY),
+                padding_left: Some(f64::INFINITY),
                 rows: vec![GridLayoutTrack::Auto],
                 column_gap: None,
                 padding_bottom: None,

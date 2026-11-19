@@ -100,7 +100,7 @@ fn fail_layout_resolution(
     return false;
 }
 
-fn finite_size(value: f32) -> f32 {
+fn finite_size(value: f64) -> f64 {
     return if value.is_finite() && value > 0.0 {
         value
     } else {
@@ -108,13 +108,14 @@ fn finite_size(value: f32) -> f32 {
     };
 }
 
+// flight-lint: allow(f32) the layout output is TS's Float32Array storage lane: computed in f64, narrowed once per write and widened when read back
 pub fn resolve_layout_tree(
     out: &mut [f32],
     state: &mut LayoutState,
     tree: &LayoutTree,
-    intrinsic_sizes: &[f32],
-    available_width: f32,
-    available_height: f32,
+    intrinsic_sizes: &[f64],
+    available_width: f64,
+    available_height: f64,
 ) -> bool {
     clear_layout_failure(state);
     let nodes = &tree.nodes;
@@ -166,8 +167,8 @@ pub fn resolve_layout_tree(
         if parent_index == -1 {
             out[offset] = 0.0;
             out[offset + 1] = 0.0;
-            out[offset + 2] = root_width;
-            out[offset + 3] = root_height;
+            out[offset + 2] = (root_width) as f32;
+            out[offset + 3] = (root_height) as f32;
             continue;
         }
 

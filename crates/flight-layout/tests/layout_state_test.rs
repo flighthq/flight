@@ -5,7 +5,7 @@ use flight_layout::contract::*;
 fn noop_resolver(
     _out: &mut [f32],
     _tree: &LayoutTree,
-    _sizes: &[f32],
+    _sizes: &[f64],
     _parent: usize,
     _child: usize,
 ) -> Option<LayoutResolutionFailureKind> {
@@ -15,7 +15,7 @@ fn noop_resolver(
 fn replacement_resolver(
     _out: &mut [f32],
     _tree: &LayoutTree,
-    _sizes: &[f32],
+    _sizes: &[f64],
     _parent: usize,
     _child: usize,
 ) -> Option<LayoutResolutionFailureKind> {

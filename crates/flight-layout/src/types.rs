@@ -43,12 +43,12 @@ pub enum ViewportAlign {
 #[derive(Clone, Debug, Default)]
 pub struct AnchorLayoutItemStyle {
     pub align: Option<ViewportAlign>,
-    pub bottom: Option<f32>,
-    pub height: Option<f32>,
-    pub left: Option<f32>,
-    pub right: Option<f32>,
-    pub top: Option<f32>,
-    pub width: Option<f32>,
+    pub bottom: Option<f64>,
+    pub height: Option<f64>,
+    pub left: Option<f64>,
+    pub right: Option<f64>,
+    pub top: Option<f64>,
+    pub width: Option<f64>,
 }
 
 // -- Flex layout types --
@@ -99,19 +99,19 @@ pub enum FlexAlignSelf {
 #[derive(Clone, Copy, Debug, PartialEq)]
 pub enum FlexBasis {
     Auto,
-    Fixed(f32),
+    Fixed(f64),
 }
 
 #[derive(Clone, Debug, Default)]
 pub struct FlexLayoutContainerStyle {
     pub align: Option<FlexLayoutAlign>,
     pub direction: Option<FlexLayoutDirection>,
-    pub gap: Option<f32>,
+    pub gap: Option<f64>,
     pub justify: Option<FlexLayoutJustify>,
-    pub padding_bottom: Option<f32>,
-    pub padding_left: Option<f32>,
-    pub padding_right: Option<f32>,
-    pub padding_top: Option<f32>,
+    pub padding_bottom: Option<f64>,
+    pub padding_left: Option<f64>,
+    pub padding_right: Option<f64>,
+    pub padding_top: Option<f64>,
     pub wrap: Option<FlexLayoutWrap>,
 }
 
@@ -119,8 +119,8 @@ pub struct FlexLayoutContainerStyle {
 pub struct FlexLayoutItemStyle {
     pub align_self: Option<FlexAlignSelf>,
     pub basis: Option<FlexBasis>,
-    pub grow: Option<f32>,
-    pub shrink: Option<f32>,
+    pub grow: Option<f64>,
+    pub shrink: Option<f64>,
 }
 
 // -- Grid layout types --
@@ -128,19 +128,19 @@ pub struct FlexLayoutItemStyle {
 #[derive(Clone, Debug)]
 pub enum GridLayoutTrack {
     Auto,
-    Fixed { size: f32 },
-    Fraction { fraction: f32 },
+    Fixed { size: f64 },
+    Fraction { fraction: f64 },
 }
 
 #[derive(Clone, Debug, Default)]
 pub struct GridLayoutContainerStyle {
-    pub column_gap: Option<f32>,
+    pub column_gap: Option<f64>,
     pub columns: Vec<GridLayoutTrack>,
-    pub padding_bottom: Option<f32>,
-    pub padding_left: Option<f32>,
-    pub padding_right: Option<f32>,
-    pub padding_top: Option<f32>,
-    pub row_gap: Option<f32>,
+    pub padding_bottom: Option<f64>,
+    pub padding_left: Option<f64>,
+    pub padding_right: Option<f64>,
+    pub padding_top: Option<f64>,
+    pub row_gap: Option<f64>,
     pub rows: Vec<GridLayoutTrack>,
 }
 
@@ -189,10 +189,11 @@ pub struct LayoutTree {
 
 // -- Layout resolver type --
 
+// flight-lint: allow(f32) the layout output is TS's Float32Array storage lane
 pub type LayoutResolver = fn(
     out: &mut [f32],
     tree: &LayoutTree,
-    intrinsic_sizes: &[f32],
+    intrinsic_sizes: &[f64],
     parent_index: usize,
     child_index: usize,
 ) -> Option<LayoutResolutionFailureKind>;

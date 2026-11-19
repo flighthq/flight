@@ -18,7 +18,7 @@ fn count_flex_siblings(
     return count;
 }
 
-fn finite_size(value: f32) -> f32 {
+fn finite_size(value: f64) -> f64 {
     return if value.is_finite() && value > 0.0 {
         value
     } else {
@@ -27,10 +27,11 @@ fn finite_size(value: f32) -> f32 {
 }
 
 #[allow(clippy::too_many_lines, unused_assignments)]
+// flight-lint: allow(f32) the layout output is TS's Float32Array storage lane: computed in f64, narrowed once per write and widened when read back
 fn flex_layout_resolver(
     out: &mut [f32],
     tree: &LayoutTree,
-    intrinsic_sizes: &[f32],
+    intrinsic_sizes: &[f64],
     parent_index: usize,
     child_index: usize,
 ) -> Option<LayoutResolutionFailureKind> {
@@ -69,22 +70,22 @@ fn flex_layout_resolver(
     let padding_top = container.and_then(|c| c.padding_top).unwrap_or(0.0);
     let padding_bottom = container.and_then(|c| c.padding_bottom).unwrap_or(0.0);
     let parent_offset = parent_index * 4;
-    let main_start =
-        out[parent_offset + if row { 0 } else { 1 }] + if row { padding_left } else { padding_top };
-    let cross_start =
-        out[parent_offset + if row { 1 } else { 0 }] + if row { padding_top } else { padding_left };
-    let main_size = f32::max(
+    let main_start = f64::from(out[parent_offset + if row { 0 } else { 1 }])
+        + if row { padding_left } else { padding_top };
+    let cross_start = f64::from(out[parent_offset + if row { 1 } else { 0 }])
+        + if row { padding_top } else { padding_left };
+    let main_size = f64::max(
         0.0,
-        out[parent_offset + if row { 2 } else { 3 }]
+        f64::from(out[parent_offset + if row { 2 } else { 3 }])
             - if row {
                 padding_left + padding_right
             } else {
                 padding_top + padding_bottom
             },
     );
-    let cross_size = f32::max(
+    let cross_size = f64::max(
         0.0,
-        out[parent_offset + if row { 3 } else { 2 }]
+        f64::from(out[parent_offset + if row { 3 } else { 2 }])
             - if row {
                 padding_top + padding_bottom
             } else {
@@ -95,12 +96,12 @@ fn flex_layout_resolver(
     let mut line_start_index: i32 = -1;
     let mut line_last_index: i32 = -1;
     let mut line_count: i32 = 0;
-    let mut line_base_sum: f32 = 0.0;
-    let mut line_grow_sum: f32 = 0.0;
-    let mut line_shrink_weight: f32 = 0.0;
-    let mut line_cross: f32 = 0.0;
-    let mut line_used_for_wrap: f32 = 0.0;
-    let mut cross_offset: f32 = 0.0;
+    let mut line_base_sum: f64 = 0.0;
+    let mut line_grow_sum: f64 = 0.0;
+    let mut line_shrink_weight: f64 = 0.0;
+    let mut line_cross: f64 = 0.0;
+    let mut line_used_for_wrap: f64 = 0.0;
+    let mut cross_offset: f64 = 0.0;
     let mut contains_target = false;
     let nodes = &tree.nodes;
 
@@ -136,7 +137,7 @@ fn flex_layout_resolver(
         line_base_sum += base;
         line_grow_sum += grow;
         line_shrink_weight += shrink * base;
-        line_cross = f32::max(line_cross, get_flex_cross(intrinsic_sizes, i, row));
+        line_cross = f64::max(line_cross, get_flex_cross(intrinsic_sizes, i, row));
         line_used_for_wrap += (if line_count == 0 { 0.0 } else { gap }) + base;
         line_count += 1;
         if i == child_index {
@@ -155,7 +156,7 @@ fn flex_layout_resolver(
         cross_offset = cross_size - cross_offset - line_cross;
     }
 
-    let distributable = main_size - line_base_sum - gap * f32::max(0.0, (line_count - 1) as f32);
+    let distributable = main_size - line_base_sum - gap * f64::max(0.0, (line_count - 1) as f64);
     let shrink_scale = get_flex_shrink_scale(
         tree,
         intrinsic_sizes,
@@ -163,12 +164,12 @@ fn flex_layout_resolver(
         row,
         line_start_index as usize,
         line_last_index as usize,
-        f32::max(0.0, -distributable),
+        f64::max(0.0, -distributable),
         line_shrink_weight,
     );
-    let mut used_main = gap * f32::max(0.0, (line_count - 1) as f32);
-    let mut target_main_size: f32 = 0.0;
-    let mut before_target: f32 = 0.0;
+    let mut used_main = gap * f64::max(0.0, (line_count - 1) as f64);
+    let mut target_main_size: f64 = 0.0;
+    let mut before_target: f64 = 0.0;
     for i in (line_start_index as usize)..=(line_last_index as usize) {
         let node = &nodes[i];
         if node.parent_index != parent_index as i32 {
@@ -192,7 +193,7 @@ fn flex_layout_resolver(
         used_main += item_main_size;
     }
 
-    let free_main = f32::max(0.0, main_size - used_main);
+    let free_main = f64::max(0.0, main_size - used_main);
     let justify = container
         .and_then(|c| c.justify)
         .unwrap_or(FlexLayoutJustify::Start);
@@ -200,7 +201,7 @@ fn flex_layout_resolver(
     let justify_offset = get_flex_justify_offset(justify, free_main, justify_gap);
     let target_ordinal =
         count_flex_siblings(tree, parent_index, line_start_index as usize, child_index);
-    before_target += justify_gap * target_ordinal as f32;
+    before_target += justify_gap * target_ordinal as f64;
     let target_main = if reverse {
         main_start + main_size - justify_offset - before_target - target_main_size
     } else {
@@ -228,22 +229,22 @@ fn flex_layout_resolver(
         + cross_offset
         + get_flex_align_offset(align, line_cross, target_cross_size, cross_reverse);
     let child_offset = child_index * 4;
-    out[child_offset] = if row { target_main } else { target_cross };
-    out[child_offset + 1] = if row { target_cross } else { target_main };
-    out[child_offset + 2] = if row {
+    out[child_offset] = (if row { target_main } else { target_cross }) as f32;
+    out[child_offset + 1] = (if row { target_cross } else { target_main }) as f32;
+    out[child_offset + 2] = (if row {
         target_main_size
     } else {
         target_cross_size
-    };
-    out[child_offset + 3] = if row {
+    }) as f32;
+    out[child_offset + 3] = (if row {
         target_cross_size
     } else {
         target_main_size
-    };
+    }) as f32;
     return None;
 }
 
-fn get_flex_align_offset(align: FlexLayoutAlign, available: f32, size: f32, reverse: bool) -> f32 {
+fn get_flex_align_offset(align: FlexLayoutAlign, available: f64, size: f64, reverse: bool) -> f64 {
     if align == FlexLayoutAlign::Center {
         return (available - size) / 2.0;
     }
@@ -259,7 +260,7 @@ fn get_flex_align_offset(align: FlexLayoutAlign, available: f32, size: f32, reve
     return 0.0;
 }
 
-fn get_flex_base(node: &LayoutNode, intrinsic_sizes: &[f32], node_index: usize, row: bool) -> f32 {
+fn get_flex_base(node: &LayoutNode, intrinsic_sizes: &[f64], node_index: usize, row: bool) -> f64 {
     let item = get_flex_item_style(node);
     let basis = item.and_then(|s| s.basis).unwrap_or(FlexBasis::Auto);
     return match basis {
@@ -268,23 +269,23 @@ fn get_flex_base(node: &LayoutNode, intrinsic_sizes: &[f32], node_index: usize, 
     };
 }
 
-fn get_flex_cross(intrinsic_sizes: &[f32], node_index: usize, row: bool) -> f32 {
+fn get_flex_cross(intrinsic_sizes: &[f64], node_index: usize, row: bool) -> f64 {
     return finite_size(intrinsic_sizes[node_index * 2 + if row { 1 } else { 0 }]);
 }
 
 fn get_flex_item_main_size(
-    base: f32,
-    grow: f32,
-    shrink: f32,
-    distributable: f32,
-    grow_sum: f32,
-    shrink_scale: f32,
-) -> f32 {
+    base: f64,
+    grow: f64,
+    shrink: f64,
+    distributable: f64,
+    grow_sum: f64,
+    shrink_scale: f64,
+) -> f64 {
     if distributable > 0.0 && grow_sum > 0.0 {
         return base + (distributable * grow) / grow_sum;
     }
     if distributable < 0.0 {
-        return f32::max(0.0, base - shrink_scale * shrink * base);
+        return f64::max(0.0, base - shrink_scale * shrink * base);
     }
     return base;
 }
@@ -296,24 +297,24 @@ fn get_flex_item_style(node: &LayoutNode) -> Option<&FlexLayoutItemStyle> {
     };
 }
 
-fn get_flex_justify_gap(justify: FlexLayoutJustify, free: f32, count: i32) -> f32 {
+fn get_flex_justify_gap(justify: FlexLayoutJustify, free: f64, count: i32) -> f64 {
     if justify == FlexLayoutJustify::SpaceBetween {
         return if count > 1 {
-            free / (count - 1) as f32
+            free / (count - 1) as f64
         } else {
             0.0
         };
     }
     if justify == FlexLayoutJustify::SpaceAround {
-        return if count > 0 { free / count as f32 } else { 0.0 };
+        return if count > 0 { free / count as f64 } else { 0.0 };
     }
     if justify == FlexLayoutJustify::SpaceEvenly {
-        return free / (count + 1) as f32;
+        return free / (count + 1) as f64;
     }
     return 0.0;
 }
 
-fn get_flex_justify_offset(justify: FlexLayoutJustify, free: f32, distributed_gap: f32) -> f32 {
+fn get_flex_justify_offset(justify: FlexLayoutJustify, free: f64, distributed_gap: f64) -> f64 {
     if justify == FlexLayoutJustify::End {
         return free;
     }
@@ -332,14 +333,14 @@ fn get_flex_justify_offset(justify: FlexLayoutJustify, free: f32, distributed_ga
 #[allow(clippy::too_many_arguments)]
 fn get_flex_shrink_scale(
     tree: &LayoutTree,
-    intrinsic_sizes: &[f32],
+    intrinsic_sizes: &[f64],
     parent_index: usize,
     row: bool,
     line_start_index: usize,
     line_last_index: usize,
-    deficit: f32,
-    initial_weight: f32,
-) -> f32 {
+    deficit: f64,
+    initial_weight: f64,
+) -> f64 {
     if deficit == 0.0 || initial_weight == 0.0 {
         return 0.0;
     }
@@ -347,8 +348,8 @@ fn get_flex_shrink_scale(
     let mut frozen_count: i32 = -1;
     loop {
         let mut next_frozen_count: i32 = 0;
-        let mut frozen_base: f32 = 0.0;
-        let mut active_weight: f32 = 0.0;
+        let mut frozen_base: f64 = 0.0;
+        let mut active_weight: f64 = 0.0;
         for i in line_start_index..=line_last_index {
             let node = &tree.nodes[i];
             if node.parent_index != parent_index as i32 {
@@ -371,11 +372,11 @@ fn get_flex_shrink_scale(
             return scale;
         }
         frozen_count = next_frozen_count;
-        scale = f32::max(0.0, deficit - frozen_base) / active_weight;
+        scale = f64::max(0.0, deficit - frozen_base) / active_weight;
     }
 }
 
-fn is_non_negative_optional(value: Option<f32>) -> bool {
+fn is_non_negative_optional(value: Option<f64>) -> bool {
     return match value {
         None => true,
         Some(v) => v.is_finite() && v >= 0.0,
