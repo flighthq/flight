@@ -45,6 +45,7 @@ fn main() {
             surface,
             haxe_common::NATIVE_SKIPS,
             haxe_common::NATIVE_NEVER_ACCESSORS,
+            haxe_common::RETAINED_CALLBACK_CARRIER_SKIPS,
         ) {
             for error in &errors {
                 eprintln!("native binding policy: {error}");
@@ -56,8 +57,9 @@ fn main() {
             std::process::exit(1);
         }
         eprintln!(
-            "native binding policy: {} reviewed skips, {} reviewed never accessors",
+            "native binding policy: {} reviewed skips ({} retained-callback carriers), {} reviewed never accessors",
             haxe_common::NATIVE_SKIPS.len(),
+            haxe_common::RETAINED_CALLBACK_CARRIER_SKIPS.len(),
             haxe_common::NATIVE_NEVER_ACCESSORS.len()
         );
     }

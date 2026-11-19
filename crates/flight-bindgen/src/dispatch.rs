@@ -705,6 +705,88 @@ extern inline function getLastPoint(randomFn:Dynamic, randomCtx:Dynamic, mean:Fl
         fs::remove_dir_all(directory).unwrap();
     }
     #[test]
+    fn retained_callback_carrier_skip_emits_no_partial_native_binding() {
+        let directory =
+            std::env::temp_dir().join(format!("flight-dispatch-carrier-{}", std::process::id()));
+        let _ = fs::remove_dir_all(&directory);
+        let function = |name: &str, ty: &str| ParsedFn {
+            name: name.into(),
+            source_name: Some(name.into()),
+            params: vec![crate::parse::Param {
+                name: "value".into(),
+                ty: ty.into(),
+            }],
+            ret: None,
+        };
+        let exports = vec![CrateExports {
+            dir_name: "flight-audio".into(),
+            fns: vec![
+                function("set_audio_volume", "f32"),
+                function("watch_audio_volume", "Arc<dyn Fn(f32) + Send + Sync>"),
+            ],
+            structs: vec![],
+            enums: vec![],
+        }];
+        let mut surface = FfiSurface {
+            c: crate::ffi_surface::parse_ffi_header(
+                "void flight_set_audio_volume(float arg0);\n\
+                 void flight_watch_audio_volume(void (*arg0)(void *, float), void * arg1, void (*arg2)(void *));",
+            ),
+            hl: crate::ffi_surface::parse_hl_primitives(
+                "DEFINE_PRIM(_VOID, flight_set_audio_volume, _F32);\n\
+                 DEFINE_PRIM(_VOID, flight_watch_audio_volume, _BYTES _BYTES _BYTES);",
+            ),
+            native_skips: BTreeSet::new(),
+        };
+        let policy = crate::haxe_common::enforce_native_binding_policy(
+            &exports,
+            &mut surface,
+            &[("watch_audio_volume", "retained listener carrier")],
+            &[],
+            &["watch_audio_volume"],
+        );
+        assert_eq!(policy, Ok(()));
+        crate::haxe_hl::generate(&exports, &directory, &BTreeMap::new(), Some(&surface));
+        crate::haxe_cpp::generate(&exports, &directory, Some(&surface));
+        crate::haxe_js::generate(&exports, &directory, Some(&surface));
+        generate(&exports, &directory, Some(&surface));
+        let read = |path: &str| fs::read_to_string(directory.join(path)).unwrap();
+        let hl = read("flight/_hl/_fn/Audio.hx");
+        let cpp = read("flight/_cpp/_fn/Audio.hx");
+        let js = read("flight/_js/_fn/Audio.hx");
+        let facade = read("flight/Audio.hx");
+        fs::remove_dir_all(&directory).unwrap();
+        assert!(hl.contains("flight_set_audio_volume"), "{hl}");
+        assert!(cpp.contains("flight_set_audio_volume"), "{cpp}");
+        for native in [&hl, &cpp] {
+            assert!(!native.contains("watch_audio_volume"), "{native}");
+            assert!(!native.contains("watchAudioVolume"), "{native}");
+        }
+        assert!(js.contains("watchAudioVolume("), "{js}");
+        let start = facade.find("function watchAudioVolume(").unwrap();
+        let branch_open = facade[..start].rfind("#if").unwrap();
+        assert_eq!(
+            &facade[branch_open..facade[branch_open..].find('\n').unwrap() + branch_open],
+            "#if (js && flight_esm)",
+            "{facade}"
+        );
+        let body = &facade[start..];
+        let body = &body[..body.find("\n#end").unwrap()];
+        assert!(
+            body.contains("flight._js._fn.Audio.watchAudioVolume("),
+            "{body}"
+        );
+        assert!(
+            !body.contains("flight._hl") && !body.contains("flight._cpp"),
+            "{body}"
+        );
+        assert_eq!(
+            facade.matches("function watchAudioVolume(").count(),
+            1,
+            "{facade}"
+        );
+    }
+    #[test]
     fn native_skip_keeps_only_the_js_esm_branch() {
         let function = crate::parse::random_gaussian_pair_fixture();
         let (native, _) =

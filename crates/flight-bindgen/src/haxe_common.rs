@@ -4,7 +4,7 @@ use std::path::Path;
 
 use crate::ffi_surface::{
     FfiSurface, FieldAccess, contains_ffi_symbol, declaration_matches_ffi_surface,
-    get_ffi_field_access, has_native_ffi_symbol,
+    get_ffi_field_access, has_native_ffi_symbol, has_retained_callback_carrier,
 };
 use crate::parse::{
     CrateExports, ParamKind, ParsedFn, ParsedStruct, ReturnKind, classify_param, classify_return,
@@ -155,12 +155,15 @@ pub fn derive_method_name(fn_name: &str, type_name: &str) -> Option<String> {
 // native skip when its generic extern on either native backend disagrees with the wrapper
 // flight-ffi generated; an accessor direction is `never` when a symbol with the accessor's name
 // exists without accessor shape. Any difference from the tables, added or removed, is an error:
-// a carrier change must never silently delete a binding. JS/ESM is unaffected by both.
+// a carrier change must never silently delete a binding. JS/ESM is unaffected by both. Each
+// reviewed retained-callback skip must also be a reviewed skip whose C and HashLink signatures
+// still carry the `(fn, ctx, release)` triple, so a stale or reshaped carrier fails generation.
 pub fn enforce_native_binding_policy(
     exports: &[CrateExports],
     surface: &mut FfiSurface,
     expected_skips: &[(&str, &str)],
     expected_never_accessors: &[(&str, &str)],
+    expected_carrier_skips: &[&str],
 ) -> Result<(), Vec<String>> {
     let mut errors = Vec::new();
 
@@ -199,6 +202,18 @@ pub fn enforce_native_binding_policy(
         if !actual_skips.contains_key(*name) {
             errors.push(format!(
                 "reviewed native skip flight_{name} no longer disagrees (or is gone); update the table"
+            ));
+        }
+    }
+    for name in expected_carrier_skips {
+        if !expected.contains(name) {
+            errors.push(format!(
+                "retained-callback skip flight_{name} is not a reviewed native skip"
+            ));
+        }
+        if !has_retained_callback_carrier(surface, &format!("flight_{name}")) {
+            errors.push(format!(
+                "retained-callback skip flight_{name} no longer carries (fn, ctx, release) on C and HashLink; update the table"
             ));
         }
     }
@@ -390,6 +405,28 @@ pub const NATIVE_SKIPS: &[(&str, &str)] = &[
         "collect_import_diagnostics",
         "flight-ffi wraps the callback in a `bool` completion status; the generic extern returns Void",
     ),
+    ("connect_interaction_signal", ROOTED_CONNECTION_SKIP_REASON),
+    ("enable_audio_mixer_guards", RETAINED_CALLBACK_SKIP_REASON),
+    ("enable_bitmap_text_guards", RETAINED_CALLBACK_SKIP_REASON),
+    ("enable_camera_guards", RETAINED_CALLBACK_SKIP_REASON),
+    ("enable_collision_guards", RETAINED_CALLBACK_SKIP_REASON),
+    ("enable_easing_guards", RETAINED_CALLBACK_SKIP_REASON),
+    ("enable_flow_guards", RETAINED_CALLBACK_SKIP_REASON),
+    ("enable_geometry_pool_guards", RETAINED_CALLBACK_SKIP_REASON),
+    ("enable_movie_clip_guards", RETAINED_CALLBACK_SKIP_REASON),
+    ("enable_node_guards", RETAINED_CALLBACK_SKIP_REASON),
+    ("enable_physics2d_guards", RETAINED_CALLBACK_SKIP_REASON),
+    (
+        "enable_scene2d_resource_failure_guards",
+        RETAINED_CALLBACK_SKIP_REASON,
+    ),
+    ("enable_snapshot_guards", RETAINED_CALLBACK_SKIP_REASON),
+    ("enable_socket_guards", RETAINED_CALLBACK_SKIP_REASON),
+    ("enable_text_bidi_guards", RETAINED_CALLBACK_SKIP_REASON),
+    ("enable_text_segment_guards", RETAINED_CALLBACK_SKIP_REASON),
+    ("enable_text_shaper_guards", RETAINED_CALLBACK_SKIP_REASON),
+    ("enable_texture_atlas_guards", RETAINED_CALLBACK_SKIP_REASON),
+    ("enable_tray_guards", RETAINED_CALLBACK_SKIP_REASON),
     (
         "find_requirement_catalog_entries",
         "the cross-crate `flight_requirement::RequirementFacet` enum crosses as `uint32_t`, not an opaque handle",
@@ -398,10 +435,17 @@ pub const NATIVE_SKIPS: &[(&str, &str)] = &[
         "for_each_path_segment",
         "flight-ffi flattens PathSegment into scalar callback arguments and returns a `bool` status",
     ),
+    ("set_signal_timeout", RETAINED_CALLBACK_SKIP_REASON),
     (
         "set_storage_items",
         "flight-ffi lowers the `&[(&str, &str)]` record to parallel key/value string arrays plus one length",
     ),
+    (
+        "start_input_key_repeat_timer",
+        RETAINED_CALLBACK_SKIP_REASON,
+    ),
+    ("watch_geolocation_position", RETAINED_CALLBACK_SKIP_REASON),
+    ("watch_path", RETAINED_CALLBACK_SKIP_REASON),
 ];
 
 // Reviewed accessor directions bound as `never`: a symbol with the accessor's name exists but is an
@@ -468,6 +512,40 @@ pub const NATIVE_NEVER_ACCESSORS: &[(&str, &str)] = &[
         "C (video capability, channel, float) -> float: an SDK setter through the host video capability",
     ),
 ];
+
+// Reviewed native skips whose flight-ffi wrapper lowers a retained `Arc<dyn Fn>` callback to the
+// `(fn, ctx, release)` carrier. The generic native lowering has no release parameter, so each
+// stays JS/ESM-only until bindgen lowers callbacks and signal slots explicitly; none is bound
+// through a `Dynamic` carrier meanwhile.
+pub const RETAINED_CALLBACK_CARRIER_SKIPS: &[&str] = &[
+    "connect_interaction_signal",
+    "enable_audio_mixer_guards",
+    "enable_bitmap_text_guards",
+    "enable_camera_guards",
+    "enable_collision_guards",
+    "enable_easing_guards",
+    "enable_flow_guards",
+    "enable_geometry_pool_guards",
+    "enable_movie_clip_guards",
+    "enable_node_guards",
+    "enable_physics2d_guards",
+    "enable_scene2d_resource_failure_guards",
+    "enable_snapshot_guards",
+    "enable_socket_guards",
+    "enable_text_bidi_guards",
+    "enable_text_segment_guards",
+    "enable_text_shaper_guards",
+    "enable_texture_atlas_guards",
+    "enable_tray_guards",
+    "set_signal_timeout",
+    "start_input_key_repeat_timer",
+    "watch_geolocation_position",
+    "watch_path",
+];
+
+const RETAINED_CALLBACK_SKIP_REASON: &str = "flight-ffi lowers the retained callback to a `(fn, ctx, release)` carrier; native binding awaits explicit bindgen callback/signal lowering";
+
+const ROOTED_CONNECTION_SKIP_REASON: &str = "flight-ffi lowers the retained slot to a `(fn, ctx, release)` carrier; deliberately unbound natively until Item H3 provides its rooted connection abstraction";
 
 #[cfg(test)]
 mod portable_module_tests {
@@ -547,6 +625,7 @@ mod portable_module_tests {
             &mut surface,
             POLICY_SKIPS,
             POLICY_NEVER,
+            &[],
         );
         assert_eq!(result, Ok(()));
         assert_eq!(
@@ -576,6 +655,7 @@ mod portable_module_tests {
             &mut surface,
             POLICY_SKIPS,
             POLICY_NEVER,
+            &[],
         )
         .unwrap_err();
         assert!(
@@ -597,6 +677,7 @@ mod portable_module_tests {
             &mut surface,
             POLICY_SKIPS,
             POLICY_NEVER,
+            &[],
         )
         .unwrap_err();
         assert_eq!(
@@ -620,7 +701,7 @@ mod portable_module_tests {
             .fns
             .retain(|func| func.name != "get_audio_bus_gain");
         let errors =
-            enforce_native_binding_policy(&exports, &mut surface, POLICY_SKIPS, POLICY_NEVER)
+            enforce_native_binding_policy(&exports, &mut surface, POLICY_SKIPS, POLICY_NEVER, &[])
                 .unwrap_err();
         assert_eq!(
             errors,
@@ -646,6 +727,7 @@ mod portable_module_tests {
             &mut surface,
             POLICY_SKIPS,
             POLICY_NEVER,
+            &[],
         )
         .unwrap_err();
         assert_eq!(errors.len(), 1, "{errors:?}");
@@ -655,7 +737,7 @@ mod portable_module_tests {
     fn native_binding_policy_fails_on_unexpected_or_stale_never_accessors() {
         let mut surface = policy_surface(POLICY_HEADER, POLICY_HL);
         let unexpected =
-            enforce_native_binding_policy(&policy_exports(), &mut surface, POLICY_SKIPS, &[])
+            enforce_native_binding_policy(&policy_exports(), &mut surface, POLICY_SKIPS, &[], &[])
                 .unwrap_err();
         assert_eq!(
             unexpected,
@@ -674,11 +756,142 @@ mod portable_module_tests {
             &mut surface,
             POLICY_SKIPS,
             POLICY_NEVER,
+            &[],
         )
         .unwrap_err();
         assert_eq!(
             stale,
             ["reviewed never accessor AudioBus.gain:set no longer applies; update the table"]
+        );
+    }
+    // flight_watch_audio_bus as flight-ffi lowers a retained listener: (fn, ctx, release).
+    const CARRIER_HEADER: &str = "void * flight_watch_audio_bus(void * arg0, void (*arg1)(void *, void *), void * arg2, void (*arg3)(void *));";
+    const CARRIER_HL: &str =
+        "DEFINE_PRIM(_BYTES, flight_watch_audio_bus, _BYTES _BYTES _BYTES _BYTES);";
+    const CARRIER_SKIPS: &[(&str, &str)] = &[
+        ("visit_audio_bus", "status bool around the visit"),
+        ("watch_audio_bus", "retained listener carrier"),
+    ];
+
+    fn carrier_policy_exports() -> Vec<CrateExports> {
+        let mut exports = policy_exports();
+        exports[0].fns.push(ParsedFn {
+            name: "watch_audio_bus".into(),
+            source_name: Some("watch_audio_bus".into()),
+            params: vec![
+                crate::parse::Param {
+                    name: "bus".into(),
+                    ty: "&AudioBus".into(),
+                },
+                crate::parse::Param {
+                    name: "listener".into(),
+                    ty: "Arc<dyn Fn(&AudioBus) + Send + Sync>".into(),
+                },
+            ],
+            ret: Some("AudioBusWatch".into()),
+        });
+        return exports;
+    }
+
+    fn carrier_policy_surface(carrier_header: &str, carrier_hl: &str) -> FfiSurface {
+        return policy_surface(
+            &format!("{POLICY_HEADER}\n{carrier_header}"),
+            &format!("{POLICY_HL}\n{carrier_hl}"),
+        );
+    }
+
+    #[test]
+    fn native_binding_policy_accepts_reviewed_retained_callback_carriers() {
+        let mut surface = carrier_policy_surface(CARRIER_HEADER, CARRIER_HL);
+        let result = enforce_native_binding_policy(
+            &carrier_policy_exports(),
+            &mut surface,
+            CARRIER_SKIPS,
+            POLICY_NEVER,
+            &["watch_audio_bus"],
+        );
+        assert_eq!(result, Ok(()));
+        assert!(surface.native_skips.contains("flight_watch_audio_bus"));
+        assert!(!has_native_ffi_function("watch_audio_bus", Some(&surface)));
+        assert!(has_ffi_function("watch_audio_bus", Some(&surface)));
+    }
+    #[test]
+    fn native_binding_policy_fails_when_a_retained_callback_carrier_drifts() {
+        // The release dropped on HashLink only, then on C as well: either way the wrapper still
+        // disagrees with the generic extern, so only the carrier check notices.
+        let hl_drift =
+            CARRIER_HL.replace("_BYTES _BYTES _BYTES _BYTES", "_BYTES _BYTES _BYTES _I32");
+        let c_drift = CARRIER_HEADER.replace("void (*arg3)(void *)", "void * arg3");
+        for (header, hl) in [
+            (CARRIER_HEADER, hl_drift.as_str()),
+            (c_drift.as_str(), CARRIER_HL),
+        ] {
+            let mut surface = carrier_policy_surface(header, hl);
+            let errors = enforce_native_binding_policy(
+                &carrier_policy_exports(),
+                &mut surface,
+                CARRIER_SKIPS,
+                POLICY_NEVER,
+                &["watch_audio_bus"],
+            )
+            .unwrap_err();
+            assert_eq!(
+                errors,
+                [
+                    "retained-callback skip flight_watch_audio_bus no longer carries (fn, ctx, release) on C and HashLink; update the table"
+                ]
+            );
+            assert!(surface.native_skips.is_empty());
+        }
+    }
+    #[test]
+    fn native_binding_policy_fails_when_a_carrier_skip_is_unreviewed_or_gone() {
+        let mut surface = carrier_policy_surface(CARRIER_HEADER, CARRIER_HL);
+        let unreviewed = enforce_native_binding_policy(
+            &carrier_policy_exports(),
+            &mut surface,
+            CARRIER_SKIPS,
+            POLICY_NEVER,
+            &["visit_audio_bus", "watch_audio_bus"],
+        )
+        .unwrap_err();
+        assert_eq!(
+            unreviewed,
+            [
+                "retained-callback skip flight_visit_audio_bus no longer carries (fn, ctx, release) on C and HashLink; update the table"
+            ]
+        );
+        let mut surface = carrier_policy_surface(CARRIER_HEADER, CARRIER_HL);
+        let unlisted = enforce_native_binding_policy(
+            &carrier_policy_exports(),
+            &mut surface,
+            CARRIER_SKIPS,
+            POLICY_NEVER,
+            &["watch_audio_bus", "watch_audio_mixer"],
+        )
+        .unwrap_err();
+        assert_eq!(
+            unlisted,
+            [
+                "retained-callback skip flight_watch_audio_mixer is not a reviewed native skip",
+                "retained-callback skip flight_watch_audio_mixer no longer carries (fn, ctx, release) on C and HashLink; update the table",
+            ]
+        );
+        let mut surface = policy_surface(POLICY_HEADER, POLICY_HL);
+        let gone = enforce_native_binding_policy(
+            &policy_exports(),
+            &mut surface,
+            CARRIER_SKIPS,
+            POLICY_NEVER,
+            &["watch_audio_bus"],
+        )
+        .unwrap_err();
+        assert_eq!(
+            gone,
+            [
+                "reviewed native skip flight_watch_audio_bus no longer disagrees (or is gone); update the table",
+                "retained-callback skip flight_watch_audio_bus no longer carries (fn, ctx, release) on C and HashLink; update the table",
+            ]
         );
     }
     #[test]
@@ -689,9 +902,32 @@ mod portable_module_tests {
             [
                 "build_particle_color_curve",
                 "collect_import_diagnostics",
+                "connect_interaction_signal",
+                "enable_audio_mixer_guards",
+                "enable_bitmap_text_guards",
+                "enable_camera_guards",
+                "enable_collision_guards",
+                "enable_easing_guards",
+                "enable_flow_guards",
+                "enable_geometry_pool_guards",
+                "enable_movie_clip_guards",
+                "enable_node_guards",
+                "enable_physics2d_guards",
+                "enable_scene2d_resource_failure_guards",
+                "enable_snapshot_guards",
+                "enable_socket_guards",
+                "enable_text_bidi_guards",
+                "enable_text_segment_guards",
+                "enable_text_shaper_guards",
+                "enable_texture_atlas_guards",
+                "enable_tray_guards",
                 "find_requirement_catalog_entries",
                 "for_each_path_segment",
+                "set_signal_timeout",
                 "set_storage_items",
+                "start_input_key_repeat_timer",
+                "watch_geolocation_position",
+                "watch_path",
             ]
         );
         let never: Vec<&str> = NATIVE_NEVER_ACCESSORS.iter().map(|(key, _)| *key).collect();
@@ -717,6 +953,120 @@ mod portable_module_tests {
         );
         for (name, reason) in NATIVE_SKIPS.iter().chain(NATIVE_NEVER_ACCESSORS) {
             assert!(!reason.trim().is_empty(), "{name} needs a reason");
+        }
+    }
+    #[test]
+    fn retained_callback_carrier_skips_are_exact_and_reasoned() {
+        assert_eq!(
+            RETAINED_CALLBACK_CARRIER_SKIPS,
+            [
+                "connect_interaction_signal",
+                "enable_audio_mixer_guards",
+                "enable_bitmap_text_guards",
+                "enable_camera_guards",
+                "enable_collision_guards",
+                "enable_easing_guards",
+                "enable_flow_guards",
+                "enable_geometry_pool_guards",
+                "enable_movie_clip_guards",
+                "enable_node_guards",
+                "enable_physics2d_guards",
+                "enable_scene2d_resource_failure_guards",
+                "enable_snapshot_guards",
+                "enable_socket_guards",
+                "enable_text_bidi_guards",
+                "enable_text_segment_guards",
+                "enable_text_shaper_guards",
+                "enable_texture_atlas_guards",
+                "enable_tray_guards",
+                "set_signal_timeout",
+                "start_input_key_repeat_timer",
+                "watch_geolocation_position",
+                "watch_path",
+            ]
+        );
+        assert_eq!(RETAINED_CALLBACK_CARRIER_SKIPS.len(), 23);
+        assert_eq!(
+            RETAINED_CALLBACK_SKIP_REASON,
+            "flight-ffi lowers the retained callback to a `(fn, ctx, release)` carrier; native binding awaits explicit bindgen callback/signal lowering"
+        );
+        assert_eq!(
+            ROOTED_CONNECTION_SKIP_REASON,
+            "flight-ffi lowers the retained slot to a `(fn, ctx, release)` carrier; deliberately unbound natively until Item H3 provides its rooted connection abstraction"
+        );
+        for name in RETAINED_CALLBACK_CARRIER_SKIPS {
+            let expected = if *name == "connect_interaction_signal" {
+                ROOTED_CONNECTION_SKIP_REASON
+            } else {
+                RETAINED_CALLBACK_SKIP_REASON
+            };
+            let reasons: Vec<&str> = NATIVE_SKIPS
+                .iter()
+                .filter(|(skip, _)| skip == name)
+                .map(|(_, reason)| *reason)
+                .collect();
+            assert_eq!(reasons, [expected], "{name}");
+        }
+        let carrier_reasoned = NATIVE_SKIPS
+            .iter()
+            .filter(|(_, reason)| reason.contains("(fn, ctx, release)"))
+            .count();
+        assert_eq!(carrier_reasoned, RETAINED_CALLBACK_CARRIER_SKIPS.len());
+    }
+    #[test]
+    fn retained_callback_carrier_skips_are_exported_sdk_functions_with_retained_callbacks() {
+        // Read from the scanned crates themselves: each carrier skip must still be a root-exported
+        // function of exactly one scanned crate, and a reviewed skip takes a retained callback
+        // (an `Arc<dyn Fn>`, spelled out or through a `pub type` alias) exactly when it is listed.
+        let crates_dir = Path::new(env!("CARGO_MANIFEST_DIR")).parent().unwrap();
+        let mut retained_aliases = BTreeSet::new();
+        let mut owners: BTreeMap<String, Vec<(&str, ParsedFn)>> = BTreeMap::new();
+        for dir_name in crate::parse::SCAN_CRATES {
+            let src_dir = crates_dir.join(dir_name).join("src");
+            for entry in fs::read_dir(&src_dir).unwrap() {
+                let path = entry.unwrap().path();
+                if path.extension().is_none_or(|ext| ext != "rs") {
+                    continue;
+                }
+                for line in fs::read_to_string(&path).unwrap().lines() {
+                    let Some(rest) = line.trim().strip_prefix("pub type ") else {
+                        continue;
+                    };
+                    let Some((name, target)) = rest.split_once('=') else {
+                        continue;
+                    };
+                    let target = target.trim().trim_start_matches("std::sync::");
+                    if target.starts_with("Arc<dyn Fn") {
+                        let name = name.split('<').next().unwrap().trim();
+                        retained_aliases.insert(name.to_string());
+                    }
+                }
+            }
+            for func in crate::parse::collect_pub_fns(&src_dir) {
+                owners
+                    .entry(func.name.clone())
+                    .or_default()
+                    .push((dir_name, func));
+            }
+        }
+        let takes_retained_callback = |func: &ParsedFn| {
+            return func.params.iter().any(|param| {
+                let ty: String = param.ty.split_whitespace().collect();
+                let ty = ty.strip_prefix("Option<").unwrap_or(&ty);
+                let base = ty.split('<').next().unwrap();
+                return ty.starts_with("Arc<dynFn") || retained_aliases.contains(base);
+            });
+        };
+        for (name, _) in NATIVE_SKIPS {
+            let found = owners.get(*name).map(Vec::as_slice).unwrap_or_default();
+            let crates: Vec<&str> = found.iter().map(|(dir_name, _)| *dir_name).collect();
+            assert_eq!(found.len(), 1, "{name} is exported by {crates:?}");
+            assert_eq!(
+                takes_retained_callback(&found[0].1),
+                RETAINED_CALLBACK_CARRIER_SKIPS.contains(name),
+                "{name} in {crates:?}: {:?}",
+                found[0].1.params
+            );
         }
     }
 }

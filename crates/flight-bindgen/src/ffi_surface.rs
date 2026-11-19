@@ -179,6 +179,24 @@ pub fn has_native_ffi_symbol(surface: &FfiSurface, symbol: &str) -> bool {
     return surface.c.contains_key(symbol) && !surface.native_skips.contains(symbol);
 }
 
+// True when `symbol` carries a retained callback as flight-ffi lowers it: a callback, its context,
+// and the nullable release that context is handed to exactly once, as three consecutive C
+// parameters (`fn *`, `void *`, `fn *`) that HashLink carries as three `_BYTES` at the same
+// positions. A borrowed callback is only a callback + context pair, so it never matches.
+pub fn has_retained_callback_carrier(surface: &FfiSurface, symbol: &str) -> bool {
+    let (Some(c), Some(hl)) = (surface.c.get(symbol), surface.hl.get(symbol)) else {
+        return false;
+    };
+    if c.params.len() != hl.params.len() {
+        return false;
+    }
+    return (2..c.params.len()).any(|end| {
+        let start = end - 2;
+        return c.params[start..=end] == ["fn *", "void *", "fn *"]
+            && hl.params[start..=end].iter().all(|param| param == "_BYTES");
+    });
+}
+
 fn haxe_signature_to_c_class(ext: &NativeExtern) -> Option<FfiSignature> {
     Some(FfiSignature {
         ret: haxe_type_to_c_class(&ext.ret)?,

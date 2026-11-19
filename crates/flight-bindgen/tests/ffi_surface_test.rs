@@ -193,6 +193,95 @@ mod has_native_ffi_symbol {
     }
 }
 
+mod has_retained_callback_carrier {
+    use super::*;
+
+    // Exact flight-ffi output for retained callbacks: a trailing carrier, one followed by a scalar,
+    // and two carriers in one wrapper.
+    const CARRIER_HEADER: &str = "\
+void * flight_watch_path(const char * arg0, void (*arg1)(void *, void *), void * arg2, void (*arg3)(void *));
+void flight_enable_node_guards(void * arg0, void * arg1, double (*arg2)(void *), void * arg3, void (*arg4)(void *));
+void flight_start_input_key_repeat_timer(void * arg0, void (*arg1)(void *), void * arg2, void (*arg3)(void *), double arg4);
+int32_t flight_watch_geolocation_position(void * arg0, void (*arg1)(void *, void *), void * arg2, void (*arg3)(void *), void * arg4, void (*arg5)(void *, uint32_t), void * arg6, void (*arg7)(void *));
+";
+    const CARRIER_HL: &str = "\
+DEFINE_PRIM(_BYTES, flight_watch_path, _BYTES _BYTES _BYTES _BYTES);
+DEFINE_PRIM(_VOID, flight_enable_node_guards, _BYTES _BYTES _BYTES _BYTES _BYTES);
+DEFINE_PRIM(_VOID, flight_start_input_key_repeat_timer, _BYTES _BYTES _BYTES _BYTES _F64);
+DEFINE_PRIM(_I32, flight_watch_geolocation_position, _BYTES _BYTES _BYTES _BYTES _BYTES _BYTES _BYTES _BYTES);
+";
+
+    fn carrier_surface(header: &str, hl: &str) -> FfiSurface {
+        return FfiSurface {
+            c: parse_ffi_header(header),
+            hl: parse_hl_primitives(hl),
+            native_skips: BTreeSet::new(),
+        };
+    }
+
+    #[test]
+    fn accepts_the_callback_context_release_triple() {
+        let surface = carrier_surface(CARRIER_HEADER, CARRIER_HL);
+        for symbol in [
+            "flight_enable_node_guards",
+            "flight_start_input_key_repeat_timer",
+            "flight_watch_geolocation_position",
+            "flight_watch_path",
+        ] {
+            assert!(has_retained_callback_carrier(&surface, symbol), "{symbol}");
+        }
+    }
+
+    #[test]
+    fn rejects_a_borrowed_callback_or_a_pair_without_release() {
+        let surface = fixture_surface();
+        assert!(!has_retained_callback_carrier(
+            &surface,
+            "flight_for_each_path_segment"
+        ));
+        assert!(!has_retained_callback_carrier(
+            &surface,
+            "flight_set_audio_bus_gain"
+        ));
+        let before_release = carrier_surface(
+            "void flight_enable_node_guards(void * arg0, void * arg1, double (*arg2)(void *), void * arg3);",
+            "DEFINE_PRIM(_VOID, flight_enable_node_guards, _BYTES _BYTES _BYTES _BYTES);",
+        );
+        assert!(!has_retained_callback_carrier(
+            &before_release,
+            "flight_enable_node_guards"
+        ));
+    }
+
+    #[test]
+    fn rejects_a_carrier_missing_or_drifted_on_one_surface() {
+        let hl_release_drift = CARRIER_HL.replace(
+            "flight_watch_path, _BYTES _BYTES _BYTES _BYTES",
+            "flight_watch_path, _BYTES _BYTES _BYTES _I32",
+        );
+        let hl_arity_drift = CARRIER_HL.replace(
+            "flight_watch_path, _BYTES _BYTES _BYTES _BYTES",
+            "flight_watch_path, _BYTES _BYTES _BYTES",
+        );
+        let c_release_drift = CARRIER_HEADER.replace(
+            "void * arg2, void (*arg3)(void *));\nvoid flight_enable",
+            "void * arg2, void * arg3);\nvoid flight_enable",
+        );
+        for surface in [
+            carrier_surface(CARRIER_HEADER, &hl_release_drift),
+            carrier_surface(CARRIER_HEADER, &hl_arity_drift),
+            carrier_surface(&c_release_drift, CARRIER_HL),
+            carrier_surface(CARRIER_HEADER, ""),
+            carrier_surface("", CARRIER_HL),
+        ] {
+            assert!(!has_retained_callback_carrier(
+                &surface,
+                "flight_watch_path"
+            ));
+        }
+    }
+}
+
 mod load_ffi_surface {
     use super::*;
 
