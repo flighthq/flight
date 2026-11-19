@@ -198,15 +198,10 @@ pub struct InteractionDispatchLayerOptions {
 
 // ── InteractionInputSource ──
 
-pub struct InteractionInputSource {
-    pub on_key_down: Signal<flight_input::InputKeyboardData>,
-    pub on_key_up: Signal<flight_input::InputKeyboardData>,
-    pub on_pointer_cancel: Signal<flight_input::InputPointerData>,
-    pub on_pointer_down: Signal<flight_input::InputPointerData>,
-    pub on_pointer_move: Signal<flight_input::InputPointerData>,
-    pub on_pointer_up: Signal<flight_input::InputPointerData>,
-    pub on_wheel: Signal<flight_input::InputPointerData>,
-}
+/// The input events interaction consumes (TS `InteractionInputSource`, a `Pick` of
+/// `InputSignals` that TS callers satisfy with their `InputManager`): the shared input manager
+/// hosts feed through `attach_*_input`. It is read-locked only while a connection is made.
+pub type InteractionInputSource = Ref<flight_input::InputManager>;
 
 // ── InteractionManager ──
 

@@ -7,7 +7,9 @@ use flight_entity::{Ref, UnknownValue};
 use flight_input::PointerType;
 
 use flight_node::{NodeRef, get_node_parent};
-use flight_signals::{connect_signal, create_signal, disconnect_signal, emit_signal};
+use flight_signals::{
+    connect_signal_tracked, create_signal, disconnect_signal_connection, emit_signal,
+};
 
 use crate::hit_tests::{
     create_hit_test_context, find_graph_hit_target, find_graph_hit_target_precise,
@@ -277,30 +279,24 @@ pub fn connect_input_to_interaction(
             );
         });
 
-    let kd_id = connect_signal(&input.on_key_down, on_key_down, None);
-    let ku_id = connect_signal(&input.on_key_up, on_key_up, None);
-    let pc_id = connect_signal(&input.on_pointer_cancel, on_pointer_cancel, None);
-    let pd_id = connect_signal(&input.on_pointer_down, on_pointer_down, None);
-    let pm_id = connect_signal(&input.on_pointer_move, on_pointer_move, None);
-    let pu_id = connect_signal(&input.on_pointer_up, on_pointer_up, None);
-    let wh_id = connect_signal(&input.on_wheel, on_wheel, None);
-
-    let kd_sig = input.on_key_down.clone();
-    let ku_sig = input.on_key_up.clone();
-    let pc_sig = input.on_pointer_cancel.clone();
-    let pd_sig = input.on_pointer_down.clone();
-    let pm_sig = input.on_pointer_move.clone();
-    let pu_sig = input.on_pointer_up.clone();
-    let wh_sig = input.on_wheel.clone();
+    // Only the registrations are retained: tracked connections reach the input signals weakly, so
+    // the disposer never keeps the input manager alive, and the input lock is held only to connect.
+    let source = input.read().unwrap();
+    let connections = [
+        connect_signal_tracked(&source.on_key_down, on_key_down, None),
+        connect_signal_tracked(&source.on_key_up, on_key_up, None),
+        connect_signal_tracked(&source.on_pointer_cancel, on_pointer_cancel, None),
+        connect_signal_tracked(&source.on_pointer_down, on_pointer_down, None),
+        connect_signal_tracked(&source.on_pointer_move, on_pointer_move, None),
+        connect_signal_tracked(&source.on_pointer_up, on_pointer_up, None),
+        connect_signal_tracked(&source.on_wheel, on_wheel, None),
+    ];
+    drop(source);
 
     return Arc::new(move || {
-        disconnect_signal(&kd_sig, kd_id);
-        disconnect_signal(&ku_sig, ku_id);
-        disconnect_signal(&pc_sig, pc_id);
-        disconnect_signal(&pd_sig, pd_id);
-        disconnect_signal(&pm_sig, pm_id);
-        disconnect_signal(&pu_sig, pu_id);
-        disconnect_signal(&wh_sig, wh_id);
+        for connection in &connections {
+            disconnect_signal_connection(connection);
+        }
         let mut m = manager.write().unwrap();
         for state in m.pointer_states.values_mut() {
             reset_interaction_click_state(state);

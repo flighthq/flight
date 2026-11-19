@@ -27,15 +27,7 @@ mod connect_input_to_interaction {
     use std::sync::atomic::{AtomicU32, Ordering};
 
     fn test_input_source() -> InteractionInputSource {
-        return InteractionInputSource {
-            on_key_down: flight_signals::create_signal(),
-            on_key_up: flight_signals::create_signal(),
-            on_pointer_cancel: flight_signals::create_signal(),
-            on_pointer_down: flight_signals::create_signal(),
-            on_pointer_move: flight_signals::create_signal(),
-            on_pointer_up: flight_signals::create_signal(),
-            on_wheel: flight_signals::create_signal(),
-        };
+        return flight_input::create_input_manager();
     }
 
     fn test_keyboard_data(key: &str) -> flight_input::InputKeyboardData {
@@ -84,7 +76,7 @@ mod connect_input_to_interaction {
         mgr.write().unwrap().enabled = true;
         let input = test_input_source();
         let _dispose = connect_input_to_interaction(&input, mgr, 1.0);
-        flight_signals::emit_signal(&input.on_key_down, &test_keyboard_data("a"));
+        flight_signals::emit_signal(&input.read().unwrap().on_key_down, &test_keyboard_data("a"));
         assert!(count.load(Ordering::Relaxed) > 0);
     }
 
@@ -95,7 +87,38 @@ mod connect_input_to_interaction {
         let input = test_input_source();
         let dispose = connect_input_to_interaction(&input, mgr, 1.0);
         dispose();
-        flight_signals::emit_signal(&input.on_key_down, &test_keyboard_data("a"));
+        flight_signals::emit_signal(&input.read().unwrap().on_key_down, &test_keyboard_data("a"));
+    }
+
+    #[test]
+    fn retains_only_registrations_and_the_manager_handle() {
+        let root = interaction_fixture::node();
+        let mgr = Arc::new(RwLock::new(interaction_fixture::manager_for(&root)));
+        let input = test_input_source();
+        let dispose = connect_input_to_interaction(&input, mgr.clone(), 1.0);
+        assert_eq!(
+            Arc::strong_count(&input),
+            1,
+            "the input lock is held only to connect"
+        );
+        assert!(
+            input.try_write().is_ok(),
+            "no input lock outlives the connection"
+        );
+        let released = Arc::downgrade(&input);
+        drop(input);
+        assert!(
+            released.upgrade().is_none(),
+            "the disposer must not keep the input alive"
+        );
+        dispose();
+        assert_eq!(
+            Arc::strong_count(&mgr),
+            2,
+            "the disposer holds the manager to reset it"
+        );
+        drop(dispose);
+        assert_eq!(Arc::strong_count(&mgr), 1);
     }
 }
 
