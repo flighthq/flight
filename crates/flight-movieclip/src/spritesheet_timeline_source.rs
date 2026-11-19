@@ -140,13 +140,15 @@ fn construct_spritesheet_frame(
     {
         let mut bitmap = bitmap.write().unwrap();
         bitmap.data.texture = Some(texture_union);
-        bitmap.x = offset_x_frame - offset_x;
-        bitmap.y = offset_y_frame - offset_y;
+        // Spritesheet frame offsets and pivots are the f32 frame-data lane; they widen exactly and
+        // combine in f64 for the node transform.
+        bitmap.x = f64::from(offset_x_frame) - f64::from(offset_x);
+        bitmap.y = f64::from(offset_y_frame) - f64::from(offset_y);
         bitmap.pivot_x = pivot_x
-            .map(|pivot| pivot * region_frame.width)
+            .map(|pivot| f64::from(pivot) * region_frame.width)
             .unwrap_or(0.0);
         bitmap.pivot_y = pivot_y
-            .map(|pivot| pivot * region_frame.height)
+            .map(|pivot| f64::from(pivot) * region_frame.height)
             .unwrap_or(0.0);
     }
     invalidate_node_local_transform(&node_ref);

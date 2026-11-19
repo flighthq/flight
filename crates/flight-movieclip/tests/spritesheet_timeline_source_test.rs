@@ -111,6 +111,27 @@ mod create_spritesheet_timeline_source {
     }
 
     #[test]
+    fn subtracts_the_animation_origin_in_double_precision() {
+        // 2^24 - 0.5 is exact in f64 but rounds back to 2^24 when subtracted in f32.
+        let sheet = sheet_with_frames(1);
+        sheet.read().unwrap().frames[0].write().unwrap().offset_x = 16_777_216.0;
+        let animation = animation(vec![0.0], None);
+        animation.write().unwrap().origin_x = 0.5;
+        let guards = MovieClipGuardState {
+            movie_clip_guards_enabled: false,
+            spritesheet_timeline_source_guard: None,
+        };
+        let source = create_spritesheet_timeline_source(&guards, &sheet, &animation);
+        let target = create_display_object();
+        let target_ref: Node2DRef = target.clone();
+        construct(&source)(&target_ref, 1);
+        assert_eq!(f64::from(16_777_216.0_f32 - 0.5_f32), 16_777_216.0);
+        with_sprite(&target_ref, |sprite| {
+            assert_eq!(sprite.node2d_fields().x, 16_777_215.5);
+        });
+    }
+
+    #[test]
     fn writes_the_frame_offsets_minus_the_animation_origin() {
         let sheet = sheet_with_frames(1);
         sheet.read().unwrap().frames[0].write().unwrap().offset_x = 12.0;
