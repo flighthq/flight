@@ -63,17 +63,23 @@ fn main() {
         ));
     }
 
-    let resize = get_sdl_host_surface_resize_capability(&host)
-        .expect("resize capability")
+    let display = get_sdl_host_surface_display_capability(&host)
+        .expect("display capability")
         .clone();
-    (resize.resize)(&surface, 0.0, 0.0);
-    pump_sdl_host(&mut host).expect("minimized extent pump");
-    assert_eq!((acquisition.surface.width)(), 0.0);
-    assert_eq!((acquisition.surface.height)(), 0.0);
-    (resize.resize)(&surface, 320.0, 240.0);
-    pump_sdl_host(&mut host).expect("restored extent pump");
-    assert_eq!((acquisition.surface.width)(), 320.0);
-    assert_eq!((acquisition.surface.height)(), 240.0);
+    (display.set_display_size)(&surface, 200.0, 150.0);
+    for _ in 0..20 {
+        pump_sdl_host(&mut host).expect("real resize event pump");
+        if (
+            (acquisition.surface.width)(),
+            (acquisition.surface.height)(),
+        ) == (200.0, 150.0)
+        {
+            break;
+        }
+        std::thread::sleep(std::time::Duration::from_millis(10));
+    }
+    assert_eq!((acquisition.surface.width)(), 200.0);
+    assert_eq!((acquisition.surface.height)(), 150.0);
 
     enable_wgpu_screen_render_target_capture(&mut screen.write().unwrap());
     end_wgpu_render_pass(begin_wgpu_render_pass(
@@ -86,6 +92,7 @@ fn main() {
         Some(5_000),
     ))
     .expect("bounded screen capture");
+    assert_eq!((bitmap.width, bitmap.height), (200, 150));
     assert!(bitmap.data.iter().any(|channel| *channel != 0));
     assert!(
         bitmap

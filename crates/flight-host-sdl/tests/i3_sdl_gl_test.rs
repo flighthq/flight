@@ -71,6 +71,15 @@ fn main() {
     // SAFETY: the default framebuffer belongs to the current SDL GL context and the output is valid.
     unsafe {
         gl.bind_framebuffer(glow::READ_FRAMEBUFFER, None);
+        assert!(!gl.is_enabled(glow::FRAMEBUFFER_SRGB));
+        assert_eq!(
+            gl.get_framebuffer_attachment_parameter_i32(
+                glow::FRAMEBUFFER,
+                glow::BACK_LEFT,
+                glow::FRAMEBUFFER_ATTACHMENT_COLOR_ENCODING,
+            ),
+            glow::SRGB as i32
+        );
         gl.read_pixels(
             100,
             75,
@@ -81,7 +90,7 @@ fn main() {
             PixelPackData::Slice(Some(&mut pixel)),
         );
     }
-    assert!(pixel[0] > 20 && pixel[1] > 90 && pixel[2] > 150 && pixel[3] == 255);
+    assert_eq!(pixel, [31, 122, 199, 255]);
     // SAFETY: framebuffer zero must be bound before the SDL window swap, notably on macOS.
     unsafe { gl.bind_framebuffer(glow::DRAW_FRAMEBUFFER, None) };
     present_sdl_host_gl(&host).expect("swap resized SDL GL window");

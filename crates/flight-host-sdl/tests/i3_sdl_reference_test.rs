@@ -205,24 +205,39 @@ fn solid_sprite(color: u32, x: f64, y: f64, width: u32, height: u32) -> NodeRef 
     return sprite;
 }
 
-fn assert_sentinel(pixels: &[u8], x: usize, y: usize, expected: [u8; 4], tolerance: u8) {
+fn assert_sentinel(pixels: &[u8], x: usize, y: usize, expected: [u8; 4]) {
     let offset = (y * WIDTH as usize + x) * 4;
     let pixel = &pixels[offset..offset + 4];
-    for (actual, expected) in pixel.iter().zip(expected) {
-        assert!(
-            actual.abs_diff(expected) <= tolerance,
-            "sentinel ({x},{y}) {pixel:?}"
-        );
-    }
+    assert_eq!(pixel, expected, "sentinel ({x},{y})");
 }
 
-fn is_primitive_edge(x: usize, y: usize) -> bool {
-    return [8, 31, 38, 55]
-        .into_iter()
-        .any(|edge| x.abs_diff(edge) <= 1)
-        || [8, 27, 36, 51]
-            .into_iter()
-            .any(|edge| y.abs_diff(edge) <= 1);
+fn exact_pixels_match(left: &[u8], right: &[u8]) -> bool {
+    return left == right;
+}
+
+fn one_row_normalization_error(pixels: &[u8]) -> Vec<u8> {
+    let row_bytes = WIDTH as usize * 4;
+    let mut shifted = pixels.to_vec();
+    shifted.rotate_left(row_bytes);
+    return shifted;
+}
+
+fn one_pixel_sprite_shift(pixels: &[u8]) -> Vec<u8> {
+    let mut shifted = pixels.to_vec();
+    for y in 8..28 {
+        let row = y * WIDTH as usize * 4;
+        let source = pixels[row + 8 * 4..row + 32 * 4].to_vec();
+        shifted[row + 9 * 4..row + 33 * 4].copy_from_slice(&source);
+        shifted[row + 8 * 4..row + 9 * 4].copy_from_slice(&pixels[row..row + 4]);
+    }
+    return shifted;
+}
+
+fn seven_step_channel_change(pixels: &[u8]) -> Vec<u8> {
+    let mut changed = pixels.to_vec();
+    let offset = (16 * WIDTH as usize + 16) * 4;
+    changed[offset] = changed[offset].saturating_sub(7);
+    return changed;
 }
 
 fn main() {
@@ -233,31 +248,24 @@ fn main() {
     let wgpu = render_wgpu_reference();
     let gl = render_gl_reference();
     assert_eq!(wgpu.len(), gl.len());
-    assert_sentinel(&wgpu, 2, 2, [10, 15, 23, 255], 4);
-    assert_sentinel(&gl, 2, 2, [10, 15, 23, 255], 4);
-    assert_sentinel(&wgpu, 16, 16, [53, 184, 242, 255], 8);
-    assert_sentinel(&gl, 16, 16, [53, 184, 242, 255], 8);
-    assert_sentinel(&wgpu, 46, 44, [242, 201, 76, 255], 8);
-    assert_sentinel(&gl, 46, 44, [242, 201, 76, 255], 8);
+    assert_sentinel(&wgpu, 2, 2, [10, 15, 23, 255]);
+    assert_sentinel(&gl, 2, 2, [10, 15, 23, 255]);
+    assert_sentinel(&wgpu, 16, 16, [53, 184, 242, 255]);
+    assert_sentinel(&gl, 16, 16, [53, 184, 242, 255]);
+    assert_sentinel(&wgpu, 46, 44, [242, 201, 76, 255]);
+    assert_sentinel(&gl, 46, 44, [242, 201, 76, 255]);
+    assert!(
+        exact_pixels_match(&wgpu, &gl),
+        "GL and wgpu must match at tolerance zero over every pixel"
+    );
 
-    let mut maximum = 0_u8;
-    let mut sum = 0_u64;
-    let mut count = 0_u64;
-    for y in 0..HEIGHT as usize {
-        for x in 0..WIDTH as usize {
-            if is_primitive_edge(x, y) {
-                continue;
-            }
-            let offset = (y * WIDTH as usize + x) * 4;
-            for channel in 0..4 {
-                let delta = wgpu[offset + channel].abs_diff(gl[offset + channel]);
-                maximum = maximum.max(delta);
-                sum += u64::from(delta);
-                count += 1;
-            }
-        }
-    }
-    let mean = sum as f64 / count as f64;
-    assert!(maximum <= 8, "maximum channel delta {maximum}");
-    assert!(mean <= 1.5, "mean absolute channel delta {mean}");
+    assert!(!exact_pixels_match(
+        &wgpu,
+        &one_row_normalization_error(&wgpu)
+    ));
+    assert!(!exact_pixels_match(&wgpu, &one_pixel_sprite_shift(&wgpu)));
+    assert!(!exact_pixels_match(
+        &wgpu,
+        &seven_step_channel_change(&wgpu)
+    ));
 }
