@@ -176,7 +176,7 @@ pub type Physics3DAbiExecute = Arc<
 pub type Physics3DAbiStep = Arc<
     dyn Fn(
             Physics3DAbiWorldHandle,
-            f32,
+            f64,
             Option<&Physics3DAbiContactHooks>,
         ) -> Physics3DAbiStepStatus
         + Send
@@ -201,9 +201,9 @@ pub type Physics3DAbiReadJoints =
 pub type Physics3DAbiQueryPoint = Arc<
     dyn Fn(
             Physics3DAbiWorldHandle,
-            f32,
-            f32,
-            f32,
+            f64,
+            f64,
+            f64,
             Option<&Physics3DQueryFilter>,
             &mut Physics3DAbiQueryBuffer,
         ) -> bool
@@ -213,13 +213,13 @@ pub type Physics3DAbiQueryPoint = Arc<
 pub type Physics3DAbiQueryRay = Arc<
     dyn Fn(
             Physics3DAbiWorldHandle,
-            f32,
-            f32,
-            f32,
-            f32,
-            f32,
-            f32,
-            f32,
+            f64,
+            f64,
+            f64,
+            f64,
+            f64,
+            f64,
+            f64,
             bool,
             Option<&Physics3DQueryFilter>,
             &mut Physics3DAbiQueryBuffer,
@@ -241,10 +241,10 @@ pub type Physics3DAbiQueryShapeCast = Arc<
     dyn Fn(
             Physics3DAbiWorldHandle,
             &CollisionShape3D,
-            f32,
-            f32,
-            f32,
-            f32,
+            f64,
+            f64,
+            f64,
+            f64,
             Option<&Physics3DQueryFilter>,
             &mut Physics3DAbiQueryBuffer,
         ) -> bool

@@ -69,7 +69,7 @@ pub fn joint(kind: &str, body_a: i32, body_b: i32) -> Physics3DJointRef {
 }
 
 // TS `createPhysics3DDistanceJoint({ bodyA, bodyB, length })`.
-pub fn distance_joint(body_a: i32, body_b: i32, length: f32) -> Physics3DJointRef {
+pub fn distance_joint(body_a: i32, body_b: i32, length: f64) -> Physics3DJointRef {
     let out = create_physics_3d_distance_joint();
     {
         let mut out = out.write().unwrap();
@@ -103,12 +103,12 @@ pub fn joints() -> Vec<(&'static str, Physics3DJointRef)> {
 }
 
 pub fn aabb(
-    min_x: f32,
-    min_y: f32,
-    min_z: f32,
-    max_x: f32,
-    max_y: f32,
-    max_z: f32,
+    min_x: f64,
+    min_y: f64,
+    min_z: f64,
+    max_x: f64,
+    max_y: f64,
+    max_z: f64,
 ) -> CollisionColliderShape3D {
     return CollisionColliderShape3D::BuiltIn(CollisionShape3D::Aabb(CollisionAabb3D {
         min_x,
@@ -138,7 +138,7 @@ pub fn unit_aabb_shape() -> CollisionShape3D {
 // Every built-in collider shape, in wire order, with the given box half extents, triangle-mesh
 // version and heightfield version.
 pub fn collider_shapes(
-    half: (f32, f32, f32),
+    half: (f64, f64, f64),
     mesh_version: i64,
     heightfield_version: i64,
 ) -> Vec<(&'static str, CollisionColliderShape3D)> {

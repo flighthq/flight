@@ -93,7 +93,7 @@ pub fn read_physics3d_abi_joints(
 pub fn step_physics3d_abi_world(
     abi: &Physics3DAbi,
     world: Physics3DAbiWorldHandle,
-    dt: f32,
+    dt: f64,
     hooks: Option<&Physics3DAbiContactHooks>,
 ) -> Physics3DAbiStepStatus {
     return (abi.step)(world, dt, hooks);

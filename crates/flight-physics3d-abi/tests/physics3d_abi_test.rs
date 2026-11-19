@@ -134,6 +134,26 @@ mod create_physics3d_abi {
     }
 
     #[test]
+    fn round_trips_a_body_velocity_through_the_wire_double_exactly() {
+        // 0.1 is not an f32 value: the wire double must reach physics and come back unchanged.
+        let abi = create_physics3d_abi();
+        let world = create_physics3d_abi_world(&abi);
+        let mut commands = create_physics3d_abi_command_buffer(None);
+        let body = rigid_body3d(Physics3DBodyType::Dynamic);
+        body.write().unwrap().velocity_x = 0.1;
+        assert!(write_physics3d_abi_set_body_command(
+            &mut commands,
+            3,
+            &body.read().unwrap()
+        ));
+        execute_or_throw(&abi, world, &commands);
+        let mut out = create_physics3d_abi_body_buffer(1);
+        assert!(read_physics3d_abi_bodies(&mut out, &abi, world, None));
+        assert_ne!(f64::from(0.1_f32), 0.1);
+        assert_eq!(out.values[PHYSICS3D_ABI_BODY_VALUE_VELOCITY_X], 0.1);
+    }
+
+    #[test]
     fn executes_and_reads_through_caller_owned_shared_memory_views() {
         let abi = create_physics3d_abi();
         let world = create_physics3d_abi_world(&abi);
@@ -349,10 +369,10 @@ mod execute_physics3d_abi_commands {
         assert_eq!(before_step.flags[0] & (1 << 4), 0);
         // D1 f32 bound (TS: toBeCloseTo(2, 12))
         let velocity_x = before_step.values[PHYSICS3D_ABI_BODY_VALUE_VELOCITY_X];
-        assert!((velocity_x - 2.0).abs() <= 4.0 * f64::from(f32::EPSILON) * 2.0);
+        assert!((velocity_x - 2.0).abs() <= 4.0 * f64::EPSILON * 2.0);
         // D1 f32 bound (TS: toBeCloseTo(-0.5, 12))
         let angular_velocity_z = before_step.values[PHYSICS3D_ABI_BODY_VALUE_ANGULAR_VELOCITY_Z];
-        assert!((angular_velocity_z + 0.5).abs() <= 4.0 * f64::from(f32::EPSILON));
+        assert!((angular_velocity_z + 0.5).abs() <= 4.0 * f64::EPSILON);
         assert_eq!(before_step.values[PHYSICS3D_ABI_BODY_VALUE_FORCE_X], 4.0);
         assert_eq!(before_step.values[PHYSICS3D_ABI_BODY_VALUE_TORQUE_Z], 4.0);
 
@@ -369,7 +389,7 @@ mod execute_physics3d_abi_commands {
         ));
         // D1 f32 bound (TS: toBeCloseTo(3, 12)); two substeps of accumulation.
         let velocity_x = after_step.values[PHYSICS3D_ABI_BODY_VALUE_VELOCITY_X];
-        assert!((velocity_x - 3.0).abs() <= 4.0 * f64::from(f32::EPSILON) * 3.0);
+        assert!((velocity_x - 3.0).abs() <= 4.0 * f64::EPSILON * 3.0);
         assert_eq!(after_step.values[PHYSICS3D_ABI_BODY_VALUE_VELOCITY_Y], 0.0);
         assert_eq!(after_step.values[PHYSICS3D_ABI_BODY_VALUE_FORCE_X], 0.0);
         assert_eq!(after_step.values[PHYSICS3D_ABI_BODY_VALUE_TORQUE_Z], 0.0);
@@ -688,17 +708,11 @@ mod step_physics3d_abi_world {
         let mut out = create_physics3d_abi_body_buffer(1);
         read_physics3d_abi_bodies(&mut out, &abi, abi_world, None);
         let direct_body = direct_body.read().unwrap();
-        assert_eq!(
-            out.values[PHYSICS3D_ABI_BODY_VALUE_X],
-            f64::from(direct_body.x)
-        );
-        assert_eq!(
-            out.values[PHYSICS3D_ABI_BODY_VALUE_Y],
-            f64::from(direct_body.y)
-        );
+        assert_eq!(out.values[PHYSICS3D_ABI_BODY_VALUE_X], direct_body.x);
+        assert_eq!(out.values[PHYSICS3D_ABI_BODY_VALUE_Y], direct_body.y);
         assert_eq!(
             out.values[PHYSICS3D_ABI_BODY_VALUE_VELOCITY_Y],
-            f64::from(direct_body.velocity_y)
+            direct_body.velocity_y
         );
     }
 
@@ -807,11 +821,7 @@ mod step_physics3d_abi_world {
                 ),
             ];
             for (slot, value) in expected {
-                assert_eq!(
-                    out.values[at + slot],
-                    f64::from(value),
-                    "body {i} slot {slot}"
-                );
+                assert_eq!(out.values[at + slot], value, "body {i} slot {slot}");
             }
         }
         assert!(bodies[3].read().unwrap().y < 2.7);

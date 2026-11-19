@@ -254,7 +254,7 @@ src/physics3d_abi.rs: pub fn initialize_physics3d_abi(out: &mut Physics3DAbi)
 src/physics3d_abi.rs: pub fn read_physics3d_abi_bodies(out: &mut Physics3DAbiBodyBuffer, abi: &Physics3DAbi, world: Physics3DAbiWorldHandle, body_ids: Option<&Uint32Array>,) -> bool
 src/physics3d_abi.rs: pub fn read_physics3d_abi_contacts(out: &mut Physics3DAbiContactBuffer, abi: &Physics3DAbi, world: Physics3DAbiWorldHandle, selection: Physics3DAbiContactSelection,) -> bool
 src/physics3d_abi.rs: pub fn read_physics3d_abi_joints(out: &mut Physics3DAbiJointBuffer, abi: &Physics3DAbi, world: Physics3DAbiWorldHandle,) -> bool
-src/physics3d_abi.rs: pub fn step_physics3d_abi_world(abi: &Physics3DAbi, world: Physics3DAbiWorldHandle, dt: f32, hooks: Option<&Physics3DAbiContactHooks>,) -> Physics3DAbiStepStatus
+src/physics3d_abi.rs: pub fn step_physics3d_abi_world(abi: &Physics3DAbi, world: Physics3DAbiWorldHandle, dt: f64, hooks: Option<&Physics3DAbiContactHooks>,) -> Physics3DAbiStepStatus
 src/physics3d_abi_buffer.rs: pub fn clear_physics3d_abi_command_buffer(out: &mut Physics3DAbiCommandBuffer)
 src/physics3d_abi_buffer.rs: pub fn create_physics3d_abi_body_buffer(capacity: usize) -> Physics3DAbiBodyBuffer
 src/physics3d_abi_buffer.rs: pub fn create_physics3d_abi_command_buffer(byte_capacity: Option<usize>,) -> Physics3DAbiCommandBuffer
@@ -457,11 +457,11 @@ src/physics3d_abi_layout.rs: pub const PHYSICS3D_ABI_SHAPE_KIND_HEIGHTFIELD: u32
 src/physics3d_abi_layout.rs: pub const PHYSICS3D_ABI_SHAPE_KIND_SPHERE: u32
 src/physics3d_abi_layout.rs: pub const PHYSICS3D_ABI_SHAPE_KIND_TRIANGLE_MESH: u32
 src/physics3d_abi_layout.rs: pub const PHYSICS3D_ABI_VERSION: u32
-src/physics3d_abi_query.rs: pub fn query_physics3d_abi_point(out: &mut Physics3DAbiQueryBuffer, abi: &Physics3DAbi, world: Physics3DAbiWorldHandle, x: f32, y: f32, z: f32, filter: Option<&Physics3DQueryFilter>,) -> bool
-src/physics3d_abi_query.rs: pub fn query_physics3d_abi_ray(out: &mut Physics3DAbiQueryBuffer, abi: &Physics3DAbi, world: Physics3DAbiWorldHandle, origin_x: f32, origin_y: f32, origin_z: f32, direction_x: f32, direction_y: f32, direction_z: f32, max_fraction: Option<f32>, filter: Option<&Physics3DQueryFilter>,) -> bool
-src/physics3d_abi_query.rs: pub fn query_physics3d_abi_ray_closest(out: &mut Physics3DAbiQueryBuffer, abi: &Physics3DAbi, world: Physics3DAbiWorldHandle, origin_x: f32, origin_y: f32, origin_z: f32, direction_x: f32, direction_y: f32, direction_z: f32, max_fraction: Option<f32>, filter: Option<&Physics3DQueryFilter>,) -> bool
+src/physics3d_abi_query.rs: pub fn query_physics3d_abi_point(out: &mut Physics3DAbiQueryBuffer, abi: &Physics3DAbi, world: Physics3DAbiWorldHandle, x: f64, y: f64, z: f64, filter: Option<&Physics3DQueryFilter>,) -> bool
+src/physics3d_abi_query.rs: pub fn query_physics3d_abi_ray(out: &mut Physics3DAbiQueryBuffer, abi: &Physics3DAbi, world: Physics3DAbiWorldHandle, origin_x: f64, origin_y: f64, origin_z: f64, direction_x: f64, direction_y: f64, direction_z: f64, max_fraction: Option<f64>, filter: Option<&Physics3DQueryFilter>,) -> bool
+src/physics3d_abi_query.rs: pub fn query_physics3d_abi_ray_closest(out: &mut Physics3DAbiQueryBuffer, abi: &Physics3DAbi, world: Physics3DAbiWorldHandle, origin_x: f64, origin_y: f64, origin_z: f64, direction_x: f64, direction_y: f64, direction_z: f64, max_fraction: Option<f64>, filter: Option<&Physics3DQueryFilter>,) -> bool
 src/physics3d_abi_query.rs: pub fn query_physics3d_abi_region(out: &mut Physics3DAbiQueryBuffer, abi: &Physics3DAbi, world: Physics3DAbiWorldHandle, region: &SpatialAabb3D, filter: Option<&Physics3DQueryFilter>,) -> bool
-src/physics3d_abi_query.rs: pub fn query_physics3d_abi_shape_cast(out: &mut Physics3DAbiQueryBuffer, abi: &Physics3DAbi, world: Physics3DAbiWorldHandle, shape: &CollisionShape3D, dx: f32, dy: f32, dz: f32, max_fraction: Option<f32>, filter: Option<&Physics3DQueryFilter>,) -> bool
+src/physics3d_abi_query.rs: pub fn query_physics3d_abi_shape_cast(out: &mut Physics3DAbiQueryBuffer, abi: &Physics3DAbi, world: Physics3DAbiWorldHandle, shape: &CollisionShape3D, dx: f64, dy: f64, dz: f64, max_fraction: Option<f64>, filter: Option<&Physics3DQueryFilter>,) -> bool
 src/physics3d_abi_strings.rs: pub fn get_physics3d_abi_contact_selection_string(value: Physics3DAbiContactSelection,) -> &'static str
 src/physics3d_abi_strings.rs: pub fn get_physics3d_abi_execution_status_string(value: Physics3DAbiExecutionStatus,) -> &'static str
 src/physics3d_abi_strings.rs: pub fn get_physics3d_abi_step_status_string(value: Physics3DAbiStepStatus) -> &'static str
@@ -477,7 +477,7 @@ src/sugar.rs: impl Physics3DAbi :: fn destroy_world(&self, world: Physics3DAbiWo
 src/sugar.rs: impl Physics3DAbi :: fn get_world_status(&self, world: Physics3DAbiWorldHandle) -> Physics3DAbiWorldStatus
 src/sugar.rs: impl Physics3DAbi :: fn new() -> Physics3DAbi
 src/sugar.rs: impl Physics3DAbi :: fn new_reference() -> Physics3DAbi
-src/sugar.rs: impl Physics3DAbi :: fn step_world(&self, world: Physics3DAbiWorldHandle, dt: f32, hooks: Option<&Physics3DAbiContactHooks>,) -> Physics3DAbiStepStatus
+src/sugar.rs: impl Physics3DAbi :: fn step_world(&self, world: Physics3DAbiWorldHandle, dt: f64, hooks: Option<&Physics3DAbiContactHooks>,) -> Physics3DAbiStepStatus
 src/sugar.rs: impl Physics3DAbiBodyBuffer :: fn new(capacity: usize) -> Physics3DAbiBodyBuffer
 src/sugar.rs: impl Physics3DAbiBodyBuffer :: fn read_bodies(&mut self, abi: &Physics3DAbi, world: Physics3DAbiWorldHandle, body_ids: Option<&Uint32Array>,) -> bool
 src/sugar.rs: impl Physics3DAbiCommandBuffer :: fn clear(&mut self)
@@ -504,11 +504,11 @@ src/sugar.rs: impl Physics3DAbiExecutionResult :: fn new() -> Physics3DAbiExecut
 src/sugar.rs: impl Physics3DAbiJointBuffer :: fn new(capacity: usize) -> Physics3DAbiJointBuffer
 src/sugar.rs: impl Physics3DAbiJointBuffer :: fn read_joints(&mut self, abi: &Physics3DAbi, world: Physics3DAbiWorldHandle) -> bool
 src/sugar.rs: impl Physics3DAbiQueryBuffer :: fn new(capacity: usize) -> Physics3DAbiQueryBuffer
-src/sugar.rs: impl Physics3DAbiQueryBuffer :: fn query_point(&mut self, abi: &Physics3DAbi, world: Physics3DAbiWorldHandle, x: f32, y: f32, z: f32, filter: Option<&Physics3DQueryFilter>,) -> bool
-src/sugar.rs: impl Physics3DAbiQueryBuffer :: fn query_ray(&mut self, abi: &Physics3DAbi, world: Physics3DAbiWorldHandle, origin_x: f32, origin_y: f32, origin_z: f32, direction_x: f32, direction_y: f32, direction_z: f32, max_fraction: Option<f32>, filter: Option<&Physics3DQueryFilter>,) -> bool
-src/sugar.rs: impl Physics3DAbiQueryBuffer :: fn query_ray_closest(&mut self, abi: &Physics3DAbi, world: Physics3DAbiWorldHandle, origin_x: f32, origin_y: f32, origin_z: f32, direction_x: f32, direction_y: f32, direction_z: f32, max_fraction: Option<f32>, filter: Option<&Physics3DQueryFilter>,) -> bool
+src/sugar.rs: impl Physics3DAbiQueryBuffer :: fn query_point(&mut self, abi: &Physics3DAbi, world: Physics3DAbiWorldHandle, x: f64, y: f64, z: f64, filter: Option<&Physics3DQueryFilter>,) -> bool
+src/sugar.rs: impl Physics3DAbiQueryBuffer :: fn query_ray(&mut self, abi: &Physics3DAbi, world: Physics3DAbiWorldHandle, origin_x: f64, origin_y: f64, origin_z: f64, direction_x: f64, direction_y: f64, direction_z: f64, max_fraction: Option<f64>, filter: Option<&Physics3DQueryFilter>,) -> bool
+src/sugar.rs: impl Physics3DAbiQueryBuffer :: fn query_ray_closest(&mut self, abi: &Physics3DAbi, world: Physics3DAbiWorldHandle, origin_x: f64, origin_y: f64, origin_z: f64, direction_x: f64, direction_y: f64, direction_z: f64, max_fraction: Option<f64>, filter: Option<&Physics3DQueryFilter>,) -> bool
 src/sugar.rs: impl Physics3DAbiQueryBuffer :: fn query_region(&mut self, abi: &Physics3DAbi, world: Physics3DAbiWorldHandle, region: &SpatialAabb3D, filter: Option<&Physics3DQueryFilter>,) -> bool
-src/sugar.rs: impl Physics3DAbiQueryBuffer :: fn query_shape_cast(&mut self, abi: &Physics3DAbi, world: Physics3DAbiWorldHandle, shape: &CollisionShape3D, dx: f32, dy: f32, dz: f32, max_fraction: Option<f32>, filter: Option<&Physics3DQueryFilter>,) -> bool
+src/sugar.rs: impl Physics3DAbiQueryBuffer :: fn query_shape_cast(&mut self, abi: &Physics3DAbi, world: Physics3DAbiWorldHandle, shape: &CollisionShape3D, dx: f64, dy: f64, dz: f64, max_fraction: Option<f64>, filter: Option<&Physics3DQueryFilter>,) -> bool
 src/types.rs: #[derive(Clone)] pub struct Physics3DAbiContactHooks { pub buffer: Ref<Physics3DAbiContactBuffer>, pub post_solve: Option<Physics3DAbiContactHook>, pub pre_solve: Option<Physics3DAbiContactHook>, }
 src/types.rs: #[derive(Clone, Copy, Debug, PartialEq, Eq)] pub enum Physics3DAbiContactSelection { All, Began, Ended, }
 src/types.rs: #[derive(Clone, Copy, Debug, PartialEq, Eq)] pub enum Physics3DAbiExecutionStatus { BusyWorld, Complete, InvalidBuffer, InvalidCommand, MissingBody, MissingCollider, MissingJoint, RejectedMutation, StaleWorld, UnsupportedJoint, UnsupportedShape, }
@@ -562,12 +562,12 @@ src/types.rs: pub type Physics3DAbiDestroyWorld = Arc<dyn Fn(Physics3DAbiWorldHa
 src/types.rs: pub type Physics3DAbiExecute = Arc<dyn Fn(Physics3DAbiWorldHandle, &Physics3DAbiCommandBuffer, &mut Physics3DAbiExecutionResult,) -> bool + Send + Sync,>;
 src/types.rs: pub type Physics3DAbiGetWorldStatus = Arc<dyn Fn(Physics3DAbiWorldHandle) -> Physics3DAbiWorldStatus + Send + Sync>;
 src/types.rs: pub type Physics3DAbiObjectId = u32;
-src/types.rs: pub type Physics3DAbiQueryPoint = Arc<dyn Fn(Physics3DAbiWorldHandle, f32, f32, f32, Option<&Physics3DQueryFilter>, &mut Physics3DAbiQueryBuffer,) -> bool + Send + Sync,>;
-src/types.rs: pub type Physics3DAbiQueryRay = Arc<dyn Fn(Physics3DAbiWorldHandle, f32, f32, f32, f32, f32, f32, f32, bool, Option<&Physics3DQueryFilter>, &mut Physics3DAbiQueryBuffer,) -> bool + Send + Sync,>;
+src/types.rs: pub type Physics3DAbiQueryPoint = Arc<dyn Fn(Physics3DAbiWorldHandle, f64, f64, f64, Option<&Physics3DQueryFilter>, &mut Physics3DAbiQueryBuffer,) -> bool + Send + Sync,>;
+src/types.rs: pub type Physics3DAbiQueryRay = Arc<dyn Fn(Physics3DAbiWorldHandle, f64, f64, f64, f64, f64, f64, f64, bool, Option<&Physics3DQueryFilter>, &mut Physics3DAbiQueryBuffer,) -> bool + Send + Sync,>;
 src/types.rs: pub type Physics3DAbiQueryRegion = Arc<dyn Fn(Physics3DAbiWorldHandle, &SpatialAabb3D, Option<&Physics3DQueryFilter>, &mut Physics3DAbiQueryBuffer,) -> bool + Send + Sync,>;
-src/types.rs: pub type Physics3DAbiQueryShapeCast = Arc<dyn Fn(Physics3DAbiWorldHandle, &CollisionShape3D, f32, f32, f32, f32, Option<&Physics3DQueryFilter>, &mut Physics3DAbiQueryBuffer,) -> bool + Send + Sync,>;
+src/types.rs: pub type Physics3DAbiQueryShapeCast = Arc<dyn Fn(Physics3DAbiWorldHandle, &CollisionShape3D, f64, f64, f64, f64, Option<&Physics3DQueryFilter>, &mut Physics3DAbiQueryBuffer,) -> bool + Send + Sync,>;
 src/types.rs: pub type Physics3DAbiReadBodies = Arc<dyn Fn(Physics3DAbiWorldHandle, Option<&Uint32Array>, &mut Physics3DAbiBodyBuffer) -> bool + Send + Sync,>;
 src/types.rs: pub type Physics3DAbiReadContacts = Arc<dyn Fn(Physics3DAbiWorldHandle, Physics3DAbiContactSelection, &mut Physics3DAbiContactBuffer,) -> bool + Send + Sync,>;
 src/types.rs: pub type Physics3DAbiReadJoints = Arc<dyn Fn(Physics3DAbiWorldHandle, &mut Physics3DAbiJointBuffer) -> bool + Send + Sync>;
-src/types.rs: pub type Physics3DAbiStep = Arc<dyn Fn(Physics3DAbiWorldHandle, f32, Option<&Physics3DAbiContactHooks>,) -> Physics3DAbiStepStatus + Send + Sync,>;
+src/types.rs: pub type Physics3DAbiStep = Arc<dyn Fn(Physics3DAbiWorldHandle, f64, Option<&Physics3DAbiContactHooks>,) -> Physics3DAbiStepStatus + Send + Sync,>;
 src/types.rs: pub type Physics3DAbiWorldHandle = u32;

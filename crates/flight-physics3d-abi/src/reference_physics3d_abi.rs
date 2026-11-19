@@ -134,8 +134,8 @@ fn create_joint(
     common: &[f64; JOINT_COMMON_VALUE_COUNT],
     values: &[f64; JOINT_KIND_VALUE_COUNT],
 ) -> Option<ReferenceJointAdder> {
-    let c = |i: usize| common[i] as f32;
-    let v = |i: usize| values[i] as f32;
+    let c = |i: usize| common[i];
+    let v = |i: usize| values[i];
     let bit = |i: u32| flags & (1 << i) != 0;
     let broken = flags & PHYSICS3D_ABI_JOINT_FLAG_BROKEN != 0;
     let frames = Physics3DJointFrames {
@@ -530,7 +530,7 @@ fn are_finite(values: &[f64]) -> bool {
 }
 
 // The Physics3D step validator's admission of a world (TS `canStep`).
-fn can_step(world: &Physics3DWorld, dt: f32) -> bool {
+fn can_step(world: &Physics3DWorld, dt: f64) -> bool {
     return is_physics_3d_timestep_valid(dt)
         && is_physics_3d_substeps_valid(&world.config)
         && is_physics_3d_velocity_iterations_valid(&world.config)
@@ -593,7 +593,7 @@ fn encode_body_flags(body: &RigidBody3D) -> u32 {
 fn execute_body_action(
     state: &mut ReferenceWorld,
     command: &CommandRecord,
-    apply: fn(&RigidBody3DRef, f32, f32, f32) -> bool,
+    apply: fn(&RigidBody3DRef, f64, f64, f64) -> bool,
 ) -> Physics3DAbiExecutionStatus {
     if command.byte_length != PHYSICS3D_ABI_COMMAND_BYTE_LENGTH_BODY_ACTION
         || !is_object_id(command.object_id)
@@ -606,9 +606,9 @@ fn execute_body_action(
     };
     let applied = apply(
         body,
-        read_f64(command.bytes, command.payload) as f32,
-        read_f64(command.bytes, command.payload + 8) as f32,
-        read_f64(command.bytes, command.payload + 16) as f32,
+        read_f64(command.bytes, command.payload),
+        read_f64(command.bytes, command.payload + 8),
+        read_f64(command.bytes, command.payload + 16),
     );
     return if applied {
         Physics3DAbiExecutionStatus::Complete
@@ -620,7 +620,7 @@ fn execute_body_action(
 fn execute_body_point_action(
     state: &mut ReferenceWorld,
     command: &CommandRecord,
-    apply: fn(&RigidBody3DRef, f32, f32, f32, f32, f32, f32) -> bool,
+    apply: fn(&RigidBody3DRef, f64, f64, f64, f64, f64, f64) -> bool,
 ) -> Physics3DAbiExecutionStatus {
     if command.byte_length != PHYSICS3D_ABI_COMMAND_BYTE_LENGTH_BODY_ACTION
         || !is_object_id(command.object_id)
@@ -631,7 +631,7 @@ fn execute_body_point_action(
     let Some(body) = state.body_by_id.get(&command.object_id) else {
         return Physics3DAbiExecutionStatus::MissingBody;
     };
-    let value = |i: usize| read_f64(command.bytes, command.payload + i * 8) as f32;
+    let value = |i: usize| read_f64(command.bytes, command.payload + i * 8);
     let applied = apply(
         body,
         value(0),
@@ -873,7 +873,7 @@ fn execute_set_body(
     let existing = state.body_by_id.get(&command.object_id).cloned();
     let added = existing.is_none();
     let body = existing.unwrap_or_else(|| create_typed_rigid_body_3d(body_type));
-    let v = |i: usize| values[i] as f32;
+    let v = |i: usize| values[i];
     let world = &mut state.world;
     if !set_physics_3d_body_type(world, &body, body_type)
         || !set_physics_3d_body_fixed_rotation(
@@ -971,9 +971,9 @@ fn execute_set_collider(
     {
         let mut out = collider.write().unwrap();
         out.material = Physics3DMaterial {
-            density: density as f32,
-            friction: friction as f32,
-            restitution: restitution as f32,
+            density: density,
+            friction: friction,
+            restitution: restitution,
         };
         out.filter = Physics3DCollisionFilter {
             category_bits: read_u32(command.bytes, command.payload + 4),
@@ -1025,9 +1025,9 @@ fn execute_set_gravity(
     if !x.is_finite() || !y.is_finite() || !z.is_finite() {
         return Physics3DAbiExecutionStatus::RejectedMutation;
     }
-    state.world.gravity_x = x as f32;
-    state.world.gravity_y = y as f32;
-    state.world.gravity_z = z as f32;
+    state.world.gravity_x = x;
+    state.world.gravity_y = y;
+    state.world.gravity_z = z;
     return Physics3DAbiExecutionStatus::Complete;
 }
 
@@ -1137,7 +1137,7 @@ fn execute_set_solver_config(
         read_f64(
             command.bytes,
             payload + PHYSICS3D_ABI_SET_SOLVER_CONFIG_PAYLOAD_OFFSET_VALUES + i * 8,
-        ) as f32
+        )
     };
     let config = Physics3DSolverConfig {
         allow_sleeping: flags & 1 != 0,
@@ -1316,8 +1316,8 @@ fn invoke_contact_hook(
     }
     let mut contact = contact.write().unwrap();
     contact.enabled = flags & PHYSICS3D_ABI_CONTACT_FLAG_ENABLED != 0;
-    contact.friction = friction as f32;
-    contact.restitution = restitution as f32;
+    contact.friction = friction;
+    contact.restitution = restitution;
 }
 
 fn is_body_value_block_valid(values: &[f64; PHYSICS3D_ABI_BODY_VALUE_STRIDE]) -> bool {
@@ -1513,12 +1513,12 @@ fn read_joints(state: &mut ReferenceWorld, out: &mut Physics3DAbiJointBuffer) {
         write_physics_3d_joint_reaction(&mut state.reaction, &state.world, joint, dt);
         let reaction = &state.reaction;
         let base = at * PHYSICS3D_ABI_JOINT_VALUE_STRIDE;
-        out.values[base] = f64::from(reaction.force_x);
-        out.values[base + 1] = f64::from(reaction.force_y);
-        out.values[base + 2] = f64::from(reaction.force_z);
-        out.values[base + 3] = f64::from(reaction.torque_x);
-        out.values[base + 4] = f64::from(reaction.torque_y);
-        out.values[base + 5] = f64::from(reaction.torque_z);
+        out.values[base] = reaction.force_x;
+        out.values[base + 1] = reaction.force_y;
+        out.values[base + 2] = reaction.force_z;
+        out.values[base + 3] = reaction.torque_x;
+        out.values[base + 4] = reaction.torque_y;
+        out.values[base + 5] = reaction.torque_z;
         out.count += 1;
     }
 }
@@ -1561,7 +1561,7 @@ fn read_shape(command: &CommandRecord, at: usize) -> Option<CollisionColliderSha
     let integers: Vec<u32> = (0..integer_count)
         .map(|i| read_u32(command.bytes, integers_at + i * 4))
         .collect();
-    let s = |i: usize| scalars[i] as f32;
+    let s = |i: usize| scalars[i];
     let built_in = |shape: CollisionShape3D| Some(CollisionColliderShape3D::BuiltIn(shape));
 
     if kind == PHYSICS3D_ABI_SHAPE_KIND_SPHERE && scalar_count == 4 && integer_count == 0 {
@@ -1633,12 +1633,12 @@ fn read_shape(command: &CommandRecord, at: usize) -> Option<CollisionColliderSha
     }
     if kind == PHYSICS3D_ABI_SHAPE_KIND_CONVEX && integer_count == 0 {
         return built_in(CollisionShape3D::Convex(CollisionConvex3D {
-            points: scalars.iter().map(|value| *value as f32).collect(),
+            points: scalars.iter().map(|value| *value).collect(),
         }));
     }
     if kind == PHYSICS3D_ABI_SHAPE_KIND_TRIANGLE_MESH && scalar_count >= 7 {
         let mut mesh = create_collision_triangle_mesh3d();
-        mesh.points = scalars[7..].iter().map(|value| *value as f32).collect();
+        mesh.points = scalars[7..].iter().map(|value| *value).collect();
         mesh.indices = integers.iter().map(|index| *index as usize).collect();
         mesh.version = i64::from(version);
         mesh.x = s(0);
@@ -1656,7 +1656,7 @@ fn read_shape(command: &CommandRecord, at: usize) -> Option<CollisionColliderSha
         let mut heightfield = create_collision_heightfield3d();
         heightfield.columns = integers[0] as usize;
         heightfield.rows = integers[1] as usize;
-        heightfield.heights = scalars[9..].iter().map(|value| *value as f32).collect();
+        heightfield.heights = scalars[9..].iter().map(|value| *value).collect();
         heightfield.cell_size_x = s(0);
         heightfield.cell_size_z = s(1);
         heightfield.version = i64::from(version);
@@ -1682,7 +1682,7 @@ fn remove_sorted(values: &mut Vec<u32>, value: u32) {
 
 fn step_reference_world(
     entry: &ReferenceWorldEntry,
-    dt: f32,
+    dt: f64,
     hooks: Option<&Physics3DAbiContactHooks>,
 ) -> Physics3DAbiStepStatus {
     let mut state = lock(&entry.state);
@@ -1785,7 +1785,7 @@ fn write_body(id: u32, body: &RigidBody3D, out: &mut Physics3DAbiBodyBuffer, at:
         .iter_mut()
         .zip(values)
     {
-        *slot = f64::from(value);
+        *slot = value;
     }
 }
 
@@ -1799,7 +1799,7 @@ fn write_body_dynamic_values(
     let movable = body.body_type != Physics3DBodyType::Static;
     let dynamic = body.body_type == Physics3DBodyType::Dynamic;
     let rotates = movable && !body.fixed_rotation;
-    let gated = |allowed: bool, i: usize| if allowed { values[i] as f32 } else { 0.0 };
+    let gated = |allowed: bool, i: usize| if allowed { values[i] } else { 0.0 };
     body.velocity_x = gated(movable, 7);
     body.velocity_y = gated(movable, 8);
     body.velocity_z = gated(movable, 9);
@@ -1812,9 +1812,9 @@ fn write_body_dynamic_values(
     body.torque_x = gated(dynamic && rotates, 16);
     body.torque_y = gated(dynamic && rotates, 17);
     body.torque_z = gated(dynamic && rotates, 18);
-    body.linear_damping = values[29] as f32;
-    body.angular_damping = values[30] as f32;
-    body.gravity_scale = values[31] as f32;
+    body.linear_damping = values[29];
+    body.angular_damping = values[30];
+    body.gravity_scale = values[31];
     body.sleep_timer = gated(movable && body.sleep_enabled, 32);
     body.sleeping = movable && body.sleep_enabled && flags & PHYSICS3D_ABI_BODY_FLAG_SLEEPING != 0;
 }
@@ -1862,11 +1862,11 @@ fn write_contact(
     out.point_starts[at] = point_at as u32;
     out.point_counts[at] = contact.point_count as u32;
     let value_at = at * PHYSICS3D_ABI_CONTACT_VALUE_STRIDE;
-    out.values[value_at] = f64::from(contact.normal_x);
-    out.values[value_at + 1] = f64::from(contact.normal_y);
-    out.values[value_at + 2] = f64::from(contact.normal_z);
-    out.values[value_at + 3] = f64::from(contact.friction);
-    out.values[value_at + 4] = f64::from(contact.restitution);
+    out.values[value_at] = contact.normal_x;
+    out.values[value_at + 1] = contact.normal_y;
+    out.values[value_at + 2] = contact.normal_z;
+    out.values[value_at + 3] = contact.friction;
+    out.values[value_at + 4] = contact.restitution;
     for i in 0..contact.point_count {
         let point = &contact.points[i];
         let destination = point_at + i;
@@ -1890,7 +1890,7 @@ fn write_contact(
             .iter_mut()
             .zip(values)
         {
-            *slot = f64::from(value);
+            *slot = value;
         }
     }
 }
@@ -1921,13 +1921,13 @@ fn write_query_identity(
 fn write_query_values(
     out: &mut Physics3DAbiQueryBuffer,
     at: usize,
-    fraction: f32,
-    x: f32,
-    y: f32,
-    z: f32,
-    normal_x: f32,
-    normal_y: f32,
-    normal_z: f32,
+    fraction: f64,
+    x: f64,
+    y: f64,
+    z: f64,
+    normal_x: f64,
+    normal_y: f64,
+    normal_z: f64,
 ) {
     let base = at * PHYSICS3D_ABI_QUERY_VALUE_STRIDE;
     let values = [fraction, x, y, z, normal_x, normal_y, normal_z];
@@ -1935,7 +1935,7 @@ fn write_query_values(
         .iter_mut()
         .zip(values)
     {
-        *slot = f64::from(value);
+        *slot = value;
     }
 }
 

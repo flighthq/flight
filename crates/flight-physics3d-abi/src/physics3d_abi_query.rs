@@ -1,7 +1,7 @@
 //! flight-compiler: target-native
 
 //! The ABI's world queries (TS `physics3DAbiQuery.ts`): thin free functions over the backend seam
-//! that pack hits into a caller-owned query buffer. Query scalars are Physics3D's f32.
+//! that pack hits into a caller-owned query buffer. Query scalars are Physics3D's f64, the same doubles the wire carries.
 
 use flight_collision::CollisionShape3D;
 use flight_physics3d::Physics3DQueryFilter;
@@ -15,9 +15,9 @@ pub fn query_physics3d_abi_point(
     out: &mut Physics3DAbiQueryBuffer,
     abi: &Physics3DAbi,
     world: Physics3DAbiWorldHandle,
-    x: f32,
-    y: f32,
-    z: f32,
+    x: f64,
+    y: f64,
+    z: f64,
     filter: Option<&Physics3DQueryFilter>,
 ) -> bool {
     return (abi.query_point)(world, x, y, z, filter, out);
@@ -30,13 +30,13 @@ pub fn query_physics3d_abi_ray(
     out: &mut Physics3DAbiQueryBuffer,
     abi: &Physics3DAbi,
     world: Physics3DAbiWorldHandle,
-    origin_x: f32,
-    origin_y: f32,
-    origin_z: f32,
-    direction_x: f32,
-    direction_y: f32,
-    direction_z: f32,
-    max_fraction: Option<f32>,
+    origin_x: f64,
+    origin_y: f64,
+    origin_z: f64,
+    direction_x: f64,
+    direction_y: f64,
+    direction_z: f64,
+    max_fraction: Option<f64>,
     filter: Option<&Physics3DQueryFilter>,
 ) -> bool {
     return (abi.query_ray)(
@@ -47,7 +47,7 @@ pub fn query_physics3d_abi_ray(
         direction_x,
         direction_y,
         direction_z,
-        max_fraction.unwrap_or(f32::INFINITY),
+        max_fraction.unwrap_or(f64::INFINITY),
         false,
         filter,
         out,
@@ -60,13 +60,13 @@ pub fn query_physics3d_abi_ray_closest(
     out: &mut Physics3DAbiQueryBuffer,
     abi: &Physics3DAbi,
     world: Physics3DAbiWorldHandle,
-    origin_x: f32,
-    origin_y: f32,
-    origin_z: f32,
-    direction_x: f32,
-    direction_y: f32,
-    direction_z: f32,
-    max_fraction: Option<f32>,
+    origin_x: f64,
+    origin_y: f64,
+    origin_z: f64,
+    direction_x: f64,
+    direction_y: f64,
+    direction_z: f64,
+    max_fraction: Option<f64>,
     filter: Option<&Physics3DQueryFilter>,
 ) -> bool {
     return (abi.query_ray)(
@@ -77,7 +77,7 @@ pub fn query_physics3d_abi_ray_closest(
         direction_x,
         direction_y,
         direction_z,
-        max_fraction.unwrap_or(f32::INFINITY),
+        max_fraction.unwrap_or(f64::INFINITY),
         true,
         filter,
         out,
@@ -104,10 +104,10 @@ pub fn query_physics3d_abi_shape_cast(
     abi: &Physics3DAbi,
     world: Physics3DAbiWorldHandle,
     shape: &CollisionShape3D,
-    dx: f32,
-    dy: f32,
-    dz: f32,
-    max_fraction: Option<f32>,
+    dx: f64,
+    dy: f64,
+    dz: f64,
+    max_fraction: Option<f64>,
     filter: Option<&Physics3DQueryFilter>,
 ) -> bool {
     return (abi.query_shape_cast)(

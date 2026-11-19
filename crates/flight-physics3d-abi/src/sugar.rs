@@ -329,7 +329,7 @@ impl Physics3DAbi {
     pub fn step_world(
         &self,
         world: Physics3DAbiWorldHandle,
-        dt: f32,
+        dt: f64,
         hooks: Option<&Physics3DAbiContactHooks>,
     ) -> Physics3DAbiStepStatus {
         return step_physics3d_abi_world(self, world, dt, hooks);
@@ -530,9 +530,9 @@ impl Physics3DAbiQueryBuffer {
         &mut self,
         abi: &Physics3DAbi,
         world: Physics3DAbiWorldHandle,
-        x: f32,
-        y: f32,
-        z: f32,
+        x: f64,
+        y: f64,
+        z: f64,
         filter: Option<&Physics3DQueryFilter>,
     ) -> bool {
         return query_physics3d_abi_point(self, abi, world, x, y, z, filter);
@@ -542,13 +542,13 @@ impl Physics3DAbiQueryBuffer {
         &mut self,
         abi: &Physics3DAbi,
         world: Physics3DAbiWorldHandle,
-        origin_x: f32,
-        origin_y: f32,
-        origin_z: f32,
-        direction_x: f32,
-        direction_y: f32,
-        direction_z: f32,
-        max_fraction: Option<f32>,
+        origin_x: f64,
+        origin_y: f64,
+        origin_z: f64,
+        direction_x: f64,
+        direction_y: f64,
+        direction_z: f64,
+        max_fraction: Option<f64>,
         filter: Option<&Physics3DQueryFilter>,
     ) -> bool {
         return query_physics3d_abi_ray(
@@ -570,13 +570,13 @@ impl Physics3DAbiQueryBuffer {
         &mut self,
         abi: &Physics3DAbi,
         world: Physics3DAbiWorldHandle,
-        origin_x: f32,
-        origin_y: f32,
-        origin_z: f32,
-        direction_x: f32,
-        direction_y: f32,
-        direction_z: f32,
-        max_fraction: Option<f32>,
+        origin_x: f64,
+        origin_y: f64,
+        origin_z: f64,
+        direction_x: f64,
+        direction_y: f64,
+        direction_z: f64,
+        max_fraction: Option<f64>,
         filter: Option<&Physics3DQueryFilter>,
     ) -> bool {
         return query_physics3d_abi_ray_closest(
@@ -609,10 +609,10 @@ impl Physics3DAbiQueryBuffer {
         abi: &Physics3DAbi,
         world: Physics3DAbiWorldHandle,
         shape: &CollisionShape3D,
-        dx: f32,
-        dy: f32,
-        dz: f32,
-        max_fraction: Option<f32>,
+        dx: f64,
+        dy: f64,
+        dz: f64,
+        max_fraction: Option<f64>,
         filter: Option<&Physics3DQueryFilter>,
     ) -> bool {
         return query_physics3d_abi_shape_cast(

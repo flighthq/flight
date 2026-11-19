@@ -95,10 +95,9 @@ mod query_physics3d_abi_ray {
         ));
         assert_eq!(out.count, 2);
         assert_eq!(out.required_count, 2);
-        // D1 f32 bound (TS: toBeCloseTo(4.5, 12))
-        let bound = 4.0 * f64::from(f32::EPSILON) * 4.5;
+        // TS toBeCloseTo(4.5, 12).
+        let bound = 0.5e-12;
         assert!((out.values[PHYSICS3D_ABI_QUERY_VALUE_FRACTION] - 4.5).abs() <= bound);
-        // D1 f32 bound (TS: toBeCloseTo(4.5, 12))
         assert!((out.values[PHYSICS3D_ABI_QUERY_VALUE_X] - 4.5).abs() <= bound);
         assert_eq!(out.values[PHYSICS3D_ABI_QUERY_VALUE_NORMAL_X], -1.0);
     }
@@ -177,7 +176,7 @@ mod query_physics3d_abi_shape_cast {
         ));
         assert_eq!((out.count, out.required_count), (1, 1));
         assert_eq!(out.body_ids[0], 101);
-        // D1 f32 bound (TS: toBeCloseTo(0.4, 4))
+        // TS toBeCloseTo(0.4, 4).
         assert!((out.values[PHYSICS3D_ABI_QUERY_VALUE_FRACTION] - 0.4).abs() <= 0.5e-4);
     }
 }

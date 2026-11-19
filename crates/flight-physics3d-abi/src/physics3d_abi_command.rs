@@ -442,12 +442,6 @@ fn write_empty_command(out: &mut Physics3DAbiCommandBuffer, kind: u32, object_id
     return true;
 }
 
-fn write_f32_values(bytes: &mut [u8], at: usize, values: &[f32]) {
-    for (i, value) in values.iter().enumerate() {
-        write_f64(bytes, at + i * 8, f64::from(*value));
-    }
-}
-
 pub(crate) fn write_f64(bytes: &mut [u8], at: usize, value: f64) {
     bytes[at..at + 8].copy_from_slice(&value.to_le_bytes());
 }
@@ -462,9 +456,9 @@ fn write_i32(bytes: &mut [u8], at: usize, value: i32) {
     bytes[at..at + 4].copy_from_slice(&value.to_le_bytes());
 }
 
-fn write_kind_values(out: &mut [f64; JOINT_KIND_VALUE_COUNT], values: &[f32]) {
+fn write_kind_values(out: &mut [f64; JOINT_KIND_VALUE_COUNT], values: &[f64]) {
     for (slot, value) in out.iter_mut().zip(values) {
-        *slot = f64::from(*value);
+        *slot = *value;
     }
 }
 
@@ -655,7 +649,7 @@ pub fn write_physics3d_abi_set_body_command(
     }
     write_u32(&mut out.data, record.payload, flags);
     write_u32(&mut out.data, record.payload + 4, 0);
-    write_f32_values(
+    write_f64_values(
         &mut out.data,
         record.payload + PHYSICS3D_ABI_SET_BODY_PAYLOAD_OFFSET_VALUES,
         &[
@@ -731,7 +725,7 @@ pub fn write_physics3d_abi_set_collider_command(
     write_u32(&mut out.data, payload + 4, collider.filter.category_bits);
     write_u32(&mut out.data, payload + 8, collider.filter.mask_bits);
     write_i32(&mut out.data, payload + 12, collider.filter.group_index);
-    write_f32_values(
+    write_f64_values(
         &mut out.data,
         payload + PHYSICS3D_ABI_SET_COLLIDER_PAYLOAD_OFFSET_DENSITY,
         &[
@@ -843,7 +837,7 @@ pub fn write_physics3d_abi_set_joint_command(
         local_rotation_bw: 1.0,
     };
     let frames = get_joint_frames(joint).unwrap_or(&identity);
-    let common: [f32; JOINT_COMMON_VALUE_COUNT] = [
+    let common: [f64; JOINT_COMMON_VALUE_COUNT] = [
         fields.local_anchor_ax,
         fields.local_anchor_ay,
         fields.local_anchor_az,
@@ -861,7 +855,7 @@ pub fn write_physics3d_abi_set_joint_command(
         frames.local_rotation_bz,
         frames.local_rotation_bw,
     ];
-    write_f32_values(
+    write_f64_values(
         &mut out.data,
         payload + PHYSICS3D_ABI_SET_JOINT_PAYLOAD_OFFSET_COMMON_VALUES,
         &common,
@@ -926,7 +920,7 @@ pub fn write_physics3d_abi_set_solver_config_command(
     write_u32(&mut out.data, payload + 20, position_iterations);
     write_u32(&mut out.data, payload + 24, 0);
     write_u32(&mut out.data, payload + 28, 0);
-    write_f32_values(
+    write_f64_values(
         &mut out.data,
         payload + PHYSICS3D_ABI_SET_SOLVER_CONFIG_PAYLOAD_OFFSET_VALUES,
         &[
@@ -992,17 +986,17 @@ fn write_shape(bytes: &mut [u8], at: usize, shape: &CollisionColliderShape3D) {
 fn write_shape_scalars(bytes: &mut [u8], at: usize, shape: &CollisionColliderShape3D) {
     match shape {
         CollisionColliderShape3D::BuiltIn(CollisionShape3D::Sphere(s)) => {
-            write_f32_values(bytes, at, &[s.x, s.y, s.z, s.radius]);
+            write_f64_values(bytes, at, &[s.x, s.y, s.z, s.radius]);
         }
         CollisionColliderShape3D::BuiltIn(CollisionShape3D::Aabb(s)) => {
-            write_f32_values(
+            write_f64_values(
                 bytes,
                 at,
                 &[s.min_x, s.min_y, s.min_z, s.max_x, s.max_y, s.max_z],
             );
         }
         CollisionColliderShape3D::BuiltIn(CollisionShape3D::Box(s)) => {
-            write_f32_values(
+            write_f64_values(
                 bytes,
                 at,
                 &[
@@ -1020,22 +1014,22 @@ fn write_shape_scalars(bytes: &mut [u8], at: usize, shape: &CollisionColliderSha
             );
         }
         CollisionColliderShape3D::BuiltIn(CollisionShape3D::Capsule(s)) => {
-            write_f32_values(bytes, at, &[s.x0, s.y0, s.z0, s.x1, s.y1, s.z1, s.radius]);
+            write_f64_values(bytes, at, &[s.x0, s.y0, s.z0, s.x1, s.y1, s.z1, s.radius]);
         }
         CollisionColliderShape3D::BuiltIn(CollisionShape3D::Cylinder(s)) => {
-            write_f32_values(bytes, at, &[s.x0, s.y0, s.z0, s.x1, s.y1, s.z1, s.radius]);
+            write_f64_values(bytes, at, &[s.x0, s.y0, s.z0, s.x1, s.y1, s.z1, s.radius]);
         }
         // The wire carries the source's apex then base. flight-collision stores the base in the
         // `0` endpoint and the apex in the `1` endpoint.
         CollisionColliderShape3D::BuiltIn(CollisionShape3D::Cone(s)) => {
-            write_f32_values(bytes, at, &[s.x1, s.y1, s.z1, s.x0, s.y0, s.z0, s.radius]);
+            write_f64_values(bytes, at, &[s.x1, s.y1, s.z1, s.x0, s.y0, s.z0, s.radius]);
         }
         CollisionColliderShape3D::BuiltIn(CollisionShape3D::Convex(s)) => {
-            write_f32_values(bytes, at, &s.points);
+            write_f64_values(bytes, at, &s.points);
         }
         CollisionColliderShape3D::TriangleMesh(mesh) => {
             let mesh = mesh.read().unwrap();
-            write_f32_values(
+            write_f64_values(
                 bytes,
                 at,
                 &[
@@ -1048,11 +1042,11 @@ fn write_shape_scalars(bytes: &mut [u8], at: usize, shape: &CollisionColliderSha
                     mesh.rotation_w,
                 ],
             );
-            write_f32_values(bytes, at + 7 * 8, &mesh.points);
+            write_f64_values(bytes, at + 7 * 8, &mesh.points);
         }
         CollisionColliderShape3D::Heightfield(heightfield) => {
             let heightfield = heightfield.read().unwrap();
-            write_f32_values(
+            write_f64_values(
                 bytes,
                 at,
                 &[
@@ -1067,7 +1061,7 @@ fn write_shape_scalars(bytes: &mut [u8], at: usize, shape: &CollisionColliderSha
                     heightfield.rotation_w,
                 ],
             );
-            write_f32_values(bytes, at + 9 * 8, &heightfield.heights);
+            write_f64_values(bytes, at + 9 * 8, &heightfield.heights);
         }
     }
 }
