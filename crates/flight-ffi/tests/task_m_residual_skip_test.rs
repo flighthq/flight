@@ -27,6 +27,7 @@ enum Contract {
     PathSegmentCallback,
     OptionalEnumCallback,
     DisposerReturn,
+    SignalConnectionReturn,
 }
 
 #[derive(Clone, Copy, Debug)]
@@ -360,7 +361,7 @@ const TASK_M_CANDIDATES: &[Candidate] = &[
         "connect_signal_at_frame_rate",
         "closure_return(Arc<dyn Fn() + Send + Sync>)",
         ClosureReturn,
-        DisposerReturn
+        SignalConnectionReturn
     ),
     candidate!(
         "enable_scene3d_resource_failure_guards",
@@ -1094,6 +1095,34 @@ fn task_m_generated_surface_satisfies_every_carrier_contract() {
                     || {
                         format!(
                             "{} loses nullable enum callback semantics",
+                            candidate.function
+                        )
+                    },
+                );
+            }
+            // Item C: the frame-rate connection shares the signal connection teardown contract.
+            Contract::SignalConnectionReturn => {
+                push_error(
+                    &mut errors,
+                    has_callback_pair(block, prototype)
+                        && block
+                            .contains("release_fn: Option<extern \"C\" fn(*mut std::ffi::c_void)>")
+                        && block.contains("Box::into_raw(Box::new(connection))")
+                        && !block.contains("FfiDisposer"),
+                    || {
+                        format!(
+                            "{} does not return an owned signal connection",
+                            candidate.function
+                        )
+                    },
+                );
+                push_error(
+                    &mut errors,
+                    comment.is_some_and(|line| line.contains("flight_free_signal_connection"))
+                        && prototype.starts_with("void *"),
+                    || {
+                        format!(
+                            "{} header lacks signal connection ownership",
                             candidate.function
                         )
                     },

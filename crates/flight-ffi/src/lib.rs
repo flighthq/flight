@@ -18,6 +18,8 @@ mod generic_carrier_test;
 #[cfg(test)]
 mod shape_bounds_context_test;
 #[cfg(test)]
+mod signal_connection_runtime_test;
+#[cfg(test)]
 mod task_k_runtime_test;
 #[cfg(test)]
 mod task_m_runtime_test;

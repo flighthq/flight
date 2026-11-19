@@ -100,21 +100,21 @@ fn lifetime_data_and_nested_optional_channels_preserve_all_states() {
 fn retained_callbacks_have_explicit_signal_and_geolocation_teardown() {
     let signal = flight_sdk::create_signal::<flight_sdk::FrameTick>();
     let mut deltas = Vec::new();
-    let disposer = unsafe {
+    let connection = unsafe {
         crate::flight_connect_signal_at_frame_rate(
-            (&signal as *const flight_sdk::Signal<flight_sdk::FrameTick>).cast(),
+            &signal,
             10.0,
-            z_collect_signal_delta,
+            Some(z_collect_signal_delta),
             (&mut deltas as *mut Vec<f64>).cast(),
+            None,
         )
     };
     flight_sdk::emit_signal(&signal, &flight_sdk::FrameTick { delta_time: 40.0 });
     flight_sdk::emit_signal(&signal, &flight_sdk::FrameTick { delta_time: 60.0 });
     assert_eq!(deltas, [100.0]);
-    assert!(unsafe { crate::flight_call_disposer(disposer) });
+    unsafe { crate::flight_free_signal_connection(connection) };
     flight_sdk::emit_signal(&signal, &flight_sdk::FrameTick { delta_time: 100.0 });
     assert_eq!(deltas, [100.0]);
-    unsafe { crate::flight_free_disposer(disposer) };
 
     type PositionCallback = Arc<dyn Fn(&flight_sdk::GeolocationPosition) + Send + Sync + 'static>;
     type ErrorCallback = Arc<dyn Fn(flight_sdk::GeolocationErrorReason) + Send + Sync + 'static>;

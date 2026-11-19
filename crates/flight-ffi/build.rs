@@ -466,9 +466,8 @@ const BEHAVIOR_POLICY_SKIP_FNS: &[&str] = &[
 // This opt-in diagnostic guard retains a caller-supplied live clock and returns guard teardown.
 // It is an extension boundary, unlike the immediate consumption callbacks Task M lowers below.
 const GUARD_POLICY_SKIP_FNS: &[&str] = &["enable_scene3d_resource_failure_guards"];
-// Task M's retained callback has an explicit teardown path: its returned disposer disconnects the
-// signal slot, after which C may release the callback context and free the disposer handle.
-const RETAINED_CALLBACK_DISPOSER_FNS: &[&str] = &["connect_signal_at_frame_rate"];
+// The header contract every `flight_connect_<payload>_signal` carries.
+const SIGNAL_CONNECT_CONTRACT: &str = "Connects callback_fn(callback_ctx, payload) to signal and returns an owned connection; NULL signal or callback_fn returns NULL without connecting and without calling release_fn. Callbacks run synchronously on the thread that emits the signal; borrowed payload pointers and handles are valid only during the call. release_fn (nullable) receives callback_ctx exactly once when the slot is torn down: flight_free_signal_connection (which disconnects), flight_disconnect_signal_connection, a once connection firing, disconnecting scope, or clearing the signal. The callback never runs after release_fn; a call already running on another thread finishes first. release_fn may run while the signal is locked, so it must only release the context and must not call into the same signal. Higher priority runs first and equal priorities keep connect order; once disconnects after the first call; scope may be NULL.";
 // Item C: the decision for every `Signal<T>` payload on the public perimeter. `connect` emits one
 // `flight_connect_<payload>_signal` wrapper whose callback argument follows Task M's lowering
 // rules (unit, scalar, checked enum as u32, `&PlainStruct` and `&Ref<T>` as borrowed handles);
@@ -1178,6 +1177,8 @@ fn main() {
     all_output.push_str(&generate_typed_array_ref_support());
     all_output.push_str(&generate_registered_handle_support());
     all_output.push_str(generate_disposer_support());
+    all_output.push_str(generate_signal_connection_support());
+    all_output.push_str(&generate_signal_connect_wrappers());
     boxed_types.extend(REGISTERED_HANDLE_REFS.iter().map(|ty| ty.to_string()));
     all_output.push_str(generate_storage_set_items_result_support());
 
@@ -3536,6 +3537,9 @@ fn generate_ffi_wrapper(func: &ParsedFn) -> Option<(String, Option<String>)> {
     if func.lacks_public_export {
         return None;
     }
+    if func.name == "connect_signal_at_frame_rate" {
+        return Some((generate_signal_at_frame_rate_wrapper(), None));
+    }
     if let Some(wrapper) = generate_task_m_wrapper(func) {
         return Some(wrapper);
     }
@@ -3603,9 +3607,7 @@ fn generate_ffi_wrapper(func: &ParsedFn) -> Option<(String, Option<String>)> {
             .map(|param| strip_crate_paths(&resolve_type_alias(param.ty.trim())))
             .collect();
         let param_types: Vec<&str> = param_types.iter().map(String::as_str).collect();
-        if !public_perimeter::is_disposer_function(&func.name, &param_types)
-            && !RETAINED_CALLBACK_DISPOSER_FNS.contains(&func.name.as_str())
-        {
+        if !public_perimeter::is_disposer_function(&func.name, &param_types) {
             return None;
         }
     }
@@ -3690,9 +3692,6 @@ fn generate_ffi_wrapper(func: &ParsedFn) -> Option<(String, Option<String>)> {
                 .map(|note| format!("#[doc = \"ffi-param {}: {note}\"]\n", param.name))
         })
         .collect();
-    if func.name == "connect_signal_at_frame_rate" {
-        notes.push_str("#[doc = \"flight-ffi contract|Callback and context are retained until flight_call_disposer disconnects them; call flight_call_disposer before releasing the context, then call flight_free_disposer. Calling flight_free_disposer without first calling flight_call_disposer does not disconnect.\"]\n");
-    }
     if func.name == "watch_geolocation_position" {
         notes.push_str("#[doc = \"flight-ffi contract|Handler and error contexts are retained until flight_clear_geolocation_watch(id); caller must keep them alive through the clear call.\"]\n");
     }
@@ -4461,6 +4460,180 @@ fn generate_owned_byte_reader_support() -> &'static str {
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn flight_free_owned_byte_reader(reader: *mut FfiOwnedByteReader) {
     if !reader.is_null() { unsafe { drop(Box::from_raw(reader)); } }
+}
+"#
+}
+
+// Item C retained signal callbacks. Every `flight_connect_*_signal` wrapper funnels into
+// `ffi_connect_signal`, so one teardown mechanism serves every payload:
+// - The slot closure owns an `FfiSignalCallbackRelease` guard; its `Drop` calls `release(ctx)`.
+// - The guard lives exactly as long as the slot, so `release` runs exactly once, when the last
+//   reference to the slot goes away: `flight_disconnect_signal_connection`, freeing a still-connected
+//   handle (`flight_free_signal_connection` disconnects first), a `once` slot firing, scope
+//   teardown, or the signal being cleared or disposed. A callback already in flight on another
+//   thread keeps the slot alive until it returns, so `release` never overlaps or precedes a call,
+//   and the callback can never run after `release`.
+// - Callbacks run synchronously on the thread that emits the signal.
+// One `flight_connect_<payload>_signal` per `connect` policy. The callback receives the context
+// first, then the payload lowered by its Task M class; the returned connection is owned by C and
+// freed (which disconnects) with `flight_free_signal_connection`.
+fn generate_signal_connect_wrappers() -> String {
+    let mut out = String::new();
+    for (payload, decision) in SIGNAL_PAYLOAD_POLICIES {
+        if *decision != "connect" {
+            continue;
+        }
+        let class = get_signal_payload_class(payload)
+            .unwrap_or_else(|| panic!("connect payload `{payload}` has no Task M class"));
+        let (rust_ty, callback_args, call_args) = match class {
+            "unit" => ("()".to_string(), String::new(), String::new()),
+            "scalar" => (
+                payload.to_string(),
+                format!(", {payload}"),
+                ", *payload".to_string(),
+            ),
+            "enum-u32" => (
+                qualify_type(payload),
+                ", u32".to_string(),
+                ", *payload as u32".to_string(),
+            ),
+            "borrowed-struct" => {
+                let qualified = qualify_type(payload);
+                (
+                    qualified.clone(),
+                    format!(", *const {qualified}"),
+                    format!(", payload as *const {qualified}"),
+                )
+            }
+            "borrowed-ref-handle" => {
+                let inner = &payload["Ref<".len()..payload.len() - 1];
+                let qualified = format!("{QUALIFIER}::Ref<{}>", qualify_type(inner));
+                (
+                    qualified.clone(),
+                    ", *const std::ffi::c_void".to_string(),
+                    format!(", payload as *const {qualified} as *const std::ffi::c_void"),
+                )
+            }
+            other => panic!("unknown signal payload class `{other}`"),
+        };
+        let stem = get_signal_payload_stem(payload);
+        let payload_name = if call_args.is_empty() {
+            "_payload"
+        } else {
+            "payload"
+        };
+        writeln!(
+            out,
+            "#[doc = \"flight-ffi contract|{SIGNAL_CONNECT_CONTRACT}\"]\n\
+             #[doc = \"flight-ffi ownership|owned-return|flight_free_signal_connection|flight_sdk::SignalConnection\"]\n\
+             #[unsafe(no_mangle)]\n\
+             pub unsafe extern \"C\" fn flight_connect_{stem}_signal(signal: *const {QUALIFIER}::Signal<{rust_ty}>, callback_fn: Option<extern \"C\" fn(*mut std::ffi::c_void{callback_args})>, callback_ctx: *mut std::ffi::c_void, release_fn: Option<extern \"C\" fn(*mut std::ffi::c_void)>, priority: i32, once: bool, scope: *const {QUALIFIER}::SignalScope) -> *mut {QUALIFIER}::SignalConnection {{\n    \
+                 let Some(callback) = callback_fn else {{ return std::ptr::null_mut(); }};\n    \
+                 return ffi_connect_signal(signal, callback_ctx, release_fn, priority, once, scope, move |ctx, {payload_name}: &{rust_ty}| callback(ctx{call_args}));\n\
+             }}"
+        )
+        .unwrap();
+    }
+    out
+}
+
+// `connect_signal_at_frame_rate` shares the signal connection teardown contract (one owned
+// `SignalConnection`, context released exactly once) instead of the generic disposer lowering, so
+// its wrapper is written here and counted as that source's generated wrapper.
+fn generate_signal_at_frame_rate_wrapper() -> String {
+    return r#"#[doc = "flight-ffi contract|Connects callback_fn(callback_ctx, accumulated_ms) to a FrameTick signal at a reduced frame rate and returns an owned connection; NULL source or callback_fn returns NULL without calling release_fn. Teardown matches flight_connect_*_signal: release_fn(callback_ctx) runs exactly once when flight_free_signal_connection disconnects it or the source is cleared, and the callback never runs after it. Callbacks run on the emitting thread; release_fn may run while the source is locked and must not call into it."]
+#[doc = "flight-ffi ownership|owned-return|flight_free_signal_connection|flight_sdk::SignalConnection"]
+#[unsafe(no_mangle)]
+pub unsafe extern "C" fn flight_connect_signal_at_frame_rate(source: *const flight_sdk::Signal<flight_sdk::FrameTick>, fps: f64, callback_fn: Option<extern "C" fn(*mut std::ffi::c_void, f64)>, callback_ctx: *mut std::ffi::c_void, release_fn: Option<extern "C" fn(*mut std::ffi::c_void)>) -> *mut flight_sdk::SignalConnection {
+    if source.is_null() {
+        return std::ptr::null_mut();
+    }
+    let Some(callback) = callback_fn else {
+        return std::ptr::null_mut();
+    };
+    let guard = FfiSignalCallbackRelease { ctx: callback_ctx as usize, release: release_fn };
+    let paused = std::sync::Arc::new(std::sync::atomic::AtomicBool::new(false));
+    let slot_paused = paused.clone();
+    let slot: std::sync::Arc<dyn Fn(f64) + Send + Sync> = std::sync::Arc::new(move |total: f64| {
+        if !slot_paused.load(std::sync::atomic::Ordering::Acquire) {
+            callback(guard.ctx(), total);
+        }
+    });
+    let live = std::sync::Arc::downgrade(&slot);
+    let dispose = flight_sdk::connect_signal_at_frame_rate(unsafe { &*source }, fps, slot);
+    let connected = std::sync::Arc::new(std::sync::atomic::AtomicBool::new(true));
+    let disconnect_connected = connected.clone();
+    let is_connected = move || connected.load(std::sync::atomic::Ordering::Acquire) && live.strong_count() > 0;
+    let connection = flight_sdk::SignalConnection {
+        disconnect: std::sync::Arc::new(move || {
+            if disconnect_connected.swap(false, std::sync::atomic::Ordering::AcqRel) {
+                dispose();
+            }
+        }),
+        set_paused: std::sync::Arc::new(move |value| paused.store(value, std::sync::atomic::Ordering::Release)),
+        is_connected: std::sync::Arc::new(is_connected),
+        paused: std::sync::Arc::new(std::sync::RwLock::new(false)),
+    };
+    return Box::into_raw(Box::new(connection));
+}"#
+        .to_string();
+}
+
+fn generate_signal_connection_support() -> &'static str {
+    r#"struct FfiSignalCallbackRelease {
+    ctx: usize,
+    release: Option<extern "C" fn(*mut std::ffi::c_void)>,
+}
+// Slots read the context through this method so the closure captures the whole guard: a field
+// read (`guard.ctx`) captures only the `usize` under edition 2021+ disjoint capture, which drops
+// the guard, and releases the context, as soon as the connect call returns.
+impl FfiSignalCallbackRelease {
+    fn ctx(&self) -> *mut std::ffi::c_void {
+        return self.ctx as *mut std::ffi::c_void;
+    }
+}
+impl Drop for FfiSignalCallbackRelease {
+    fn drop(&mut self) {
+        if let Some(release) = self.release {
+            release(self.ctx as *mut std::ffi::c_void);
+        }
+    }
+}
+// Connects `invoke` (the payload lowering of one wrapper) to `signal` and returns the owned
+// connection. NULL signal or callback returns NULL without connecting and without calling
+// `release`: the caller still owns the context.
+fn ffi_connect_signal<T: 'static>(
+    signal: *const flight_sdk::Signal<T>,
+    ctx: *mut std::ffi::c_void,
+    release: Option<extern "C" fn(*mut std::ffi::c_void)>,
+    priority: i32,
+    once: bool,
+    scope: *const flight_sdk::SignalScope,
+    invoke: impl Fn(*mut std::ffi::c_void, &T) + Send + Sync + 'static,
+) -> *mut flight_sdk::SignalConnection {
+    if signal.is_null() {
+        return std::ptr::null_mut();
+    }
+    let guard = FfiSignalCallbackRelease { ctx: ctx as usize, release };
+    let slot: flight_sdk::SignalSlot<T> = std::sync::Arc::new(move |payload: &T| {
+        invoke(guard.ctx(), payload);
+    });
+    let options = flight_sdk::SignalTrackedConnectOptions {
+        priority: Some(priority),
+        once: Some(once),
+        scope: if scope.is_null() { None } else { Some(unsafe { (*scope).clone() }) },
+    };
+    let connection = flight_sdk::connect_signal_tracked(unsafe { &*signal }, slot, Some(&options));
+    return Box::into_raw(Box::new(connection));
+}
+#[doc = "flight-ffi contract|Disconnects the connection if it is still connected, which releases the callback context exactly once, then frees the handle. NULL is a no-op."]
+#[unsafe(no_mangle)]
+pub unsafe extern "C" fn flight_free_signal_connection(connection: *mut flight_sdk::SignalConnection) {
+    if connection.is_null() {
+        return;
+    }
+    let connection = unsafe { Box::from_raw(connection) };
+    flight_sdk::disconnect_signal_connection(&connection);
 }
 "#
 }

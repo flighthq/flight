@@ -1008,14 +1008,14 @@ fn registered_collectors_return_owned_ref_clones() {
     );
 }
 
-// Approved returned closures cross as callable, independently freeable disposer handles. A
-// callback-retaining connection documents that its context remains live until the disposer runs.
+// Approved returned closures cross as callable, independently freeable disposer handles. The
+// callback-retaining frame-rate connection returns a signal connection instead (Item C).
 #[test]
 fn returned_disposers_lower_to_callable_handles() {
     let (header, shim) = generated();
     for line in [
         "void * flight_reveal_scene3d_resources_on_resolve(void * arg0, void * arg1, void * arg2, void * arg3);",
-        "void * flight_connect_signal_at_frame_rate(void * arg0, double arg1, void (*arg2)(void *, double), void * arg3);",
+        "void * flight_connect_signal_at_frame_rate(void * arg0, double arg1, void (*arg2)(void *, double), void * arg3, void (*arg4)(void *));",
         "bool flight_call_disposer(void * arg0);",
         "void flight_free_disposer(void * arg0);",
     ] {
@@ -1029,7 +1029,7 @@ fn returned_disposers_lower_to_callable_handles() {
     assert!(!header.contains(" flight_enable_scene3d_resource_failure_guards("));
     assert_line(
         &shim,
-        "DEFINE_PRIM(_BYTES, flight_connect_signal_at_frame_rate, _BYTES _F64 _BYTES _BYTES);",
+        "DEFINE_PRIM(_BYTES, flight_connect_signal_at_frame_rate, _BYTES _F64 _BYTES _BYTES _BYTES);",
     );
     assert!(
         generated_stats().contains("safety_policy_skip(enable_scene3d_resource_failure_guards)")
@@ -1044,10 +1044,7 @@ fn returned_disposers_lower_to_callable_handles() {
         .collect();
     assert_eq!(
         disposer_wrappers,
-        [
-            "pub unsafe extern \"C\" fn flight_reveal_scene3d_resources_on_resolve",
-            "pub unsafe extern \"C\" fn flight_connect_signal_at_frame_rate",
-        ]
+        ["pub unsafe extern \"C\" fn flight_reveal_scene3d_resources_on_resolve"]
     );
 }
 
@@ -1056,10 +1053,10 @@ fn task_m_contract_docs_stay_attached_to_native_symbols() {
     let (header, shim) = generated();
     for (comment, ownership, prototype, hl_prim) in [
         (
-            "Callback and context are retained until flight_call_disposer disconnects them; call flight_call_disposer before releasing the context, then call flight_free_disposer. Calling flight_free_disposer without first calling flight_call_disposer does not disconnect.",
-            Some("Caller owns the return value; call flight_free_disposer when done."),
-            "void * flight_connect_signal_at_frame_rate(void * arg0, double arg1, void (*arg2)(void *, double), void * arg3);",
-            "HL_PRIM vbyte * HL_NAME(flight_connect_signal_at_frame_rate)(vbyte * arg0, double arg1, vbyte * arg2, vbyte * arg3) { return (vbyte *)flight_connect_signal_at_frame_rate((void *)arg0, (double)arg1, (void (*)(void *, double))arg2, (void *)arg3); }",
+            "Connects callback_fn(callback_ctx, accumulated_ms) to a FrameTick signal at a reduced frame rate and returns an owned connection; NULL source or callback_fn returns NULL without calling release_fn. Teardown matches flight_connect_*_signal: release_fn(callback_ctx) runs exactly once when flight_free_signal_connection disconnects it or the source is cleared, and the callback never runs after it. Callbacks run on the emitting thread; release_fn may run while the source is locked and must not call into it.",
+            Some("Caller owns the return value; call flight_free_signal_connection when done."),
+            "void * flight_connect_signal_at_frame_rate(void * arg0, double arg1, void (*arg2)(void *, double), void * arg3, void (*arg4)(void *));",
+            "HL_PRIM vbyte * HL_NAME(flight_connect_signal_at_frame_rate)(vbyte * arg0, double arg1, vbyte * arg2, vbyte * arg3, vbyte * arg4) { return (vbyte *)flight_connect_signal_at_frame_rate((void *)arg0, (double)arg1, (void (*)(void *, double))arg2, (void *)arg3, (void (*)(void *))arg4); }",
         ),
         (
             "Handler and error contexts are retained until flight_clear_geolocation_watch(id); caller must keep them alive through the clear call.",
