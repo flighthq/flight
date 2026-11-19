@@ -1,7 +1,7 @@
 //! flight-compiler: target-native
 
 use crate::interaction_fixture;
-use flight_interaction::interaction_spatial_index::*;
+use flight_interaction::contract::*;
 
 mod find_spatial_interaction_target {
     use super::*;
@@ -10,7 +10,7 @@ mod find_spatial_interaction_target {
     fn returns_none_for_empty_tree() {
         let root = interaction_fixture::node();
         let mgr = interaction_fixture::manager_for(&root);
-        let ctx = flight_interaction::hit_tests::create_hit_test_context();
+        let ctx = flight_interaction::contract::create_hit_test_context();
         let candidates: Vec<flight_node::NodeRef> = Vec::new();
         let result = find_spatial_interaction_target(&mgr, &ctx, 0.0, 0.0, false, &candidates);
         assert!(result.is_none());

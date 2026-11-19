@@ -1,7 +1,7 @@
 //! flight-compiler: target-native
 
 use crate::interaction_fixture;
-use flight_interaction::enable_interaction_guards::*;
+use flight_interaction::contract::*;
 
 mod disable_interaction_guards {
     use super::*;

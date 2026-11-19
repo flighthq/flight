@@ -1,7 +1,7 @@
 //! flight-compiler: target-native
 
 use crate::interaction_fixture;
-use flight_interaction::node_interaction_state::*;
+use flight_interaction::contract::*;
 
 mod are_node_children_hit_test_enabled {
     use super::*;

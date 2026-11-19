@@ -5,16 +5,14 @@ use std::sync::{Arc, RwLock};
 use flight_node::{NodeRef, add_node_child};
 use flight_scene2d::create_display_object;
 
-use flight_interaction::interaction_manager::{
-    create_interaction_manager, enable_interaction_signals,
+use flight_interaction::contract::register_default_hit_tests;
+use flight_interaction::contract::{
+    InteractionManager, InteractionSignals, create_interaction_manager_options,
 };
-use flight_interaction::node_interaction_state::{
+use flight_interaction::contract::{create_interaction_manager, enable_interaction_signals};
+use flight_interaction::contract::{
     enable_node_interaction_state, set_node_focusable, set_node_hit_test_enabled,
     set_node_tab_index,
-};
-use flight_interaction::register_default_hit_tests::register_default_hit_tests;
-use flight_interaction::types::{
-    InteractionManager, InteractionSignals, create_interaction_manager_options,
 };
 
 pub fn node() -> NodeRef {

@@ -1,7 +1,7 @@
 //! flight-compiler: target-native
 
 use crate::interaction_fixture;
-use flight_interaction::sprite_hit_tests::*;
+use flight_interaction::contract::*;
 
 mod default_quad_batch_hit_test_handler {
     use super::*;

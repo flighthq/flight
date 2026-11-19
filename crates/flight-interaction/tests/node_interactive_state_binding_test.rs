@@ -4,8 +4,8 @@ use std::collections::HashMap;
 use std::sync::{Arc, Mutex};
 
 use crate::interaction_fixture;
-use flight_interaction::node_interactive_state_binding::*;
-use flight_interaction::types::NodeInteractiveStateFlags;
+use flight_interaction::contract::NodeInteractiveStateFlags;
+use flight_interaction::contract::*;
 use flight_registry::KindMap;
 use flight_scene_document::{
     FlightDocumentInteractiveState, FlightDocumentInteractiveStateTransitionDescriptor,

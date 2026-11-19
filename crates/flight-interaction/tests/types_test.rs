@@ -1,6 +1,6 @@
 //! flight-compiler: rust-only
 
-use flight_interaction::types::*;
+use flight_interaction::contract::*;
 
 mod create_focus_manager_options {
     use super::*;

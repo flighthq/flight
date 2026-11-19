@@ -1,7 +1,7 @@
 //! flight-compiler: target-native
 
 use crate::interaction_fixture;
-use flight_interaction::display_hit_tests::*;
+use flight_interaction::contract::*;
 
 mod default_html_view_hit_test_handler {
     use super::*;

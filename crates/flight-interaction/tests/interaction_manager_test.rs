@@ -3,8 +3,8 @@
 use std::sync::{Arc, RwLock};
 
 use crate::interaction_fixture;
-use flight_interaction::interaction_manager::*;
-use flight_interaction::types::{
+use flight_interaction::contract::*;
+use flight_interaction::contract::{
     InteractionDispatchLayerOptions, InteractionInputSource, InteractionSignalName,
     create_interaction_manager_options,
 };
@@ -74,7 +74,7 @@ mod connect_input_to_interaction {
         flight_signals::connect_signal(
             &sigs.read().unwrap().on_key_down,
             Arc::new(
-                move |_data: &flight_interaction::types::KeyboardEventData| {
+                move |_data: &flight_interaction::contract::KeyboardEventData| {
                     count2.fetch_add(1, Ordering::Relaxed);
                 },
             ),
@@ -106,7 +106,7 @@ mod connect_interaction_dispatch_layer {
     fn adds_layer() {
         let root = interaction_fixture::node();
         let mut mgr = interaction_fixture::manager_for(&root);
-        let layer: flight_interaction::types::InteractionDispatchLayer =
+        let layer: flight_interaction::contract::InteractionDispatchLayer =
             Arc::new(|_node, _name, _data| false);
         connect_interaction_dispatch_layer(
             &mut mgr,
@@ -125,8 +125,8 @@ mod connect_interaction_signal {
         let root = interaction_fixture::node();
         let target = interaction_fixture::node();
         let mut mgr = interaction_fixture::manager_for(&root);
-        let slot: flight_interaction::types::AnyInteractionSignalSlot =
-            Arc::new(|_data: &flight_interaction::types::PointerEventData| {});
+        let slot: flight_interaction::contract::AnyInteractionSignalSlot =
+            Arc::new(|_data: &flight_interaction::contract::PointerEventData| {});
         connect_interaction_signal(&mut mgr, &target, InteractionSignalName::OnClick, slot);
         assert_eq!(
             mgr.signal_subscriber_counts
@@ -169,8 +169,8 @@ mod disconnect_interaction_signal {
         let root = interaction_fixture::node();
         let target = interaction_fixture::node();
         let mut mgr = interaction_fixture::manager_for(&root);
-        let slot: flight_interaction::types::AnyInteractionSignalSlot =
-            Arc::new(|_data: &flight_interaction::types::PointerEventData| {});
+        let slot: flight_interaction::contract::AnyInteractionSignalSlot =
+            Arc::new(|_data: &flight_interaction::contract::PointerEventData| {});
         connect_interaction_signal(
             &mut mgr,
             &target,

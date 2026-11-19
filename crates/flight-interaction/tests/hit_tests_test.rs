@@ -5,9 +5,9 @@ use std::sync::Arc;
 use crate::interaction_fixture;
 use flight_clip::create_clip_region_from_rectangle;
 use flight_geometry::create_rectangle;
-use flight_interaction::hit_tests::*;
-use flight_interaction::register_default_hit_tests::register_default_hit_tests;
-use flight_interaction::types::HitTestResult;
+use flight_interaction::contract::HitTestResult;
+use flight_interaction::contract::register_default_hit_tests;
+use flight_interaction::contract::*;
 use flight_scene2d::{as_node2d_ref, set_node2d_clip};
 
 mod create_hit_test_context {
@@ -25,7 +25,7 @@ mod describe_graph_hit {
     #[test]
     fn does_not_panic() {
         let root = interaction_fixture::interactive_node();
-        let ctx = flight_interaction::hit_tests::create_hit_test_context();
+        let ctx = flight_interaction::contract::create_hit_test_context();
         let mut result = HitTestResult {
             local_x: 0.0,
             local_y: 0.0,
@@ -42,7 +42,7 @@ mod find_graph_hit_target {
     #[test]
     fn empty_context_returns_none() {
         let root = interaction_fixture::interactive_node();
-        let ctx = flight_interaction::hit_tests::create_hit_test_context();
+        let ctx = flight_interaction::contract::create_hit_test_context();
         let result = find_graph_hit_target(&ctx, &root, 0.0, 0.0);
         assert!(result.is_none());
     }
@@ -57,7 +57,7 @@ mod find_graph_hit_target {
                 0.0, 0.0, 10.0, 10.0,
             ))),
         );
-        let mut ctx = flight_interaction::hit_tests::create_hit_test_context();
+        let mut ctx = flight_interaction::contract::create_hit_test_context();
         register_hit_test(
             &mut ctx,
             "DisplayObject".to_string(),
@@ -75,7 +75,7 @@ mod find_graph_hit_target_precise {
     #[test]
     fn empty_context_returns_none() {
         let root = interaction_fixture::interactive_node();
-        let ctx = flight_interaction::hit_tests::create_hit_test_context();
+        let ctx = flight_interaction::contract::create_hit_test_context();
         let result = find_graph_hit_target_precise(&ctx, &root, 0.0, 0.0);
         assert!(result.is_none());
     }
@@ -87,7 +87,7 @@ mod find_graph_hit_targets {
     #[test]
     fn returns_empty_for_no_match() {
         let root = interaction_fixture::interactive_node();
-        let ctx = flight_interaction::hit_tests::create_hit_test_context();
+        let ctx = flight_interaction::contract::create_hit_test_context();
         let mut out = Vec::new();
         find_graph_hit_targets(&ctx, &root, 999.0, 999.0, &mut out);
         assert!(out.is_empty());
@@ -100,7 +100,7 @@ mod find_graph_hit_targets_precise {
     #[test]
     fn returns_empty_for_no_match() {
         let root = interaction_fixture::interactive_node();
-        let ctx = flight_interaction::hit_tests::create_hit_test_context();
+        let ctx = flight_interaction::contract::create_hit_test_context();
         let mut out = Vec::new();
         find_graph_hit_targets_precise(&ctx, &root, 999.0, 999.0, &mut out);
         assert!(out.is_empty());
@@ -124,7 +124,7 @@ mod hit_test_graph_point {
     #[test]
     fn returns_false_with_no_handlers() {
         let root = interaction_fixture::interactive_node();
-        let ctx = flight_interaction::hit_tests::create_hit_test_context();
+        let ctx = flight_interaction::contract::create_hit_test_context();
         let result = hit_test_graph_point(&ctx, &root, 0.0, 0.0);
         assert!(!result);
     }
@@ -132,7 +132,7 @@ mod hit_test_graph_point {
     #[test]
     fn uses_registered_handler() {
         let root = interaction_fixture::interactive_node();
-        let mut ctx = flight_interaction::hit_tests::create_hit_test_context();
+        let mut ctx = flight_interaction::contract::create_hit_test_context();
         register_default_hit_tests(&mut ctx);
         let result = hit_test_graph_point(&ctx, &root, 0.0, 0.0);
         assert!(!result);
@@ -145,7 +145,7 @@ mod hit_test_graph_point_precise {
     #[test]
     fn returns_false_with_no_handlers() {
         let root = interaction_fixture::interactive_node();
-        let ctx = flight_interaction::hit_tests::create_hit_test_context();
+        let ctx = flight_interaction::contract::create_hit_test_context();
         let result = hit_test_graph_point_precise(&ctx, &root, 0.0, 0.0);
         assert!(!result);
     }
@@ -168,7 +168,7 @@ mod hit_test_node_region {
     #[test]
     fn returns_false_for_no_interaction_state() {
         let node = interaction_fixture::node();
-        let ctx = flight_interaction::hit_tests::create_hit_test_context();
+        let ctx = flight_interaction::contract::create_hit_test_context();
         assert!(!hit_test_node_region(&ctx, &node, 0.0, 0.0, false));
     }
 }
@@ -178,7 +178,7 @@ mod register_hit_test {
 
     #[test]
     fn registered_handler_is_used_by_hit_test() {
-        let mut ctx = flight_interaction::hit_tests::create_hit_test_context();
+        let mut ctx = flight_interaction::contract::create_hit_test_context();
         register_hit_test(
             &mut ctx,
             "DisplayObject".to_string(),
@@ -194,7 +194,7 @@ mod register_hit_test_precise {
 
     #[test]
     fn registered_handler_is_used_by_precise_test() {
-        let mut ctx = flight_interaction::hit_tests::create_hit_test_context();
+        let mut ctx = flight_interaction::contract::create_hit_test_context();
         register_hit_test_precise(
             &mut ctx,
             "DisplayObject".to_string(),

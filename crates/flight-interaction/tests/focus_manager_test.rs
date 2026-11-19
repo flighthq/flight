@@ -5,8 +5,8 @@ use std::sync::{Arc, RwLock};
 use flight_node::add_node_child;
 
 use crate::interaction_fixture;
-use flight_interaction::focus_manager::*;
-use flight_interaction::types::{
+use flight_interaction::contract::*;
+use flight_interaction::contract::{
     FocusDirection, FocusNavigationInput, FocusNavigationOptions, create_focus_manager_options,
 };
 
@@ -28,7 +28,7 @@ mod clear_focus {
 
 mod connect_focus_navigation {
     use super::*;
-    use flight_interaction::types::KeyboardEventData;
+    use flight_interaction::contract::KeyboardEventData;
 
     fn key_event(key: &str, shift: bool) -> KeyboardEventData {
         return KeyboardEventData {
@@ -282,7 +282,7 @@ mod set_focused_node {
 mod set_focused_node_ref {
     use super::*;
     use flight_entity::Ref;
-    use flight_interaction::types::{FocusEventData, FocusManager};
+    use flight_interaction::contract::{FocusEventData, FocusManager};
     use flight_node::NodeRef;
     use flight_signals::connect_signal;
     use std::sync::Mutex;

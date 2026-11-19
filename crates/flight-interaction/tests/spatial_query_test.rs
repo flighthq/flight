@@ -3,7 +3,7 @@
 use flight_geometry::create_rectangle;
 
 use crate::interaction_fixture;
-use flight_interaction::spatial_query::*;
+use flight_interaction::contract::*;
 
 mod hit_test_area_query {
     use super::*;
