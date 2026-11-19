@@ -44,8 +44,8 @@ pub fn check_callback_aliases(
     return Ok(checked);
 }
 
-/// Records every public alias in `file` (including inline modules) whose target is an
-/// `Arc<dyn Fn(..)>`, under `owner`.
+/// Records every public alias in `file` whose target is an `Arc<dyn Fn(..)>`, under `owner`,
+/// including aliases in inline modules whose every enclosing module is also `pub`.
 pub fn collect_callback_aliases(
     file: &syn::File,
     owner: &str,
@@ -114,7 +114,9 @@ fn collect_items(items: &[syn::Item], owner: &str, out: &mut BTreeMap<String, Ve
                         target,
                     });
             }
-            syn::Item::Mod(module) => {
+            // An inline module that is not `pub` hides everything in it, however its items are
+            // declared, so only public inline modules are descended into.
+            syn::Item::Mod(module) if matches!(module.vis, syn::Visibility::Public(_)) => {
                 if let Some((_, content)) = &module.content {
                     collect_items(content, owner, out);
                 }

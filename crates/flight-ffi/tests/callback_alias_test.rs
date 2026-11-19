@@ -103,6 +103,15 @@ mod collect_callback_aliases {
     }
 
     #[test]
+    fn ignores_public_aliases_under_a_private_inline_module() {
+        let definitions = z_collect(&[(
+            "flight-a",
+            "mod hidden { pub type Hidden = Arc<dyn Fn() + Send + Sync>; pub mod deeper { pub type Deeper = Arc<dyn Fn() + Send + Sync>; } } pub mod open { mod sealed { pub type Sealed = Arc<dyn Fn() + Send + Sync>; } pub(crate) mod scoped { pub type Scoped = Arc<dyn Fn() + Send + Sync>; } }",
+        )]);
+        assert!(definitions.is_empty(), "{definitions:?}");
+    }
+
+    #[test]
     fn records_public_plain_generic_and_inline_module_callback_aliases() {
         let definitions = z_collect(&[(
             "flight-signals",
