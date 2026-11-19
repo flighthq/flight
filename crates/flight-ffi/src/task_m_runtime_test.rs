@@ -15,6 +15,40 @@ struct Recorded<T> {
 }
 
 #[test]
+fn an_aliased_retained_callback_lowers_to_a_released_triple() {
+    // `InputRepeatCallback` is a callback alias: it reaches C only through alias resolution.
+    let options = flight_sdk::InputKeyRepeatOptions {
+        delay: 100.0,
+        interval: 50.0,
+    };
+    let timer = unsafe { crate::flight_create_input_key_repeat_timer(&options) };
+    let mut repeats = Recorded::<()>::default();
+    unsafe {
+        crate::flight_start_input_key_repeat_timer(
+            timer,
+            z_record_repeat,
+            (&mut repeats as *mut Recorded<()>).cast(),
+            Some(z_record_release::<()>),
+            0.0,
+        )
+    };
+    unsafe { crate::flight_advance_input_key_repeat_timer(timer, 160.0) };
+    assert_eq!(
+        repeats.values.len(),
+        3,
+        "started, then the delay and one interval elapsed"
+    );
+    assert_eq!(repeats.releases, 0, "the timer retains its callback");
+    unsafe { crate::flight_stop_input_key_repeat_timer(timer) };
+    assert_eq!(
+        repeats.releases, 1,
+        "stopping drops the callback and releases its context once"
+    );
+    unsafe { crate::flight_free_input_key_repeat_timer_ref(timer.cast()) };
+    assert_eq!(repeats.releases, 1);
+}
+
+#[test]
 fn callback_collections_and_path_segments_execute_with_bounded_contexts() {
     let curve = unsafe {
         crate::flight_build_particle_color_curve(z_sample_particle_color, std::ptr::null_mut(), 2)
@@ -378,6 +412,12 @@ extern "C" fn z_geolocation_position(
 
 extern "C" fn z_record_release<T>(context: *mut c_void) {
     unsafe { &mut *(context as *mut Recorded<T>) }.releases += 1;
+}
+
+extern "C" fn z_record_repeat(context: *mut c_void) {
+    unsafe { &mut *(context as *mut Recorded<()>) }
+        .values
+        .push(());
 }
 
 extern "C" fn z_sample_particle_color(_context: *mut c_void, value: f32, out: *mut f32) -> bool {
