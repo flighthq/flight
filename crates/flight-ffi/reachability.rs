@@ -89,7 +89,7 @@ fn is_generated_ffi_function(function: &syn::ItemFn) -> bool {
             .is_some_and(|name| name.value() == "C")
 }
 
-fn canonical_type(source: &str) -> String {
+pub(crate) fn canonical_type(source: &str) -> String {
     let ty: Type = syn::parse_str(source)
         .unwrap_or_else(|error| panic!("invalid reachability carrier {source}: {error}"));
     type_fingerprint(&ty)
@@ -229,19 +229,30 @@ fn is_caller_producible(ty: &str, caller_producible: &BTreeSet<String>) -> bool 
     caller_producible.contains(bare)
 }
 
+fn is_boxed_handle_type(ty: &str) -> bool {
+    ty.starts_with("flight_sdk::Ref<")
+        || ty.starts_with("std::sync::Arc<")
+        || ty.starts_with("Vec<")
+        || ty.starts_with("std::collections::HashMap<")
+        || ty.starts_with("Ffi")
+}
+
 fn carrier_for_pointer(
     pointer: &syn::TypePtr,
     owned_types: &BTreeSet<String>,
     caller_producible: &BTreeSet<String>,
+    aliases: &BTreeMap<String, String>,
 ) -> Option<String> {
-    if matches!(&*pointer.elem, Type::Ptr(_) | Type::BareFn(_)) {
+    if matches!(&*pointer.elem, Type::BareFn(_)) {
         return None;
     }
     let pointee = type_fingerprint(&pointer.elem);
+    let bare = pointee.rsplit("::").next().unwrap_or(&pointee);
+    let pointee = aliases.get(bare).cloned().unwrap_or(pointee);
     if is_caller_producible(&pointee, caller_producible) {
         return None;
     }
-    if owned_types.contains(&pointee) {
+    if owned_types.contains(&pointee) || is_boxed_handle_type(&pointee) {
         return Some(format!("Box<{pointee}>"));
     }
     Some(format!(
@@ -270,24 +281,26 @@ fn root_parameter(expr: &Expr) -> Option<String> {
 struct CastVisitor<'a> {
     parameters: &'a BTreeSet<String>,
     casts: BTreeMap<String, Vec<syn::TypePtr>>,
+    all_casts: Vec<syn::TypePtr>,
 }
 
 impl<'ast> Visit<'ast> for CastVisitor<'_> {
     fn visit_expr_cast(&mut self, cast: &'ast syn::ExprCast) {
-        let Some(parameter) = root_parameter(&cast.expr) else {
-            syn::visit::visit_expr_cast(self, cast);
-            return;
-        };
         let Type::Ptr(pointer) = &*cast.ty else {
             syn::visit::visit_expr_cast(self, cast);
             return;
         };
         let pointee = type_fingerprint(&pointer.elem);
-        if self.parameters.contains(&parameter) && !is_void(&pointee) && pointee != "_" {
-            self.casts
-                .entry(parameter)
-                .or_default()
-                .push(pointer.clone());
+        if !is_void(&pointee) && pointee != "_" {
+            self.all_casts.push(pointer.clone());
+            if let Some(parameter) = root_parameter(&cast.expr)
+                && self.parameters.contains(&parameter)
+            {
+                self.casts
+                    .entry(parameter)
+                    .or_default()
+                    .push(pointer.clone());
+            }
         }
         syn::visit::visit_expr_cast(self, cast);
     }
@@ -301,6 +314,7 @@ fn collect_function_carriers(
     function: &syn::ItemFn,
     owned_types: &BTreeSet<String>,
     caller_producible: &BTreeSet<String>,
+    aliases: &BTreeMap<String, String>,
 ) -> FunctionCarriers {
     let ownership = function_ownership(function);
     let parameters: BTreeSet<_> = function
@@ -312,6 +326,7 @@ fn collect_function_carriers(
     let mut visitor = CastVisitor {
         parameters: &parameters,
         casts: BTreeMap::new(),
+        all_casts: Vec::new(),
     };
     visitor.visit_block(&function.block);
     let body = &function.block;
@@ -339,13 +354,34 @@ fn collect_function_carriers(
             continue;
         }
         let pointee = type_fingerprint(&pointer.elem);
+        if let Type::Ptr(inner) = &*pointer.elem {
+            let inner_pointee = type_fingerprint(&inner.elem);
+            if is_void(&inner_pointee) {
+                for cast in &visitor.all_casts {
+                    if let Some(carrier) =
+                        carrier_for_pointer(cast, owned_types, caller_producible, aliases)
+                    {
+                        carriers.consumes.insert(carrier);
+                    }
+                }
+            } else if let Some(carrier) =
+                carrier_for_pointer(inner, owned_types, caller_producible, aliases)
+            {
+                carriers.consumes.insert(carrier);
+            }
+            continue;
+        }
         if is_void(&pointee) {
             for cast in visitor.casts.get(&name).into_iter().flatten() {
-                if let Some(carrier) = carrier_for_pointer(cast, owned_types, caller_producible) {
+                if let Some(carrier) =
+                    carrier_for_pointer(cast, owned_types, caller_producible, aliases)
+                {
                     carriers.consumes.insert(carrier);
                 }
             }
-        } else if let Some(carrier) = carrier_for_pointer(pointer, owned_types, caller_producible) {
+        } else if let Some(carrier) =
+            carrier_for_pointer(pointer, owned_types, caller_producible, aliases)
+        {
             carriers.consumes.insert(carrier);
         }
     }
@@ -366,7 +402,8 @@ fn collect_function_carriers(
         }
         Some(OwnershipKind::Borrowed) => {
             if let Some(pointer) = function_return(function).and_then(pointer)
-                && let Some(carrier) = carrier_for_pointer(pointer, owned_types, caller_producible)
+                && let Some(carrier) =
+                    carrier_for_pointer(pointer, owned_types, caller_producible, aliases)
             {
                 carriers.produces.insert(carrier);
             }
@@ -409,6 +446,7 @@ fn solve(
 pub fn generate(
     source: &str,
     caller_producible: &BTreeSet<String>,
+    aliases: &BTreeMap<String, String>,
     surface: &BTreeSet<String>,
 ) -> Reports {
     let file = syn::parse_file(source).expect("generated FFI Rust must parse for reachability");
@@ -434,7 +472,7 @@ pub fn generate(
         .map(|(name, function)| {
             (
                 name,
-                collect_function_carriers(function, &owned_types, caller_producible),
+                collect_function_carriers(function, &owned_types, caller_producible, aliases),
             )
         })
         .collect();

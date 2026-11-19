@@ -980,10 +980,12 @@ fn main() {
     }
 
     let caller_producible = collect_caller_producible_value_types(crates_dir);
+    let reachability_aliases = collect_reachability_aliases();
     native_bindings::emit(
         &all_output,
         &out_dir,
         &caller_producible,
+        &reachability_aliases,
         &reachability_surface,
     );
     fs::write(out_dir.join("ffi_generated.rs"), all_output).unwrap();
@@ -2091,6 +2093,22 @@ fn caller_value_type_dependencies(ty: &syn::Type) -> Option<BTreeSet<String>> {
         }
         _ => None,
     }
+}
+
+fn collect_reachability_aliases() -> BTreeMap<String, String> {
+    TYPE_DEFINITIONS
+        .get()
+        .unwrap()
+        .keys()
+        .filter_map(|name| {
+            let resolved = resolve_type_alias(name);
+            if resolved == *name {
+                return None;
+            }
+            let qualified = qualify_opaque_type(&resolved)?;
+            Some((name.clone(), reachability::canonical_type(&qualified)))
+        })
+        .collect()
 }
 
 // Records each `pub struct` / `pub enum` with whether its `#[derive(...)]` list (across any

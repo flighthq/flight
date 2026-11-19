@@ -1,6 +1,6 @@
 format|ffi-reachability-baseline|1
 policy|host_capability|feature-gated native host crates supply borrowed Host*Capability carriers
-summary|policy-exempt|235|unreachable|3424|blocking-carriers|900
+summary|policy-exempt|235|unreachable|3436|blocking-carriers|917
 carrier|1|*const Option<String>
 carrier|1|*const Option<flight_sdk::Node2DRef>
 carrier|2|*const flight_sdk::AbcInstruction
@@ -219,7 +219,6 @@ carrier|1|*const flight_sdk::NativeWindowHandle
 carrier|11|*const flight_sdk::Node2DFields
 carrier|1|*const flight_sdk::NodeFields
 carrier|3|*const flight_sdk::NodeGuardState
-carrier|31|*const flight_sdk::NodeRef
 carrier|17|*const flight_sdk::NodeRuntime
 carrier|1|*const flight_sdk::NotificationSchedule
 carrier|1|*const flight_sdk::ObjMaterialLibrary
@@ -301,33 +300,6 @@ carrier|1|*const flight_sdk::QuadBatchData
 carrier|8|*const flight_sdk::QuaternionReading
 carrier|1|*const flight_sdk::RateLimitedLogSinkOptions
 carrier|1|*const flight_sdk::Record<flight_sdk::Unknown>
-carrier|2|*const flight_sdk::Ref<Vec<Option<flight_sdk::NodeRef>>>
-carrier|1|*const flight_sdk::Ref<flight_sdk::AnimationBlendTree>
-carrier|1|*const flight_sdk::Ref<flight_sdk::AnimationClip>
-carrier|1|*const flight_sdk::Ref<flight_sdk::AnimationPlayer>
-carrier|1|*const flight_sdk::Ref<flight_sdk::AnimationTrack>
-carrier|1|*const flight_sdk::Ref<flight_sdk::AppPointerLockState>
-carrier|1|*const flight_sdk::Ref<flight_sdk::AssetLibrary>
-carrier|5|*const flight_sdk::Ref<flight_sdk::CameraGuardState>
-carrier|4|*const flight_sdk::Ref<flight_sdk::DebugState>
-carrier|1|*const flight_sdk::Ref<flight_sdk::FileDialogHandle>
-carrier|4|*const flight_sdk::Ref<flight_sdk::FlowGuardState>
-carrier|1|*const flight_sdk::Ref<flight_sdk::FullscreenTargetHandle>
-carrier|45|*const flight_sdk::Ref<flight_sdk::LogState>
-carrier|2|*const flight_sdk::Ref<flight_sdk::MidiAccess>
-carrier|3|*const flight_sdk::Ref<flight_sdk::PathMorph>
-carrier|1|*const flight_sdk::Ref<flight_sdk::Record<flight_sdk::TextFormat>>
-carrier|4|*const flight_sdk::Ref<flight_sdk::Scene2DResourceFailureGuardState>
-carrier|3|*const flight_sdk::Ref<flight_sdk::Scene3D>
-carrier|1|*const flight_sdk::Ref<flight_sdk::ShapeBoundsState>
-carrier|3|*const flight_sdk::Ref<flight_sdk::SignalTimerState>
-carrier|1|*const flight_sdk::Ref<flight_sdk::Skin2D>
-carrier|6|*const flight_sdk::Ref<flight_sdk::SocketGuardState>
-carrier|1|*const flight_sdk::Ref<flight_sdk::StatechartRaw>
-carrier|22|*const flight_sdk::Ref<flight_sdk::TrayIcon>
-carrier|1|*const flight_sdk::Ref<flight_sdk::VideoResource>
-carrier|1|*const flight_sdk::Ref<flight_sdk::WindowResizeTargetHandle>
-carrier|3|*const flight_sdk::Ref<flight_sdk::text::contract::TextLayoutContext>
 carrier|1|*const flight_sdk::RegExp
 carrier|1|*const flight_sdk::RegExpExecResult
 carrier|2|*const flight_sdk::RegExpMatchRange
@@ -336,6 +308,8 @@ carrier|2|*const flight_sdk::ReorderNodeChildCommand
 carrier|2|*const flight_sdk::ReplaceTextInputOptions
 carrier|1|*const flight_sdk::Requirement
 carrier|3|*const flight_sdk::RequirementCatalogEntry
+carrier|1|*const flight_sdk::ResolveScene2DResourcesOptions
+carrier|1|*const flight_sdk::ResolveScene3DResourcesOptions
 carrier|9|*const flight_sdk::RichText
 carrier|15|*const flight_sdk::RichTextData
 carrier|31|*const flight_sdk::RigidBody2D
@@ -359,6 +333,7 @@ carrier|4|*const flight_sdk::Scene2D
 carrier|2|*const flight_sdk::Scene2DAudioResourceLoadProgress
 carrier|1|*const flight_sdk::Scene2DDocument
 carrier|2|*const flight_sdk::Scene2DDocumentFetchProgress
+carrier|1|*const flight_sdk::Scene2DDocumentImportContext
 carrier|1|*const flight_sdk::Scene2DDocumentImporter
 carrier|1|*const flight_sdk::Scene2DFitContext
 carrier|2|*const flight_sdk::Scene2DImageResourceLoadProgress
@@ -388,12 +363,17 @@ carrier|5|*const flight_sdk::ShapedRun
 carrier|1|*const flight_sdk::ShellExternalUrlPolicy
 carrier|1|*const flight_sdk::ShellProcessOptions
 carrier|3|*const flight_sdk::SignalConnection
-carrier|13|*const flight_sdk::Skeleton2D
+carrier|1|*const flight_sdk::SignalSlot<flight_sdk::TrayBalloonEvent>
+carrier|1|*const flight_sdk::SignalSlot<flight_sdk::TrayDropEvent>
+carrier|1|*const flight_sdk::SignalSlot<flight_sdk::TrayInteractionEvent>
+carrier|1|*const flight_sdk::SignalSlot<flight_sdk::TrayMenuSelectionEvent>
+carrier|14|*const flight_sdk::Skeleton2D
 carrier|2|*const flight_sdk::Skeleton2DAnimationTargetBinderRegistry
 carrier|1|*const flight_sdk::Skeleton2DConstraintRef
 carrier|1|*const flight_sdk::Skeleton2DConstraintRegistry
 carrier|1|*const flight_sdk::Skeleton2DDeformAnimationTarget
 carrier|2|*const flight_sdk::Skeleton2DDeformLengthMismatch
+carrier|1|*const flight_sdk::Skeleton2DDrawOrderTimeline
 carrier|8|*const flight_sdk::Skeleton2DIkConstraint
 carrier|10|*const flight_sdk::Skeleton2DPathConstraint
 carrier|17|*const flight_sdk::Skeleton2DTransformConstraint
@@ -404,6 +384,8 @@ carrier|1|*const flight_sdk::SnapshotValue
 carrier|2|*const flight_sdk::SocketCloseInfo
 carrier|1|*const flight_sdk::SocketGuardState
 carrier|1|*const flight_sdk::SocketMessage
+carrier|1|*const flight_sdk::SocketMessageData
+carrier|1|*const flight_sdk::SocketOptions
 carrier|2|*const flight_sdk::SocketRuntime
 carrier|5|*const flight_sdk::SoftKeyboardInfo
 carrier|2|*const flight_sdk::SpatialAabb2D
@@ -448,6 +430,7 @@ carrier|2|*const flight_sdk::SvgDocumentImportOptions
 carrier|9|*const flight_sdk::SvgGradient
 carrier|1|*const flight_sdk::SvgPathDataFormatOptions
 carrier|7|*const flight_sdk::SvgStyle
+carrier|1|*const flight_sdk::TargetRef
 carrier|2|*const flight_sdk::TcpSocketOptions
 carrier|6|*const flight_sdk::TextBoundsSpec
 carrier|1|*const flight_sdk::TextFeature
@@ -462,6 +445,7 @@ carrier|12|*const flight_sdk::TextInputState
 carrier|2|*const flight_sdk::TextItem
 carrier|2|*const flight_sdk::TextLabel
 carrier|2|*const flight_sdk::TextLabelData
+carrier|1|*const flight_sdk::TextLogFormatterOptions
 carrier|2|*const flight_sdk::TextSegment
 carrier|5|*const flight_sdk::TextSelectionRectangle
 carrier|12|*const flight_sdk::TextureAtlas
@@ -492,6 +476,8 @@ carrier|1|*const flight_sdk::TimelineOptions
 carrier|1|*const flight_sdk::TimelineSource
 carrier|1|*const flight_sdk::TimelineSourceOptions
 carrier|1|*const flight_sdk::ToonModifierOptions
+carrier|1|*const flight_sdk::TrayAnimationState
+carrier|1|*const flight_sdk::TrayBalloonOptions
 carrier|1|*const flight_sdk::TrayIconOptions
 carrier|4|*const flight_sdk::TrayInteractionEvent
 carrier|1|*const flight_sdk::TweenManagerOptions
@@ -504,9 +490,11 @@ carrier|1|*const flight_sdk::UnityRotationOverLifetime
 carrier|3|*const flight_sdk::UnitySizeOverLifetime
 carrier|2|*const flight_sdk::Unknown
 carrier|2|*const flight_sdk::UnpackedRectangleExplanation
+carrier|2|*const flight_sdk::UpdateScene3DResourceStreamingOptions
 carrier|3|*const flight_sdk::VelocitySample
 carrier|1|*const flight_sdk::VertexDisplaceModifierOptions
 carrier|5|*const flight_sdk::VideoChannel
+carrier|1|*const flight_sdk::VideoChannelRuntimeStateRef
 carrier|1|*const flight_sdk::VideoResourceUrl
 carrier|2|*const flight_sdk::ViewportAlign
 carrier|1|*const flight_sdk::VoxelGrid
@@ -524,23 +512,6 @@ carrier|1|*const flight_sdk::text_markup::contract::MarkupTagHandler
 carrier|1|*const flight_sdk::text_markup::contract::TextMarkupGuardState
 carrier|3|*const flight_sdk::textbidi::contract::BidiClassKernel
 carrier|1|*const flight_sdk::textlayout::contract::TextLayoutMeasureState
-carrier|1|*const std::sync::Arc<flight_sdk::CompressedImageData>
-carrier|2|*const std::sync::Arc<flight_sdk::HostImageSource>
-carrier|1|*mut Vec<flight_sdk::AnimationTrackValidationDiagnostic>
-carrier|1|*mut Vec<flight_sdk::ColorKeyframe>
-carrier|1|*mut Vec<flight_sdk::CommandRef>
-carrier|1|*mut Vec<flight_sdk::CurveKeyframe>
-carrier|1|*mut Vec<flight_sdk::ModifierKind>
-carrier|3|*mut Vec<flight_sdk::NodeRef>
-carrier|1|*mut Vec<flight_sdk::ParticleConfigIssue>
-carrier|2|*mut Vec<flight_sdk::RequirementCatalogEntryRef>
-carrier|1|*mut Vec<flight_sdk::ScreenInfo>
-carrier|1|*mut Vec<flight_sdk::ShortcutModifier>
-carrier|2|*mut Vec<flight_sdk::SpritesheetValidationDiagnostic>
-carrier|3|*mut Vec<flight_sdk::TextSegment>
-carrier|2|*mut Vec<flight_sdk::TextSelectionRectangle>
-carrier|1|*mut Vec<i32>
-carrier|3|*mut Vec<usize>
 carrier|2|*mut flight_sdk::AbcInstruction
 carrier|1|*mut flight_sdk::AddNodeChildCommand
 carrier|3|*mut flight_sdk::AmbientLightReading
@@ -558,7 +529,7 @@ carrier|2|*mut flight_sdk::BitmapConvolutionOptions
 carrier|8|*mut flight_sdk::BitmapFontGlyphData
 carrier|9|*mut flight_sdk::BitmapText
 carrier|2|*mut flight_sdk::BitmapTextData
-carrier|1|*mut flight_sdk::BitmapTextGuardState
+carrier|2|*mut flight_sdk::BitmapTextGuardState
 carrier|1|*mut flight_sdk::BitmapTextPage
 carrier|3|*mut flight_sdk::BitmapTextRuntime
 carrier|1|*mut flight_sdk::Blob
@@ -570,7 +541,7 @@ carrier|1|*mut flight_sdk::ClipRegion
 carrier|8|*mut flight_sdk::Clock
 carrier|2|*mut flight_sdk::CocosPlistFrame
 carrier|1|*mut flight_sdk::CocosPlistMetadata
-carrier|2|*mut flight_sdk::CollisionRegistry2D
+carrier|3|*mut flight_sdk::CollisionRegistry2D
 carrier|4|*mut flight_sdk::CollisionRegistry3D
 carrier|1|*mut flight_sdk::CollisionTestExplanation2D
 carrier|1|*mut flight_sdk::CollisionTestExplanation3D
@@ -626,12 +597,12 @@ carrier|2|*mut flight_sdk::MorphShapeLineEndpoint
 carrier|1|*mut flight_sdk::MorphShapePathBinding
 carrier|1|*mut flight_sdk::MorphShapeTexturePaintBinding
 carrier|5|*mut flight_sdk::MotionReading
-carrier|2|*mut flight_sdk::MovieClipGuardState
+carrier|3|*mut flight_sdk::MovieClipGuardState
 carrier|2|*mut flight_sdk::NativeTextData
 carrier|11|*mut flight_sdk::Node2DFields
 carrier|1|*mut flight_sdk::NodeFields
-carrier|2|*mut flight_sdk::NodeGuardState
-carrier|17|*mut flight_sdk::NodeRuntime
+carrier|3|*mut flight_sdk::NodeGuardState
+carrier|18|*mut flight_sdk::NodeRuntime
 carrier|1|*mut flight_sdk::NotificationSchedule
 carrier|7|*mut flight_sdk::OrientationReading
 carrier|3|*mut flight_sdk::OrthographicProjection
@@ -651,7 +622,7 @@ carrier|3|*mut flight_sdk::Physics2DDistanceJoint
 carrier|1|*mut flight_sdk::Physics2DDistanceJointOptions
 carrier|6|*mut flight_sdk::Physics2DGearJoint
 carrier|1|*mut flight_sdk::Physics2DGearJointOptions
-carrier|2|*mut flight_sdk::Physics2DGuardState
+carrier|3|*mut flight_sdk::Physics2DGuardState
 carrier|16|*mut flight_sdk::Physics2DJointFields
 carrier|2|*mut flight_sdk::Physics2DJointOptions
 carrier|7|*mut flight_sdk::Physics2DJointResolution
@@ -713,7 +684,7 @@ carrier|2|*mut flight_sdk::ShapeFillRegion
 carrier|2|*mut flight_sdk::ShapeStrokeRegion
 carrier|6|*mut flight_sdk::ShapedGlyph
 carrier|3|*mut flight_sdk::ShapedRun
-carrier|1|*mut flight_sdk::ShapedRunPool
+carrier|2|*mut flight_sdk::ShapedRunPool
 carrier|5|*mut flight_sdk::Skeleton2D
 carrier|5|*mut flight_sdk::Skeleton2DAnimationTargetBinderRegistry
 carrier|5|*mut flight_sdk::Skeleton2DConstraintRegistry
@@ -722,7 +693,7 @@ carrier|2|*mut flight_sdk::Skeleton2DDeformLengthMismatch
 carrier|5|*mut flight_sdk::Skeleton2DIkConstraint
 carrier|7|*mut flight_sdk::Skeleton2DPathConstraint
 carrier|14|*mut flight_sdk::Skeleton2DTransformConstraint
-carrier|1|*mut flight_sdk::SnapshotGuardState
+carrier|2|*mut flight_sdk::SnapshotGuardState
 carrier|2|*mut flight_sdk::SocketCloseInfo
 carrier|1|*mut flight_sdk::SocketGuardState
 carrier|1|*mut flight_sdk::SocketMessage
@@ -767,7 +738,7 @@ carrier|14|*mut flight_sdk::TextureAtlas
 carrier|3|*mut flight_sdk::TextureAtlasAsepriteArrayFrame
 carrier|2|*mut flight_sdk::TextureAtlasAsepriteFrameTag
 carrier|2|*mut flight_sdk::TextureAtlasFormatRegistry
-carrier|2|*mut flight_sdk::TextureAtlasGuardState
+carrier|3|*mut flight_sdk::TextureAtlasGuardState
 carrier|8|*mut flight_sdk::TextureAtlasRegion
 carrier|8|*mut flight_sdk::TextureAtlasRegionLike
 carrier|2|*mut flight_sdk::TexturePackerAtlasArrayFrame
@@ -779,7 +750,7 @@ carrier|4|*mut flight_sdk::TilemapData
 carrier|4|*mut flight_sdk::Timeline
 carrier|1|*mut flight_sdk::TimelineSource
 carrier|1|*mut flight_sdk::ToonModifierOptions
-carrier|1|*mut flight_sdk::TrayAnimationState
+carrier|2|*mut flight_sdk::TrayAnimationState
 carrier|4|*mut flight_sdk::TrayInteractionEvent
 carrier|2|*mut flight_sdk::TweenPropertyDetail
 carrier|1|*mut flight_sdk::UnityColorOverLifetime
@@ -793,9 +764,24 @@ carrier|2|*mut flight_sdk::VideoChannel
 carrier|2|*mut flight_sdk::VoxelGrid
 carrier|5|*mut flight_sdk::WindowBounds
 carrier|4|*mut flight_sdk::path::contract::PathMeshPool
-carrier|1|*mut flight_sdk::skeleton2d::contract::Skeleton2DGuardState
-carrier|1|*mut flight_sdk::text_markup::contract::TextMarkupGuardState
+carrier|2|*mut flight_sdk::skeleton2d::contract::Skeleton2DGuardState
+carrier|2|*mut flight_sdk::text_markup::contract::TextMarkupGuardState
 carrier|1|*mut flight_sdk::textlayout::contract::TextLayoutMeasureState
+carrier|1|Box<Vec<flight_sdk::AnimationTrackValidationDiagnostic>>
+carrier|1|Box<Vec<flight_sdk::ColorKeyframe>>
+carrier|1|Box<Vec<flight_sdk::CommandRef>>
+carrier|1|Box<Vec<flight_sdk::CurveKeyframe>>
+carrier|1|Box<Vec<flight_sdk::ModifierKind>>
+carrier|5|Box<Vec<flight_sdk::NodeRef>>
+carrier|1|Box<Vec<flight_sdk::ParticleConfigIssue>>
+carrier|2|Box<Vec<flight_sdk::RequirementCatalogEntryRef>>
+carrier|1|Box<Vec<flight_sdk::ScreenInfo>>
+carrier|1|Box<Vec<flight_sdk::ShortcutModifier>>
+carrier|2|Box<Vec<flight_sdk::SpritesheetValidationDiagnostic>>
+carrier|3|Box<Vec<flight_sdk::TextSegment>>
+carrier|2|Box<Vec<flight_sdk::TextSelectionRectangle>>
+carrier|1|Box<Vec<i32>>
+carrier|3|Box<Vec<usize>>
 carrier|4|Box<flight_sdk::AbcFile>
 carrier|4|Box<flight_sdk::AnimationBlendTree>
 carrier|4|Box<flight_sdk::AnimationBlendTreeInput>
@@ -817,6 +803,7 @@ carrier|1|Box<flight_sdk::CollisionColliderShape3D>
 carrier|7|Box<flight_sdk::CollisionShape2D>
 carrier|4|Box<flight_sdk::ColorBlindSimulationAdjustment>
 carrier|22|Box<flight_sdk::ColorGradeAdjustment>
+carrier|3|Box<flight_sdk::ColorLut>
 carrier|4|Box<flight_sdk::ColorScaleBiasAdjustment>
 carrier|1|Box<flight_sdk::ColorTransformFunction>
 carrier|1|Box<flight_sdk::CommandBindingRef>
@@ -838,8 +825,10 @@ carrier|2|Box<flight_sdk::ImageResourceReferenceResolutionExplanation>
 carrier|6|Box<flight_sdk::InvertAdjustment>
 carrier|8|Box<flight_sdk::LayoutResolutionExplanation>
 carrier|10|Box<flight_sdk::LiftGammaGainAdjustment>
-carrier|1|Box<flight_sdk::LogLevel>
-carrier|1|Box<flight_sdk::LogSink>
+carrier|3|Box<flight_sdk::LightProbeGrid>
+carrier|4|Box<flight_sdk::LogLevel>
+carrier|3|Box<flight_sdk::LogSink>
+carrier|2|Box<flight_sdk::LogSpan>
 carrier|6|Box<flight_sdk::LookupTableGradeAdjustment>
 carrier|4|Box<flight_sdk::LottieDocumentImportResult>
 carrier|1|Box<flight_sdk::LottieMaskHandler>
@@ -851,29 +840,55 @@ carrier|30|Box<flight_sdk::OrbitCameraController>
 carrier|5|Box<flight_sdk::PackResult>
 carrier|1|Box<flight_sdk::PathMorph>
 carrier|1|Box<flight_sdk::Physics2DJointSolverRef>
+carrier|1|Box<flight_sdk::Ref<Vec<Option<flight_sdk::NodeRef>>>>
 carrier|1|Box<flight_sdk::Ref<Vec<flight_sdk::node::contract::AdjustmentRef>>>
-carrier|79|Box<flight_sdk::Ref<dyn flight_sdk::Node>>
+carrier|2|Box<flight_sdk::Ref<dyn flight_sdk::Adjustment>>
+carrier|3|Box<flight_sdk::Ref<dyn flight_sdk::Modifier>>
+carrier|107|Box<flight_sdk::Ref<dyn flight_sdk::Node>>
+carrier|1|Box<flight_sdk::Ref<flight_sdk::AnimationBlendTree>>
+carrier|1|Box<flight_sdk::Ref<flight_sdk::AnimationClip>>
+carrier|1|Box<flight_sdk::Ref<flight_sdk::AnimationPlayer>>
+carrier|1|Box<flight_sdk::Ref<flight_sdk::AppPointerLockState>>
+carrier|1|Box<flight_sdk::Ref<flight_sdk::AssetLibrary>>
 carrier|21|Box<flight_sdk::Ref<flight_sdk::AudioChannel>>
 carrier|9|Box<flight_sdk::Ref<flight_sdk::AudioMixer>>
 carrier|9|Box<flight_sdk::Ref<flight_sdk::BitmapFont>>
+carrier|5|Box<flight_sdk::Ref<flight_sdk::CameraGuardState>>
 carrier|1|Box<flight_sdk::Ref<flight_sdk::CanvasSurface>>
+carrier|5|Box<flight_sdk::Ref<flight_sdk::DebugState>>
+carrier|1|Box<flight_sdk::Ref<flight_sdk::FileDialogHandle>>
+carrier|4|Box<flight_sdk::Ref<flight_sdk::FlowGuardState>>
+carrier|1|Box<flight_sdk::Ref<flight_sdk::FullscreenTargetHandle>>
 carrier|11|Box<flight_sdk::Ref<flight_sdk::GlyphAtlas>>
 carrier|2|Box<flight_sdk::Ref<flight_sdk::GlyphSource>>
 carrier|3|Box<flight_sdk::Ref<flight_sdk::ImageResource>>
+carrier|1|Box<flight_sdk::Ref<flight_sdk::LightProbe>>
+carrier|25|Box<flight_sdk::Ref<flight_sdk::LogState>>
+carrier|2|Box<flight_sdk::Ref<flight_sdk::MidiAccess>>
 carrier|1|Box<flight_sdk::Ref<flight_sdk::MidiOutputPort>>
 carrier|1|Box<flight_sdk::Ref<flight_sdk::ModifierDefinition>>
-carrier|4|Box<flight_sdk::Ref<flight_sdk::MorphShape>>
+carrier|5|Box<flight_sdk::Ref<flight_sdk::MorphShape>>
 carrier|1|Box<flight_sdk::Ref<flight_sdk::NativeTextStyle>>
 carrier|1|Box<flight_sdk::Ref<flight_sdk::Path>>
+carrier|2|Box<flight_sdk::Ref<flight_sdk::PathMorph>>
 carrier|3|Box<flight_sdk::Ref<flight_sdk::Physics2DCollider>>
+carrier|1|Box<flight_sdk::Ref<flight_sdk::Record<flight_sdk::TextFormat>>>
 carrier|73|Box<flight_sdk::Ref<flight_sdk::RichText>>
+carrier|2|Box<flight_sdk::Ref<flight_sdk::Scene2DResourceFailureGuardState>>
 carrier|5|Box<flight_sdk::Ref<flight_sdk::Scene3DResourceResolver>>
-carrier|5|Box<flight_sdk::Ref<flight_sdk::Socket>>
+carrier|1|Box<flight_sdk::Ref<flight_sdk::ShapeBoundsState>>
+carrier|3|Box<flight_sdk::Ref<flight_sdk::SignalTimerState>>
+carrier|7|Box<flight_sdk::Ref<flight_sdk::Socket>>
+carrier|2|Box<flight_sdk::Ref<flight_sdk::SocketGuardState>>
 carrier|12|Box<flight_sdk::Ref<flight_sdk::StatechartInstanceRaw>>
+carrier|1|Box<flight_sdk::Ref<flight_sdk::StatechartRaw>>
 carrier|2|Box<flight_sdk::Ref<flight_sdk::TextFormat>>
 carrier|6|Box<flight_sdk::Ref<flight_sdk::TextLabel>>
 carrier|11|Box<flight_sdk::Ref<flight_sdk::Timeline>>
+carrier|16|Box<flight_sdk::Ref<flight_sdk::TrayIcon>>
 carrier|16|Box<flight_sdk::Ref<flight_sdk::VideoChannel>>
+carrier|1|Box<flight_sdk::Ref<flight_sdk::WindowResizeTargetHandle>>
+carrier|3|Box<flight_sdk::Ref<flight_sdk::text::contract::TextLayoutContext>>
 carrier|1|Box<flight_sdk::RequirementCatalog>
 carrier|1|Box<flight_sdk::RiveDocument>
 carrier|3|Box<flight_sdk::RivePathRecord>
@@ -901,6 +916,8 @@ carrier|2|Box<flight_sdk::TimelineLabel>
 carrier|1|Box<flight_sdk::TimelineSourceRef>
 carrier|6|Box<flight_sdk::TweenManager>
 carrier|4|Box<flight_sdk::XmlElement>
+carrier|1|Box<std::sync::Arc<flight_sdk::CompressedImageData>>
+carrier|2|Box<std::sync::Arc<flight_sdk::HostImageSource>>
 exempt|flight_acquire_power_keep_awake|host_capability|*const flight_sdk::HostPowerKeepAwakeCapability
 exempt|flight_add_app_recent_document|host_capability|*const flight_sdk::HostAppRecentDocumentsCapability
 exempt|flight_announce_accessibility|host_capability|*const flight_sdk::HostAccessibilityCapability
@@ -951,7 +968,7 @@ exempt|flight_destroy_accessibility|host_capability|*const flight_sdk::HostAcces
 exempt|flight_destroy_connectivity|host_capability|*const flight_sdk::HostConnectivityChangeCapability
 exempt|flight_destroy_media_session|host_capability|*const flight_sdk::HostMediaSessionActionCapability,*const flight_sdk::HostMediaSessionCapability
 exempt|flight_destroy_storage|host_capability|*const flight_sdk::HostPreferencesChangeCapability
-exempt|flight_destroy_updater|host_capability|*const flight_sdk::Ref<flight_sdk::HostUpdaterCommandCapability>
+exempt|flight_destroy_updater|host_capability|Box<flight_sdk::Ref<flight_sdk::HostUpdaterCommandCapability>>
 exempt|flight_destroy_video_resource|host_capability|*const flight_sdk::HostVideoCapability
 exempt|flight_directory_exists|host_capability|*const flight_sdk::HostFileSystemCapability
 exempt|flight_dispose_video_resource|host_capability|*const flight_sdk::HostVideoCapability
@@ -1092,7 +1109,7 @@ exempt|flight_set_app_dock_badge|host_capability|*const flight_sdk::HostAppDockC
 exempt|flight_set_app_dock_menu|host_capability|*const flight_sdk::HostAppDockCapability
 exempt|flight_set_app_login_item_open_as_hidden|host_capability|transitive
 exempt|flight_set_app_login_item_open_at_login|host_capability|transitive
-exempt|flight_set_app_menu|host_capability|*const flight_sdk::Ref<flight_sdk::HostAppMenuCapability>
+exempt|flight_set_app_menu|host_capability|Box<flight_sdk::Ref<flight_sdk::HostAppMenuCapability>>
 exempt|flight_set_app_name|host_capability|*const flight_sdk::HostAppNameWriteCapability
 exempt|flight_set_app_user_model_id|host_capability|*const flight_sdk::HostAppUserModelIdCapability
 exempt|flight_set_backend_operation_explanation_implemented|host_capability|transitive
@@ -1140,11 +1157,11 @@ unreachable|flight_acquire_path_mesh|*mut flight_sdk::path::contract::PathMeshPo
 unreachable|flight_acquire_path_mesh_typed|*mut flight_sdk::path::contract::PathMeshPool
 unreachable|flight_acquire_spritesheet_player|*mut flight_sdk::SpritesheetPlayerPool
 unreachable|flight_add_audio_bus_to_mixer|Box<flight_sdk::Ref<flight_sdk::AudioMixer>>
-unreachable|flight_add_log_sink|*const flight_sdk::Ref<flight_sdk::LogState>
+unreachable|flight_add_log_sink|Box<flight_sdk::LogSink>
 unreachable|flight_add_movie_clip_frame_script|*const flight_sdk::TimelineFrameArg
 unreachable|flight_add_node_child|Box<flight_sdk::Ref<dyn flight_sdk::Node>>
 unreachable|flight_add_node_child_at|Box<flight_sdk::Ref<dyn flight_sdk::Node>>
-unreachable|flight_add_node_children|*const flight_sdk::NodeRef
+unreachable|flight_add_node_children|Box<flight_sdk::Ref<dyn flight_sdk::Node>>
 unreachable|flight_add_node_color_adjustment|*const flight_sdk::node::contract::AdjustmentRef
 unreachable|flight_add_node_order_list_entry|Box<flight_sdk::Ref<dyn flight_sdk::Node>>
 unreachable|flight_add_node_to_selection|Box<flight_sdk::Ref<dyn flight_sdk::Node>>
@@ -1161,7 +1178,7 @@ unreachable|flight_advance_animation_layer_stack|Box<flight_sdk::AnimationLayerS
 unreachable|flight_advance_animation_player|Box<flight_sdk::AnimationPlayer>
 unreachable|flight_advance_animation_state_machine|*mut flight_sdk::AnimationStateMachine
 unreachable|flight_advance_log_sink|Box<flight_sdk::BufferedLogSink>
-unreachable|flight_advance_signal_timers|*const flight_sdk::Ref<flight_sdk::SignalTimerState>
+unreachable|flight_advance_signal_timers|Box<flight_sdk::Ref<flight_sdk::SignalTimerState>>
 unreachable|flight_advance_statechart_instance|Box<flight_sdk::Ref<flight_sdk::StatechartInstanceRaw>>
 unreachable|flight_append_morph_shape_begin_fill|*const flight_sdk::MorphShapeColorEndpoint
 unreachable|flight_append_morph_shape_begin_gradient_fill|*const flight_sdk::MorphShapeGradientEndpoint
@@ -1169,7 +1186,7 @@ unreachable|flight_append_morph_shape_begin_texture_fill|Box<flight_sdk::Ref<fli
 unreachable|flight_append_morph_shape_line_gradient_style|*const flight_sdk::MorphShapeGradientEndpoint
 unreachable|flight_append_morph_shape_line_style|*const flight_sdk::MorphShapeLineEndpoint
 unreachable|flight_append_morph_shape_line_texture_style|Box<flight_sdk::Ref<flight_sdk::MorphShape>>
-unreachable|flight_append_morph_shape_path|*const flight_sdk::Ref<flight_sdk::PathMorph>
+unreachable|flight_append_morph_shape_path|Box<flight_sdk::Ref<flight_sdk::MorphShape>>
 unreachable|flight_append_quad_batch_instance|*mut flight_sdk::QuadBatch
 unreachable|flight_append_rich_text_string|Box<flight_sdk::Ref<flight_sdk::RichText>>
 unreachable|flight_append_rive_shape_geometry|Box<flight_sdk::RivePathRecord>
@@ -1202,14 +1219,14 @@ unreachable|flight_apply_rive_import_options|*const flight_sdk::RiveImportOption
 unreachable|flight_apply_spritesheet_import_options|*const flight_sdk::SpritesheetImportOptions
 unreachable|flight_apply_text_input_restriction|Box<flight_sdk::Ref<flight_sdk::RichText>>
 unreachable|flight_apply_texture_atlas_import_options|*const flight_sdk::TextureAtlasImportOptions
-unreachable|flight_are_camera_guards_enabled|*const flight_sdk::Ref<flight_sdk::CameraGuardState>
+unreachable|flight_are_camera_guards_enabled|Box<flight_sdk::Ref<flight_sdk::CameraGuardState>>
 unreachable|flight_are_collision_guards_enabled|*const flight_sdk::CollisionRegistry2D
 unreachable|flight_are_movie_clip_guards_enabled|*const flight_sdk::MovieClipGuardState
 unreachable|flight_are_node_guards_enabled|*const flight_sdk::NodeGuardState
 unreachable|flight_are_physics2d_guards_enabled|*const flight_sdk::Physics2DGuardState
-unreachable|flight_are_scene2d_resource_failure_guards_enabled|*const flight_sdk::Ref<flight_sdk::Scene2DResourceFailureGuardState>
+unreachable|flight_are_scene2d_resource_failure_guards_enabled|Box<flight_sdk::Ref<flight_sdk::Scene2DResourceFailureGuardState>>
 unreachable|flight_are_scene3d_resource_failure_guards_enabled|Box<flight_sdk::Ref<flight_sdk::Scene3DResourceResolver>>
-unreachable|flight_are_socket_guards_enabled|*const flight_sdk::Ref<flight_sdk::SocketGuardState>
+unreachable|flight_are_socket_guards_enabled|Box<flight_sdk::Ref<flight_sdk::SocketGuardState>>
 unreachable|flight_are_statechart_guards_enabled|Box<flight_sdk::Ref<flight_sdk::StatechartInstanceRaw>>
 unreachable|flight_are_texture_atlas_guards_enabled|*const flight_sdk::TextureAtlasGuardState
 unreachable|flight_aseprite_spritesheet_format|*const flight_sdk::SpritesheetFormatRegistry
@@ -1227,10 +1244,11 @@ unreachable|flight_attach_window|*const flight_sdk::NativeWindowHandle
 unreachable|flight_attach_window_drop_file|*const flight_sdk::InputTargetHandle
 unreachable|flight_attach_window_focus|*const flight_sdk::InputTargetHandle
 unreachable|flight_attach_window_render_state|*const flight_sdk::SurfaceRef
-unreachable|flight_attach_window_resize|*const flight_sdk::Ref<flight_sdk::WindowResizeTargetHandle>
+unreachable|flight_attach_window_resize|Box<flight_sdk::Ref<flight_sdk::WindowResizeTargetHandle>>
 unreachable|flight_bake_color_lut|Box<flight_sdk::ColorTransformFunction>
-unreachable|flight_begin_debug_span|*const flight_sdk::Ref<flight_sdk::DebugState>
-unreachable|flight_begin_log_group|*const flight_sdk::Ref<flight_sdk::LogState>
+unreachable|flight_bake_color_lut_for_run|Box<flight_sdk::Ref<dyn flight_sdk::Adjustment>>
+unreachable|flight_begin_debug_span|Box<flight_sdk::Ref<flight_sdk::DebugState>>
+unreachable|flight_begin_log_group|Box<flight_sdk::Ref<flight_sdk::LogState>>
 unreachable|flight_bevel_bitmap|*const flight_sdk::BitmapBevelOptions
 unreachable|flight_boolean_paths|*const flight_sdk::PathBooleanOptions
 unreachable|flight_box_blur_bitmap|*const flight_sdk::BitmapBoxBlurOptions
@@ -1247,17 +1265,17 @@ unreachable|flight_clear_audio_channel_loop_region|Box<flight_sdk::Ref<flight_sd
 unreachable|flight_clear_collision_pair_tests3d|*mut flight_sdk::CollisionRegistry3D
 unreachable|flight_clear_collision_supports3d|*mut flight_sdk::CollisionRegistry3D
 unreachable|flight_clear_glyph_atlas_dirty|Box<flight_sdk::Ref<flight_sdk::GlyphAtlas>>
-unreachable|flight_clear_log_channel_level|*const flight_sdk::Ref<flight_sdk::LogState>
-unreachable|flight_clear_log_channel_levels|*const flight_sdk::Ref<flight_sdk::LogState>
-unreachable|flight_clear_log_groups|*const flight_sdk::Ref<flight_sdk::LogState>
-unreachable|flight_clear_log_once_keys|*const flight_sdk::Ref<flight_sdk::LogState>
-unreachable|flight_clear_log_redaction_paths|*const flight_sdk::Ref<flight_sdk::LogState>
-unreachable|flight_clear_log_serializers|*const flight_sdk::Ref<flight_sdk::LogState>
-unreachable|flight_clear_log_sinks|*const flight_sdk::Ref<flight_sdk::LogState>
+unreachable|flight_clear_log_channel_level|Box<flight_sdk::Ref<flight_sdk::LogState>>
+unreachable|flight_clear_log_channel_levels|Box<flight_sdk::Ref<flight_sdk::LogState>>
+unreachable|flight_clear_log_groups|Box<flight_sdk::Ref<flight_sdk::LogState>>
+unreachable|flight_clear_log_once_keys|Box<flight_sdk::Ref<flight_sdk::LogState>>
+unreachable|flight_clear_log_redaction_paths|Box<flight_sdk::Ref<flight_sdk::LogState>>
+unreachable|flight_clear_log_serializers|Box<flight_sdk::Ref<flight_sdk::LogState>>
+unreachable|flight_clear_log_sinks|Box<flight_sdk::Ref<flight_sdk::LogState>>
 unreachable|flight_clear_quad_batch|*mut flight_sdk::QuadBatch
 unreachable|flight_clear_rich_text_format_ranges|Box<flight_sdk::Ref<flight_sdk::RichText>>
 unreachable|flight_clear_shaped_run|*mut flight_sdk::ShapedRun
-unreachable|flight_clear_signal_timeout|*const flight_sdk::Ref<flight_sdk::SignalTimerState>
+unreachable|flight_clear_signal_timeout|Box<flight_sdk::Ref<flight_sdk::SignalTimerState>>
 unreachable|flight_clear_status_bar_style_stack|*mut flight_sdk::StatusBarStyleStacks
 unreachable|flight_clear_storage_namespace|*const flight_sdk::StorageNamespace
 unreachable|flight_clear_text_input_history|Box<flight_sdk::Ref<flight_sdk::RichText>>
@@ -1279,7 +1297,7 @@ unreachable|flight_clone_sprite|*const flight_sdk::Sprite
 unreachable|flight_clone_spritesheet_player|*const flight_sdk::SpritesheetPlayer
 unreachable|flight_clone_texture__texture|Box<flight_sdk::Texture>
 unreachable|flight_clone_tilemap|*const flight_sdk::Tilemap
-unreachable|flight_close_socket|*const flight_sdk::Ref<flight_sdk::SocketGuardState>
+unreachable|flight_close_socket|Box<flight_sdk::Ref<flight_sdk::Socket>>
 unreachable|flight_cocos_plist_spritesheet_format|*const flight_sdk::SpritesheetFormatRegistry
 unreachable|flight_collide_aabb_polygon_contact_manifold2d|*const flight_sdk::CollisionPolygon2D
 unreachable|flight_collide_capsule_polygon_contact_manifold2d|*const flight_sdk::CollisionPolygon2D
@@ -1307,27 +1325,27 @@ unreachable|flight_compute_god_rays_light_center|*const flight_sdk::GodRaysEffec
 unreachable|flight_compute_god_rays_sample_weight|*const flight_sdk::GodRaysEffect
 unreachable|flight_compute_god_rays_step_size|*const flight_sdk::GodRaysEffect
 unreachable|flight_compute_gravity_from_orientation|*const flight_sdk::OrientationReading
-unreachable|flight_compute_html_view_local_bounds_rectangle|*const flight_sdk::NodeRef
+unreachable|flight_compute_html_view_local_bounds_rectangle|Box<flight_sdk::Ref<dyn flight_sdk::Node>>
 unreachable|flight_compute_kuwahara_sector_pixel_count|*const flight_sdk::KuwaharaEffect
 unreachable|flight_compute_kuwahara_sector_size|*const flight_sdk::KuwaharaEffect
-unreachable|flight_compute_native_text_local_bounds_rectangle|*const flight_sdk::NodeRef
+unreachable|flight_compute_native_text_local_bounds_rectangle|Box<flight_sdk::Ref<dyn flight_sdk::Node>>
 unreachable|flight_compute_node_bounds_rectangle|Box<flight_sdk::Ref<dyn flight_sdk::Node>>
 unreachable|flight_compute_node_root_local_bounds_rectangle|Box<flight_sdk::Ref<dyn flight_sdk::Node>>
-unreachable|flight_compute_node_world_transform_revision|*const flight_sdk::NodeRef
+unreachable|flight_compute_node_world_transform_revision|*mut flight_sdk::NodeRuntime
 unreachable|flight_compute_outline_edge_params|*const flight_sdk::OutlineEffect
 unreachable|flight_compute_outline_thickness_px|*const flight_sdk::OutlineEffect
 unreachable|flight_compute_particle_emitter_2d_local_bounds_rectangle|*const flight_sdk::ParticleEmitter2D
 unreachable|flight_compute_physics2d_collider_mass_data|*const flight_sdk::Physics2DCollider
 unreachable|flight_compute_quad_batch_local_bounds_rectangle|*const flight_sdk::QuadBatch
 unreachable|flight_compute_quaternion_from_orientation_reading|*const flight_sdk::OrientationReading
-unreachable|flight_compute_rich_text_local_bounds_rectangle|*const flight_sdk::NodeRef
+unreachable|flight_compute_rich_text_local_bounds_rectangle|Box<flight_sdk::Ref<dyn flight_sdk::Node>>
 unreachable|flight_compute_rotation_matrix_from_quaternion|*const flight_sdk::QuaternionReading
 unreachable|flight_compute_scene2d_fit_align_x|*const flight_sdk::ViewportAlign
 unreachable|flight_compute_scene2d_fit_align_y|*const flight_sdk::ViewportAlign
 unreachable|flight_compute_scene2d_fit_transform|*const flight_sdk::Scene2DFitContext
 unreachable|flight_compute_screen_relative_orientation|*const flight_sdk::OrientationReading
-unreachable|flight_compute_shape_bounds_rectangle|*const flight_sdk::NodeRef
-unreachable|flight_compute_shape_local_bounds_rectangle|*const flight_sdk::NodeRef
+unreachable|flight_compute_shape_bounds_rectangle|Box<flight_sdk::Ref<dyn flight_sdk::Node>>
+unreachable|flight_compute_shape_local_bounds_rectangle|Box<flight_sdk::Ref<dyn flight_sdk::Node>>
 unreachable|flight_compute_skeleton_2d_bone_matrices|*mut flight_sdk::Skeleton2D
 unreachable|flight_compute_skeleton_2d_bone_world_transform|*mut flight_sdk::Skeleton2D
 unreachable|flight_compute_skeleton_2d_bounding_box_attachment_vertices|*const flight_sdk::Skeleton2D
@@ -1337,15 +1355,15 @@ unreachable|flight_compute_skeleton_2d_point_attachment_rotation|*const flight_s
 unreachable|flight_compute_skeleton_2d_region_attachment_vertices|*const flight_sdk::Skeleton2D
 unreachable|flight_compute_skeleton_2d_world_transforms|*mut flight_sdk::Skeleton2D
 unreachable|flight_compute_sketch_edge_params|*const flight_sdk::SketchEffect
-unreachable|flight_compute_sprite_local_bounds_rectangle|*const flight_sdk::NodeRef
+unreachable|flight_compute_sprite_local_bounds_rectangle|Box<flight_sdk::Ref<dyn flight_sdk::Node>>
 unreachable|flight_compute_text_bounds_height|*const flight_sdk::TextBoundsSpec
 unreachable|flight_compute_text_bounds_offset_x|*const flight_sdk::TextBoundsSpec
 unreachable|flight_compute_text_bounds_rectangle|*const flight_sdk::TextBoundsSpec
 unreachable|flight_compute_text_bounds_width|*const flight_sdk::TextBoundsSpec
 unreachable|flight_compute_text_format_font_string|*const flight_sdk::TextFormat
-unreachable|flight_compute_text_label_local_bounds_rectangle|*const flight_sdk::NodeRef
+unreachable|flight_compute_text_label_local_bounds_rectangle|Box<flight_sdk::Ref<dyn flight_sdk::Node>>
 unreachable|flight_compute_text_layout|Box<flight_sdk::TextLayoutParams>
-unreachable|flight_compute_tilemap_local_bounds_rectangle|*const flight_sdk::NodeRef
+unreachable|flight_compute_tilemap_local_bounds_rectangle|Box<flight_sdk::Ref<dyn flight_sdk::Node>>
 unreachable|flight_compute_world_acceleration_from_device_acceleration|*const flight_sdk::MotionReading
 unreachable|flight_connect_input_to_text_input|*const flight_sdk::TextInputSource
 unreachable|flight_connect_signal_at_frame_rate|Box<flight_sdk::Signal<flight_sdk::FrameTick>>
@@ -1358,20 +1376,20 @@ unreachable|flight_copy_orbit_camera_controller|Box<flight_sdk::OrbitCameraContr
 unreachable|flight_copy_texture__texture__texture|Box<flight_sdk::Texture>
 unreachable|flight_create_add_node_child_command|Box<flight_sdk::Ref<dyn flight_sdk::Node>>
 unreachable|flight_create_animation_blend_tree|Box<flight_sdk::AnimationBlendTreeInput>
-unreachable|flight_create_animation_blend_tree_input|*const flight_sdk::Ref<flight_sdk::AnimationPlayer>
+unreachable|flight_create_animation_blend_tree_input|Box<flight_sdk::Ref<flight_sdk::AnimationPlayer>>
 unreachable|flight_create_animation_blend_tree_layer|*const flight_sdk::AnimationLayerOptions
-unreachable|flight_create_animation_channel|*const flight_sdk::Ref<flight_sdk::AnimationTrack>
+unreachable|flight_create_animation_channel|*const flight_sdk::TargetRef
 unreachable|flight_create_animation_crossfade|*const flight_sdk::AnimationCrossfadeOptions
 unreachable|flight_create_animation_layer_stack|Box<flight_sdk::AnimationLayer>
 unreachable|flight_create_animation_player|Box<flight_sdk::AnimationClip>
-unreachable|flight_create_animation_root_motion_extractor|*const flight_sdk::Ref<flight_sdk::AnimationClip>
+unreachable|flight_create_animation_root_motion_extractor|Box<flight_sdk::Ref<flight_sdk::AnimationClip>>
 unreachable|flight_create_animation_state_machine_layer|*const flight_sdk::AnimationLayerOptions
-unreachable|flight_create_animation_state_machine_state|*const flight_sdk::Ref<flight_sdk::AnimationBlendTree>
+unreachable|flight_create_animation_state_machine_state|Box<flight_sdk::Ref<flight_sdk::AnimationBlendTree>>
 unreachable|flight_create_audio_mixer|*const flight_sdk::AudioDeviceHandle
 unreachable|flight_create_audio_resource_failure|*const flight_sdk::Unknown
 unreachable|flight_create_bitmap_font|*const flight_sdk::BitmapFontData
 unreachable|flight_create_bitmap_font_from_glyph_atlas|*const flight_sdk::BitmapFontGuardStateRef
-unreachable|flight_create_bitmap_from_image_source|*const std::sync::Arc<flight_sdk::HostImageSource>
+unreachable|flight_create_bitmap_from_image_source|Box<std::sync::Arc<flight_sdk::HostImageSource>>
 unreachable|flight_create_bitmap_text|Box<flight_sdk::Ref<flight_sdk::GlyphSource>>
 unreachable|flight_create_brightness_contrast_adjustment|*const flight_sdk::BrightnessContrastAdjustmentOptions
 unreachable|flight_create_buffered_log_sink|*const flight_sdk::BufferedLogSinkOptions
@@ -1384,7 +1402,7 @@ unreachable|flight_create_color_blind_simulation_adjustment|*const flight_sdk::C
 unreachable|flight_create_color_grade_adjustment|*const flight_sdk::ColorGradeAdjustmentOptions
 unreachable|flight_create_color_scale_bias_adjustment|*const flight_sdk::ColorScaleBias
 unreachable|flight_create_composite_command|*const flight_sdk::CommandRef
-unreachable|flight_create_compressed_image_resource|*const std::sync::Arc<flight_sdk::CompressedImageData>
+unreachable|flight_create_compressed_image_resource|Box<std::sync::Arc<flight_sdk::CompressedImageData>>
 unreachable|flight_create_console_log_sink|*const flight_sdk::ConsoleLogSinkOptions
 unreachable|flight_create_directional_light|*const flight_sdk::DirectionalLightOptions
 unreachable|flight_create_exposure_adjustment|*const flight_sdk::ExposureAdjustmentOptions
@@ -1398,13 +1416,14 @@ unreachable|flight_create_hue_saturation_adjustment|*const flight_sdk::HueSatura
 unreachable|flight_create_image_resource|*const flight_sdk::ImageResolverState
 unreachable|flight_create_image_resource_failure|*const flight_sdk::Unknown
 unreachable|flight_create_invert_adjustment|*const flight_sdk::InvertAdjustmentOptions
-unreachable|flight_create_json_log_formatter|*const flight_sdk::Ref<flight_sdk::LogState>
+unreachable|flight_create_json_log_formatter|Box<flight_sdk::Ref<flight_sdk::LogState>>
 unreachable|flight_create_lift_gamma_gain_adjustment|*const flight_sdk::LiftGammaGainAdjustmentOptions
-unreachable|flight_create_log_span|*const flight_sdk::Ref<flight_sdk::LogState>
+unreachable|flight_create_light_probe_grid|Box<flight_sdk::Ref<flight_sdk::LightProbe>>
+unreachable|flight_create_log_span|Box<flight_sdk::Ref<flight_sdk::LogState>>
 unreachable|flight_create_lookup_table_grade_adjustment|*const flight_sdk::LookupTableGradeAdjustmentOptions
-unreachable|flight_create_morph_shape|*const flight_sdk::Ref<flight_sdk::PathMorph>
+unreachable|flight_create_morph_shape|Box<flight_sdk::Ref<flight_sdk::PathMorph>>
 unreachable|flight_create_morph_shape_animation_target|Box<flight_sdk::Ref<flight_sdk::MorphShape>>
-unreachable|flight_create_morph_shape_data|*const flight_sdk::Ref<flight_sdk::PathMorph>
+unreachable|flight_create_morph_shape_data|Box<flight_sdk::Ref<flight_sdk::PathMorph>>
 unreachable|flight_create_motion_path|Box<flight_sdk::Ref<flight_sdk::Path>>
 unreachable|flight_create_orbit_camera_controller|*const flight_sdk::OrbitCameraControllerOptions
 unreachable|flight_create_particle_emitter_config|*const flight_sdk::ParticleEmitterConfigOptions
@@ -1418,7 +1437,7 @@ unreachable|flight_create_reorder_node_child_command|Box<flight_sdk::Ref<dyn fli
 unreachable|flight_create_requirement_catalog|*const flight_sdk::RequirementCatalogEntry
 unreachable|flight_create_requirement_codegen_plan|Box<flight_sdk::RequirementCatalog>
 unreachable|flight_create_requirement_set|*const flight_sdk::Requirement
-unreachable|flight_create_rich_text|*const flight_sdk::Ref<flight_sdk::text::contract::TextLayoutContext>
+unreachable|flight_create_rich_text|Box<flight_sdk::Ref<flight_sdk::text::contract::TextLayoutContext>>
 unreachable|flight_create_rive_animation_clips|*const Option<flight_sdk::Node2DRef>
 unreachable|flight_create_rive_import_registry_from_options|*const flight_sdk::RiveImportOptions
 unreachable|flight_create_rive_object_graph|Box<flight_sdk::RiveDocument>
@@ -1427,24 +1446,24 @@ unreachable|flight_create_rive_path_record|*const flight_sdk::RiveArtboardGraph
 unreachable|flight_create_rive_rich_text|*const flight_sdk::RiveArtboardGraph
 unreachable|flight_create_rive_skin_2d|*const flight_sdk::RiveArtboardGraph
 unreachable|flight_create_sampled_log_sink|Box<flight_sdk::LogSink>
-unreachable|flight_create_scene2d_document_from_bytes|*const flight_sdk::Ref<flight_sdk::Scene2DResourceFailureGuardState>
+unreachable|flight_create_scene2d_document_from_bytes|*const flight_sdk::Scene2DDocumentImportContext
 unreachable|flight_create_scene2d_from_lottie_document|*const flight_sdk::LottieDocumentImportOptions
 unreachable|flight_create_scene2d_from_lottie_document_with_registry|*const flight_sdk::LottieDocumentImportOptions
 unreachable|flight_create_scene2d_from_svg_document|*const flight_sdk::SvgDocumentImportOptions
 unreachable|flight_create_scene2d_from_svg_document_with_registry|*const flight_sdk::SvgDocumentImportOptions
 unreachable|flight_create_scene3d_resource_resolver|*const flight_sdk::Scene3DResourceResolverContext
 unreachable|flight_create_sepia_adjustment|*const flight_sdk::SepiaAdjustmentOptions
-unreachable|flight_create_skeleton_2d_draw_order_animation_target|*const flight_sdk::Ref<Vec<Option<flight_sdk::NodeRef>>>
-unreachable|flight_create_skeleton_2d_draw_order_channel|*const flight_sdk::Ref<Vec<Option<flight_sdk::NodeRef>>>
-unreachable|flight_create_socket|*const flight_sdk::Ref<flight_sdk::SocketGuardState>
+unreachable|flight_create_skeleton_2d_draw_order_animation_target|Box<flight_sdk::Ref<Vec<Option<flight_sdk::NodeRef>>>>
+unreachable|flight_create_skeleton_2d_draw_order_channel|*const flight_sdk::Skeleton2DDrawOrderTimeline
+unreachable|flight_create_socket|*const flight_sdk::SocketOptions
 unreachable|flight_create_spot_light|*const flight_sdk::SpotLightOptions
 unreachable|flight_create_spritesheet_animation_from_frame_names|*const flight_sdk::SpritesheetAnimationFrameNameOptions
 unreachable|flight_create_spritesheet_from_grid|*const flight_sdk::GridSliceOptions
 unreachable|flight_create_spritesheet_timeline_source|*const flight_sdk::MovieClipGuardState
-unreachable|flight_create_statechart_instance|*const flight_sdk::Ref<flight_sdk::StatechartRaw>
-unreachable|flight_create_text_label|*const flight_sdk::Ref<flight_sdk::text::contract::TextLayoutContext>
+unreachable|flight_create_statechart_instance|Box<flight_sdk::Ref<flight_sdk::StatechartRaw>>
+unreachable|flight_create_text_label|Box<flight_sdk::Ref<flight_sdk::text::contract::TextLayoutContext>>
 unreachable|flight_create_text_layout_group|Box<flight_sdk::Ref<flight_sdk::TextFormat>>
-unreachable|flight_create_text_log_formatter|*const flight_sdk::Ref<flight_sdk::LogState>
+unreachable|flight_create_text_log_formatter|*const flight_sdk::TextLogFormatterOptions
 unreachable|flight_create_texture|*const flight_sdk::CreateTextureOptions
 unreachable|flight_create_texture_atlas_from_grid|*const flight_sdk::GridSliceOptions
 unreachable|flight_create_texture_atlas_from_image_resource|Box<flight_sdk::Ref<flight_sdk::ImageResource>>
@@ -1453,8 +1472,8 @@ unreachable|flight_create_timeline_source|*const flight_sdk::TimelineSourceOptio
 unreachable|flight_create_tray_icon|*const flight_sdk::TrayIconOptions
 unreachable|flight_create_tween_manager|*const flight_sdk::TweenManagerOptions
 unreachable|flight_create_tween_timer|*const flight_sdk::TweenOptions
-unreachable|flight_default_compute_local_bounds_rectangle|*const flight_sdk::NodeRef
-unreachable|flight_default_node_runtime_can_add_child|*const flight_sdk::NodeRef
+unreachable|flight_default_compute_local_bounds_rectangle|Box<flight_sdk::Ref<dyn flight_sdk::Node>>
+unreachable|flight_default_node_runtime_can_add_child|Box<flight_sdk::Ref<dyn flight_sdk::Node>>
 unreachable|flight_deform_skeleton_2d_mesh_attachment|*const flight_sdk::Skeleton2D
 unreachable|flight_deform_skeleton_2d_path_attachment|*const flight_sdk::Skeleton2D
 unreachable|flight_delete_text_input_backward|Box<flight_sdk::Ref<flight_sdk::RichText>>
@@ -1467,7 +1486,7 @@ unreachable|flight_destroy_audio_mixer|Box<flight_sdk::Ref<flight_sdk::AudioMixe
 unreachable|flight_destroy_canvas_host_surface|*mut flight_sdk::CanvasHostSurfaces
 unreachable|flight_destroy_canvas_surface|Box<flight_sdk::Ref<flight_sdk::CanvasSurface>>
 unreachable|flight_destroy_power_keep_awake|*mut flight_sdk::PowerContext
-unreachable|flight_destroy_tray_icon|*const flight_sdk::Ref<flight_sdk::TrayIcon>
+unreachable|flight_destroy_tray_icon|Box<flight_sdk::Ref<flight_sdk::TrayIcon>>
 unreachable|flight_destroy_video_channel|Box<flight_sdk::Ref<flight_sdk::VideoChannel>>
 unreachable|flight_detach_gamepad_input|*const flight_sdk::InputIngressSource
 unreachable|flight_detach_keyboard_input|*const flight_sdk::InputIngressSource
@@ -1484,22 +1503,22 @@ unreachable|flight_difference_paths|*const flight_sdk::PathBooleanOptions
 unreachable|flight_disable_audio_mixer_guards|*const flight_sdk::AudioMixerGuardStateRef
 unreachable|flight_disable_bitmap_font_guards|*const flight_sdk::BitmapFontGuardStateRef
 unreachable|flight_disable_bitmap_text_guards|*mut flight_sdk::BitmapTextGuardState
-unreachable|flight_disable_camera_guards|*const flight_sdk::Ref<flight_sdk::CameraGuardState>
+unreachable|flight_disable_camera_guards|Box<flight_sdk::Ref<flight_sdk::CameraGuardState>>
 unreachable|flight_disable_collision_guards|*mut flight_sdk::CollisionRegistry2D
-unreachable|flight_disable_debug|*const flight_sdk::Ref<flight_sdk::DebugState>
-unreachable|flight_disable_flow_guards|*const flight_sdk::Ref<flight_sdk::FlowGuardState>
+unreachable|flight_disable_debug|Box<flight_sdk::Ref<flight_sdk::DebugState>>
+unreachable|flight_disable_flow_guards|Box<flight_sdk::Ref<flight_sdk::FlowGuardState>>
 unreachable|flight_disable_glyph_atlas_guards|Box<flight_sdk::Ref<flight_sdk::GlyphAtlas>>
 unreachable|flight_disable_movie_clip_guards|*mut flight_sdk::MovieClipGuardState
 unreachable|flight_disable_node_guards|*mut flight_sdk::NodeGuardState
 unreachable|flight_disable_physics2d_guards|*mut flight_sdk::Physics2DGuardState
-unreachable|flight_disable_scene2d_resource_failure_guards|*const flight_sdk::Ref<flight_sdk::Scene2DResourceFailureGuardState>
+unreachable|flight_disable_scene2d_resource_failure_guards|Box<flight_sdk::Ref<flight_sdk::Scene2DResourceFailureGuardState>>
 unreachable|flight_disable_scene3d_resource_failure_guards|Box<flight_sdk::Ref<flight_sdk::Scene3DResourceResolver>>
 unreachable|flight_disable_skeleton_2d_guards|*mut flight_sdk::skeleton2d::contract::Skeleton2DGuardState
 unreachable|flight_disable_snapshot_guards|*mut flight_sdk::SnapshotGuardState
-unreachable|flight_disable_socket_guards|*const flight_sdk::Ref<flight_sdk::SocketGuardState>
+unreachable|flight_disable_socket_guards|Box<flight_sdk::Ref<flight_sdk::SocketGuardState>>
 unreachable|flight_disable_statechart_guards|Box<flight_sdk::Ref<flight_sdk::StatechartInstanceRaw>>
 unreachable|flight_disable_text_input|Box<flight_sdk::Ref<flight_sdk::RichText>>
-unreachable|flight_disable_text_label_guards|*const flight_sdk::Ref<flight_sdk::text::contract::TextLayoutContext>
+unreachable|flight_disable_text_label_guards|Box<flight_sdk::Ref<flight_sdk::text::contract::TextLayoutContext>>
 unreachable|flight_disable_text_markup_guards|*mut flight_sdk::text_markup::contract::TextMarkupGuardState
 unreachable|flight_disable_text_shaper_guards|*mut flight_sdk::ShapedRunPool
 unreachable|flight_disable_texture_atlas_guards|*mut flight_sdk::TextureAtlasGuardState
@@ -1510,7 +1529,7 @@ unreachable|flight_dispatch_rich_text_wheel|Box<flight_sdk::Ref<flight_sdk::Rich
 unreachable|flight_dispatch_selectable_rich_text_pointer_down|Box<flight_sdk::Ref<flight_sdk::RichText>>
 unreachable|flight_dispatch_text_input_pointer_down|Box<flight_sdk::Ref<flight_sdk::RichText>>
 unreachable|flight_displace_bitmap|*const flight_sdk::BitmapDisplacementMapOptions
-unreachable|flight_display_tray_balloon|*const flight_sdk::Ref<flight_sdk::TrayIcon>
+unreachable|flight_display_tray_balloon|*const flight_sdk::TrayBalloonOptions
 unreachable|flight_dispose_gizmo_state|Box<flight_sdk::GizmoState>
 unreachable|flight_dispose_glyph_atlas|Box<flight_sdk::Ref<flight_sdk::GlyphAtlas>>
 unreachable|flight_dispose_log_sink|Box<flight_sdk::BufferedLogSink>
@@ -1528,63 +1547,63 @@ unreachable|flight_enable_animation_player_signals|Box<flight_sdk::AnimationPlay
 unreachable|flight_enable_audio_channel_signals|Box<flight_sdk::Ref<flight_sdk::AudioChannel>>
 unreachable|flight_enable_audio_mixer_guards|*const flight_sdk::AudioMixerGuardStateRef
 unreachable|flight_enable_bitmap_font_guards|*const flight_sdk::BitmapFontClock
-unreachable|flight_enable_bitmap_text_guards|*const flight_sdk::Ref<flight_sdk::LogState>
-unreachable|flight_enable_camera_guards|*const flight_sdk::Ref<flight_sdk::CameraGuardState>
+unreachable|flight_enable_bitmap_text_guards|*mut flight_sdk::BitmapTextGuardState
+unreachable|flight_enable_camera_guards|Box<flight_sdk::Ref<flight_sdk::CameraGuardState>>
 unreachable|flight_enable_clock_signals|*mut flight_sdk::Clock
-unreachable|flight_enable_collision_guards|*const flight_sdk::Ref<flight_sdk::LogState>
+unreachable|flight_enable_collision_guards|*mut flight_sdk::CollisionRegistry2D
 unreachable|flight_enable_debug|*const flight_sdk::DebugOptions
-unreachable|flight_enable_easing_guards|*const flight_sdk::Ref<flight_sdk::LogState>
+unreachable|flight_enable_easing_guards|Box<flight_sdk::Ref<flight_sdk::LogState>>
 unreachable|flight_enable_entity_runtime_guards|*const flight_sdk::EntityRuntimeWriteGuard
-unreachable|flight_enable_flow_guards|*const flight_sdk::Ref<flight_sdk::FlowGuardState>
-unreachable|flight_enable_geometry_pool_guards|*const flight_sdk::Ref<flight_sdk::LogState>
+unreachable|flight_enable_flow_guards|Box<flight_sdk::Ref<flight_sdk::FlowGuardState>>
+unreachable|flight_enable_geometry_pool_guards|Box<flight_sdk::Ref<flight_sdk::LogState>>
 unreachable|flight_enable_glyph_atlas_guards|*const flight_sdk::GlyphAtlasClock
 unreachable|flight_enable_layout_guards|*const flight_sdk::LayoutResolutionGuard
 unreachable|flight_enable_menu_signals|*mut flight_sdk::MenuSignalsState
-unreachable|flight_enable_movie_clip_guards|*const flight_sdk::Ref<flight_sdk::LogState>
-unreachable|flight_enable_node_guards|*const flight_sdk::Ref<flight_sdk::LogState>
+unreachable|flight_enable_movie_clip_guards|*mut flight_sdk::MovieClipGuardState
+unreachable|flight_enable_node_guards|*mut flight_sdk::NodeGuardState
 unreachable|flight_enable_node_signals|Box<flight_sdk::Ref<dyn flight_sdk::Node>>
-unreachable|flight_enable_physics2d_guards|*const flight_sdk::Ref<flight_sdk::LogState>
+unreachable|flight_enable_physics2d_guards|*mut flight_sdk::Physics2DGuardState
 unreachable|flight_enable_quad_batch_signals|*mut flight_sdk::QuadBatch
-unreachable|flight_enable_scene2d_resource_failure_guards|*const flight_sdk::Ref<flight_sdk::LogState>
+unreachable|flight_enable_scene2d_resource_failure_guards|Box<flight_sdk::Ref<flight_sdk::LogState>>
 unreachable|flight_enable_scene2d_signals|*mut flight_sdk::Scene2D
 unreachable|flight_enable_scene3d_resource_signals|Box<flight_sdk::Ref<flight_sdk::Scene3DResourceResolver>>
-unreachable|flight_enable_shape_bounds_guards|*const flight_sdk::Ref<flight_sdk::LogState>
-unreachable|flight_enable_skeleton_2d_guards|*const flight_sdk::Ref<flight_sdk::LogState>
-unreachable|flight_enable_snapshot_guards|*const flight_sdk::Ref<flight_sdk::LogState>
-unreachable|flight_enable_socket_guards|*const flight_sdk::Ref<flight_sdk::LogState>
-unreachable|flight_enable_socket_signals|*const flight_sdk::Ref<flight_sdk::SocketGuardState>
+unreachable|flight_enable_shape_bounds_guards|Box<flight_sdk::Ref<flight_sdk::LogState>>
+unreachable|flight_enable_skeleton_2d_guards|*mut flight_sdk::skeleton2d::contract::Skeleton2DGuardState
+unreachable|flight_enable_snapshot_guards|*mut flight_sdk::SnapshotGuardState
+unreachable|flight_enable_socket_guards|Box<flight_sdk::Ref<flight_sdk::LogState>>
+unreachable|flight_enable_socket_signals|Box<flight_sdk::Ref<flight_sdk::Socket>>
 unreachable|flight_enable_statechart_signals|Box<flight_sdk::Ref<flight_sdk::StatechartInstanceRaw>>
-unreachable|flight_enable_text_bidi_guards|*const flight_sdk::Ref<flight_sdk::LogState>
+unreachable|flight_enable_text_bidi_guards|Box<flight_sdk::Ref<flight_sdk::LogState>>
 unreachable|flight_enable_text_field_signals|Box<flight_sdk::Ref<flight_sdk::RichText>>
 unreachable|flight_enable_text_input|*const flight_sdk::TextInputOptions
-unreachable|flight_enable_text_label_guards|*const flight_sdk::Ref<flight_sdk::LogState>
-unreachable|flight_enable_text_markup_guards|*const flight_sdk::Ref<flight_sdk::LogState>
-unreachable|flight_enable_text_segment_guards|*const flight_sdk::Ref<flight_sdk::LogState>
-unreachable|flight_enable_text_shaper_guards|*const flight_sdk::Ref<flight_sdk::LogState>
-unreachable|flight_enable_texture_atlas_guards|*const flight_sdk::Ref<flight_sdk::LogState>
+unreachable|flight_enable_text_label_guards|Box<flight_sdk::Ref<flight_sdk::LogState>>
+unreachable|flight_enable_text_markup_guards|*mut flight_sdk::text_markup::contract::TextMarkupGuardState
+unreachable|flight_enable_text_segment_guards|Box<flight_sdk::Ref<flight_sdk::LogState>>
+unreachable|flight_enable_text_shaper_guards|*mut flight_sdk::ShapedRunPool
+unreachable|flight_enable_texture_atlas_guards|*mut flight_sdk::TextureAtlasGuardState
 unreachable|flight_enable_tilemap_signals|*mut flight_sdk::Tilemap
 unreachable|flight_enable_timeline_signals|Box<flight_sdk::Ref<flight_sdk::Timeline>>
-unreachable|flight_enable_tray_guards|*const flight_sdk::Ref<flight_sdk::LogState>
+unreachable|flight_enable_tray_guards|*mut flight_sdk::TrayAnimationState
 unreachable|flight_enable_video_channel_signals|Box<flight_sdk::Ref<flight_sdk::VideoChannel>>
-unreachable|flight_end_debug_span|*const flight_sdk::Ref<flight_sdk::LogState>
-unreachable|flight_end_log_group|*const flight_sdk::Ref<flight_sdk::LogState>
-unreachable|flight_end_log_timer|*const flight_sdk::Ref<flight_sdk::LogState>
+unreachable|flight_end_debug_span|Box<flight_sdk::Ref<flight_sdk::LogState>>
+unreachable|flight_end_log_group|Box<flight_sdk::Ref<flight_sdk::LogState>>
+unreachable|flight_end_log_timer|Box<flight_sdk::Ref<flight_sdk::LogState>>
 unreachable|flight_ensure_node_local_bounds_rectangle|Box<flight_sdk::Ref<dyn flight_sdk::Node>>
 unreachable|flight_ensure_node_parent_bounds_rectangle|Box<flight_sdk::Ref<dyn flight_sdk::Node>>
 unreachable|flight_ensure_node_world_bounds_rectangle|Box<flight_sdk::Ref<dyn flight_sdk::Node>>
-unreachable|flight_enter_log_span|*const flight_sdk::Ref<flight_sdk::LogState>
+unreachable|flight_enter_log_span|Box<flight_sdk::LogSpan>
 unreachable|flight_equals_skeleton_2d|*const flight_sdk::Skeleton2D
 unreachable|flight_equals_snapshot|Box<flight_sdk::Snapshot>
 unreachable|flight_equals_texture__texture__texture|Box<flight_sdk::Texture>
 unreachable|flight_execute_command|*const flight_sdk::CommandRef
-unreachable|flight_exit_app_input_pointer_lock|*const flight_sdk::Ref<flight_sdk::AppPointerLockState>
-unreachable|flight_exit_log_span|*const flight_sdk::Ref<flight_sdk::LogState>
-unreachable|flight_explain_asset_load|*const flight_sdk::Ref<flight_sdk::AssetLibrary>
+unreachable|flight_exit_app_input_pointer_lock|Box<flight_sdk::Ref<flight_sdk::AppPointerLockState>>
+unreachable|flight_exit_log_span|Box<flight_sdk::LogSpan>
+unreachable|flight_explain_asset_load|Box<flight_sdk::Ref<flight_sdk::AssetLibrary>>
 unreachable|flight_explain_audio_resource_reference_resolution|Box<flight_sdk::AudioResourceReference>
 unreachable|flight_explain_bidi_class_kernel|*const flight_sdk::textbidi::contract::BidiClassKernel
 unreachable|flight_explain_bitmap_font_glyph|Box<flight_sdk::Ref<flight_sdk::BitmapFont>>
 unreachable|flight_explain_bitmap_font_parse|*const flight_sdk::BitmapFontParseOptions
-unreachable|flight_explain_bitmap_readback|*const std::sync::Arc<flight_sdk::HostImageSource>
+unreachable|flight_explain_bitmap_readback|Box<std::sync::Arc<flight_sdk::HostImageSource>>
 unreachable|flight_explain_bitmap_text_missing_glyphs|Box<flight_sdk::Ref<flight_sdk::GlyphSource>>
 unreachable|flight_explain_command_dispatch|*const flight_sdk::CommandRef
 unreachable|flight_explain_flight_document_scene_token_resolution|Box<flight_sdk::FlightDocumentScene>
@@ -1596,7 +1615,7 @@ unreachable|flight_explain_morph_shape_gradient_endpoints|*const flight_sdk::Mor
 unreachable|flight_explain_offset_path|*const flight_sdk::PathOffsetOptions
 unreachable|flight_explain_scene2d_resource_coverage|*const flight_sdk::Scene2DDocument
 unreachable|flight_explain_scene3d_resource_coverage|*const flight_sdk::Scene3DKindUsage
-unreachable|flight_explain_shape_bounds|*const flight_sdk::NodeRef
+unreachable|flight_explain_shape_bounds|Box<flight_sdk::Ref<dyn flight_sdk::Node>>
 unreachable|flight_explain_shape_tessellation|*const flight_sdk::ShapeCommandToken
 unreachable|flight_explain_simplify_path|*const flight_sdk::PathBooleanOptions
 unreachable|flight_explain_skeleton_2d_channel_interpolation|Box<flight_sdk::AnimationChannel>
@@ -1606,7 +1625,7 @@ unreachable|flight_explain_spatial_indexing_2d|*const flight_sdk::SpatialIndex2D
 unreachable|flight_explain_spatial_indexing_3d|*const flight_sdk::SpatialIndex3D
 unreachable|flight_explain_statechart_transition|Box<flight_sdk::Ref<flight_sdk::StatechartInstanceRaw>>
 unreachable|flight_explain_stroke_path_tessellation|*const flight_sdk::StrokeStyle
-unreachable|flight_explain_text_label_content|*const flight_sdk::NodeRef
+unreachable|flight_explain_text_label_content|Box<flight_sdk::Ref<dyn flight_sdk::Node>>
 unreachable|flight_explain_texture_atlas_region_texture|*const flight_sdk::TextureAtlas
 unreachable|flight_explain_unpacked_rectangles|*const flight_sdk::BinPackOptions
 unreachable|flight_extract_animation_root_motion|Box<flight_sdk::AnimationRootMotionExtractor>
@@ -1618,9 +1637,9 @@ unreachable|flight_find_files|*const flight_sdk::FileWalkOptions
 unreachable|flight_find_gizmo_smart_guides|*mut flight_sdk::GizmoSmartGuideResult
 unreachable|flight_find_node|Box<flight_sdk::Ref<dyn flight_sdk::Node>>
 unreachable|flight_find_node_by_name|Box<flight_sdk::Ref<dyn flight_sdk::Node>>
-unreachable|flight_find_nodes_in_lasso_selection|*const flight_sdk::NodeRef
-unreachable|flight_find_nodes_in_marquee_selection|*const flight_sdk::NodeRef
-unreachable|flight_find_requirement_catalog_entries|*mut Vec<flight_sdk::RequirementCatalogEntryRef>
+unreachable|flight_find_nodes_in_lasso_selection|Box<Vec<flight_sdk::NodeRef>>
+unreachable|flight_find_nodes_in_marquee_selection|Box<Vec<flight_sdk::NodeRef>>
+unreachable|flight_find_requirement_catalog_entries|Box<Vec<flight_sdk::RequirementCatalogEntryRef>>
 unreachable|flight_find_timeline_label|Box<flight_sdk::Ref<flight_sdk::Timeline>>
 unreachable|flight_fire_statechart_trigger|Box<flight_sdk::Ref<flight_sdk::StatechartInstanceRaw>>
 unreachable|flight_flush_log_sink|Box<flight_sdk::BufferedLogSink>
@@ -1648,7 +1667,7 @@ unreachable|flight_get_abc_file_major_version|Box<flight_sdk::AbcFile>
 unreachable|flight_get_abc_file_minor_version|Box<flight_sdk::AbcFile>
 unreachable|flight_get_abc_instruction_offset|*const flight_sdk::AbcInstruction
 unreachable|flight_get_abc_instruction_opcode|*const flight_sdk::AbcInstruction
-unreachable|flight_get_accelerator_modifiers|*mut Vec<flight_sdk::ShortcutModifier>
+unreachable|flight_get_accelerator_modifiers|Box<Vec<flight_sdk::ShortcutModifier>>
 unreachable|flight_get_active_tween_count|Box<flight_sdk::TweenManager>
 unreachable|flight_get_add_node_child_command_index|*const flight_sdk::AddNodeChildCommand
 unreachable|flight_get_adjustment_color_matrix__brightness_contrast_adjustment|Box<flight_sdk::BrightnessContrastAdjustment>
@@ -1787,7 +1806,7 @@ unreachable|flight_get_brightness_contrast_adjustment_brightness|Box<flight_sdk:
 unreachable|flight_get_brightness_contrast_adjustment_contrast|Box<flight_sdk::BrightnessContrastAdjustment>
 unreachable|flight_get_camera3_doptions_far|*const flight_sdk::Camera3DOptions
 unreachable|flight_get_camera3_doptions_near|*const flight_sdk::Camera3DOptions
-unreachable|flight_get_camera_2d_visible_bounds|*const flight_sdk::Ref<flight_sdk::CameraGuardState>
+unreachable|flight_get_camera_2d_visible_bounds|Box<flight_sdk::Ref<flight_sdk::CameraGuardState>>
 unreachable|flight_get_camera_guard_state_enabled|*const flight_sdk::CameraGuardState
 unreachable|flight_get_canvas_host_surface|*const flight_sdk::CanvasHostSurfaces
 unreachable|flight_get_canvas_text_metrics_width|*const flight_sdk::CanvasTextMetrics
@@ -1827,8 +1846,9 @@ unreachable|flight_get_color_grade_adjustment_lift|Box<flight_sdk::ColorGradeAdj
 unreachable|flight_get_color_grade_adjustment_saturation|Box<flight_sdk::ColorGradeAdjustment>
 unreachable|flight_get_color_grade_adjustment_temperature|Box<flight_sdk::ColorGradeAdjustment>
 unreachable|flight_get_color_grade_adjustment_tint|Box<flight_sdk::ColorGradeAdjustment>
+unreachable|flight_get_color_lut_size|Box<flight_sdk::ColorLut>
 unreachable|flight_get_command_dispatch_explanation_resolved|Box<flight_sdk::CommandDispatchExplanation>
-unreachable|flight_get_command_history_entries|*mut Vec<flight_sdk::CommandRef>
+unreachable|flight_get_command_history_entries|Box<Vec<flight_sdk::CommandRef>>
 unreachable|flight_get_command_history_max_size|*const flight_sdk::CommandHistory
 unreachable|flight_get_command_history_transaction_depth|*const flight_sdk::CommandHistory
 unreachable|flight_get_command_history_transaction_index|*const flight_sdk::CommandHistory
@@ -1872,7 +1892,7 @@ unreachable|flight_get_effect_defaults|*mut flight_sdk::EffectDefaults
 unreachable|flight_get_effect_inputs|*const flight_sdk::EffectRef
 unreachable|flight_get_emissive_modifier_options_color|*const flight_sdk::EmissiveModifierOptions
 unreachable|flight_get_exposure_adjustment_exposure|Box<flight_sdk::ExposureAdjustment>
-unreachable|flight_get_file_dialog_handle_operations|*const flight_sdk::Ref<flight_sdk::FileDialogHandle>
+unreachable|flight_get_file_dialog_handle_operations|Box<flight_sdk::Ref<flight_sdk::FileDialogHandle>>
 unreachable|flight_get_file_entry_is_directory|*const flight_sdk::FileEntry
 unreachable|flight_get_file_permissions_executable|Box<flight_sdk::FilePermissions>
 unreachable|flight_get_file_permissions_readable|Box<flight_sdk::FilePermissions>
@@ -2046,9 +2066,10 @@ unreachable|flight_get_light_contribution_at_bounding_sphere__spot_light|Box<fli
 unreachable|flight_get_light_influence_bounds__directional_light|Box<flight_sdk::DirectionalLight>
 unreachable|flight_get_light_luminance__directional_light|Box<flight_sdk::DirectionalLight>
 unreachable|flight_get_light_photometric_intensity__directional_light|Box<flight_sdk::DirectionalLight>
-unreachable|flight_get_log_channel_level|*const flight_sdk::Ref<flight_sdk::LogState>
-unreachable|flight_get_log_console_level|*const flight_sdk::Ref<flight_sdk::LogState>
-unreachable|flight_get_log_level|*const flight_sdk::Ref<flight_sdk::LogState>
+unreachable|flight_get_light_probe_grid_enabled|Box<flight_sdk::LightProbeGrid>
+unreachable|flight_get_log_channel_level|Box<flight_sdk::Ref<flight_sdk::LogState>>
+unreachable|flight_get_log_console_level|Box<flight_sdk::Ref<flight_sdk::LogState>>
+unreachable|flight_get_log_level|Box<flight_sdk::Ref<flight_sdk::LogState>>
 unreachable|flight_get_log_level_name|Box<flight_sdk::LogLevel>
 unreachable|flight_get_lookup_table_grade_adjustment_strength|Box<flight_sdk::LookupTableGradeAdjustment>
 unreachable|flight_get_lottie_document_import_result_duration|Box<flight_sdk::LottieDocumentImportResult>
@@ -2063,11 +2084,12 @@ unreachable|flight_get_menu_signals|*const flight_sdk::MenuSignalsState
 unreachable|flight_get_message_dialog_result_button_index|Box<flight_sdk::MessageDialogResult>
 unreachable|flight_get_message_dialog_result_cancelled|Box<flight_sdk::MessageDialogResult>
 unreachable|flight_get_message_dialog_result_checkbox_checked|Box<flight_sdk::MessageDialogResult>
-unreachable|flight_get_midi_access_input_ports|*const flight_sdk::Ref<flight_sdk::MidiAccess>
-unreachable|flight_get_midi_access_output_ports|*const flight_sdk::Ref<flight_sdk::MidiAccess>
+unreachable|flight_get_midi_access_input_ports|Box<flight_sdk::Ref<flight_sdk::MidiAccess>>
+unreachable|flight_get_midi_access_output_ports|Box<flight_sdk::Ref<flight_sdk::MidiAccess>>
 unreachable|flight_get_midi_input_message_timestamp|*const flight_sdk::MidiInputMessage
 unreachable|flight_get_midi_port_connection|*const flight_sdk::MidiPort
 unreachable|flight_get_midi_port_state|*const flight_sdk::MidiPort
+unreachable|flight_get_modifier_define_key|Box<flight_sdk::Ref<dyn flight_sdk::Modifier>>
 unreachable|flight_get_morph_shape_color_endpoint_color|*const flight_sdk::MorphShapeColorEndpoint
 unreachable|flight_get_morph_shape_data_progress|Box<flight_sdk::MorphShapeData>
 unreachable|flight_get_morph_shape_gradient_paint_binding_command_index|*const flight_sdk::MorphShapeGradientPaintBinding
@@ -2112,30 +2134,30 @@ unreachable|flight_get_node2_dfields_skew_y|*const flight_sdk::Node2DFields
 unreachable|flight_get_node2_dfields_visible|*const flight_sdk::Node2DFields
 unreachable|flight_get_node2_dfields_x|*const flight_sdk::Node2DFields
 unreachable|flight_get_node2_dfields_y|*const flight_sdk::Node2DFields
-unreachable|flight_get_node_ancestors|*mut Vec<flight_sdk::NodeRef>
-unreachable|flight_get_node_appearance_revision|*const flight_sdk::NodeRef
+unreachable|flight_get_node_ancestors|Box<Vec<flight_sdk::NodeRef>>
+unreachable|flight_get_node_appearance_revision|Box<flight_sdk::Ref<dyn flight_sdk::Node>>
 unreachable|flight_get_node_child_at|Box<flight_sdk::Ref<dyn flight_sdk::Node>>
 unreachable|flight_get_node_child_by_name|Box<flight_sdk::Ref<dyn flight_sdk::Node>>
 unreachable|flight_get_node_child_count|Box<flight_sdk::Ref<dyn flight_sdk::Node>>
 unreachable|flight_get_node_child_index|Box<flight_sdk::Ref<dyn flight_sdk::Node>>
-unreachable|flight_get_node_children|*mut Vec<flight_sdk::NodeRef>
-unreachable|flight_get_node_children_revision|*const flight_sdk::NodeRef
-unreachable|flight_get_node_color_adjustments|*const flight_sdk::NodeRef
+unreachable|flight_get_node_children|Box<Vec<flight_sdk::NodeRef>>
+unreachable|flight_get_node_children_revision|Box<flight_sdk::Ref<dyn flight_sdk::Node>>
+unreachable|flight_get_node_color_adjustments|Box<flight_sdk::Ref<dyn flight_sdk::Node>>
 unreachable|flight_get_node_common_ancestor|Box<flight_sdk::Ref<dyn flight_sdk::Node>>
 unreachable|flight_get_node_depth|Box<flight_sdk::Ref<dyn flight_sdk::Node>>
 unreachable|flight_get_node_fields_enabled|*const flight_sdk::NodeFields
 unreachable|flight_get_node_guard_state_enabled|*const flight_sdk::NodeGuardState
 unreachable|flight_get_node_height|Box<flight_sdk::Ref<dyn flight_sdk::Node>>
 unreachable|flight_get_node_local_bounds_rectangle|Box<flight_sdk::Ref<dyn flight_sdk::Node>>
-unreachable|flight_get_node_local_bounds_revision|*const flight_sdk::NodeRef
-unreachable|flight_get_node_local_content_revision|*const flight_sdk::NodeRef
+unreachable|flight_get_node_local_bounds_revision|Box<flight_sdk::Ref<dyn flight_sdk::Node>>
+unreachable|flight_get_node_local_content_revision|Box<flight_sdk::Ref<dyn flight_sdk::Node>>
 unreachable|flight_get_node_local_matrix|Box<flight_sdk::Ref<dyn flight_sdk::Node>>
-unreachable|flight_get_node_local_transform_revision|*const flight_sdk::NodeRef
+unreachable|flight_get_node_local_transform_revision|Box<flight_sdk::Ref<dyn flight_sdk::Node>>
 unreachable|flight_get_node_next_sibling|Box<flight_sdk::Ref<dyn flight_sdk::Node>>
 unreachable|flight_get_node_order_list_entry_sort_key|Box<flight_sdk::Ref<dyn flight_sdk::Node>>
 unreachable|flight_get_node_parent|Box<flight_sdk::Ref<dyn flight_sdk::Node>>
 unreachable|flight_get_node_parent_bounds_rectangle|Box<flight_sdk::Ref<dyn flight_sdk::Node>>
-unreachable|flight_get_node_parent_reference_revision|*const flight_sdk::NodeRef
+unreachable|flight_get_node_parent_reference_revision|Box<flight_sdk::Ref<dyn flight_sdk::Node>>
 unreachable|flight_get_node_previous_sibling|Box<flight_sdk::Ref<dyn flight_sdk::Node>>
 unreachable|flight_get_node_root|Box<flight_sdk::Ref<dyn flight_sdk::Node>>
 unreachable|flight_get_node_runtime_appearance_id|*const flight_sdk::NodeRuntime
@@ -2155,12 +2177,12 @@ unreachable|flight_get_node_runtime_world_transform_id|*const flight_sdk::NodeRu
 unreachable|flight_get_node_runtime_world_transform_revision_counter|*const flight_sdk::NodeRuntime
 unreachable|flight_get_node_runtime_world_transform_using_local_transform_id|*const flight_sdk::NodeRuntime
 unreachable|flight_get_node_runtime_world_transform_using_parent_transform_id|*const flight_sdk::NodeRuntime
-unreachable|flight_get_node_signals|*const flight_sdk::NodeRef
+unreachable|flight_get_node_signals|Box<flight_sdk::Ref<dyn flight_sdk::Node>>
 unreachable|flight_get_node_transform2d|Box<flight_sdk::Ref<dyn flight_sdk::Node>>
 unreachable|flight_get_node_width|Box<flight_sdk::Ref<dyn flight_sdk::Node>>
 unreachable|flight_get_node_world_bounds_rectangle|Box<flight_sdk::Ref<dyn flight_sdk::Node>>
 unreachable|flight_get_node_world_matrix|Box<flight_sdk::Ref<dyn flight_sdk::Node>>
-unreachable|flight_get_node_world_transform_revision|*const flight_sdk::NodeRef
+unreachable|flight_get_node_world_transform_revision|Box<flight_sdk::Ref<dyn flight_sdk::Node>>
 unreachable|flight_get_notification_schedule_at|*const flight_sdk::NotificationSchedule
 unreachable|flight_get_orbit_camera_controller_azimuth|Box<flight_sdk::OrbitCameraController>
 unreachable|flight_get_orbit_camera_controller_distance|Box<flight_sdk::OrbitCameraController>
@@ -2402,7 +2424,7 @@ unreachable|flight_get_registered_particle_formats|*const flight_sdk::ParticleFo
 unreachable|flight_get_remove_node_child_command_index|*const flight_sdk::RemoveNodeChildCommand
 unreachable|flight_get_reorder_node_child_command_from_index|*const flight_sdk::ReorderNodeChildCommand
 unreachable|flight_get_reorder_node_child_command_to_index|*const flight_sdk::ReorderNodeChildCommand
-unreachable|flight_get_requirement_catalog_entries|*mut Vec<flight_sdk::RequirementCatalogEntryRef>
+unreachable|flight_get_requirement_catalog_entries|Box<Vec<flight_sdk::RequirementCatalogEntryRef>>
 unreachable|flight_get_rich_text_bottom_scroll_v|Box<flight_sdk::Ref<flight_sdk::RichText>>
 unreachable|flight_get_rich_text_char_index_at_point|Box<flight_sdk::Ref<flight_sdk::RichText>>
 unreachable|flight_get_rich_text_data_background|*const flight_sdk::RichTextData
@@ -2431,7 +2453,7 @@ unreachable|flight_get_rich_text_line_metrics|Box<flight_sdk::Ref<flight_sdk::Ri
 unreachable|flight_get_rich_text_max_scroll_h|Box<flight_sdk::Ref<flight_sdk::RichText>>
 unreachable|flight_get_rich_text_max_scroll_v|Box<flight_sdk::Ref<flight_sdk::RichText>>
 unreachable|flight_get_rich_text_password_character|*const flight_sdk::RichText
-unreachable|flight_get_rich_text_selection_rectangles|*mut Vec<flight_sdk::TextSelectionRectangle>
+unreachable|flight_get_rich_text_selection_rectangles|Box<Vec<flight_sdk::TextSelectionRectangle>>
 unreachable|flight_get_rich_text_string|*const flight_sdk::RichText
 unreachable|flight_get_rich_text_text_height|Box<flight_sdk::Ref<flight_sdk::RichText>>
 unreachable|flight_get_rich_text_text_width|Box<flight_sdk::Ref<flight_sdk::RichText>>
@@ -2520,16 +2542,16 @@ unreachable|flight_get_screen_containing_rect|*mut flight_sdk::ScreenQueryScratc
 unreachable|flight_get_screen_cursor_screen|*mut flight_sdk::ScreenQueryScratch
 unreachable|flight_get_screen_nearest_point|*mut flight_sdk::ScreenQueryScratch
 unreachable|flight_get_screen_nearest_rect|*mut flight_sdk::ScreenQueryScratch
-unreachable|flight_get_screens|*mut Vec<flight_sdk::ScreenInfo>
-unreachable|flight_get_selected_nodes|*mut Vec<flight_sdk::NodeRef>
+unreachable|flight_get_screens|Box<Vec<flight_sdk::ScreenInfo>>
+unreachable|flight_get_selected_nodes|Box<Vec<flight_sdk::NodeRef>>
 unreachable|flight_get_sensor_reading_interval|*const flight_sdk::SensorReading
 unreachable|flight_get_sensor_reading_timestamp|*const flight_sdk::SensorReading
 unreachable|flight_get_sepia_adjustment_intensity|Box<flight_sdk::SepiaAdjustment>
 unreachable|flight_get_set_node_property_command_merge_window|*const flight_sdk::SetNodePropertyCommand
 unreachable|flight_get_set_node_property_command_time|*const flight_sdk::SetNodePropertyCommand
-unreachable|flight_get_shape_bounds|*const flight_sdk::NodeRef
+unreachable|flight_get_shape_bounds|Box<flight_sdk::Ref<dyn flight_sdk::Node>>
 unreachable|flight_get_shape_bounds_explanation_complete|Box<flight_sdk::ShapeBoundsExplanation>
-unreachable|flight_get_shape_command_count|*const flight_sdk::NodeRef
+unreachable|flight_get_shape_command_count|Box<flight_sdk::Ref<dyn flight_sdk::Node>>
 unreachable|flight_get_shape_fill_region_alpha|*const flight_sdk::ShapeFillRegion
 unreachable|flight_get_shape_fill_region_color|*const flight_sdk::ShapeFillRegion
 unreachable|flight_get_shape_fill_regions|*const flight_sdk::ShapeCommandToken
@@ -2738,7 +2760,7 @@ unreachable|flight_get_text_input_history_entry_selection_index_before|*const fl
 unreachable|flight_get_text_input_manager_enabled|*const flight_sdk::TextInputManager
 unreachable|flight_get_text_input_selection_begin_index|Box<flight_sdk::Ref<flight_sdk::RichText>>
 unreachable|flight_get_text_input_selection_end_index|Box<flight_sdk::Ref<flight_sdk::RichText>>
-unreachable|flight_get_text_input_selection_rectangles|*mut Vec<flight_sdk::TextSelectionRectangle>
+unreachable|flight_get_text_input_selection_rectangles|Box<Vec<flight_sdk::TextSelectionRectangle>>
 unreachable|flight_get_text_input_selection_text|Box<flight_sdk::Ref<flight_sdk::RichText>>
 unreachable|flight_get_text_input_state|Box<flight_sdk::Ref<flight_sdk::RichText>>
 unreachable|flight_get_text_input_state_always_show_selection|*const flight_sdk::TextInputState
@@ -2776,7 +2798,7 @@ unreachable|flight_get_text_layout_measure_provider|*const flight_sdk::textlayou
 unreachable|flight_get_text_layout_metrics|Box<flight_sdk::Ref<dyn flight_sdk::Node>>
 unreachable|flight_get_text_layout_params_height|Box<flight_sdk::TextLayoutParams>
 unreachable|flight_get_text_layout_params_width|Box<flight_sdk::TextLayoutParams>
-unreachable|flight_get_text_line_breaks|*mut Vec<usize>
+unreachable|flight_get_text_line_breaks|Box<Vec<usize>>
 unreachable|flight_get_text_line_metrics_ascent|Box<flight_sdk::TextLineMetrics>
 unreachable|flight_get_text_line_metrics_descent|Box<flight_sdk::TextLineMetrics>
 unreachable|flight_get_text_line_metrics_height|Box<flight_sdk::TextLineMetrics>
@@ -2867,7 +2889,7 @@ unreachable|flight_get_tilt_shift_effect_padding|*const flight_sdk::TiltShiftEff
 unreachable|flight_get_timeline_current_frame|*const flight_sdk::Timeline
 unreachable|flight_get_timeline_current_label|Box<flight_sdk::Ref<flight_sdk::Timeline>>
 unreachable|flight_get_timeline_frame_script|*const flight_sdk::TimelineFrameArg
-unreachable|flight_get_timeline_frame_script_frames|*mut Vec<i32>
+unreachable|flight_get_timeline_frame_script_frames|Box<Vec<i32>>
 unreachable|flight_get_timeline_is_playing|*const flight_sdk::Timeline
 unreachable|flight_get_timeline_label_frame|Box<flight_sdk::TimelineLabel>
 unreachable|flight_get_timeline_labels|Box<flight_sdk::Ref<flight_sdk::Timeline>>
@@ -2875,9 +2897,9 @@ unreachable|flight_get_timeline_last_frame_update|*const flight_sdk::Timeline
 unreachable|flight_get_timeline_source_total_frames|*const flight_sdk::TimelineSource
 unreachable|flight_get_timeline_time_elapsed|*const flight_sdk::Timeline
 unreachable|flight_get_toon_modifier_options_steps|*const flight_sdk::ToonModifierOptions
-unreachable|flight_get_tray_icon_bounds|*const flight_sdk::Ref<flight_sdk::TrayIcon>
-unreachable|flight_get_tray_icon_title|*const flight_sdk::Ref<flight_sdk::TrayIcon>
-unreachable|flight_get_tray_icon_tooltip|*const flight_sdk::Ref<flight_sdk::TrayIcon>
+unreachable|flight_get_tray_icon_bounds|Box<flight_sdk::Ref<flight_sdk::TrayIcon>>
+unreachable|flight_get_tray_icon_title|Box<flight_sdk::Ref<flight_sdk::TrayIcon>>
+unreachable|flight_get_tray_icon_tooltip|Box<flight_sdk::Ref<flight_sdk::TrayIcon>>
 unreachable|flight_get_tray_interaction_event_alt_key|*const flight_sdk::TrayInteractionEvent
 unreachable|flight_get_tray_interaction_event_ctrl_key|*const flight_sdk::TrayInteractionEvent
 unreachable|flight_get_tray_interaction_event_meta_key|*const flight_sdk::TrayInteractionEvent
@@ -2897,7 +2919,7 @@ unreachable|flight_get_unity_size_over_lifetime_size_end|*const flight_sdk::Unit
 unreachable|flight_get_unity_size_over_lifetime_size_start|*const flight_sdk::UnitySizeOverLifetime
 unreachable|flight_get_unpacked_rectangle_explanation_usable_height|*const flight_sdk::UnpackedRectangleExplanation
 unreachable|flight_get_unpacked_rectangle_explanation_usable_width|*const flight_sdk::UnpackedRectangleExplanation
-unreachable|flight_get_unregistered_modifier_kinds|*mut Vec<flight_sdk::ModifierKind>
+unreachable|flight_get_unregistered_modifier_kinds|Box<Vec<flight_sdk::ModifierKind>>
 unreachable|flight_get_velocity_sample_at|*const flight_sdk::VelocitySample
 unreachable|flight_get_velocity_sample_explicit_frame_id|*const flight_sdk::VelocitySample
 unreachable|flight_get_velocity_sample_last_frame_id|*const flight_sdk::VelocitySample
@@ -3008,17 +3030,18 @@ unreachable|flight_is_color_matrix_adjustment__invert_adjustment|Box<flight_sdk:
 unreachable|flight_is_color_matrix_adjustment__lift_gamma_gain_adjustment|Box<flight_sdk::LiftGammaGainAdjustment>
 unreachable|flight_is_color_matrix_adjustment__lookup_table_grade_adjustment|Box<flight_sdk::LookupTableGradeAdjustment>
 unreachable|flight_is_color_matrix_adjustment__sepia_adjustment|Box<flight_sdk::SepiaAdjustment>
-unreachable|flight_is_debug_enabled|*const flight_sdk::Ref<flight_sdk::DebugState>
+unreachable|flight_is_debug_enabled|Box<flight_sdk::Ref<flight_sdk::DebugState>>
 unreachable|flight_is_image_resource_empty|Box<flight_sdk::Ref<flight_sdk::ImageResource>>
 unreachable|flight_is_image_url_same_origin|*const flight_sdk::ImageUrlOriginContext
 unreachable|flight_is_light_casting_shadow__directional_light|Box<flight_sdk::DirectionalLight>
+unreachable|flight_is_modifier_stack_valid|Box<flight_sdk::Ref<dyn flight_sdk::Modifier>>
 unreachable|flight_is_motion_path_at_end|Box<flight_sdk::MotionPath>
-unreachable|flight_is_node2d|*const flight_sdk::NodeRef
+unreachable|flight_is_node2d|Box<flight_sdk::Ref<dyn flight_sdk::Node>>
 unreachable|flight_is_node_ancestor_of|Box<flight_sdk::Ref<dyn flight_sdk::Node>>
 unreachable|flight_is_node_selected|Box<flight_sdk::Ref<dyn flight_sdk::Node>>
 unreachable|flight_is_orthographic_projection|*const flight_sdk::Projection
 unreachable|flight_is_particle_emitter_2d_complete|*const flight_sdk::ParticleEmitter2D
-unreachable|flight_is_particle_emitter_3d|*const flight_sdk::NodeRef
+unreachable|flight_is_particle_emitter_3d|Box<flight_sdk::Ref<dyn flight_sdk::Node>>
 unreachable|flight_is_particle_emitter_3d_complete|*const flight_sdk::ParticleEmitter3D
 unreachable|flight_is_particle_objects_complete|*const flight_sdk::ParticleObject
 unreachable|flight_is_perspective_projection|*const flight_sdk::Projection
@@ -3026,12 +3049,12 @@ unreachable|flight_is_physics2d_contact_valid|*const flight_sdk::Physics2DContac
 unreachable|flight_is_physics2d_pair_ordered|*const flight_sdk::RigidBody2D
 unreachable|flight_is_raw_projection|*const flight_sdk::Projection
 unreachable|flight_is_rigid_body2d_pair_awake|*const flight_sdk::RigidBody2D
-unreachable|flight_is_shape_empty|*const flight_sdk::NodeRef
+unreachable|flight_is_shape_empty|Box<flight_sdk::Ref<dyn flight_sdk::Node>>
 unreachable|flight_is_shell_url_allowed|*const flight_sdk::ShellExternalUrlPolicy
 unreachable|flight_is_text_layout_truncated|Box<flight_sdk::TextLayoutParams>
 unreachable|flight_is_texture_ready__texture|Box<flight_sdk::Texture>
-unreachable|flight_is_tray_destroyed|*const flight_sdk::Ref<flight_sdk::TrayIcon>
-unreachable|flight_is_tray_icon_animating|*const flight_sdk::Ref<flight_sdk::TrayIcon>
+unreachable|flight_is_tray_destroyed|Box<flight_sdk::Ref<flight_sdk::TrayIcon>>
+unreachable|flight_is_tray_icon_animating|Box<flight_sdk::Ref<flight_sdk::TrayIcon>>
 unreachable|flight_is_video_channel_muted|Box<flight_sdk::Ref<flight_sdk::VideoChannel>>
 unreachable|flight_is_video_channel_playing|Box<flight_sdk::Ref<flight_sdk::VideoChannel>>
 unreachable|flight_itemize_text|*const flight_sdk::TextFormat
@@ -3045,7 +3068,7 @@ unreachable|flight_load_video_resource_from_urls|*const flight_sdk::AbortSignal
 unreachable|flight_lock_app_input_pointer|*const flight_sdk::InputTargetHandle
 unreachable|flight_look_fly_camera_controller|Box<flight_sdk::FlyCameraController>
 unreachable|flight_map_scale9_shape_commands|*const flight_sdk::ShapeCommandToken
-unreachable|flight_mark_debug_frame|*const flight_sdk::Ref<flight_sdk::LogState>
+unreachable|flight_mark_debug_frame|Box<flight_sdk::Ref<flight_sdk::DebugState>>
 unreachable|flight_measure_text|*const flight_sdk::TextFormat
 unreachable|flight_move_fly_camera_controller|Box<flight_sdk::FlyCameraController>
 unreachable|flight_move_text_input_caret|Box<flight_sdk::Ref<flight_sdk::RichText>>
@@ -3059,15 +3082,16 @@ unreachable|flight_normalize_effect|*const flight_sdk::EffectRef
 unreachable|flight_offset_path|*const flight_sdk::PathOffsetOptions
 unreachable|flight_on_ipc_invoke|*const flight_sdk::IpcInvokeHandler
 unreachable|flight_on_ipc_message|*const flight_sdk::IpcMessageListener
-unreachable|flight_on_tray_balloon_event|*const flight_sdk::Ref<flight_sdk::TrayIcon>
-unreachable|flight_on_tray_drop|*const flight_sdk::Ref<flight_sdk::TrayIcon>
-unreachable|flight_on_tray_interaction|*const flight_sdk::Ref<flight_sdk::TrayIcon>
-unreachable|flight_on_tray_menu_selection|*const flight_sdk::Ref<flight_sdk::TrayIcon>
+unreachable|flight_on_tray_balloon_event|*const flight_sdk::SignalSlot<flight_sdk::TrayBalloonEvent>
+unreachable|flight_on_tray_drop|*const flight_sdk::SignalSlot<flight_sdk::TrayDropEvent>
+unreachable|flight_on_tray_interaction|*const flight_sdk::SignalSlot<flight_sdk::TrayInteractionEvent>
+unreachable|flight_on_tray_menu_selection|*const flight_sdk::SignalSlot<flight_sdk::TrayMenuSelectionEvent>
 unreachable|flight_once_ipc_message|*const flight_sdk::IpcMessageListener
 unreachable|flight_open_file_read_stream|*const flight_sdk::AbortSignal
 unreachable|flight_open_file_write_stream|*const flight_sdk::AbortSignal
 unreachable|flight_open_tcp_socket|*const flight_sdk::TcpSocketOptions
 unreachable|flight_open_window|*const flight_sdk::WindowOptions
+unreachable|flight_order_modifier_stack|Box<flight_sdk::Ref<dyn flight_sdk::Modifier>>
 unreachable|flight_pack_rectangles|*const flight_sdk::BinPackOptions
 unreachable|flight_pan_orbit_camera_controller|Box<flight_sdk::OrbitCameraController>
 unreachable|flight_pan_orbit_camera_controller_in_view_plane|Box<flight_sdk::OrbitCameraController>
@@ -3098,8 +3122,8 @@ unreachable|flight_parse_texture_packer_atlas_json|*const flight_sdk::TexturePac
 unreachable|flight_parse_unity_particle|*const flight_sdk::UnityParseOptions
 unreachable|flight_parse_unity_particle_document|*const flight_sdk::UnityParseOptions
 unreachable|flight_parse_user_agent_runtime|*const flight_sdk::Record<flight_sdk::Unknown>
-unreachable|flight_particle_color_curve_to_keyframes|*mut Vec<flight_sdk::ColorKeyframe>
-unreachable|flight_particle_curve_to_keyframes|*mut Vec<flight_sdk::CurveKeyframe>
+unreachable|flight_particle_color_curve_to_keyframes|Box<Vec<flight_sdk::ColorKeyframe>>
+unreachable|flight_particle_curve_to_keyframes|Box<Vec<flight_sdk::CurveKeyframe>>
 unreachable|flight_patch_native_text_style|*const flight_sdk::NativeTextStyle
 unreachable|flight_pause_all_audio_mixer_channels|Box<flight_sdk::Ref<flight_sdk::AudioMixer>>
 unreachable|flight_pause_all_tweens|Box<flight_sdk::TweenManager>
@@ -3116,14 +3140,14 @@ unreachable|flight_play_animation_player|Box<flight_sdk::AnimationPlayer>
 unreachable|flight_play_audio_resource|*const flight_sdk::AudioDeviceHandle
 unreachable|flight_play_spritesheet_animation|*mut flight_sdk::SpritesheetPlayer
 unreachable|flight_play_timeline|Box<flight_sdk::Ref<flight_sdk::Timeline>>
-unreachable|flight_play_video_resource|*const flight_sdk::Ref<flight_sdk::VideoResource>
+unreachable|flight_play_video_resource|*const flight_sdk::VideoChannelRuntimeStateRef
 unreachable|flight_pop_status_bar_style_entry|*mut flight_sdk::StatusBarStyleStacks
-unreachable|flight_popup_tray_context_menu|*const flight_sdk::Ref<flight_sdk::TrayIcon>
+unreachable|flight_popup_tray_context_menu|Box<flight_sdk::Ref<flight_sdk::TrayIcon>>
 unreachable|flight_prepare_element_for_input|*const flight_sdk::InputTargetHandle
 unreachable|flight_prev_frame_timeline|Box<flight_sdk::Ref<flight_sdk::Timeline>>
 unreachable|flight_prewarm_particle_emitter_2d|*const flight_sdk::ParticleEmitterCallbacks
 unreachable|flight_prewarm_particle_emitter_3d|*const flight_sdk::ParticleEmitterCallbacks
-unreachable|flight_push_flow_state|*const flight_sdk::Ref<flight_sdk::FlowGuardState>
+unreachable|flight_push_flow_state|Box<flight_sdk::Ref<flight_sdk::FlowGuardState>>
 unreachable|flight_push_status_bar_style_entry|*const flight_sdk::StatusBarStyleEntry
 unreachable|flight_query_collision_aabb_face3d|*const flight_sdk::CollisionShape3D
 unreachable|flight_query_collision_box_face3d|*const flight_sdk::CollisionShape3D
@@ -3165,11 +3189,11 @@ unreachable|flight_register_collision_support3d|*const flight_sdk::CollisionSupp
 unreachable|flight_register_command_binding|Box<flight_sdk::CommandBindingRef>
 unreachable|flight_register_debug_subsystem|*const flight_sdk::DebugSubsystemHooks
 unreachable|flight_register_default_command_bindings|*const flight_sdk::CommandPropertyAccessRef
-unreachable|flight_register_default_shape_bounds_commands|*const flight_sdk::Ref<flight_sdk::ShapeBoundsState>
+unreachable|flight_register_default_shape_bounds_commands|Box<flight_sdk::Ref<flight_sdk::ShapeBoundsState>>
 unreachable|flight_register_lottie_layer_handler|*const flight_sdk::LottieLayerKind
 unreachable|flight_register_lottie_mask_handler|Box<flight_sdk::LottieMaskHandler>
 unreachable|flight_register_lottie_shape_item_handler|Box<flight_sdk::LottieShapeItemHandler>
-unreachable|flight_register_markup_class_styles|*const flight_sdk::Ref<flight_sdk::Record<flight_sdk::TextFormat>>
+unreachable|flight_register_markup_class_styles|Box<flight_sdk::Ref<flight_sdk::Record<flight_sdk::TextFormat>>>
 unreachable|flight_register_markup_tag|*const flight_sdk::text_markup::contract::MarkupTagHandler
 unreachable|flight_register_modifier|Box<flight_sdk::Ref<flight_sdk::ModifierDefinition>>
 unreachable|flight_register_particle_format|*const flight_sdk::ParticleFormatCodec
@@ -3191,7 +3215,7 @@ unreachable|flight_relative_normal_velocity|*const flight_sdk::RigidBody2D
 unreachable|flight_release_path_mesh|*mut flight_sdk::path::contract::PathMeshPool
 unreachable|flight_release_path_mesh_typed|*mut flight_sdk::path::contract::PathMeshPool
 unreachable|flight_release_spritesheet_player|*mut flight_sdk::SpritesheetPlayerPool
-unreachable|flight_remove_log_sink|*const flight_sdk::Ref<flight_sdk::LogState>
+unreachable|flight_remove_log_sink|Box<flight_sdk::LogSink>
 unreachable|flight_remove_movie_clip_frame_script|*const flight_sdk::TimelineFrameArg
 unreachable|flight_remove_namespaced_storage_item|*const flight_sdk::StorageNamespace
 unreachable|flight_remove_node_child|Box<flight_sdk::Ref<dyn flight_sdk::Node>>
@@ -3205,15 +3229,15 @@ unreachable|flight_remove_quad_batch_instance|*mut flight_sdk::QuadBatch
 unreachable|flight_remove_rich_text_format_ranges_in|Box<flight_sdk::Ref<flight_sdk::RichText>>
 unreachable|flight_remove_texture_atlas_region|*mut flight_sdk::TextureAtlas
 unreachable|flight_remove_timeline_frame_script|*const flight_sdk::TimelineFrameArg
-unreachable|flight_remove_tray_balloon|*const flight_sdk::Ref<flight_sdk::TrayIcon>
-unreachable|flight_reorder_bidi_line|*mut Vec<usize>
+unreachable|flight_remove_tray_balloon|Box<flight_sdk::Ref<flight_sdk::TrayIcon>>
+unreachable|flight_reorder_bidi_line|Box<Vec<usize>>
 unreachable|flight_reparent_node|*const flight_sdk::NodeGuardState
-unreachable|flight_replace_flow_state|*const flight_sdk::Ref<flight_sdk::FlowGuardState>
+unreachable|flight_replace_flow_state|Box<flight_sdk::Ref<flight_sdk::FlowGuardState>>
 unreachable|flight_replace_node_child|Box<flight_sdk::Ref<dyn flight_sdk::Node>>
 unreachable|flight_replace_rich_text_string|Box<flight_sdk::Ref<flight_sdk::RichText>>
 unreachable|flight_replace_selected_text_input|*const flight_sdk::ReplaceTextInputOptions
 unreachable|flight_replace_text_input|*const flight_sdk::ReplaceTextInputOptions
-unreachable|flight_request_app_window_fullscreen|*const flight_sdk::Ref<flight_sdk::FullscreenTargetHandle>
+unreachable|flight_request_app_window_fullscreen|Box<flight_sdk::Ref<flight_sdk::FullscreenTargetHandle>>
 unreachable|flight_reserve_bitmap_text|*mut flight_sdk::BitmapText
 unreachable|flight_reserve_quad_batch|*mut flight_sdk::QuadBatch
 unreachable|flight_reset_all_tweens|Box<flight_sdk::TweenManager>
@@ -3228,11 +3252,12 @@ unreachable|flight_resize_quad_batch|*mut flight_sdk::QuadBatch
 unreachable|flight_resize_surface|*const flight_sdk::SurfaceRef
 unreachable|flight_resize_tilemap|*mut flight_sdk::Tilemap
 unreachable|flight_resolve_bidi_levels|*const flight_sdk::textbidi::contract::BidiClassKernel
+unreachable|flight_resolve_color_adjustments_color_matrix|Box<flight_sdk::Ref<dyn flight_sdk::Adjustment>>
 unreachable|flight_resolve_color_adjustments_color_scale_bias|*mut flight_sdk::ColorScaleBias
 unreachable|flight_resolve_flight_document_scene_tokens|Box<flight_sdk::FlightDocumentScene>
 unreachable|flight_resolve_layout_tree|*const flight_sdk::LayoutTree
-unreachable|flight_resolve_scene2d_resources|*const flight_sdk::Ref<flight_sdk::Scene2DResourceFailureGuardState>
-unreachable|flight_resolve_scene3d_resources|*const flight_sdk::Ref<flight_sdk::Scene3D>
+unreachable|flight_resolve_scene2d_resources|*const flight_sdk::ResolveScene2DResourcesOptions
+unreachable|flight_resolve_scene3d_resources|*const flight_sdk::ResolveScene3DResourcesOptions
 unreachable|flight_resolve_spine_draw_ordering|*const flight_sdk::SpineDrawOrderMove
 unreachable|flight_restore_snapshot|*const flight_sdk::SnapshotValue
 unreachable|flight_resume_all_audio_mixer_channels|Box<flight_sdk::Ref<flight_sdk::AudioMixer>>
@@ -3242,7 +3267,7 @@ unreachable|flight_resume_clock|*mut flight_sdk::Clock
 unreachable|flight_resume_signal_connection|*const flight_sdk::SignalConnection
 unreachable|flight_resume_spritesheet_player|*mut flight_sdk::SpritesheetPlayer
 unreachable|flight_resume_video_channel|Box<flight_sdk::Ref<flight_sdk::VideoChannel>>
-unreachable|flight_retry_failed_scene3d_resources|*const flight_sdk::Ref<flight_sdk::Scene3D>
+unreachable|flight_retry_failed_scene3d_resources|*const flight_sdk::UpdateScene3DResourceStreamingOptions
 unreachable|flight_reveal_scene3d_resources_on_resolve|*const flight_sdk::Scene3D
 unreachable|flight_rotate_orbit_camera_controller|Box<flight_sdk::OrbitCameraController>
 unreachable|flight_route_audio_channel_to_mixer_bus|Box<flight_sdk::Ref<flight_sdk::AudioChannel>>
@@ -3254,15 +3279,17 @@ unreachable|flight_sample_animation_layer_stack|Box<flight_sdk::AnimationLayerSt
 unreachable|flight_sample_animation_layer_stack_channel|Box<flight_sdk::AnimationLayerStack>
 unreachable|flight_sample_animation_state_machine|*mut flight_sdk::AnimationStateMachine
 unreachable|flight_sample_animation_state_machine_channel|*mut flight_sdk::AnimationStateMachine
+unreachable|flight_sample_color_lut|Box<flight_sdk::ColorLut>
+unreachable|flight_sample_light_probe_grid|Box<flight_sdk::LightProbeGrid>
 unreachable|flight_sample_path_morph|Box<flight_sdk::PathMorph>
 unreachable|flight_scroll_text_input_caret_into_view|Box<flight_sdk::Ref<flight_sdk::RichText>>
 unreachable|flight_seek_animation_player|Box<flight_sdk::AnimationPlayer>
 unreachable|flight_seek_spritesheet_player_to_frame|*mut flight_sdk::SpritesheetPlayer
 unreachable|flight_seek_spritesheet_player_to_time|*mut flight_sdk::SpritesheetPlayer
-unreachable|flight_segment_graphemes|*mut Vec<flight_sdk::TextSegment>
-unreachable|flight_segment_sentences|*mut Vec<flight_sdk::TextSegment>
-unreachable|flight_segment_words|*mut Vec<flight_sdk::TextSegment>
-unreachable|flight_select_all_nodes|*const flight_sdk::NodeRef
+unreachable|flight_segment_graphemes|Box<Vec<flight_sdk::TextSegment>>
+unreachable|flight_segment_sentences|Box<Vec<flight_sdk::TextSegment>>
+unreachable|flight_segment_words|Box<Vec<flight_sdk::TextSegment>>
+unreachable|flight_select_all_nodes|Box<flight_sdk::Ref<dyn flight_sdk::Node>>
 unreachable|flight_select_all_text_input|Box<flight_sdk::Ref<flight_sdk::RichText>>
 unreachable|flight_select_audio_resource_url|*const flight_sdk::AudioDecoderRegistry
 unreachable|flight_select_line_at_text_input_index|Box<flight_sdk::Ref<flight_sdk::RichText>>
@@ -3274,7 +3301,7 @@ unreachable|flight_select_texture_container|*const flight_sdk::TextureContainerF
 unreachable|flight_select_video_resource_url|*const flight_sdk::VideoResourceUrl
 unreachable|flight_select_word_at_text_input_index|Box<flight_sdk::Ref<flight_sdk::RichText>>
 unreachable|flight_send_midi_message|Box<flight_sdk::Ref<flight_sdk::MidiOutputPort>>
-unreachable|flight_send_socket_message|*const flight_sdk::Ref<flight_sdk::SocketGuardState>
+unreachable|flight_send_socket_message|*const flight_sdk::SocketMessageData
 unreachable|flight_serialize_aseprite_spritesheet|*const flight_sdk::AsepriteDocument
 unreachable|flight_serialize_cocos_plist_spritesheet|*const flight_sdk::CocosPlistDocument
 unreachable|flight_serialize_libgdx_particle|*const flight_sdk::LibgdxParticleDocument
@@ -3395,7 +3422,7 @@ unreachable|flight_set_brightness_contrast_adjustment_brightness|Box<flight_sdk:
 unreachable|flight_set_brightness_contrast_adjustment_contrast|Box<flight_sdk::BrightnessContrastAdjustment>
 unreachable|flight_set_camera3_doptions_far|*mut flight_sdk::Camera3DOptions
 unreachable|flight_set_camera3_doptions_near|*mut flight_sdk::Camera3DOptions
-unreachable|flight_set_camera_3d_view_matrix4_from_matrix4|*const flight_sdk::Ref<flight_sdk::CameraGuardState>
+unreachable|flight_set_camera_3d_view_matrix4_from_matrix4|Box<flight_sdk::Ref<flight_sdk::CameraGuardState>>
 unreachable|flight_set_camera_guard_state_enabled|*mut flight_sdk::CameraGuardState
 unreachable|flight_set_canvas_text_metrics_width|*mut flight_sdk::CanvasTextMetrics
 unreachable|flight_set_capture_baseline_provenance|Box<flight_sdk::CaptureBaselineProvenance>
@@ -3421,6 +3448,7 @@ unreachable|flight_set_color_grade_adjustment_lift|Box<flight_sdk::ColorGradeAdj
 unreachable|flight_set_color_grade_adjustment_saturation|Box<flight_sdk::ColorGradeAdjustment>
 unreachable|flight_set_color_grade_adjustment_temperature|Box<flight_sdk::ColorGradeAdjustment>
 unreachable|flight_set_color_grade_adjustment_tint|Box<flight_sdk::ColorGradeAdjustment>
+unreachable|flight_set_color_lut_size|Box<flight_sdk::ColorLut>
 unreachable|flight_set_command_dispatch_explanation_resolved|Box<flight_sdk::CommandDispatchExplanation>
 unreachable|flight_set_command_history_index|*mut flight_sdk::CommandHistory
 unreachable|flight_set_command_history_max_size|*mut flight_sdk::CommandHistory
@@ -3615,10 +3643,11 @@ unreachable|flight_set_lift_gamma_gain_adjustment_gain|Box<flight_sdk::LiftGamma
 unreachable|flight_set_lift_gamma_gain_adjustment_gamma|Box<flight_sdk::LiftGammaGainAdjustment>
 unreachable|flight_set_lift_gamma_gain_adjustment_lift|Box<flight_sdk::LiftGammaGainAdjustment>
 unreachable|flight_set_light_photometric_intensity__directional_light|Box<flight_sdk::DirectionalLight>
-unreachable|flight_set_log_channel_level|*const flight_sdk::Ref<flight_sdk::LogState>
-unreachable|flight_set_log_console_level|*const flight_sdk::Ref<flight_sdk::LogState>
-unreachable|flight_set_log_level|*const flight_sdk::Ref<flight_sdk::LogState>
-unreachable|flight_set_log_redaction_paths|*const flight_sdk::Ref<flight_sdk::LogState>
+unreachable|flight_set_light_probe_grid_enabled|Box<flight_sdk::LightProbeGrid>
+unreachable|flight_set_log_channel_level|Box<flight_sdk::LogLevel>
+unreachable|flight_set_log_console_level|Box<flight_sdk::LogLevel>
+unreachable|flight_set_log_level|Box<flight_sdk::LogLevel>
+unreachable|flight_set_log_redaction_paths|Box<flight_sdk::Ref<flight_sdk::LogState>>
 unreachable|flight_set_lookup_table_grade_adjustment_strength|Box<flight_sdk::LookupTableGradeAdjustment>
 unreachable|flight_set_lottie_document_import_result_duration|Box<flight_sdk::LottieDocumentImportResult>
 unreachable|flight_set_lottie_document_import_result_frame_rate|Box<flight_sdk::LottieDocumentImportResult>
@@ -4067,7 +4096,7 @@ unreachable|flight_set_shaped_glyph_y_advance|*mut flight_sdk::ShapedGlyph
 unreachable|flight_set_shaped_glyph_y_offset|*mut flight_sdk::ShapedGlyph
 unreachable|flight_set_shaped_run_advance_width|*mut flight_sdk::ShapedRun
 unreachable|flight_set_shaped_run_glyph_count|*mut flight_sdk::ShapedRun
-unreachable|flight_set_signal_timeout|*const flight_sdk::Ref<flight_sdk::SignalTimerState>
+unreachable|flight_set_signal_timeout|Box<flight_sdk::Ref<flight_sdk::SignalTimerState>>
 unreachable|flight_set_skeleton2_ddeform_animation_target_slot_index|*mut flight_sdk::Skeleton2DDeformAnimationTarget
 unreachable|flight_set_skeleton2_ddeform_length_explanation_accepted|Box<flight_sdk::Skeleton2DDeformLengthExplanation>
 unreachable|flight_set_skeleton2_ddeform_length_explanation_addressed|Box<flight_sdk::Skeleton2DDeformLengthExplanation>
@@ -4358,17 +4387,17 @@ unreachable|flight_set_timeline_last_frame_update|*mut flight_sdk::Timeline
 unreachable|flight_set_timeline_source_total_frames|*mut flight_sdk::TimelineSource
 unreachable|flight_set_timeline_time_elapsed|*mut flight_sdk::Timeline
 unreachable|flight_set_toon_modifier_options_steps|*mut flight_sdk::ToonModifierOptions
-unreachable|flight_set_tray_icon|*const flight_sdk::Ref<flight_sdk::TrayIcon>
-unreachable|flight_set_tray_icon_context_menu|*const flight_sdk::Ref<flight_sdk::TrayIcon>
-unreachable|flight_set_tray_icon_template|*const flight_sdk::Ref<flight_sdk::TrayIcon>
-unreachable|flight_set_tray_icon_title|*const flight_sdk::Ref<flight_sdk::TrayIcon>
-unreachable|flight_set_tray_icon_tooltip|*const flight_sdk::Ref<flight_sdk::TrayIcon>
-unreachable|flight_set_tray_ignore_double_click_events|*const flight_sdk::Ref<flight_sdk::TrayIcon>
+unreachable|flight_set_tray_icon|Box<flight_sdk::Ref<flight_sdk::TrayIcon>>
+unreachable|flight_set_tray_icon_context_menu|Box<flight_sdk::Ref<flight_sdk::TrayIcon>>
+unreachable|flight_set_tray_icon_template|Box<flight_sdk::Ref<flight_sdk::TrayIcon>>
+unreachable|flight_set_tray_icon_title|Box<flight_sdk::Ref<flight_sdk::TrayIcon>>
+unreachable|flight_set_tray_icon_tooltip|Box<flight_sdk::Ref<flight_sdk::TrayIcon>>
+unreachable|flight_set_tray_ignore_double_click_events|Box<flight_sdk::Ref<flight_sdk::TrayIcon>>
 unreachable|flight_set_tray_interaction_event_alt_key|*mut flight_sdk::TrayInteractionEvent
 unreachable|flight_set_tray_interaction_event_ctrl_key|*mut flight_sdk::TrayInteractionEvent
 unreachable|flight_set_tray_interaction_event_meta_key|*mut flight_sdk::TrayInteractionEvent
 unreachable|flight_set_tray_interaction_event_shift_key|*mut flight_sdk::TrayInteractionEvent
-unreachable|flight_set_tray_pressed_icon|*const flight_sdk::Ref<flight_sdk::TrayIcon>
+unreachable|flight_set_tray_pressed_icon|Box<flight_sdk::Ref<flight_sdk::TrayIcon>>
 unreachable|flight_set_tween_property_detail_change|*mut flight_sdk::TweenPropertyDetail
 unreachable|flight_set_tween_property_detail_start|*mut flight_sdk::TweenPropertyDetail
 unreachable|flight_set_unity_color_over_lifetime_enabled|*mut flight_sdk::UnityColorOverLifetime
@@ -4417,7 +4446,7 @@ unreachable|flight_show_prompt_dialog|*const flight_sdk::PromptDialogOptions
 unreachable|flight_show_save_file_dialog|*const flight_sdk::SaveFileDialogOptions
 unreachable|flight_show_warning_dialog|*const flight_sdk::MessageDialogOptions
 unreachable|flight_simplify_path|*const flight_sdk::PathBooleanOptions
-unreachable|flight_skin_skeleton_2d_attachment_points|*const flight_sdk::Ref<flight_sdk::Skin2D>
+unreachable|flight_skin_skeleton_2d_attachment_points|*const flight_sdk::Skeleton2D
 unreachable|flight_snap_fly_camera_controller|Box<flight_sdk::FlyCameraController>
 unreachable|flight_snap_orbit_camera_controller|Box<flight_sdk::OrbitCameraController>
 unreachable|flight_solve_skeleton_2d_constraints|*const flight_sdk::Skeleton2DConstraintRef
@@ -4437,7 +4466,7 @@ unreachable|flight_starling_spritesheet_format|*const flight_sdk::SpritesheetFor
 unreachable|flight_starling_texture_atlas_format|*const flight_sdk::TextureAtlasFormatRegistry
 unreachable|flight_start_app_loop|*const flight_sdk::AppLoopOptions
 unreachable|flight_start_input_key_repeat_timer|*const flight_sdk::InputRepeatCallback
-unreachable|flight_start_tray_icon_animation|*const flight_sdk::Ref<flight_sdk::TrayIcon>
+unreachable|flight_start_tray_icon_animation|*const flight_sdk::TrayAnimationState
 unreachable|flight_step_app_loop|*const flight_sdk::AppStepOptions
 unreachable|flight_step_particle_emitter_2d|*const flight_sdk::ParticleCollider
 unreachable|flight_step_particle_emitter_3d|*const flight_sdk::ParticleCollider
@@ -4451,7 +4480,7 @@ unreachable|flight_stop_animation_player|Box<flight_sdk::AnimationPlayer>
 unreachable|flight_stop_audio_channel|Box<flight_sdk::Ref<flight_sdk::AudioChannel>>
 unreachable|flight_stop_spritesheet_player|*mut flight_sdk::SpritesheetPlayer
 unreachable|flight_stop_timeline|Box<flight_sdk::Ref<flight_sdk::Timeline>>
-unreachable|flight_stop_tray_icon_animation|*const flight_sdk::Ref<flight_sdk::TrayIcon>
+unreachable|flight_stop_tray_icon_animation|Box<flight_sdk::Ref<flight_sdk::TrayIcon>>
 unreachable|flight_stop_video_channel|Box<flight_sdk::Ref<flight_sdk::VideoChannel>>
 unreachable|flight_stroke_path|*const flight_sdk::StrokeStyle
 unreachable|flight_substitute_flight_document_scene_tokens|Box<flight_sdk::FlightDocumentScene>
@@ -4484,7 +4513,7 @@ unreachable|flight_transform_texture_uv__texture|Box<flight_sdk::Texture>
 unreachable|flight_undo_text_input|Box<flight_sdk::Ref<flight_sdk::RichText>>
 unreachable|flight_union_all_paths|*const flight_sdk::PathBooleanOptions
 unreachable|flight_union_paths|*const flight_sdk::PathBooleanOptions
-unreachable|flight_unregister_debug_subsystem|*const flight_sdk::Ref<flight_sdk::DebugState>
+unreachable|flight_unregister_debug_subsystem|Box<flight_sdk::Ref<flight_sdk::DebugState>>
 unreachable|flight_unregister_lottie_layer_handler|*const flight_sdk::LottieLayerKind
 unreachable|flight_unregister_particle_format|*mut flight_sdk::ParticleFormatRegistry
 unreachable|flight_unregister_requirement_catalog_entry|*const flight_sdk::RequirementCatalogEntry
@@ -4505,22 +4534,22 @@ unreachable|flight_update_particle_emitter_3d|*const flight_sdk::ParticleEmitter
 unreachable|flight_update_particle_objects|*const flight_sdk::ParticleObjectsUpdateOptions
 unreachable|flight_update_physics2d_collider_world_shape|*const flight_sdk::RigidBody2D
 unreachable|flight_update_rigid_body2d_mass_data|*mut flight_sdk::RigidBody2D
-unreachable|flight_update_scene3d_resource_streaming|*const flight_sdk::Ref<flight_sdk::Scene3D>
+unreachable|flight_update_scene3d_resource_streaming|*const flight_sdk::UpdateScene3DResourceStreamingOptions
 unreachable|flight_update_spritesheet_player|*mut flight_sdk::SpritesheetPlayer
 unreachable|flight_update_timeline|Box<flight_sdk::Ref<flight_sdk::Timeline>>
 unreachable|flight_update_tweens|Box<flight_sdk::TweenManager>
-unreachable|flight_validate_animation_track|*mut Vec<flight_sdk::AnimationTrackValidationDiagnostic>
+unreachable|flight_validate_animation_track|Box<Vec<flight_sdk::AnimationTrackValidationDiagnostic>>
 unreachable|flight_validate_effect_list|*const flight_sdk::EffectInput
-unreachable|flight_validate_particle_emitter_config|*mut Vec<flight_sdk::ParticleConfigIssue>
+unreachable|flight_validate_particle_emitter_config|Box<Vec<flight_sdk::ParticleConfigIssue>>
 unreachable|flight_validate_skeleton_2d|*const flight_sdk::Skeleton2D
-unreachable|flight_validate_spritesheet|*mut Vec<flight_sdk::SpritesheetValidationDiagnostic>
-unreachable|flight_validate_spritesheet_data|*mut Vec<flight_sdk::SpritesheetValidationDiagnostic>
+unreachable|flight_validate_spritesheet|Box<Vec<flight_sdk::SpritesheetValidationDiagnostic>>
+unreachable|flight_validate_spritesheet_data|Box<Vec<flight_sdk::SpritesheetValidationDiagnostic>>
 unreachable|flight_wake_physics2d_body|*mut flight_sdk::RigidBody2D
 unreachable|flight_walk_node_descendants|Box<flight_sdk::Ref<dyn flight_sdk::Node>>
 unreachable|flight_watch_geolocation_position|*const flight_sdk::GeolocationRequestOptions
 unreachable|flight_watch_path|*const flight_sdk::FileWatchListener
 unreachable|flight_write_binary_file|*const flight_sdk::AbortSignal
-unreachable|flight_write_collision_convex_hull_faces3d|*mut Vec<usize>
+unreachable|flight_write_collision_convex_hull_faces3d|Box<Vec<usize>>
 unreachable|flight_write_collision_distance3d|*const flight_sdk::CollisionRegistry3D
 unreachable|flight_write_dialog_handle_binary_file|*const flight_sdk::AbortSignal
 unreachable|flight_write_dialog_handle_text_file|*const flight_sdk::AbortSignal

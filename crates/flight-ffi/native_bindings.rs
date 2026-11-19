@@ -935,6 +935,7 @@ pub fn emit(
     source: &str,
     out: &Path,
     caller_producible: &std::collections::BTreeSet<String>,
+    reachability_aliases: &std::collections::BTreeMap<String, String>,
     reachability_surface: &std::collections::BTreeSet<String>,
 ) {
     let file = syn::parse_file(source).expect("generated FFI Rust must parse");
@@ -942,8 +943,12 @@ pub fn emit(
     validate_vec_result_helpers(&file);
     validate_vec_ref_handles(&file);
     validate_return_ownership(&file);
-    let reachability =
-        crate::reachability::generate(source, caller_producible, reachability_surface);
+    let reachability = crate::reachability::generate(
+        source,
+        caller_producible,
+        reachability_aliases,
+        reachability_surface,
+    );
     std::fs::write(out.join("ffi_reachability_graph.tsv"), reachability.graph).unwrap();
     std::fs::write(
         out.join("ffi_reachability_baseline.tsv"),
