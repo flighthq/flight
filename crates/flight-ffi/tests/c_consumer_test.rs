@@ -14,6 +14,66 @@ use std::path::{Path, PathBuf};
 use std::process::Command;
 
 #[test]
+fn thin_node_pointer_is_rejected_by_typed_flight_node_parameters() {
+    if env!("FLIGHT_FFI_TARGET") != env!("FLIGHT_FFI_HOST") {
+        eprintln!(
+            "skipping the flight-ffi strict-C negative: it is built for {} and cannot run on host {}",
+            env!("FLIGHT_FFI_TARGET"),
+            env!("FLIGHT_FFI_HOST")
+        );
+        return;
+    }
+
+    let work_dir = Path::new(env!("OUT_DIR")).join("flight-ffi-thin-node-negative");
+    fs::create_dir_all(&work_dir).unwrap();
+    let source = Path::new(env!("CARGO_MANIFEST_DIR"))
+        .join("tests")
+        .join("c_consumer")
+        .join("thin_node_must_not_compile.c");
+    let object = work_dir.join("thin_node_must_not_compile.o");
+    let _ = fs::remove_file(&object);
+
+    let compiler = cc::Build::new()
+        .cargo_metadata(false)
+        .target(env!("FLIGHT_FFI_TARGET"))
+        .host(env!("FLIGHT_FFI_HOST"))
+        .opt_level(0)
+        .debug(false)
+        .out_dir(&work_dir)
+        .get_compiler();
+    let mut compile = compiler.to_command();
+    compile
+        .args([
+            "-std=c11",
+            "-Wall",
+            "-Wextra",
+            "-Wpedantic",
+            "-Werror",
+            "-Werror=incompatible-pointer-types",
+        ])
+        .arg(format!("-I{}", env!("OUT_DIR")))
+        .arg("-c")
+        .arg(&source)
+        .arg("-o")
+        .arg(&object);
+    let rejected = compile.output().unwrap();
+    let diagnostics = String::from_utf8_lossy(&rejected.stderr);
+    assert!(
+        !rejected.status.success(),
+        "strict C incorrectly accepted a fake thin node pointer"
+    );
+    assert!(
+        diagnostics.contains("incompatible pointer type")
+            || diagnostics.contains("incompatible-pointer-types"),
+        "strict C failed for an unexpected reason:\n{diagnostics}"
+    );
+    assert!(
+        diagnostics.contains("FlightNode"),
+        "diagnostic did not identify the typed FlightNode boundary:\n{diagnostics}"
+    );
+}
+
+#[test]
 fn c_consumer_links_static_library_and_runs() {
     if let Some(stdout) = z_compile_link_and_run("consumer.c", "consumer", true) {
         assert_eq!(stdout.trim(), "flight-ffi C consumer: ok");

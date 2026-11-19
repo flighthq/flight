@@ -1049,13 +1049,21 @@ fn generate_dual_produced_report(inventory: &BorrowProduction) -> String {
         let ref_count = inventory.ref_producers[ty].len();
         let owned_count = inventory.owned_producers[ty].len();
         let borrowers = inventory.borrowers.get(ty).cloned().unwrap_or_default();
-        writeln!(
+        write!(
             out,
-            "{ty}\t{ref_count}\t{owned_count}\t{}\t{}",
-            borrowers.len(),
-            borrowers.into_iter().collect::<Vec<_>>().join(",")
+            "{ty}\t{ref_count}\t{owned_count}\t{}",
+            borrowers.len()
         )
         .unwrap();
+        if !borrowers.is_empty() {
+            write!(
+                out,
+                "\t{}",
+                borrowers.into_iter().collect::<Vec<_>>().join(",")
+            )
+            .unwrap();
+        }
+        out.push('\n');
     }
     return out;
 }

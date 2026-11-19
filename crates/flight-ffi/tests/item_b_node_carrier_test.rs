@@ -1,9 +1,13 @@
+use std::collections::{BTreeMap, BTreeSet};
 use std::fs;
 use std::path::Path;
 
 const COMMITTED_DUAL_REPORT: &str = include_str!("ffi_dual_produced_types.tsv");
 const GENERATED_DUAL_REPORT: &str =
     include_str!(concat!(env!("OUT_DIR"), "/ffi_dual_produced_types.tsv"));
+const GENERATED_REACHABILITY_GRAPH: &str =
+    include_str!(concat!(env!("OUT_DIR"), "/ffi_reachability_graph.tsv"));
+const NODE_CONSUMER_MIGRATION: &str = include_str!("ffi_node_consumer_migration.tsv");
 
 fn generated(name: &str) -> String {
     fs::read_to_string(Path::new(env!("OUT_DIR")).join(name)).unwrap()
@@ -52,8 +56,6 @@ fn one_node_carrier_covers_concrete_abstract_nullable_array_and_callback_paths()
         assert!(!header.contains(obsolete), "obsolete node free {obsolete}");
     }
     assert_eq!(header.matches("void flight_free_node(").count(), 1);
-    assert!(!wrappers.contains("as *const flight_sdk::Ref<dyn flight_sdk::Node>"));
-    assert!(!wrappers.contains("as *mut flight_sdk::Ref<dyn flight_sdk::Node>"));
 
     for fragment in [
         "pub struct FfiNodeHandle {",
@@ -77,6 +79,132 @@ fn one_node_carrier_covers_concrete_abstract_nullable_array_and_callback_paths()
     assert!(
         wrapper(&wrappers, "flight_get_text_label_string").contains("return std::ptr::null_mut();")
     );
+}
+
+#[test]
+fn generated_node_wrappers_have_no_raw_fat_ref_casts() {
+    let wrappers = generated("ffi_generated.rs");
+    for (line_number, line) in wrappers.lines().enumerate() {
+        let normalized = line.replace("flight_sdk::", "");
+        for pointer in ["*const", "*mut"] {
+            for target in [
+                "Ref<dyn Node>",
+                "Ref<dyn Node2D>",
+                "Ref<dyn Node3D>",
+                "NodeRef",
+                "Node2DRef",
+                "Node3DRef",
+            ] {
+                let raw_cast = format!("as {pointer} {target}");
+                assert!(
+                    !normalized.contains(&raw_cast),
+                    "generated raw node-ref cast at line {}: {line}",
+                    line_number + 1
+                );
+            }
+        }
+    }
+}
+
+#[test]
+fn landed_base_node_consumer_census_has_exact_reviewed_outcomes() {
+    let mut fixture = NODE_CONSUMER_MIGRATION.lines();
+    assert_eq!(
+        fixture.next(),
+        Some("format|ffi-node-consumer-migration|1")
+    );
+    assert_eq!(
+        fixture.next(),
+        Some(
+            "source|ffi_reachability_graph.tsv|base|f56ed33887f1f426f01fe78d5efacb95fadc9d8f"
+        )
+    );
+    assert_eq!(
+        fixture.next(),
+        Some("columns|function|base_carrier|expected_outcome")
+    );
+
+    let graph_rows: BTreeSet<_> = GENERATED_REACHABILITY_GRAPH.lines().collect();
+    let generated_functions: BTreeSet<_> = GENERATED_REACHABILITY_GRAPH
+        .lines()
+        .filter_map(|line| {
+            let mut fields = line.split('|');
+            (fields.next()? == "function").then(|| fields.next().unwrap())
+        })
+        .collect();
+    let wrappers = generated("ffi_generated.rs");
+    let header = generated("flight_ffi.h");
+    let mut names = BTreeSet::new();
+    let mut base_carriers = BTreeMap::new();
+    let mut outcomes = BTreeMap::new();
+
+    for (index, line) in fixture.enumerate() {
+        let fields: Vec<_> = line.split('|').collect();
+        assert_eq!(fields.len(), 4, "malformed census row {}: {line}", index + 4);
+        assert_eq!(fields[0], "consumer", "malformed census row: {line}");
+        let function = fields[1];
+        let base_carrier = fields[2];
+        let expected = fields[3];
+        assert!(names.insert(function), "duplicate census function: {function}");
+        *base_carriers.entry(base_carrier).or_insert(0usize) += 1;
+        *outcomes.entry(expected).or_insert(0usize) += 1;
+
+        let old_edge = format!("consume|{function}|{base_carrier}");
+        match expected {
+            "FlightNode" => {
+                assert!(
+                    graph_rows.contains(format!("consume|{function}|Box<FlightNode>").as_str()),
+                    "{function} did not migrate to FlightNode"
+                );
+                assert!(!graph_rows.contains(old_edge.as_str()));
+            }
+            "FlightNodeArray" => {
+                assert!(
+                    graph_rows
+                        .contains(format!("consume|{function}|Box<FlightNodeArray>").as_str()),
+                    "{function} did not migrate to FlightNodeArray"
+                );
+                assert!(!graph_rows.contains(old_edge.as_str()));
+            }
+            "retired" => {
+                assert!(!generated_functions.contains(function));
+                assert!(!wrappers.contains(&format!("fn {function}(")));
+                assert!(!header.contains(function));
+            }
+            "unreachable-optional" => {
+                assert_eq!(function, "flight_create_rive_animation_clips");
+                assert_eq!(
+                    base_carrier,
+                    "*const Option<flight_sdk::Ref<dyn flight_sdk::Node2D>>"
+                );
+                assert!(graph_rows.contains(old_edge.as_str()));
+                assert!(graph_rows.contains(
+                    format!("function|{function}|surface|unreachable|{base_carrier}").as_str()
+                ));
+                assert!(wrappers.contains(&format!("fn {function}(")));
+                assert!(header.contains(function));
+            }
+            _ => panic!("unknown census outcome {expected} for {function}"),
+        }
+    }
+
+    assert_eq!(names.len(), 162);
+    assert_eq!(
+        base_carriers["Box<flight_sdk::Ref<dyn flight_sdk::Node>>"],
+        153
+    );
+    assert_eq!(
+        base_carriers["Box<flight_sdk::Ref<dyn flight_sdk::Node2D>>"],
+        8
+    );
+    assert_eq!(
+        base_carriers["*const Option<flight_sdk::Ref<dyn flight_sdk::Node2D>>"],
+        1
+    );
+    assert_eq!(outcomes["FlightNode"], 155);
+    assert_eq!(outcomes["FlightNodeArray"], 4);
+    assert_eq!(outcomes["retired"], 2);
+    assert_eq!(outcomes["unreachable-optional"], 1);
 }
 
 #[test]
@@ -228,7 +356,7 @@ fn hashlink_keeps_node_carriers_opaque_bytes() {
         "DEFINE_PRIM(_BYTES, flight_node_array_get, _BYTES _I32);",
         "DEFINE_PRIM(_BOOL, flight_node_array_push, _BYTES _BYTES);",
         "DEFINE_PRIM(_BYTES, flight_create_sprite, _NO_ARG);",
-        "DEFINE_PRIM(_F32, flight_get_node2_dfields_x, _BYTES);",
+        "DEFINE_PRIM(_F64, flight_get_node2_dfields_x, _BYTES);",
         "DEFINE_PRIM(_BOOL, flight_set_node2_dfields_blend_mode, _BYTES _I32 _BOOL);",
         "DEFINE_PRIM(_VOID, flight_get_node_children, _BYTES _BYTES);",
     ] {
