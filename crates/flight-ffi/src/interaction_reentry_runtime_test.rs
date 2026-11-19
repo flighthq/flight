@@ -90,20 +90,17 @@ fn z_create_reentry() -> (&'static Reentry, *mut flight_sdk::SignalConnection) {
     return (reentry, connection);
 }
 
-fn z_get_manager_handle(reentry: &Reentry) -> *const c_void {
-    return (&reentry.manager as *const flight_sdk::Ref<flight_sdk::InteractionManager>).cast();
+fn z_get_manager_handle(reentry: &Reentry) -> *mut c_void {
+    return (&reentry.manager as *const flight_sdk::Ref<flight_sdk::InteractionManager>)
+        .cast_mut()
+        .cast();
 }
 
 extern "C" fn z_reenter_manager(ctx: *mut c_void, _event: *const flight_sdk::PointerEventData) {
     let reentry = unsafe { &*(ctx as *const Reentry) };
     assert!(reentry.manager.read().unwrap().enabled);
-    unsafe {
-        crate::flight_capture_interaction_pointer(
-            z_get_manager_handle(reentry),
-            9,
-            (&reentry.target as *const flight_sdk::NodeRef).cast(),
-        )
-    };
+    let target = crate::ffi_node_from_node_ref(reentry.target.clone());
+    unsafe { crate::flight_capture_interaction_pointer(z_get_manager_handle(reentry), 9, &target) };
     reentry.calls.fetch_add(1, Ordering::SeqCst);
 }
 

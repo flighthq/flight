@@ -32,7 +32,12 @@ mod flight_build_texture_atlas_region_index {
             );
         }
         let map = unsafe { flight_create_texture_atlas_region_map() };
-        unsafe { flight_build_texture_atlas_region_index(map, &*atlas.read().unwrap()) };
+        unsafe {
+            flight_build_texture_atlas_region_index(
+                map,
+                (&atlas as *const flight_sdk::Ref<flight_sdk::TextureAtlas>).cast(),
+            )
+        };
         assert_eq!(
             unsafe { flight_get_texture_atlas_region_map_length(map) },
             2
@@ -87,7 +92,12 @@ mod flight_build_texture_atlas_region_index {
         let atlas = flight_sdk::create_texture_atlas();
         let counts = unsafe { flight_create_string_count_map() };
         let foreign = counts as *mut FfiTextureAtlasRegionMap;
-        unsafe { flight_build_texture_atlas_region_index(foreign, &*atlas.read().unwrap()) };
+        unsafe {
+            flight_build_texture_atlas_region_index(
+                foreign,
+                (&atlas as *const flight_sdk::Ref<flight_sdk::TextureAtlas>).cast(),
+            )
+        };
         assert_eq!(
             unsafe { flight_get_texture_atlas_region_map_length(foreign) },
             0

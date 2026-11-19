@@ -1049,12 +1049,7 @@ fn generate_dual_produced_report(inventory: &BorrowProduction) -> String {
         let ref_count = inventory.ref_producers[ty].len();
         let owned_count = inventory.owned_producers[ty].len();
         let borrowers = inventory.borrowers.get(ty).cloned().unwrap_or_default();
-        write!(
-            out,
-            "{ty}\t{ref_count}\t{owned_count}\t{}",
-            borrowers.len()
-        )
-        .unwrap();
+        write!(out, "{ty}\t{ref_count}\t{owned_count}\t{}", borrowers.len()).unwrap();
         if !borrowers.is_empty() {
             write!(
                 out,
@@ -1088,8 +1083,7 @@ fn main() {
     let crates_dir = manifest_dir.parent().unwrap();
     let out_dir = PathBuf::from(env::var("OUT_DIR").unwrap());
 
-    let mut all_output =
-        String::from("use flight_sdk;\nuse flight_sdk::{Node as _, Node2D as _, Node3D as _};\n\n");
+    let mut all_output = String::from("use flight_sdk;\n\n");
     all_output.push_str(generate_checked_slice_support());
     all_output.push_str(generate_node_handle_support());
     all_output.push_str(generate_shape_bounds_context_support());
@@ -4822,10 +4816,10 @@ fn invalid_parameter_return(value: &FfiReturn) -> &'static str {
         FfiReturn::SharedClone(value) => invalid_parameter_return(value),
         FfiReturn::Void
         | FfiReturn::TupleReturn(_)
-        | FfiReturn::OptionTupleReturn(_)
-        | FfiReturn::BorrowedSliceReturn
         | FfiReturn::AsyncCallback(_)
         | FfiReturn::ArrayOutReturn(_) => "return;",
+        FfiReturn::OptionTupleReturn(_) => "return false;",
+        FfiReturn::BorrowedSliceReturn => "return std::ptr::null();",
         FfiReturn::OptionEnumReturn | FfiReturn::OptionU32Return | FfiReturn::OptionBoolReturn => {
             "return -1;"
         }
@@ -5603,7 +5597,7 @@ fn generate_interaction_signal_connect_wrapper() -> String {
 #[doc = "flight-ffi nullable|options"]
 #[doc = "flight-ffi ownership|owned-return|flight_free_slot_id|flight_sdk::SlotId"]
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn flight_connect_interaction_signal(manager: *const std::ffi::c_void, target: *const std::ffi::c_void, name: u32, slot_fn: Option<extern "C" fn(*mut std::ffi::c_void, *const {QUALIFIER}::PointerEventData)>, slot_ctx: *mut std::ffi::c_void, slot_release: Option<extern "C" fn(*mut std::ffi::c_void)>, options: *const {QUALIFIER}::SignalConnectOptions) -> *mut {QUALIFIER}::SlotId {{
+pub unsafe extern "C" fn flight_connect_interaction_signal(manager: *const std::ffi::c_void, target: *const FlightNode, name: u32, slot_fn: Option<extern "C" fn(*mut std::ffi::c_void, *const {QUALIFIER}::PointerEventData)>, slot_ctx: *mut std::ffi::c_void, slot_release: Option<extern "C" fn(*mut std::ffi::c_void)>, options: *const {QUALIFIER}::SignalConnectOptions) -> *mut {QUALIFIER}::SlotId {{
     let Some(name) = [{names}].into_iter().find(|pointer| *pointer as u32 == name) else {{
         return std::ptr::null_mut();
     }};
@@ -5613,12 +5607,15 @@ pub unsafe extern "C" fn flight_connect_interaction_signal(manager: *const std::
     let Some(callback) = slot_fn else {{
         return std::ptr::null_mut();
     }};
+    let Some(target) = (unsafe {{ ffi_node_handle(target) }}) else {{
+        return std::ptr::null_mut();
+    }};
+    let target = target.node.clone();
     let guard = FfiSignalCallbackRelease {{ ctx: slot_ctx as usize, release: slot_release }};
     let slot: {QUALIFIER}::AnyInteractionSignalSlot = std::sync::Arc::new(move |event: &{QUALIFIER}::PointerEventData| callback(guard.ctx(), event));
     let manager = unsafe {{ &*(manager as *const {QUALIFIER}::Ref<{QUALIFIER}::InteractionManager>) }};
-    let target = unsafe {{ &*(target as *const {QUALIFIER}::Ref<dyn {QUALIFIER}::Node>) }};
     let options = if options.is_null() {{ None }} else {{ Some(unsafe {{ &*options }}) }};
-    return match {QUALIFIER}::connect_interaction_signal(manager, target, name, slot, options) {{
+    return match {QUALIFIER}::connect_interaction_signal(manager, &target, name, slot, options) {{
         Some(id) => Box::into_raw(Box::new(id)),
         None => std::ptr::null_mut(),
     }};
@@ -5813,10 +5810,12 @@ fn ffi_node_from_node2d_ref(node2d: flight_sdk::Node2DRef) -> FlightNode {
     let node: flight_sdk::NodeRef = node2d.clone();
     FlightNode { node, node2d: Some(node2d), node3d: None, concrete: None }
 }
+#[allow(dead_code)]
 fn ffi_node_from_node3d_ref(node3d: flight_sdk::Node3DRef) -> FlightNode {
     let node: flight_sdk::NodeRef = node3d.clone();
     FlightNode { node, node2d: None, node3d: Some(node3d), concrete: None }
 }
+#[allow(dead_code)]
 fn ffi_node_from_concrete<T: flight_sdk::Node + 'static>(value: flight_sdk::Ref<T>) -> FlightNode {
     let node: flight_sdk::NodeRef = value.clone();
     FlightNode { node, node2d: None, node3d: None, concrete: Some(Box::new(value)) }
@@ -5832,7 +5831,9 @@ fn ffi_node_from_concrete_3d<T: flight_sdk::Node3D + 'static>(value: flight_sdk:
     FlightNode { node, node2d: None, node3d: Some(node3d), concrete: Some(Box::new(value)) }
 }
 fn ffi_node_ref_from_node(value: flight_sdk::NodeRef) -> flight_sdk::NodeRef { value }
+#[allow(dead_code)]
 fn ffi_node_ref_from_node2d(value: flight_sdk::Node2DRef) -> flight_sdk::NodeRef { value }
+#[allow(dead_code)]
 fn ffi_node_ref_from_node3d(value: flight_sdk::Node3DRef) -> flight_sdk::NodeRef { value }
 unsafe fn ffi_node_handle<'a>(node: *const FlightNode) -> Option<&'a FlightNode> {
     if node.is_null() { return None; }

@@ -138,7 +138,11 @@ fn run(command: &mut Command, purpose: &str) -> std::process::Output {
 
 // Compiles `tests/c_consumer/<source_name>` strictly as C against the generated header, links it
 // with the static library, runs it, and returns its stdout; `None` when the target is not the host.
-fn z_compile_link_and_run(source_name: &str, stem: &str, address_sanitizer: bool) -> Option<String> {
+fn z_compile_link_and_run(
+    source_name: &str,
+    stem: &str,
+    address_sanitizer: bool,
+) -> Option<String> {
     if env!("FLIGHT_FFI_TARGET") != env!("FLIGHT_FFI_HOST") {
         eprintln!(
             "skipping the flight-ffi C consumer: it is built for {} and cannot run on host {}",
@@ -179,11 +183,7 @@ fn z_compile_link_and_run(source_name: &str, stem: &str, address_sanitizer: bool
     if address_sanitizer {
         compile.args(["-fsanitize=address", "-fno-omit-frame-pointer"]);
     }
-    compile
-        .arg("-c")
-        .arg(&source)
-        .arg("-o")
-        .arg(&object);
+    compile.arg("-c").arg(&source).arg("-o").arg(&object);
     let compiled = run(&mut compile, "compile the C consumer");
     let diagnostics = String::from_utf8_lossy(&compiled.stderr);
     assert!(

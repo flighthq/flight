@@ -1,4 +1,4 @@
-use std::ffi::{CStr, CString, c_void};
+use std::ffi::{CStr, CString};
 use std::sync::Arc;
 
 use flight_sdk::node::contract::AdjustmentRef;
@@ -80,8 +80,10 @@ fn producer_owned_handle_has_one_drop_and_its_clone_consumer_retains_the_caller_
     let adjustments: Ref<Vec<AdjustmentRef>> = Arc::new(std::sync::RwLock::new(Vec::new()));
     flight_sdk::set_node_color_adjustments(&source, Some(adjustments.clone()));
 
-    let source_ptr = std::ptr::from_ref(&source).cast::<c_void>();
-    let target_ptr = std::ptr::from_ref(&target).cast::<c_void>();
+    let source_handle = crate::ffi_node_from_node_ref(source.clone());
+    let target_handle = crate::ffi_node_from_node_ref(target.clone());
+    let source_ptr = std::ptr::from_ref(&source_handle);
+    let target_ptr = std::ptr::from_ref(&target_handle);
     let baseline = Arc::strong_count(&adjustments);
 
     let produced = unsafe { crate::flight_get_node_color_adjustments(source_ptr) };

@@ -129,6 +129,28 @@ fn ref_only_struct_accessors_borrow_the_ref_handle() {
         assert_eq!(flight_set_clock_elapsed(clock, 4.25), 4.25);
         assert_eq!(flight_get_clock_elapsed(clock), 4.25);
         assert!(flight_get_clock_parent(clock).is_null());
-        flight_free_clock_ref(clock);
+        flight_free_clock_ref(clock.cast::<flight_sdk::Ref<flight_sdk::Clock>>());
+    }
+}
+
+#[test]
+fn wrong_handle_and_null_ref_only_inputs_return_their_typed_sentinels() {
+    unsafe {
+        let sprite = flight_create_sprite();
+        let mut page_count = usize::MAX;
+        assert!(flight_get_bitmap_text_pages(sprite, &mut page_count).is_null());
+        assert_eq!(page_count, usize::MAX);
+
+        let mut first = i32::MAX;
+        let mut second = i32::MAX;
+        assert!(!flight_get_index_range_for_cluster(
+            std::ptr::null(),
+            0,
+            0,
+            &mut first,
+            &mut second,
+        ));
+        assert_eq!((first, second), (i32::MAX, i32::MAX));
+        flight_free_node(sprite);
     }
 }

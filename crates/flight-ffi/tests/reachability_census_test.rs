@@ -127,7 +127,10 @@ fn carrier_graph_preserves_thin_fat_raw_and_policy_distinctions() {
         edge_rows("produce", "flight_add_node_child"),
         ["Box<FlightNode>"].into_iter().collect()
     );
-    assert_eq!(functions["flight_add_node_child"].classification, "reachable");
+    assert_eq!(
+        functions["flight_add_node_child"].classification,
+        "reachable"
+    );
     assert_eq!(functions["flight_add_node_child"].blocker, "-");
     assert_eq!(
         edge_rows("consume", "flight_add_node_children"),
@@ -160,7 +163,9 @@ fn carrier_graph_preserves_thin_fat_raw_and_policy_distinctions() {
         ) {
             row.kind == "surface"
                 && row.classification == "unreachable"
-                && row.blocker.starts_with("Box<flight_sdk::Ref<dyn flight_sdk::Material")
+                && row
+                    .blocker
+                    .starts_with("Box<flight_sdk::Ref<dyn flight_sdk::Material")
         } else {
             row.kind == "surface" && row.classification == "reachable" && row.blocker == "-"
         }

@@ -33,6 +33,7 @@ fn one_node_carrier_covers_concrete_abstract_nullable_array_and_callback_paths()
         "typedef struct FlightNodeArray FlightNodeArray;",
         "FlightNode * flight_create_sprite(void);",
         "FlightNode * flight_add_node_child(const FlightNode * arg0, const FlightNode * arg1);",
+        "void * flight_connect_interaction_signal(void * arg0, const FlightNode * arg1, uint32_t arg2, void (*arg3)(void *, void *), void * arg4, void (*arg5)(void *), void * arg6);",
         "void flight_compute_node_bounds_rectangle(void * arg0, const FlightNode * arg1, const FlightNode * arg2);",
         "void flight_add_node_children(const FlightNode * arg0, const FlightNodeArray * arg1);",
         "void flight_get_node_children(FlightNodeArray * arg0, const FlightNode * arg1);",
@@ -109,15 +110,10 @@ fn generated_node_wrappers_have_no_raw_fat_ref_casts() {
 #[test]
 fn landed_base_node_consumer_census_has_exact_reviewed_outcomes() {
     let mut fixture = NODE_CONSUMER_MIGRATION.lines();
+    assert_eq!(fixture.next(), Some("format|ffi-node-consumer-migration|1"));
     assert_eq!(
         fixture.next(),
-        Some("format|ffi-node-consumer-migration|1")
-    );
-    assert_eq!(
-        fixture.next(),
-        Some(
-            "source|ffi_reachability_graph.tsv|base|f56ed33887f1f426f01fe78d5efacb95fadc9d8f"
-        )
+        Some("source|ffi_reachability_graph.tsv|base|f56ed33887f1f426f01fe78d5efacb95fadc9d8f")
     );
     assert_eq!(
         fixture.next(),
@@ -140,12 +136,20 @@ fn landed_base_node_consumer_census_has_exact_reviewed_outcomes() {
 
     for (index, line) in fixture.enumerate() {
         let fields: Vec<_> = line.split('|').collect();
-        assert_eq!(fields.len(), 4, "malformed census row {}: {line}", index + 4);
+        assert_eq!(
+            fields.len(),
+            4,
+            "malformed census row {}: {line}",
+            index + 4
+        );
         assert_eq!(fields[0], "consumer", "malformed census row: {line}");
         let function = fields[1];
         let base_carrier = fields[2];
         let expected = fields[3];
-        assert!(names.insert(function), "duplicate census function: {function}");
+        assert!(
+            names.insert(function),
+            "duplicate census function: {function}"
+        );
         *base_carriers.entry(base_carrier).or_insert(0usize) += 1;
         *outcomes.entry(expected).or_insert(0usize) += 1;
 
@@ -339,9 +343,7 @@ fn monomorphized_ref_only_trait_borrows_lock_the_ref_handle() {
         ),
     ] {
         let body = wrapper(&wrappers, name);
-        assert!(body.contains(&format!(
-            "*const flight_sdk::Ref<flight_sdk::{concrete}>"
-        )));
+        assert!(body.contains(&format!("*const flight_sdk::Ref<flight_sdk::{concrete}>")));
         assert!(body.contains(".read()"));
         assert!(body.contains("as &dyn flight_sdk::Physics2DJoint"));
     }

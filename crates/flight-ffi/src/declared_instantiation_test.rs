@@ -27,10 +27,9 @@ mod flight_destroy_wgpu_scene_2d_render {
     fn tears_down_every_prepared_proxy_like_the_rust_destroy() {
         let mut state = noop_render_state();
         let scene = two_node_scene();
+        let scene_handle = node_handle(&scene);
         let carrier = unsafe { flight_create_wgpu_scene_2d_render_proxies() };
-        assert!(unsafe {
-            flight_prepare_wgpu_scene_2d_render(&mut state, carrier, node_handle(&scene))
-        });
+        assert!(unsafe { flight_prepare_wgpu_scene_2d_render(&mut state, carrier, &scene_handle) });
         unsafe { flight_destroy_wgpu_scene_2d_render(&mut state, carrier) };
         let proxies = unsafe { &*(carrier as *const WgpuProxies) };
         assert!(proxies.entries.iter().all(Option::is_none));
@@ -60,10 +59,10 @@ mod flight_prepare_wgpu_scene_2d_render {
     fn prepares_the_same_proxies_as_the_rust_generic_call() {
         let mut state = noop_render_state();
         let scene = two_node_scene();
+        let scene_handle = node_handle(&scene);
         let carrier = unsafe { flight_create_wgpu_scene_2d_render_proxies() };
-        let prepared = unsafe {
-            flight_prepare_wgpu_scene_2d_render(&mut state, carrier, node_handle(&scene))
-        };
+        let prepared =
+            unsafe { flight_prepare_wgpu_scene_2d_render(&mut state, carrier, &scene_handle) };
 
         let mut expected = WgpuProxies::default();
         let expected_prepared =
@@ -103,9 +102,9 @@ fn live_uids(proxies: &WgpuProxies) -> Vec<u64> {
     return uids;
 }
 
-// The generated wrapper reads `source` as a pointer to the caller's `NodeRef` handle.
-fn node_handle(node: &flight_sdk::NodeRef) -> *const std::ffi::c_void {
-    return (node as *const flight_sdk::NodeRef).cast();
+// The generated wrapper reads `source` through the unified node handle.
+fn node_handle(node: &flight_sdk::NodeRef) -> FlightNode {
+    return ffi_node_from_node_ref(node.clone());
 }
 
 // A render state on wgpu's noop backend, so the declared instantiations run against a real

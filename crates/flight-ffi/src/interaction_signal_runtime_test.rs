@@ -1,10 +1,10 @@
 use std::ffi::c_void;
 use std::sync::atomic::{AtomicUsize, Ordering};
 
-// G4 through the generated C-shaped path: nodes and option values are built in Rust (Item B will
-// supply C node production), and every interaction step goes through the generated wrappers. The
-// manager is created tracked-subscribers-only, so only flight_connect_interaction_signal can arm
-// dispatch; no subscriber count is ever seeded by hand.
+// G4 through the generated C-shaped path: nodes use Item B's unified handles, and every interaction
+// step goes through the generated wrappers. The manager is created tracked-subscribers-only, so
+// only flight_connect_interaction_signal can arm dispatch; no subscriber count is ever seeded by
+// hand.
 
 struct Probe {
     calls: AtomicUsize,
@@ -20,6 +20,8 @@ struct Scene {
     manager: *mut c_void,
     root: flight_sdk::NodeRef,
     child: flight_sdk::NodeRef,
+    root_handle: crate::FlightNode,
+    child_handle: crate::FlightNode,
 }
 
 #[test]
@@ -103,7 +105,7 @@ fn rejects_every_non_pointer_and_invalid_name_without_retaining_or_releasing() {
             let id = unsafe {
                 crate::flight_connect_interaction_signal(
                     scene.manager,
-                    (&scene.child as *const flight_sdk::NodeRef).cast(),
+                    &scene.child_handle,
                     name,
                     Some(z_on_pointer_down),
                     probe as *const Probe as *mut c_void,
@@ -154,7 +156,7 @@ fn rejects_every_non_pointer_and_invalid_name_without_retaining_or_releasing() {
 fn rejects_null_inputs_without_releasing() {
     let scene = z_create_scene();
     let probe = z_create_probe(&scene);
-    let child = (&scene.child as *const flight_sdk::NodeRef).cast::<c_void>();
+    let child = &scene.child_handle as *const crate::FlightNode;
     let ctx = probe as *const Probe as *mut c_void;
     let down = flight_sdk::InteractionSignalName::OnPointerDown as u32;
     for (manager, target, slot_fn) in [
@@ -202,6 +204,8 @@ fn the_connection_lives_with_the_node_not_the_manager() {
             manager,
             root,
             child,
+            root_handle,
+            child_handle,
         } = scene;
         unsafe { crate::flight_free_interaction_manager_ref(manager.cast()) };
         assert_eq!(
@@ -209,7 +213,7 @@ fn the_connection_lives_with_the_node_not_the_manager() {
             0,
             "the slot stays on the node's signal after the manager is freed"
         );
-        drop((root, child));
+        drop((root, child, root_handle, child_handle));
         assert_eq!(
             probe.releases.load(Ordering::SeqCst),
             0,
@@ -230,7 +234,7 @@ fn z_connect(
     let id = unsafe {
         crate::flight_connect_interaction_signal(
             scene.manager,
-            (&scene.child as *const flight_sdk::NodeRef).cast(),
+            &scene.child_handle,
             flight_sdk::InteractionSignalName::OnPointerDown as u32,
             Some(z_on_pointer_down),
             probe as *const Probe as *mut c_void,
@@ -259,25 +263,18 @@ fn z_create_scene() -> Scene {
     let root: flight_sdk::NodeRef = flight_sdk::create_display_object();
     let child: flight_sdk::NodeRef = flight_sdk::create_display_object();
     flight_sdk::add_node_child(&root, &child);
+    let root_handle = crate::ffi_node_from_node_ref(root.clone());
+    let child_handle = crate::ffi_node_from_node_ref(child.clone());
     let mut options = flight_sdk::interaction::contract::create_interaction_manager_options();
     options.tracked_subscribers_only = Some(true);
-    let manager = unsafe {
-        crate::flight_create_interaction_manager(
-            (&root as *const flight_sdk::NodeRef).cast(),
-            &options,
-        )
-    };
-    unsafe {
-        crate::flight_capture_interaction_pointer(
-            manager,
-            0,
-            (&child as *const flight_sdk::NodeRef).cast(),
-        )
-    };
+    let manager = unsafe { crate::flight_create_interaction_manager(&root_handle, &options) };
+    unsafe { crate::flight_capture_interaction_pointer(manager, 0, &child_handle) };
     return Scene {
         manager,
         root,
         child,
+        root_handle,
+        child_handle,
     };
 }
 
@@ -285,7 +282,7 @@ fn z_disconnect(scene: &Scene, id: *const flight_sdk::SlotId) {
     unsafe {
         crate::flight_disconnect_interaction_signal(
             scene.manager,
-            (&scene.child as *const flight_sdk::NodeRef).cast(),
+            &scene.child_handle,
             flight_sdk::InteractionSignalName::OnPointerDown as u32,
             id,
         )
@@ -328,10 +325,11 @@ extern "C" fn z_on_pointer_down(ctx: *mut c_void, _event: *const flight_sdk::Poi
     let id = *probe.disconnect_from_callback.lock().unwrap();
     let target = probe.target.lock().unwrap().clone();
     if let (Some(id), Some(target)) = (id, target) {
+        let target = crate::ffi_node_from_node_ref(target);
         unsafe {
             crate::flight_disconnect_interaction_signal(
                 probe.manager as *const c_void,
-                (&target as *const flight_sdk::NodeRef).cast(),
+                &target,
                 flight_sdk::InteractionSignalName::OnPointerDown as u32,
                 &id,
             )
@@ -348,12 +346,9 @@ extern "C" fn z_release_probe(ctx: *mut c_void) {
     if probe.disconnect_from_callback.lock().unwrap().is_some()
         && let Some(target) = target
     {
+        let target = crate::ffi_node_from_node_ref(target);
         unsafe {
-            crate::flight_capture_interaction_pointer(
-                probe.manager as *const c_void,
-                9,
-                (&target as *const flight_sdk::NodeRef).cast(),
-            )
+            crate::flight_capture_interaction_pointer(probe.manager as *mut c_void, 9, &target)
         };
     }
 }

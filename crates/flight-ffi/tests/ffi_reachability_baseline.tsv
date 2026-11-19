@@ -1,6 +1,6 @@
 format|ffi-reachability-baseline|1
 policy|host_capability|feature-gated native host crates supply borrowed Host*Capability carriers
-summary|policy-exempt|278|unreachable|2346|blocking-carriers|701
+summary|policy-exempt|278|unreachable|2345|blocking-carriers|700
 carrier|1|*const Option<String>
 carrier|1|*const Option<flight_sdk::Ref<dyn flight_sdk::Node2D>>
 carrier|2|*const flight_sdk::AbcInstruction
@@ -639,7 +639,6 @@ carrier|1|Box<flight_sdk::Ref<dyn flight_sdk::Adjustment>>
 carrier|2|Box<flight_sdk::Ref<dyn flight_sdk::Material2D>>
 carrier|2|Box<flight_sdk::Ref<dyn flight_sdk::MaterialData>>
 carrier|3|Box<flight_sdk::Ref<dyn flight_sdk::Modifier>>
-carrier|1|Box<flight_sdk::Ref<dyn flight_sdk::Node>>
 carrier|2|Box<flight_sdk::Ref<flight_sdk::AnimationBlendTree>>
 carrier|1|Box<flight_sdk::Ref<flight_sdk::AnimationClip>>
 carrier|2|Box<flight_sdk::Ref<flight_sdk::AnimationPlayer>>
@@ -1120,7 +1119,6 @@ unreachable|flight_compute_world_acceleration_from_device_acceleration|*const fl
 unreachable|flight_connect_focus_navigation|*const flight_sdk::FocusNavigationInput
 unreachable|flight_connect_input_to_text_input|*const flight_sdk::TextInputSource
 unreachable|flight_connect_interaction_dispatch_layer|*const flight_sdk::InteractionDispatchLayer
-unreachable|flight_connect_interaction_signal|Box<flight_sdk::Ref<dyn flight_sdk::Node>>
 unreachable|flight_convolve_bitmap|*const flight_sdk::BitmapConvolutionOptions
 unreachable|flight_copy_bitmap_channel|*const flight_sdk::ImageChannel
 unreachable|flight_create_animation_blend_tree|Box<flight_sdk::AnimationBlendTreeInput>
