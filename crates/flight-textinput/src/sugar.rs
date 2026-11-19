@@ -30,7 +30,7 @@ pub trait RichTextInputMethods {
     fn enable_input(&self, options: Option<&TextInputOptions>) -> Ref<TextInputState>;
     fn input_caret_index(&self) -> usize;
     fn input_caret_rectangle(&self, out: &mut TextSelectionRectangle, layout: &TextLayoutResult);
-    fn input_character_index_at_point(&self, layout: &TextLayoutResult, x: f32, y: f32) -> usize;
+    fn input_character_index_at_point(&self, layout: &TextLayoutResult, x: f64, y: f64) -> usize;
     fn input_display_text(&self) -> String;
     fn input_selection_begin_index(&self) -> usize;
     fn input_selection_end_index(&self) -> usize;
@@ -74,8 +74,8 @@ pub trait RichTextInputMethods {
     fn scroll_input_caret_into_view(
         &self,
         layout: &TextLayoutResult,
-        viewport_width: f32,
-        viewport_height: f32,
+        viewport_width: f64,
+        viewport_height: f64,
     );
     fn select_all_input(&self);
     fn select_input_line_at(&self, index: i32);
@@ -91,9 +91,9 @@ pub trait SelectableRichTextManagerMethods {
         data: &InputKeyboardData,
         on_copy: Option<TextInputCopyCallback>,
     ) -> bool;
-    fn dispatch_pointer_down(&self, target: &Ref<RichText>, x: f32, y: f32, extend: bool);
-    fn dispatch_pointer_move(&self, x: f32, y: f32);
-    fn dispatch_wheel(&self, delta_lines: f32);
+    fn dispatch_pointer_down(&self, target: &Ref<RichText>, x: f64, y: f64, extend: bool);
+    fn dispatch_pointer_move(&self, x: f64, y: f64);
+    fn dispatch_wheel(&self, delta_lines: f64);
     fn focus(&self, target: &Ref<RichText>);
     fn selection_text(&self) -> String;
 }
@@ -111,13 +111,13 @@ pub trait TextInputManagerMethods {
     fn dispatch_pointer_down(
         &self,
         target: &Ref<RichText>,
-        x: f32,
-        y: f32,
+        x: f64,
+        y: f64,
         extend: bool,
         click_count: i32,
     );
-    fn dispatch_pointer_move(&self, x: f32, y: f32);
-    fn dispatch_wheel(&self, delta_lines: f32);
+    fn dispatch_pointer_move(&self, x: f64, y: f64);
+    fn dispatch_wheel(&self, delta_lines: f64);
     fn focus(&self, target: &Ref<RichText>);
 }
 
@@ -171,7 +171,7 @@ impl RichTextInputMethods for Ref<RichText> {
     fn input_caret_rectangle(&self, out: &mut TextSelectionRectangle, layout: &TextLayoutResult) {
         get_text_input_caret_rectangle(out, self, layout);
     }
-    fn input_character_index_at_point(&self, layout: &TextLayoutResult, x: f32, y: f32) -> usize {
+    fn input_character_index_at_point(&self, layout: &TextLayoutResult, x: f64, y: f64) -> usize {
         return get_text_input_character_index_at_point(self, layout, x, y);
     }
     fn input_display_text(&self) -> String {
@@ -243,8 +243,8 @@ impl RichTextInputMethods for Ref<RichText> {
     fn scroll_input_caret_into_view(
         &self,
         layout: &TextLayoutResult,
-        viewport_width: f32,
-        viewport_height: f32,
+        viewport_width: f64,
+        viewport_height: f64,
     ) {
         scroll_text_input_caret_into_view(self, layout, viewport_width, viewport_height);
     }
@@ -283,13 +283,13 @@ impl SelectableRichTextManagerMethods for Ref<SelectableRichTextManager> {
     ) -> bool {
         return dispatch_selectable_rich_text_key_down(self, data, on_copy);
     }
-    fn dispatch_pointer_down(&self, target: &Ref<RichText>, x: f32, y: f32, extend: bool) {
+    fn dispatch_pointer_down(&self, target: &Ref<RichText>, x: f64, y: f64, extend: bool) {
         dispatch_selectable_rich_text_pointer_down(self, target, x, y, extend);
     }
-    fn dispatch_pointer_move(&self, x: f32, y: f32) {
+    fn dispatch_pointer_move(&self, x: f64, y: f64) {
         dispatch_selectable_rich_text_pointer_move(self, x, y);
     }
-    fn dispatch_wheel(&self, delta_lines: f32) {
+    fn dispatch_wheel(&self, delta_lines: f64) {
         dispatch_selectable_rich_text_wheel(self, delta_lines);
     }
     fn focus(&self, target: &Ref<RichText>) {
@@ -328,17 +328,17 @@ impl TextInputManagerMethods for Ref<TextInputManager> {
     fn dispatch_pointer_down(
         &self,
         target: &Ref<RichText>,
-        x: f32,
-        y: f32,
+        x: f64,
+        y: f64,
         extend: bool,
         click_count: i32,
     ) {
         dispatch_text_input_pointer_down(self, target, x, y, extend, click_count);
     }
-    fn dispatch_pointer_move(&self, x: f32, y: f32) {
+    fn dispatch_pointer_move(&self, x: f64, y: f64) {
         dispatch_text_input_pointer_move(self, x, y);
     }
-    fn dispatch_wheel(&self, delta_lines: f32) {
+    fn dispatch_wheel(&self, delta_lines: f64) {
         dispatch_text_input_wheel(self, delta_lines);
     }
     fn focus(&self, target: &Ref<RichText>) {

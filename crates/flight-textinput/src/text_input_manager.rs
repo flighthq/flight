@@ -93,8 +93,8 @@ pub fn dispatch_text_input_key_down(
 pub fn dispatch_text_input_pointer_down(
     manager: &Ref<TextInputManager>,
     target: &Ref<RichText>,
-    x: f32,
-    y: f32,
+    x: f64,
+    y: f64,
     extend: bool,
     click_count: i32,
 ) {
@@ -112,7 +112,7 @@ pub fn dispatch_text_input_pointer_down(
     }
 }
 
-pub fn dispatch_text_input_pointer_move(manager: &Ref<TextInputManager>, x: f32, y: f32) {
+pub fn dispatch_text_input_pointer_move(manager: &Ref<TextInputManager>, x: f64, y: f64) {
     let target = manager.read().unwrap().focused.clone();
     let Some(target) = target else {
         return;
@@ -127,7 +127,7 @@ pub fn dispatch_text_input_pointer_move(manager: &Ref<TextInputManager>, x: f32,
     move_text_input_caret(&target, index as i32, true);
 }
 
-pub fn dispatch_text_input_wheel(manager: &Ref<TextInputManager>, delta_lines: f32) {
+pub fn dispatch_text_input_wheel(manager: &Ref<TextInputManager>, delta_lines: f64) {
     let target = manager.read().unwrap().focused.clone();
     let Some(target) = target else {
         return;

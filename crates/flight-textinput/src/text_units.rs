@@ -1,4 +1,4 @@
-pub(crate) fn js_round(value: f32) -> f32 {
+pub(crate) fn js_round(value: f64) -> f64 {
     if !value.is_finite() || value.fract() == 0.0 {
         return value;
     }

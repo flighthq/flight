@@ -27,7 +27,7 @@ use crate::text_input::get_text_input_state;
 use crate::text_units::{utf16_len, utf16_replace, utf16_slice};
 use crate::types::{HandleTextInputKeyboardOptions, ReplaceTextInputOptions};
 
-const DESIRED_CARET_X_UNSET: f32 = -1.0;
+const DESIRED_CARET_X_UNSET: f64 = -1.0;
 
 fn create_text_selection_rectangle() -> TextSelectionRectangle {
     return TextSelectionRectangle {
@@ -277,9 +277,10 @@ fn get_caret_line_index(source: &Ref<RichText>, layout: &TextLayoutResult) -> us
     return out.line_index;
 }
 
-fn get_fallback_line_height(layout: &TextLayoutResult) -> f32 {
+// flight-lint: allow(f32) reads or writes textlayout's f32 lane (line heights, glyph advances, the caret rectangle and layout queries); input and scroll math is f64
+fn get_fallback_line_height(layout: &TextLayoutResult) -> f64 {
     let line_heights: &Vec<f32> = &layout.line_heights;
-    return line_heights.first().copied().unwrap_or(12.0);
+    return line_heights.first().copied().map(f64::from).unwrap_or(12.0);
 }
 
 fn get_input_state(source: &Ref<RichText>) -> Ref<TextInputState> {
@@ -379,16 +380,21 @@ fn get_line_end_index(layout: &TextLayoutResult, line_index: usize, text_length:
     return end.unwrap_or(text_length);
 }
 
-fn get_line_offset_y(layout: &TextLayoutResult, line_index: usize) -> f32 {
+// flight-lint: allow(f32) reads or writes textlayout's f32 lane (line heights, glyph advances, the caret rectangle and layout queries); input and scroll math is f64
+fn get_line_offset_y(layout: &TextLayoutResult, line_index: usize) -> f64 {
     for group in &layout.groups {
         if group.line_index == line_index {
-            return group.offset_y;
+            return f64::from(group.offset_y);
         }
     }
-    let mut y = TEXT_BOUNDS_GUTTER;
+    let mut y = f64::from(TEXT_BOUNDS_GUTTER);
     let line_heights: &Vec<f32> = &layout.line_heights;
     for index in 0..line_index {
-        y += line_heights.get(index).copied().unwrap_or(0.0);
+        y += line_heights
+            .get(index)
+            .copied()
+            .map(f64::from)
+            .unwrap_or(0.0);
     }
     return y;
 }
@@ -416,6 +422,7 @@ pub fn get_text_input_caret_index(source: &Ref<RichText>) -> usize {
         .min(length);
 }
 
+// flight-lint: allow(f32) reads or writes textlayout's f32 lane (line heights, glyph advances, the caret rectangle and layout queries); input and scroll math is f64
 pub fn get_text_input_caret_rectangle(
     out: &mut TextSelectionRectangle,
     source: &Ref<RichText>,
@@ -426,11 +433,12 @@ pub fn get_text_input_caret_rectangle(
         out.x = TEXT_BOUNDS_GUTTER;
         out.y = TEXT_BOUNDS_GUTTER;
         out.width = 1.0;
-        out.height = get_fallback_line_height(layout);
+        out.height = get_fallback_line_height(layout) as f32;
         out.line_index = 0;
         return;
     };
-    out.x = get_text_layout_group_caret_x(group, caret_index);
+    // TextSelectionRectangle is textlayout's f32 lane: the f64 caret x narrows once.
+    out.x = get_text_layout_group_caret_x(group, caret_index) as f32;
     out.y = group.offset_y;
     out.width = 1.0;
     out.height = group.height;
@@ -440,17 +448,17 @@ pub fn get_text_input_caret_rectangle(
 pub fn get_text_input_character_index_at_point(
     source: &Ref<RichText>,
     layout: &TextLayoutResult,
-    x: f32,
-    y: f32,
+    x: f64,
+    y: f64,
 ) -> usize {
     if layout.groups.is_empty() {
         return 0;
     }
     let mut closest_line_index = 0;
-    let mut closest_line_distance = f32::INFINITY;
+    let mut closest_line_distance = f64::INFINITY;
     for index in 0..layout.line_heights.len() {
         let line_top = get_line_offset_y(layout, index);
-        let line_bottom = line_top + layout.line_heights[index];
+        let line_bottom = line_top + f64::from(layout.line_heights[index]);
         let distance = if y < line_top {
             line_top - y
         } else if y > line_bottom {
@@ -471,10 +479,10 @@ pub fn get_text_input_character_index_at_point(
         }
         line_start = line_start.min(group.start_index);
         line_end = line_end.max(group.end_index);
-        if x <= group.offset_x {
+        if x <= f64::from(group.offset_x) {
             return group.start_index;
         }
-        if x <= group.offset_x + group.width {
+        if x <= f64::from(group.offset_x) + f64::from(group.width) {
             return get_text_layout_group_character_index_at_x(group, x);
         }
     }
@@ -551,23 +559,28 @@ fn get_text_layout_group_at_index(
     return groups.last();
 }
 
-fn get_text_layout_group_caret_x(group: &TextLayoutGroup, index: usize) -> f32 {
-    let mut x = group.offset_x;
+// flight-lint: allow(f32) reads or writes textlayout's f32 lane (line heights, glyph advances, the caret rectangle and layout queries); input and scroll math is f64
+fn get_text_layout_group_caret_x(group: &TextLayoutGroup, index: usize) -> f64 {
+    let mut x = f64::from(group.offset_x);
     let limit = index.min(group.end_index).saturating_sub(group.start_index);
     let positions: &Vec<f32> = &group.positions;
     for position_index in 0..limit {
-        x += positions.get(position_index).copied().unwrap_or(0.0);
+        x += positions
+            .get(position_index)
+            .copied()
+            .map(f64::from)
+            .unwrap_or(0.0);
     }
     return x;
 }
 
-fn get_text_layout_group_character_index_at_x(group: &TextLayoutGroup, x: f32) -> usize {
-    let mut current_x = group.offset_x;
+fn get_text_layout_group_character_index_at_x(group: &TextLayoutGroup, x: f64) -> usize {
+    let mut current_x = f64::from(group.offset_x);
     for (index, advance) in group.positions.iter().enumerate() {
-        if x < current_x + *advance / 2.0 {
+        if x < current_x + f64::from(*advance) / 2.0 {
             return group.start_index + index;
         }
-        current_x += *advance;
+        current_x += f64::from(*advance);
     }
     return group.end_index;
 }
@@ -783,7 +796,7 @@ pub fn move_text_input_caret_down(
     let desired_x = {
         let mut state = state.write().unwrap();
         if state.desired_caret_x == DESIRED_CARET_X_UNSET {
-            state.desired_caret_x = out.x;
+            state.desired_caret_x = f64::from(out.x);
         }
         state.desired_caret_x
     };
@@ -793,8 +806,8 @@ pub fn move_text_input_caret_down(
         move_text_input_caret(source, length as i32, extend_selection);
         return;
     }
-    let target_y =
-        get_line_offset_y(layout, target_line_index) + layout.line_heights[target_line_index] / 2.0;
+    let target_y = get_line_offset_y(layout, target_line_index)
+        + f64::from(layout.line_heights[target_line_index]) / 2.0;
     let target_index = get_text_input_character_index_at_point(source, layout, desired_x, target_y);
     let length = utf16_len(&source.read().unwrap().data.text);
     let new_caret = target_index.min(length);
@@ -857,7 +870,7 @@ pub fn move_text_input_caret_up(
     let desired_x = {
         let mut state = state.write().unwrap();
         if state.desired_caret_x == DESIRED_CARET_X_UNSET {
-            state.desired_caret_x = out.x;
+            state.desired_caret_x = f64::from(out.x);
         }
         state.desired_caret_x
     };
@@ -866,8 +879,8 @@ pub fn move_text_input_caret_up(
         return;
     }
     let target_line_index = out.line_index - 1;
-    let target_y =
-        get_line_offset_y(layout, target_line_index) + layout.line_heights[target_line_index] / 2.0;
+    let target_y = get_line_offset_y(layout, target_line_index)
+        + f64::from(layout.line_heights[target_line_index]) / 2.0;
     let target_index = get_text_input_character_index_at_point(source, layout, desired_x, target_y);
     let length = utf16_len(&source.read().unwrap().data.text);
     let new_caret = target_index.min(length);
@@ -1041,16 +1054,18 @@ fn restrict_text_input(text: &str, restrict: &str) -> String {
     return out;
 }
 
+// flight-lint: allow(f32) reads or writes textlayout's f32 lane (line heights, glyph advances, the caret rectangle and layout queries); input and scroll math is f64
 pub fn scroll_text_input_caret_into_view(
     source: &Ref<RichText>,
     layout: &TextLayoutResult,
-    viewport_width: f32,
-    viewport_height: f32,
+    viewport_width: f64,
+    viewport_height: f64,
 ) {
     let mut out = create_text_selection_rectangle();
     get_text_input_caret_rectangle(&mut out, source, layout);
-    let caret_top = out.y;
-    let caret_bottom = out.y + out.height;
+    // The caret rectangle is textlayout's f32 lane; it widens for the f64 scroll math.
+    let caret_top = f64::from(out.y);
+    let caret_bottom = f64::from(out.y) + f64::from(out.height);
     let (scroll_v, scroll_h) = {
         let source = source.read().unwrap();
         (source.data.scroll_v, source.data.scroll_h)
@@ -1059,31 +1074,36 @@ pub fn scroll_text_input_caret_into_view(
     let mut view_top = 0.0;
     let line_heights: &Vec<f32> = &layout.line_heights;
     for index in 0..scroll_v_line {
-        view_top += line_heights.get(index).copied().unwrap_or(0.0);
+        view_top += line_heights
+            .get(index)
+            .copied()
+            .map(f64::from)
+            .unwrap_or(0.0);
     }
     let view_bottom = view_top + viewport_height;
     if caret_top < view_top {
-        set_rich_text_scroll_v(source, (out.line_index + 1) as f32, Some(layout));
+        set_rich_text_scroll_v(source, (out.line_index + 1) as f64, Some(layout));
     } else if caret_bottom > view_bottom {
         let mut pixel_offset = 0.0;
         let mut first_visible_line = 0;
         for index in 0..layout.num_lines {
-            if pixel_offset + layout.line_heights[index] > caret_bottom - viewport_height {
+            if pixel_offset + f64::from(layout.line_heights[index]) > caret_bottom - viewport_height
+            {
                 first_visible_line = index;
                 break;
             }
-            pixel_offset += layout.line_heights[index];
+            pixel_offset += f64::from(layout.line_heights[index]);
         }
-        set_rich_text_scroll_v(source, (first_visible_line + 1) as f32, Some(layout));
+        set_rich_text_scroll_v(source, (first_visible_line + 1) as f64, Some(layout));
     }
-    let caret_left = out.x - scroll_h;
-    let caret_right = caret_left + out.width;
+    let caret_left = f64::from(out.x) - scroll_h;
+    let caret_right = caret_left + f64::from(out.width);
     if caret_left < 0.0 {
-        set_rich_text_scroll_h(source, (out.x - 8.0).max(0.0), Some(layout));
+        set_rich_text_scroll_h(source, (f64::from(out.x) - 8.0).max(0.0), Some(layout));
     } else if caret_right + 8.0 > viewport_width {
         set_rich_text_scroll_h(
             source,
-            out.x + out.width + 8.0 - viewport_width,
+            f64::from(out.x) + f64::from(out.width) + 8.0 - viewport_width,
             Some(layout),
         );
     }

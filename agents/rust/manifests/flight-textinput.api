@@ -74,9 +74,9 @@ src/lib.rs: pub use contract::undo_text_input;
 src/selectable_rich_text_manager.rs: pub fn blur_selectable_rich_text(manager: &Ref<SelectableRichTextManager>)
 src/selectable_rich_text_manager.rs: pub fn create_selectable_rich_text_manager() -> Ref<SelectableRichTextManager>
 src/selectable_rich_text_manager.rs: pub fn dispatch_selectable_rich_text_key_down(manager: &Ref<SelectableRichTextManager>, data: &InputKeyboardData, on_copy: Option<TextInputCopyCallback>,) -> bool
-src/selectable_rich_text_manager.rs: pub fn dispatch_selectable_rich_text_pointer_down(manager: &Ref<SelectableRichTextManager>, target: &Ref<RichText>, x: f32, y: f32, extend: bool,)
-src/selectable_rich_text_manager.rs: pub fn dispatch_selectable_rich_text_pointer_move(manager: &Ref<SelectableRichTextManager>, x: f32, y: f32,)
-src/selectable_rich_text_manager.rs: pub fn dispatch_selectable_rich_text_wheel(manager: &Ref<SelectableRichTextManager>, delta_lines: f32,)
+src/selectable_rich_text_manager.rs: pub fn dispatch_selectable_rich_text_pointer_down(manager: &Ref<SelectableRichTextManager>, target: &Ref<RichText>, x: f64, y: f64, extend: bool,)
+src/selectable_rich_text_manager.rs: pub fn dispatch_selectable_rich_text_pointer_move(manager: &Ref<SelectableRichTextManager>, x: f64, y: f64,)
+src/selectable_rich_text_manager.rs: pub fn dispatch_selectable_rich_text_wheel(manager: &Ref<SelectableRichTextManager>, delta_lines: f64,)
 src/selectable_rich_text_manager.rs: pub fn focus_selectable_rich_text(manager: &Ref<SelectableRichTextManager>, target: &Ref<RichText>,)
 src/selectable_rich_text_manager.rs: pub fn get_selectable_rich_text_selection_text(manager: &Ref<SelectableRichTextManager>) -> String
 src/selectable_rich_text_manager.rs: pub fn initialize_selectable_rich_text_manager(out: &mut SelectableRichTextManager)
@@ -96,7 +96,7 @@ src/sugar.rs: impl RichTextInputMethods for Ref<RichText> :: fn handle_input_key
 src/sugar.rs: impl RichTextInputMethods for Ref<RichText> :: fn has_input(&self) -> bool
 src/sugar.rs: impl RichTextInputMethods for Ref<RichText> :: fn input_caret_index(&self) -> usize
 src/sugar.rs: impl RichTextInputMethods for Ref<RichText> :: fn input_caret_rectangle(&self, out: &mut TextSelectionRectangle, layout: &TextLayoutResult)
-src/sugar.rs: impl RichTextInputMethods for Ref<RichText> :: fn input_character_index_at_point(&self, layout: &TextLayoutResult, x: f32, y: f32) -> usize
+src/sugar.rs: impl RichTextInputMethods for Ref<RichText> :: fn input_character_index_at_point(&self, layout: &TextLayoutResult, x: f64, y: f64) -> usize
 src/sugar.rs: impl RichTextInputMethods for Ref<RichText> :: fn input_display_text(&self) -> String
 src/sugar.rs: impl RichTextInputMethods for Ref<RichText> :: fn input_selection_begin_index(&self) -> usize
 src/sugar.rs: impl RichTextInputMethods for Ref<RichText> :: fn input_selection_end_index(&self) -> usize
@@ -113,7 +113,7 @@ src/sugar.rs: impl RichTextInputMethods for Ref<RichText> :: fn move_input_caret
 src/sugar.rs: impl RichTextInputMethods for Ref<RichText> :: fn redo_input(&self)
 src/sugar.rs: impl RichTextInputMethods for Ref<RichText> :: fn replace_input(&self, begin_index: i32, end_index: i32, text: &str, options: Option<&ReplaceTextInputOptions>,)
 src/sugar.rs: impl RichTextInputMethods for Ref<RichText> :: fn replace_selected_input(&self, text: &str, options: Option<&ReplaceTextInputOptions>)
-src/sugar.rs: impl RichTextInputMethods for Ref<RichText> :: fn scroll_input_caret_into_view(&self, layout: &TextLayoutResult, viewport_width: f32, viewport_height: f32,)
+src/sugar.rs: impl RichTextInputMethods for Ref<RichText> :: fn scroll_input_caret_into_view(&self, layout: &TextLayoutResult, viewport_width: f64, viewport_height: f64,)
 src/sugar.rs: impl RichTextInputMethods for Ref<RichText> :: fn select_all_input(&self)
 src/sugar.rs: impl RichTextInputMethods for Ref<RichText> :: fn select_input_line_at(&self, index: i32)
 src/sugar.rs: impl RichTextInputMethods for Ref<RichText> :: fn select_input_word_at(&self, index: i32)
@@ -123,9 +123,9 @@ src/sugar.rs: impl SelectableRichTextManager :: fn new() -> Ref<Self>
 src/sugar.rs: impl SelectableRichTextManagerMethods for Ref<SelectableRichTextManager>
 src/sugar.rs: impl SelectableRichTextManagerMethods for Ref<SelectableRichTextManager> :: fn blur(&self)
 src/sugar.rs: impl SelectableRichTextManagerMethods for Ref<SelectableRichTextManager> :: fn dispatch_key_down(&self, data: &InputKeyboardData, on_copy: Option<TextInputCopyCallback>,) -> bool
-src/sugar.rs: impl SelectableRichTextManagerMethods for Ref<SelectableRichTextManager> :: fn dispatch_pointer_down(&self, target: &Ref<RichText>, x: f32, y: f32, extend: bool)
-src/sugar.rs: impl SelectableRichTextManagerMethods for Ref<SelectableRichTextManager> :: fn dispatch_pointer_move(&self, x: f32, y: f32)
-src/sugar.rs: impl SelectableRichTextManagerMethods for Ref<SelectableRichTextManager> :: fn dispatch_wheel(&self, delta_lines: f32)
+src/sugar.rs: impl SelectableRichTextManagerMethods for Ref<SelectableRichTextManager> :: fn dispatch_pointer_down(&self, target: &Ref<RichText>, x: f64, y: f64, extend: bool)
+src/sugar.rs: impl SelectableRichTextManagerMethods for Ref<SelectableRichTextManager> :: fn dispatch_pointer_move(&self, x: f64, y: f64)
+src/sugar.rs: impl SelectableRichTextManagerMethods for Ref<SelectableRichTextManager> :: fn dispatch_wheel(&self, delta_lines: f64)
 src/sugar.rs: impl SelectableRichTextManagerMethods for Ref<SelectableRichTextManager> :: fn focus(&self, target: &Ref<RichText>)
 src/sugar.rs: impl SelectableRichTextManagerMethods for Ref<SelectableRichTextManager> :: fn selection_text(&self) -> String
 src/sugar.rs: impl TextInputManager :: fn new() -> Ref<Self>
@@ -134,13 +134,13 @@ src/sugar.rs: impl TextInputManagerMethods for Ref<TextInputManager> :: fn blur(
 src/sugar.rs: impl TextInputManagerMethods for Ref<TextInputManager> :: fn connect(&self, input: &TextInputSource) -> TextInputDisposer
 src/sugar.rs: impl TextInputManagerMethods for Ref<TextInputManager> :: fn dispatch_input(&self, text: &str) -> bool
 src/sugar.rs: impl TextInputManagerMethods for Ref<TextInputManager> :: fn dispatch_key_down(&self, data: &InputKeyboardData, clipboard_text: Option<&str>, on_copy: Option<TextInputCopyCallback>,) -> bool
-src/sugar.rs: impl TextInputManagerMethods for Ref<TextInputManager> :: fn dispatch_pointer_down(&self, target: &Ref<RichText>, x: f32, y: f32, extend: bool, click_count: i32,)
-src/sugar.rs: impl TextInputManagerMethods for Ref<TextInputManager> :: fn dispatch_pointer_move(&self, x: f32, y: f32)
-src/sugar.rs: impl TextInputManagerMethods for Ref<TextInputManager> :: fn dispatch_wheel(&self, delta_lines: f32)
+src/sugar.rs: impl TextInputManagerMethods for Ref<TextInputManager> :: fn dispatch_pointer_down(&self, target: &Ref<RichText>, x: f64, y: f64, extend: bool, click_count: i32,)
+src/sugar.rs: impl TextInputManagerMethods for Ref<TextInputManager> :: fn dispatch_pointer_move(&self, x: f64, y: f64)
+src/sugar.rs: impl TextInputManagerMethods for Ref<TextInputManager> :: fn dispatch_wheel(&self, delta_lines: f64)
 src/sugar.rs: impl TextInputManagerMethods for Ref<TextInputManager> :: fn focus(&self, target: &Ref<RichText>)
-src/sugar.rs: pub trait RichTextInputMethods { fn append_input(&self, text: &str); fn apply_input_restriction(&self, text: &str, replace_length: usize) -> String; fn can_redo_input(&self) -> bool; fn can_undo_input(&self) -> bool; fn clear_input_history(&self); fn delete_input_backward(&self); fn delete_input_forward(&self); fn delete_input_word_backward(&self); fn delete_input_word_forward(&self); fn disable_input(&self); fn enable_input(&self, options: Option<&TextInputOptions>) -> Ref<TextInputState>; fn input_caret_index(&self) -> usize; fn input_caret_rectangle(&self, out: &mut TextSelectionRectangle, layout: &TextLayoutResult); fn input_character_index_at_point(&self, layout: &TextLayoutResult, x: f32, y: f32) -> usize; fn input_display_text(&self) -> String; fn input_selection_begin_index(&self) -> usize; fn input_selection_end_index(&self) -> usize; fn input_selection_rectangles(&self, out: &mut Vec<TextSelectionRectangle>, layout: &TextLayoutResult,); fn input_selection_text(&self) -> String; fn input_state(&self) -> Option<Ref<TextInputState>>; fn handle_input_keyboard(&self, data: &InputKeyboardData, options: Option<&HandleTextInputKeyboardOptions>,) -> bool; fn has_input(&self) -> bool; fn insert_input(&self, text: &str); fn move_input_caret(&self, index: i32, extend_selection: bool); fn move_input_caret_by_word(&self, direction: i32, extend_selection: bool); fn move_input_caret_down(&self, layout: Option<&TextLayoutResult>, extend_selection: bool); fn move_input_caret_to_line_end(&self, layout: Option<&TextLayoutResult>, extend_selection: bool,); fn move_input_caret_to_line_start(&self, layout: Option<&TextLayoutResult>, extend_selection: bool,); fn move_input_caret_up(&self, layout: Option<&TextLayoutResult>, extend_selection: bool); fn redo_input(&self); fn replace_input(&self, begin_index: i32, end_index: i32, text: &str, options: Option<&ReplaceTextInputOptions>,); fn replace_selected_input(&self, text: &str, options: Option<&ReplaceTextInputOptions>); fn scroll_input_caret_into_view(&self, layout: &TextLayoutResult, viewport_width: f32, viewport_height: f32,); fn select_all_input(&self); fn select_input_line_at(&self, index: i32); fn select_input_word_at(&self, index: i32); fn set_input_selection(&self, begin_index: i32, end_index: i32); fn undo_input(&self); }
-src/sugar.rs: pub trait SelectableRichTextManagerMethods { fn blur(&self); fn dispatch_key_down(&self, data: &InputKeyboardData, on_copy: Option<TextInputCopyCallback>,) -> bool; fn dispatch_pointer_down(&self, target: &Ref<RichText>, x: f32, y: f32, extend: bool); fn dispatch_pointer_move(&self, x: f32, y: f32); fn dispatch_wheel(&self, delta_lines: f32); fn focus(&self, target: &Ref<RichText>); fn selection_text(&self) -> String; }
-src/sugar.rs: pub trait TextInputManagerMethods { fn blur(&self); fn connect(&self, input: &TextInputSource) -> TextInputDisposer; fn dispatch_input(&self, text: &str) -> bool; fn dispatch_key_down(&self, data: &InputKeyboardData, clipboard_text: Option<&str>, on_copy: Option<TextInputCopyCallback>,) -> bool; fn dispatch_pointer_down(&self, target: &Ref<RichText>, x: f32, y: f32, extend: bool, click_count: i32,); fn dispatch_pointer_move(&self, x: f32, y: f32); fn dispatch_wheel(&self, delta_lines: f32); fn focus(&self, target: &Ref<RichText>); }
+src/sugar.rs: pub trait RichTextInputMethods { fn append_input(&self, text: &str); fn apply_input_restriction(&self, text: &str, replace_length: usize) -> String; fn can_redo_input(&self) -> bool; fn can_undo_input(&self) -> bool; fn clear_input_history(&self); fn delete_input_backward(&self); fn delete_input_forward(&self); fn delete_input_word_backward(&self); fn delete_input_word_forward(&self); fn disable_input(&self); fn enable_input(&self, options: Option<&TextInputOptions>) -> Ref<TextInputState>; fn input_caret_index(&self) -> usize; fn input_caret_rectangle(&self, out: &mut TextSelectionRectangle, layout: &TextLayoutResult); fn input_character_index_at_point(&self, layout: &TextLayoutResult, x: f64, y: f64) -> usize; fn input_display_text(&self) -> String; fn input_selection_begin_index(&self) -> usize; fn input_selection_end_index(&self) -> usize; fn input_selection_rectangles(&self, out: &mut Vec<TextSelectionRectangle>, layout: &TextLayoutResult,); fn input_selection_text(&self) -> String; fn input_state(&self) -> Option<Ref<TextInputState>>; fn handle_input_keyboard(&self, data: &InputKeyboardData, options: Option<&HandleTextInputKeyboardOptions>,) -> bool; fn has_input(&self) -> bool; fn insert_input(&self, text: &str); fn move_input_caret(&self, index: i32, extend_selection: bool); fn move_input_caret_by_word(&self, direction: i32, extend_selection: bool); fn move_input_caret_down(&self, layout: Option<&TextLayoutResult>, extend_selection: bool); fn move_input_caret_to_line_end(&self, layout: Option<&TextLayoutResult>, extend_selection: bool,); fn move_input_caret_to_line_start(&self, layout: Option<&TextLayoutResult>, extend_selection: bool,); fn move_input_caret_up(&self, layout: Option<&TextLayoutResult>, extend_selection: bool); fn redo_input(&self); fn replace_input(&self, begin_index: i32, end_index: i32, text: &str, options: Option<&ReplaceTextInputOptions>,); fn replace_selected_input(&self, text: &str, options: Option<&ReplaceTextInputOptions>); fn scroll_input_caret_into_view(&self, layout: &TextLayoutResult, viewport_width: f64, viewport_height: f64,); fn select_all_input(&self); fn select_input_line_at(&self, index: i32); fn select_input_word_at(&self, index: i32); fn set_input_selection(&self, begin_index: i32, end_index: i32); fn undo_input(&self); }
+src/sugar.rs: pub trait SelectableRichTextManagerMethods { fn blur(&self); fn dispatch_key_down(&self, data: &InputKeyboardData, on_copy: Option<TextInputCopyCallback>,) -> bool; fn dispatch_pointer_down(&self, target: &Ref<RichText>, x: f64, y: f64, extend: bool); fn dispatch_pointer_move(&self, x: f64, y: f64); fn dispatch_wheel(&self, delta_lines: f64); fn focus(&self, target: &Ref<RichText>); fn selection_text(&self) -> String; }
+src/sugar.rs: pub trait TextInputManagerMethods { fn blur(&self); fn connect(&self, input: &TextInputSource) -> TextInputDisposer; fn dispatch_input(&self, text: &str) -> bool; fn dispatch_key_down(&self, data: &InputKeyboardData, clipboard_text: Option<&str>, on_copy: Option<TextInputCopyCallback>,) -> bool; fn dispatch_pointer_down(&self, target: &Ref<RichText>, x: f64, y: f64, extend: bool, click_count: i32,); fn dispatch_pointer_move(&self, x: f64, y: f64); fn dispatch_wheel(&self, delta_lines: f64); fn focus(&self, target: &Ref<RichText>); }
 src/text_input.rs: pub fn disable_text_input(node: &Ref<RichText>)
 src/text_input.rs: pub fn enable_text_input(node: &Ref<RichText>, options: Option<&TextInputOptions>,) -> Ref<TextInputState>
 src/text_input.rs: pub fn get_text_input_state(node: &Ref<RichText>) -> Option<Ref<TextInputState>>
@@ -156,7 +156,7 @@ src/text_input_editing.rs: pub fn delete_text_input_word_backward(source: &Ref<R
 src/text_input_editing.rs: pub fn delete_text_input_word_forward(source: &Ref<RichText>)
 src/text_input_editing.rs: pub fn get_text_input_caret_index(source: &Ref<RichText>) -> usize
 src/text_input_editing.rs: pub fn get_text_input_caret_rectangle(out: &mut TextSelectionRectangle, source: &Ref<RichText>, layout: &TextLayoutResult,)
-src/text_input_editing.rs: pub fn get_text_input_character_index_at_point(source: &Ref<RichText>, layout: &TextLayoutResult, x: f32, y: f32,) -> usize
+src/text_input_editing.rs: pub fn get_text_input_character_index_at_point(source: &Ref<RichText>, layout: &TextLayoutResult, x: f64, y: f64,) -> usize
 src/text_input_editing.rs: pub fn get_text_input_display_text(source: &Ref<RichText>) -> String
 src/text_input_editing.rs: pub fn get_text_input_selection_begin_index(source: &Ref<RichText>) -> usize
 src/text_input_editing.rs: pub fn get_text_input_selection_end_index(source: &Ref<RichText>) -> usize
@@ -173,7 +173,7 @@ src/text_input_editing.rs: pub fn move_text_input_caret_up(source: &Ref<RichText
 src/text_input_editing.rs: pub fn redo_text_input(source: &Ref<RichText>)
 src/text_input_editing.rs: pub fn replace_selected_text_input(source: &Ref<RichText>, text: &str, options: Option<&ReplaceTextInputOptions>,)
 src/text_input_editing.rs: pub fn replace_text_input(source: &Ref<RichText>, begin_index: i32, end_index: i32, text: &str, options: Option<&ReplaceTextInputOptions>,)
-src/text_input_editing.rs: pub fn scroll_text_input_caret_into_view(source: &Ref<RichText>, layout: &TextLayoutResult, viewport_width: f32, viewport_height: f32,)
+src/text_input_editing.rs: pub fn scroll_text_input_caret_into_view(source: &Ref<RichText>, layout: &TextLayoutResult, viewport_width: f64, viewport_height: f64,)
 src/text_input_editing.rs: pub fn select_all_text_input(source: &Ref<RichText>)
 src/text_input_editing.rs: pub fn select_line_at_text_input_index(source: &Ref<RichText>, index: i32)
 src/text_input_editing.rs: pub fn select_word_at_text_input_index(source: &Ref<RichText>, index: i32)
@@ -184,9 +184,9 @@ src/text_input_manager.rs: pub fn connect_input_to_text_input(input: &TextInputS
 src/text_input_manager.rs: pub fn create_text_input_manager() -> Ref<TextInputManager>
 src/text_input_manager.rs: pub fn dispatch_text_input(manager: &Ref<TextInputManager>, text: &str) -> bool
 src/text_input_manager.rs: pub fn dispatch_text_input_key_down(manager: &Ref<TextInputManager>, data: &InputKeyboardData, clipboard_text: Option<&str>, on_copy: Option<TextInputCopyCallback>,) -> bool
-src/text_input_manager.rs: pub fn dispatch_text_input_pointer_down(manager: &Ref<TextInputManager>, target: &Ref<RichText>, x: f32, y: f32, extend: bool, click_count: i32,)
-src/text_input_manager.rs: pub fn dispatch_text_input_pointer_move(manager: &Ref<TextInputManager>, x: f32, y: f32)
-src/text_input_manager.rs: pub fn dispatch_text_input_wheel(manager: &Ref<TextInputManager>, delta_lines: f32)
+src/text_input_manager.rs: pub fn dispatch_text_input_pointer_down(manager: &Ref<TextInputManager>, target: &Ref<RichText>, x: f64, y: f64, extend: bool, click_count: i32,)
+src/text_input_manager.rs: pub fn dispatch_text_input_pointer_move(manager: &Ref<TextInputManager>, x: f64, y: f64)
+src/text_input_manager.rs: pub fn dispatch_text_input_wheel(manager: &Ref<TextInputManager>, delta_lines: f64)
 src/text_input_manager.rs: pub fn focus_text_input(manager: &Ref<TextInputManager>, target: &Ref<RichText>)
 src/text_input_manager.rs: pub fn initialize_text_input_manager(out: &mut TextInputManager)
 src/types.rs: #[derive(Clone, Debug, Default, PartialEq, Eq)] pub struct ReplaceTextInputOptions { pub apply_input_rules: Option<bool>, pub merge_kind: Option<String>, pub skip_history: Option<bool>, }

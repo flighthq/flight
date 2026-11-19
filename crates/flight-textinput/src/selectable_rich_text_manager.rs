@@ -77,11 +77,12 @@ pub fn dispatch_selectable_rich_text_key_down(
     return false;
 }
 
+// flight-lint: allow(f32) reads or writes textlayout's f32 lane (line heights, glyph advances, the caret rectangle and layout queries); input and scroll math is f64
 pub fn dispatch_selectable_rich_text_pointer_down(
     manager: &Ref<SelectableRichTextManager>,
     target: &Ref<RichText>,
-    x: f32,
-    y: f32,
+    x: f64,
+    y: f64,
     extend: bool,
 ) {
     manager.write().unwrap().focused = Some(target.clone());
@@ -96,7 +97,7 @@ pub fn dispatch_selectable_rich_text_pointer_down(
         }
         return;
     };
-    let index = compute_rich_text_char_index_at_point(&layout.read().unwrap(), x, y);
+    let index = compute_rich_text_char_index_at_point(&layout.read().unwrap(), x as f32, y as f32);
     let mut runtime = runtime.write().unwrap();
     if extend {
         runtime.selection_end_index = index;
@@ -106,10 +107,11 @@ pub fn dispatch_selectable_rich_text_pointer_down(
     }
 }
 
+// flight-lint: allow(f32) reads or writes textlayout's f32 lane (line heights, glyph advances, the caret rectangle and layout queries); input and scroll math is f64
 pub fn dispatch_selectable_rich_text_pointer_move(
     manager: &Ref<SelectableRichTextManager>,
-    x: f32,
-    y: f32,
+    x: f64,
+    y: f64,
 ) {
     let Some(target) = manager.read().unwrap().focused.clone() else {
         return;
@@ -120,13 +122,13 @@ pub fn dispatch_selectable_rich_text_pointer_move(
     let Some(layout) = layout else {
         return;
     };
-    let index = compute_rich_text_char_index_at_point(&layout.read().unwrap(), x, y);
+    let index = compute_rich_text_char_index_at_point(&layout.read().unwrap(), x as f32, y as f32);
     runtime.write().unwrap().selection_end_index = index;
 }
 
 pub fn dispatch_selectable_rich_text_wheel(
     manager: &Ref<SelectableRichTextManager>,
-    delta_lines: f32,
+    delta_lines: f64,
 ) {
     let Some(target) = manager.read().unwrap().focused.clone() else {
         return;

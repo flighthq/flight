@@ -264,6 +264,19 @@ mod dispatch_text_input_wheel {
     fn does_not_panic_when_nothing_is_focused() {
         dispatch_text_input_wheel(&create_text_input_manager(), 1.0);
     }
+
+    #[test]
+    fn rounds_large_half_integer_and_near_half_deltas_in_double_precision() {
+        // f32 turns 16_777_216.5 into 16_777_216 and 2.4999999 into 2.5 before the JS rounding.
+        let manager = create_text_input_manager();
+        let target = create_input(text_data("hello"), input_options());
+        focus_text_input(&manager, &target);
+        dispatch_text_input_wheel(&manager, 16_777_216.5);
+        assert_eq!(target.read().unwrap().data.scroll_v, 16_777_218.0);
+        dispatch_text_input_wheel(&manager, -16_777_217.0);
+        dispatch_text_input_wheel(&manager, 2.4999999);
+        assert_eq!(target.read().unwrap().data.scroll_v, 3.0);
+    }
 }
 
 mod focus_text_input {

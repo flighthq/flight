@@ -207,6 +207,19 @@ mod dispatch_selectable_rich_text_wheel {
     fn does_not_panic_when_nothing_is_focused() {
         dispatch_selectable_rich_text_wheel(&create_selectable_rich_text_manager(), 2.0);
     }
+
+    #[test]
+    fn rounds_large_half_integer_and_near_half_deltas_in_double_precision() {
+        // f32 turns 16_777_216.5 into 16_777_216 and 2.4999999 into 2.5 before the JS rounding.
+        let manager = create_selectable_rich_text_manager();
+        let text = rich_text("hello");
+        focus_selectable_rich_text(&manager, &text);
+        dispatch_selectable_rich_text_wheel(&manager, 16_777_216.5);
+        assert_eq!(text.read().unwrap().data.scroll_v, 16_777_218.0);
+        dispatch_selectable_rich_text_wheel(&manager, -16_777_217.0);
+        dispatch_selectable_rich_text_wheel(&manager, 2.4999999);
+        assert_eq!(text.read().unwrap().data.scroll_v, 3.0);
+    }
 }
 
 mod focus_selectable_rich_text {
