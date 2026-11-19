@@ -165,17 +165,20 @@ fn carrier_graph_preserves_thin_fat_raw_and_policy_distinctions() {
                 || row.blocker == "*mut flight_sdk::Node2DFields")
     }));
 
+    // Item C: the per-payload connect wrappers produce an owned SignalConnection, so its
+    // operations left the unreachable census.
     for function in [
         "flight_disconnect_signal_connection",
         "flight_pause_signal_connection",
         "flight_resume_signal_connection",
     ] {
-        assert_eq!(functions[function].classification, "unreachable");
-        assert_eq!(
-            functions[function].blocker,
-            "*const flight_sdk::SignalConnection"
-        );
+        assert_eq!(functions[function].classification, "reachable");
+        assert_eq!(functions[function].blocker, "-");
     }
+    assert!(
+        edge_rows("produce", "flight_connect_unit_signal")
+            .contains("Box<flight_sdk::SignalConnection>")
+    );
 
     assert!(GENERATED_BASELINE.contains(
         "policy|host_capability|feature-gated native host crates supply borrowed Host*Capability carriers"

@@ -1,6 +1,6 @@
 format|ffi-reachability-baseline|1
 policy|host_capability|feature-gated native host crates supply borrowed Host*Capability carriers
-summary|policy-exempt|235|unreachable|3438|blocking-carriers|918
+summary|policy-exempt|235|unreachable|3435|blocking-carriers|917
 carrier|1|*const Option<String>
 carrier|1|*const Option<flight_sdk::Ref<dyn flight_sdk::Node2D>>
 carrier|2|*const flight_sdk::AbcInstruction
@@ -362,7 +362,6 @@ carrier|6|*const flight_sdk::ShapedGlyph
 carrier|5|*const flight_sdk::ShapedRun
 carrier|1|*const flight_sdk::ShellExternalUrlPolicy
 carrier|1|*const flight_sdk::ShellProcessOptions
-carrier|3|*const flight_sdk::SignalConnection
 carrier|1|*const flight_sdk::SignalSlot<flight_sdk::TrayBalloonEvent>
 carrier|1|*const flight_sdk::SignalSlot<flight_sdk::TrayDropEvent>
 carrier|1|*const flight_sdk::SignalSlot<flight_sdk::TrayInteractionEvent>
@@ -1525,7 +1524,6 @@ unreachable|flight_disable_text_markup_guards|*mut flight_sdk::text_markup::cont
 unreachable|flight_disable_text_shaper_guards|*mut flight_sdk::ShapedRunPool
 unreachable|flight_disable_texture_atlas_guards|*mut flight_sdk::TextureAtlasGuardState
 unreachable|flight_disable_tray_guards|*mut flight_sdk::TrayAnimationState
-unreachable|flight_disconnect_signal_connection|*const flight_sdk::SignalConnection
 unreachable|flight_dispatch_rich_text_link_at_point|Box<flight_sdk::Ref<flight_sdk::RichText>>
 unreachable|flight_dispatch_rich_text_wheel|Box<flight_sdk::Ref<flight_sdk::RichText>>
 unreachable|flight_dispatch_selectable_rich_text_pointer_down|Box<flight_sdk::Ref<flight_sdk::RichText>>
@@ -3131,7 +3129,6 @@ unreachable|flight_pause_all_audio_mixer_channels|Box<flight_sdk::Ref<flight_sdk
 unreachable|flight_pause_all_tweens|Box<flight_sdk::TweenManager>
 unreachable|flight_pause_audio_channel|Box<flight_sdk::Ref<flight_sdk::AudioChannel>>
 unreachable|flight_pause_clock|*mut flight_sdk::Clock
-unreachable|flight_pause_signal_connection|*const flight_sdk::SignalConnection
 unreachable|flight_pause_spritesheet_player|*mut flight_sdk::SpritesheetPlayer
 unreachable|flight_pause_video_channel|Box<flight_sdk::Ref<flight_sdk::VideoChannel>>
 unreachable|flight_pick_scene3d|*const flight_sdk::Scene3DPickOptions
@@ -3267,7 +3264,6 @@ unreachable|flight_resume_all_audio_mixer_channels|Box<flight_sdk::Ref<flight_sd
 unreachable|flight_resume_all_tweens|Box<flight_sdk::TweenManager>
 unreachable|flight_resume_audio_channel|Box<flight_sdk::Ref<flight_sdk::AudioChannel>>
 unreachable|flight_resume_clock|*mut flight_sdk::Clock
-unreachable|flight_resume_signal_connection|*const flight_sdk::SignalConnection
 unreachable|flight_resume_spritesheet_player|*mut flight_sdk::SpritesheetPlayer
 unreachable|flight_resume_video_channel|Box<flight_sdk::Ref<flight_sdk::VideoChannel>>
 unreachable|flight_retry_failed_scene3d_resources|*const flight_sdk::UpdateScene3DResourceStreamingOptions
