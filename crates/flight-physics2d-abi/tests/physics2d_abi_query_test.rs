@@ -14,15 +14,14 @@ const MATERIAL: Physics2DMaterial = Physics2DMaterial {
     restitution: 0.0,
 };
 
-// D1 single-evaluation bound at a public f32 (Principal 192423ac): the query rows widen f32 physics.
-fn assert_f32_single(actual: f64, expected: f64, ts_bound: f64) {
-    let bound = ts_bound.max(4.0 * f64::from(f32::EPSILON) * expected.abs().max(1.0));
+// The TS `toBeCloseTo` bound, met directly now that the query rows carry f64 physics.
+fn assert_within_ts_bound(actual: f64, expected: f64, ts_bound: f64) {
     assert!(
-        (actual - expected).abs() <= bound,
+        (actual - expected).abs() <= ts_bound,
         "expected {}, got {} (bound {})",
         expected,
         actual,
-        bound
+        ts_bound
     );
 }
 
@@ -135,14 +134,12 @@ mod query_physics2d_abi_ray {
         for i in 0..out.count {
             let base = i * PHYSICS2D_ABI_QUERY_VALUE_STRIDE;
             assert!(out.values[base + PHYSICS2D_ABI_QUERY_VALUE_FRACTION] > 0.0);
-            // D1 f32 bound (TS: 0.5e-9)
-            assert_f32_single(
+            assert_within_ts_bound(
                 out.values[base + PHYSICS2D_ABI_QUERY_VALUE_NORMAL_X],
                 -1.0,
                 0.5e-9,
             );
-            // D1 f32 bound (TS: 0.5e-9)
-            assert_f32_single(out.values[base + PHYSICS2D_ABI_QUERY_VALUE_Y], 0.0, 0.5e-9);
+            assert_within_ts_bound(out.values[base + PHYSICS2D_ABI_QUERY_VALUE_Y], 0.0, 0.5e-9);
         }
     }
 }
@@ -167,8 +164,7 @@ mod query_physics2d_abi_ray_closest {
         ));
         assert_eq!(out.count, 1);
         assert_eq!(out.body_ids[0], 1);
-        // D1 f32 bound (TS: 0.5e-9)
-        assert_f32_single(out.values[PHYSICS2D_ABI_QUERY_VALUE_X], -0.5, 0.5e-9);
+        assert_within_ts_bound(out.values[PHYSICS2D_ABI_QUERY_VALUE_X], -0.5, 0.5e-9);
     }
 
     #[test]

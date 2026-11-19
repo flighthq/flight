@@ -201,8 +201,8 @@ pub type Physics2DAbiReadJoints =
 pub type Physics2DAbiQueryPoint = Arc<
     dyn Fn(
             Physics2DAbiWorldHandle,
-            f32,
-            f32,
+            f64,
+            f64,
             Option<&Physics2DQueryFilter>,
             &mut Physics2DAbiQueryBuffer,
         ) -> bool
@@ -212,11 +212,11 @@ pub type Physics2DAbiQueryPoint = Arc<
 pub type Physics2DAbiQueryRay = Arc<
     dyn Fn(
             Physics2DAbiWorldHandle,
-            f32,
-            f32,
-            f32,
-            f32,
-            f32,
+            f64,
+            f64,
+            f64,
+            f64,
+            f64,
             bool,
             Option<&Physics2DQueryFilter>,
             &mut Physics2DAbiQueryBuffer,
@@ -238,9 +238,9 @@ pub type Physics2DAbiQueryShapeCast = Arc<
     dyn Fn(
             Physics2DAbiWorldHandle,
             &CollisionShape2D,
-            f32,
-            f32,
-            f32,
+            f64,
+            f64,
+            f64,
             Option<&Physics2DQueryFilter>,
             &mut Physics2DAbiQueryBuffer,
         ) -> bool

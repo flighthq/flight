@@ -18,7 +18,7 @@ const MATERIAL: Physics2DMaterial = Physics2DMaterial {
 };
 const DT: f64 = 1.0 / 60.0;
 
-fn aabb(min_x: f32, min_y: f32, max_x: f32, max_y: f32) -> CollisionShape2D {
+fn aabb(min_x: f64, min_y: f64, max_x: f64, max_y: f64) -> CollisionShape2D {
     return CollisionShape2D::Aabb(CollisionAabb2D {
         min_x,
         min_y,

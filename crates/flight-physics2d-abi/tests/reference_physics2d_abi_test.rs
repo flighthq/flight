@@ -26,7 +26,7 @@ const MATERIAL: Physics2DMaterial = Physics2DMaterial {
 };
 const DT: f64 = 1.0 / 60.0;
 
-fn box_shape(half_w: f32, half_h: f32) -> CollisionShape2D {
+fn box_shape(half_w: f64, half_h: f64) -> CollisionShape2D {
     return CollisionShape2D::Aabb(CollisionAabb2D {
         min_x: -half_w,
         min_y: -half_h,
@@ -89,7 +89,7 @@ fn publish(commands: &mut Physics2DAbiCommandBuffer, bodies: &[Ref<RigidBody2D>]
 fn revolute(
     body_a: i32,
     body_b: i32,
-    break_force: Option<f32>,
+    break_force: Option<f64>,
 ) -> Ref<flight_physics2d::Physics2DRevoluteJoint> {
     return physics2d_revolute_joint(&Physics2DRevoluteJointOptions {
         base: Physics2DJointOptions {
@@ -204,33 +204,33 @@ mod create_reference_physics2d_abi {
             let base = i * PHYSICS2D_ABI_BODY_VALUE_STRIDE;
             assert_eq!(
                 out.values[base + PHYSICS2D_ABI_BODY_VALUE_X],
-                f64::from(body.x),
+                body.x,
                 "body {} x",
                 i
             );
             assert_eq!(
                 out.values[base + PHYSICS2D_ABI_BODY_VALUE_Y],
-                f64::from(body.y),
+                body.y,
                 "body {} y",
                 i
             );
             assert_eq!(
                 out.values[base + PHYSICS2D_ABI_BODY_VALUE_ANGLE],
-                f64::from(body.angle),
+                body.angle,
                 "body {} angle",
                 i
             );
             assert_eq!(
                 out.values[base + PHYSICS2D_ABI_BODY_VALUE_VELOCITY_X],
-                f64::from(body.velocity_x)
+                body.velocity_x
             );
             assert_eq!(
                 out.values[base + PHYSICS2D_ABI_BODY_VALUE_VELOCITY_Y],
-                f64::from(body.velocity_y)
+                body.velocity_y
             );
             assert_eq!(
                 out.values[base + PHYSICS2D_ABI_BODY_VALUE_ANGULAR_VELOCITY],
-                f64::from(body.angular_velocity)
+                body.angular_velocity
             );
         }
         // The stack must actually have moved, or bit-equality says nothing.
@@ -261,10 +261,7 @@ mod create_reference_physics2d_abi {
 
         let mut out = create_physics2d_abi_body_buffer(1);
         assert!(read_physics2d_abi_bodies(&mut out, &abi, handle, None));
-        assert_eq!(
-            out.values[PHYSICS2D_ABI_BODY_VALUE_MASS],
-            f64::from(derived_mass)
-        );
+        assert_eq!(out.values[PHYSICS2D_ABI_BODY_VALUE_MASS], derived_mass);
         assert_ne!(out.values[PHYSICS2D_ABI_BODY_VALUE_MASS], 12345.0);
     }
 
@@ -371,6 +368,22 @@ mod create_reference_physics2d_abi {
     }
 
     #[test]
+    fn round_trips_a_body_velocity_through_the_wire_double_exactly() {
+        // 0.1 is not an f32 value: the wire double must reach physics and come back unchanged.
+        let body = rigid_body2d(Physics2DBodyType::Dynamic, 0.0, 0.0, None);
+        body.write().unwrap().velocity_x = 0.1;
+        let abi = create_physics2d_abi();
+        let handle = (abi.create_world)();
+        let mut commands = create_physics2d_abi_command_buffer(Some(4096));
+        publish(&mut commands, &[body.clone()]);
+        assert!(execute(&abi, handle, &commands));
+        let mut out = create_physics2d_abi_body_buffer(1);
+        assert!(read_physics2d_abi_bodies(&mut out, &abi, handle, None));
+        assert_ne!(f64::from(0.1_f32), 0.1);
+        assert_eq!(out.values[PHYSICS2D_ABI_BODY_VALUE_VELOCITY_X], 0.1);
+    }
+
+    #[test]
     fn applies_an_impulse_through_the_wire_exactly_as_the_standard_helper_does() {
         let direct = rigid_body2d(Physics2DBodyType::Dynamic, 0.0, 0.0, None);
         let mut world = physics2d_world(None, None, None);
@@ -403,7 +416,7 @@ mod create_reference_physics2d_abi {
             let mut body = direct.write().unwrap();
             body.velocity_x += 3.0 / body.mass;
             body.velocity_y += -2.0 / body.mass;
-            (f64::from(body.velocity_x), f64::from(body.velocity_y))
+            (body.velocity_x, body.velocity_y)
         };
         let mut out = create_physics2d_abi_body_buffer(1);
         assert!(read_physics2d_abi_bodies(&mut out, &abi, handle, None));
@@ -411,8 +424,7 @@ mod create_reference_physics2d_abi {
             (out.values[PHYSICS2D_ABI_BODY_VALUE_VELOCITY_X], expected_x),
             (out.values[PHYSICS2D_ABI_BODY_VALUE_VELOCITY_Y], expected_y),
         ] {
-            // D1 f32 bound (TS: 0.5e-12)
-            let bound = 0.5e-12_f64.max(4.0 * f64::from(f32::EPSILON) * expected.abs().max(1.0));
+            let bound = 0.5e-12;
             assert!(
                 (actual - expected).abs() <= bound,
                 "expected {}, got {}",

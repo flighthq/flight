@@ -64,8 +64,8 @@ pub fn physics2d_mouse_joint(options: &Physics2DMouseJointOptions) -> Ref<Physic
         let mut out = out.write().unwrap();
         out.body_a = options.body;
         out.body_b = options.body;
-        out.break_force = options.break_force.unwrap_or(f32::INFINITY);
-        out.break_torque = options.break_torque.unwrap_or(f32::INFINITY);
+        out.break_force = options.break_force.unwrap_or(f64::INFINITY);
+        out.break_torque = options.break_torque.unwrap_or(f64::INFINITY);
         out.damping_ratio = options.damping_ratio.unwrap_or(0.7);
         out.frequency_hz = options.frequency_hz.unwrap_or(5.0);
         out.local_anchor_bx = options.local_anchor_x.unwrap_or(0.0);
@@ -174,8 +174,8 @@ pub fn physics2d_wheel_joint(options: &Physics2DWheelJointOptions) -> Ref<Physic
 }
 
 pub fn physics2d_world(
-    gravity_x: Option<f32>,
-    gravity_y: Option<f32>,
+    gravity_x: Option<f64>,
+    gravity_y: Option<f64>,
     index: Option<SpatialIndexBackend2D>,
 ) -> Physics2DWorld {
     let mut out = create_physics2d_world();
@@ -189,9 +189,9 @@ pub fn physics2d_world(
 
 pub fn rigid_body2d(
     body_type: Physics2DBodyType,
-    x: f32,
-    y: f32,
-    angle: Option<f32>,
+    x: f64,
+    y: f64,
+    angle: Option<f64>,
 ) -> Ref<RigidBody2D> {
     let out = create_rigid_body2d();
     {
@@ -207,8 +207,8 @@ pub fn rigid_body2d(
 fn apply_joint_options(out: &mut Physics2DJointFields, options: &Physics2DJointOptions) {
     out.body_a = options.body_a;
     out.body_b = options.body_b;
-    out.break_force = options.break_force.unwrap_or(f32::INFINITY);
-    out.break_torque = options.break_torque.unwrap_or(f32::INFINITY);
+    out.break_force = options.break_force.unwrap_or(f64::INFINITY);
+    out.break_torque = options.break_torque.unwrap_or(f64::INFINITY);
     out.collide_connected = options.collide_connected.unwrap_or(false);
     out.local_anchor_ax = options.local_anchor_ax.unwrap_or(0.0);
     out.local_anchor_ay = options.local_anchor_ay.unwrap_or(0.0);

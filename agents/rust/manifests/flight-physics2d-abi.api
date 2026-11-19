@@ -449,11 +449,11 @@ src/physics2d_abi_layout.rs: pub const PHYSICS2D_ABI_SOLVER_CONFIG_VALUE_SLEEP_A
 src/physics2d_abi_layout.rs: pub const PHYSICS2D_ABI_SOLVER_CONFIG_VALUE_SLEEP_LINEAR_THRESHOLD: usize
 src/physics2d_abi_layout.rs: pub const PHYSICS2D_ABI_SOLVER_CONFIG_VALUE_TIME_TO_SLEEP: usize
 src/physics2d_abi_layout.rs: pub const PHYSICS2D_ABI_VERSION: u32
-src/physics2d_abi_query.rs: pub fn query_physics2d_abi_point(out: &mut Physics2DAbiQueryBuffer, abi: &Physics2DAbi, world: Physics2DAbiWorldHandle, x: f32, y: f32, filter: Option<&Physics2DQueryFilter>,) -> bool
-src/physics2d_abi_query.rs: pub fn query_physics2d_abi_ray(out: &mut Physics2DAbiQueryBuffer, abi: &Physics2DAbi, world: Physics2DAbiWorldHandle, origin_x: f32, origin_y: f32, direction_x: f32, direction_y: f32, max_fraction: Option<f32>, filter: Option<&Physics2DQueryFilter>,) -> bool
-src/physics2d_abi_query.rs: pub fn query_physics2d_abi_ray_closest(out: &mut Physics2DAbiQueryBuffer, abi: &Physics2DAbi, world: Physics2DAbiWorldHandle, origin_x: f32, origin_y: f32, direction_x: f32, direction_y: f32, max_fraction: Option<f32>, filter: Option<&Physics2DQueryFilter>,) -> bool
+src/physics2d_abi_query.rs: pub fn query_physics2d_abi_point(out: &mut Physics2DAbiQueryBuffer, abi: &Physics2DAbi, world: Physics2DAbiWorldHandle, x: f64, y: f64, filter: Option<&Physics2DQueryFilter>,) -> bool
+src/physics2d_abi_query.rs: pub fn query_physics2d_abi_ray(out: &mut Physics2DAbiQueryBuffer, abi: &Physics2DAbi, world: Physics2DAbiWorldHandle, origin_x: f64, origin_y: f64, direction_x: f64, direction_y: f64, max_fraction: Option<f64>, filter: Option<&Physics2DQueryFilter>,) -> bool
+src/physics2d_abi_query.rs: pub fn query_physics2d_abi_ray_closest(out: &mut Physics2DAbiQueryBuffer, abi: &Physics2DAbi, world: Physics2DAbiWorldHandle, origin_x: f64, origin_y: f64, direction_x: f64, direction_y: f64, max_fraction: Option<f64>, filter: Option<&Physics2DQueryFilter>,) -> bool
 src/physics2d_abi_query.rs: pub fn query_physics2d_abi_region(out: &mut Physics2DAbiQueryBuffer, abi: &Physics2DAbi, world: Physics2DAbiWorldHandle, region: &SpatialAabb2D, filter: Option<&Physics2DQueryFilter>,) -> bool
-src/physics2d_abi_query.rs: pub fn query_physics2d_abi_shape_cast(out: &mut Physics2DAbiQueryBuffer, abi: &Physics2DAbi, world: Physics2DAbiWorldHandle, shape: &CollisionShape2D, dx: f32, dy: f32, max_fraction: Option<f32>, filter: Option<&Physics2DQueryFilter>,) -> bool
+src/physics2d_abi_query.rs: pub fn query_physics2d_abi_shape_cast(out: &mut Physics2DAbiQueryBuffer, abi: &Physics2DAbi, world: Physics2DAbiWorldHandle, shape: &CollisionShape2D, dx: f64, dy: f64, max_fraction: Option<f64>, filter: Option<&Physics2DQueryFilter>,) -> bool
 src/physics2d_abi_strings.rs: pub fn get_physics2d_abi_contact_selection_string(value: Physics2DAbiContactSelection,) -> &'static str
 src/physics2d_abi_strings.rs: pub fn get_physics2d_abi_execution_status_string(value: Physics2DAbiExecutionStatus,) -> &'static str
 src/physics2d_abi_strings.rs: pub fn get_physics2d_abi_step_status_string(value: Physics2DAbiStepStatus) -> &'static str
@@ -496,11 +496,11 @@ src/sugar.rs: impl Physics2DAbiExecutionResult :: fn new() -> Physics2DAbiExecut
 src/sugar.rs: impl Physics2DAbiJointBuffer :: fn new(capacity: usize) -> Physics2DAbiJointBuffer
 src/sugar.rs: impl Physics2DAbiJointBuffer :: fn read_joints(&mut self, abi: &Physics2DAbi, world: Physics2DAbiWorldHandle) -> bool
 src/sugar.rs: impl Physics2DAbiQueryBuffer :: fn new(capacity: usize) -> Physics2DAbiQueryBuffer
-src/sugar.rs: impl Physics2DAbiQueryBuffer :: fn query_point(&mut self, abi: &Physics2DAbi, world: Physics2DAbiWorldHandle, x: f32, y: f32, filter: Option<&Physics2DQueryFilter>,) -> bool
-src/sugar.rs: impl Physics2DAbiQueryBuffer :: fn query_ray(&mut self, abi: &Physics2DAbi, world: Physics2DAbiWorldHandle, origin_x: f32, origin_y: f32, direction_x: f32, direction_y: f32, max_fraction: Option<f32>, filter: Option<&Physics2DQueryFilter>,) -> bool
-src/sugar.rs: impl Physics2DAbiQueryBuffer :: fn query_ray_closest(&mut self, abi: &Physics2DAbi, world: Physics2DAbiWorldHandle, origin_x: f32, origin_y: f32, direction_x: f32, direction_y: f32, max_fraction: Option<f32>, filter: Option<&Physics2DQueryFilter>,) -> bool
+src/sugar.rs: impl Physics2DAbiQueryBuffer :: fn query_point(&mut self, abi: &Physics2DAbi, world: Physics2DAbiWorldHandle, x: f64, y: f64, filter: Option<&Physics2DQueryFilter>,) -> bool
+src/sugar.rs: impl Physics2DAbiQueryBuffer :: fn query_ray(&mut self, abi: &Physics2DAbi, world: Physics2DAbiWorldHandle, origin_x: f64, origin_y: f64, direction_x: f64, direction_y: f64, max_fraction: Option<f64>, filter: Option<&Physics2DQueryFilter>,) -> bool
+src/sugar.rs: impl Physics2DAbiQueryBuffer :: fn query_ray_closest(&mut self, abi: &Physics2DAbi, world: Physics2DAbiWorldHandle, origin_x: f64, origin_y: f64, direction_x: f64, direction_y: f64, max_fraction: Option<f64>, filter: Option<&Physics2DQueryFilter>,) -> bool
 src/sugar.rs: impl Physics2DAbiQueryBuffer :: fn query_region(&mut self, abi: &Physics2DAbi, world: Physics2DAbiWorldHandle, region: &SpatialAabb2D, filter: Option<&Physics2DQueryFilter>,) -> bool
-src/sugar.rs: impl Physics2DAbiQueryBuffer :: fn query_shape_cast(&mut self, abi: &Physics2DAbi, world: Physics2DAbiWorldHandle, shape: &CollisionShape2D, dx: f32, dy: f32, max_fraction: Option<f32>, filter: Option<&Physics2DQueryFilter>,) -> bool
+src/sugar.rs: impl Physics2DAbiQueryBuffer :: fn query_shape_cast(&mut self, abi: &Physics2DAbi, world: Physics2DAbiWorldHandle, shape: &CollisionShape2D, dx: f64, dy: f64, max_fraction: Option<f64>, filter: Option<&Physics2DQueryFilter>,) -> bool
 src/types.rs: #[derive(Clone)] pub struct Physics2DAbiContactHooks { pub buffer: Ref<Physics2DAbiContactBuffer>, pub post_solve: Option<Physics2DAbiContactHook>, pub pre_solve: Option<Physics2DAbiContactHook>, }
 src/types.rs: #[derive(Clone, Copy, Debug, PartialEq, Eq)] pub enum Physics2DAbiContactSelection { All, Began, Ended, }
 src/types.rs: #[derive(Clone, Copy, Debug, PartialEq, Eq)] pub enum Physics2DAbiExecutionStatus { BusyWorld, Complete, InvalidBuffer, InvalidCommand, MissingBody, MissingCollider, MissingJoint, RejectedMutation, StaleWorld, UnsupportedJoint, UnsupportedShape, }
@@ -554,10 +554,10 @@ src/types.rs: pub type Physics2DAbiDestroyWorld = Arc<dyn Fn(Physics2DAbiWorldHa
 src/types.rs: pub type Physics2DAbiExecute = Arc<dyn Fn(Physics2DAbiWorldHandle, &Physics2DAbiCommandBuffer, &mut Physics2DAbiExecutionResult,) -> bool + Send + Sync,>;
 src/types.rs: pub type Physics2DAbiGetWorldStatus = Arc<dyn Fn(Physics2DAbiWorldHandle) -> Physics2DAbiWorldStatus + Send + Sync>;
 src/types.rs: pub type Physics2DAbiObjectId = u32;
-src/types.rs: pub type Physics2DAbiQueryPoint = Arc<dyn Fn(Physics2DAbiWorldHandle, f32, f32, Option<&Physics2DQueryFilter>, &mut Physics2DAbiQueryBuffer,) -> bool + Send + Sync,>;
-src/types.rs: pub type Physics2DAbiQueryRay = Arc<dyn Fn(Physics2DAbiWorldHandle, f32, f32, f32, f32, f32, bool, Option<&Physics2DQueryFilter>, &mut Physics2DAbiQueryBuffer,) -> bool + Send + Sync,>;
+src/types.rs: pub type Physics2DAbiQueryPoint = Arc<dyn Fn(Physics2DAbiWorldHandle, f64, f64, Option<&Physics2DQueryFilter>, &mut Physics2DAbiQueryBuffer,) -> bool + Send + Sync,>;
+src/types.rs: pub type Physics2DAbiQueryRay = Arc<dyn Fn(Physics2DAbiWorldHandle, f64, f64, f64, f64, f64, bool, Option<&Physics2DQueryFilter>, &mut Physics2DAbiQueryBuffer,) -> bool + Send + Sync,>;
 src/types.rs: pub type Physics2DAbiQueryRegion = Arc<dyn Fn(Physics2DAbiWorldHandle, &SpatialAabb2D, Option<&Physics2DQueryFilter>, &mut Physics2DAbiQueryBuffer,) -> bool + Send + Sync,>;
-src/types.rs: pub type Physics2DAbiQueryShapeCast = Arc<dyn Fn(Physics2DAbiWorldHandle, &CollisionShape2D, f32, f32, f32, Option<&Physics2DQueryFilter>, &mut Physics2DAbiQueryBuffer,) -> bool + Send + Sync,>;
+src/types.rs: pub type Physics2DAbiQueryShapeCast = Arc<dyn Fn(Physics2DAbiWorldHandle, &CollisionShape2D, f64, f64, f64, Option<&Physics2DQueryFilter>, &mut Physics2DAbiQueryBuffer,) -> bool + Send + Sync,>;
 src/types.rs: pub type Physics2DAbiReadBodies = Arc<dyn Fn(Physics2DAbiWorldHandle, Option<&Uint32Array>, &mut Physics2DAbiBodyBuffer) -> bool + Send + Sync,>;
 src/types.rs: pub type Physics2DAbiReadContacts = Arc<dyn Fn(Physics2DAbiWorldHandle, Physics2DAbiContactSelection, &mut Physics2DAbiContactBuffer,) -> bool + Send + Sync,>;
 src/types.rs: pub type Physics2DAbiReadJoints = Arc<dyn Fn(Physics2DAbiWorldHandle, &mut Physics2DAbiJointBuffer) -> bool + Send + Sync>;

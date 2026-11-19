@@ -57,8 +57,8 @@ mod sugar_tests {
 
     fn authored_rigid_body(
         body_type: Physics2DBodyType,
-        x: f32,
-        y: f32,
+        x: f64,
+        y: f64,
     ) -> flight_entity::Ref<RigidBody2D> {
         let out = create_rigid_body2d();
         {
@@ -547,8 +547,8 @@ impl Physics2DAbiQueryBuffer {
         &mut self,
         abi: &Physics2DAbi,
         world: Physics2DAbiWorldHandle,
-        x: f32,
-        y: f32,
+        x: f64,
+        y: f64,
         filter: Option<&Physics2DQueryFilter>,
     ) -> bool {
         return query_physics2d_abi_point(self, abi, world, x, y, filter);
@@ -558,11 +558,11 @@ impl Physics2DAbiQueryBuffer {
         &mut self,
         abi: &Physics2DAbi,
         world: Physics2DAbiWorldHandle,
-        origin_x: f32,
-        origin_y: f32,
-        direction_x: f32,
-        direction_y: f32,
-        max_fraction: Option<f32>,
+        origin_x: f64,
+        origin_y: f64,
+        direction_x: f64,
+        direction_y: f64,
+        max_fraction: Option<f64>,
         filter: Option<&Physics2DQueryFilter>,
     ) -> bool {
         return query_physics2d_abi_ray(
@@ -582,11 +582,11 @@ impl Physics2DAbiQueryBuffer {
         &mut self,
         abi: &Physics2DAbi,
         world: Physics2DAbiWorldHandle,
-        origin_x: f32,
-        origin_y: f32,
-        direction_x: f32,
-        direction_y: f32,
-        max_fraction: Option<f32>,
+        origin_x: f64,
+        origin_y: f64,
+        direction_x: f64,
+        direction_y: f64,
+        max_fraction: Option<f64>,
         filter: Option<&Physics2DQueryFilter>,
     ) -> bool {
         return query_physics2d_abi_ray_closest(
@@ -617,9 +617,9 @@ impl Physics2DAbiQueryBuffer {
         abi: &Physics2DAbi,
         world: Physics2DAbiWorldHandle,
         shape: &CollisionShape2D,
-        dx: f32,
-        dy: f32,
-        max_fraction: Option<f32>,
+        dx: f64,
+        dy: f64,
+        max_fraction: Option<f64>,
         filter: Option<&Physics2DQueryFilter>,
     ) -> bool {
         return query_physics2d_abi_shape_cast(

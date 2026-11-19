@@ -729,10 +729,10 @@ mod write_physics2d_abi_set_solver_config_command {
             written.u32_at(written.payload + 20),
             config.position_iterations as u32
         );
-        // The wire double is the f32 config value widened exactly.
+        // The wire double is the config value exactly.
         assert_eq!(
             written.f64_at(written.payload + 32),
-            f64::from(config.sleep_linear_threshold)
+            config.sleep_linear_threshold
         );
     }
 

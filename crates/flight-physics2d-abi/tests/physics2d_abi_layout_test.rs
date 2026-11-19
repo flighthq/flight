@@ -351,29 +351,24 @@ mod physics2d_abi_max_contact_points {
                 radius: s.radius,
             }),
             CollisionShape2D::Aabb(s) => CollisionShape2D::Aabb(CollisionAabb2D {
-                min_x: s.min_x + dx as f32,
-                min_y: s.min_y + dy as f32,
-                max_x: s.max_x + dx as f32,
-                max_y: s.max_y + dy as f32,
+                min_x: s.min_x + dx,
+                min_y: s.min_y + dy,
+                max_x: s.max_x + dx,
+                max_y: s.max_y + dy,
             }),
             CollisionShape2D::Obb(s) => CollisionShape2D::Obb(CollisionObb2D {
-                x: s.x + dx as f32,
-                y: s.y + dy as f32,
-                rotation: rotation as f32,
+                x: s.x + dx,
+                y: s.y + dy,
+                rotation: rotation,
                 ..*s
             }),
             CollisionShape2D::Capsule(s) => {
-                let (x0, y0, x1, y1) = (
-                    f64::from(s.x0),
-                    f64::from(s.y0),
-                    f64::from(s.x1),
-                    f64::from(s.y1),
-                );
+                let (x0, y0, x1, y1) = (s.x0, s.y0, s.x1, s.y1);
                 CollisionShape2D::Capsule(CollisionCapsule2D {
-                    x0: (x0 * cos - y0 * sin + dx) as f32,
-                    y0: (x0 * sin + y0 * cos + dy) as f32,
-                    x1: (x1 * cos - y1 * sin + dx) as f32,
-                    y1: (x1 * sin + y1 * cos + dy) as f32,
+                    x0: (x0 * cos - y0 * sin + dx),
+                    y0: (x0 * sin + y0 * cos + dy),
+                    x1: (x1 * cos - y1 * sin + dx),
+                    y1: (x1 * sin + y1 * cos + dy),
                     radius: s.radius,
                 })
             }

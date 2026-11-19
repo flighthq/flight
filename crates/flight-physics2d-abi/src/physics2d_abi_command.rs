@@ -366,9 +366,9 @@ fn write_i32(bytes: &mut [u8], at: usize, value: i32) {
     bytes[at..at + 4].copy_from_slice(&value.to_le_bytes());
 }
 
-fn write_kind_values(out: &mut [f64; PHYSICS2D_ABI_JOINT_KIND_VALUE_COUNT], values: &[f32]) {
+fn write_kind_values(out: &mut [f64; PHYSICS2D_ABI_JOINT_KIND_VALUE_COUNT], values: &[f64]) {
     for (slot, value) in out.iter_mut().zip(values) {
-        *slot = f64::from(*value);
+        *slot = *value;
     }
 }
 
@@ -544,22 +544,22 @@ pub fn write_physics2d_abi_set_body_command(
         &mut out.data,
         record.payload + 8,
         &[
-            f64::from(body.x),
-            f64::from(body.y),
-            f64::from(body.angle),
-            f64::from(body.velocity_x),
-            f64::from(body.velocity_y),
-            f64::from(body.angular_velocity),
-            f64::from(body.force_x),
-            f64::from(body.force_y),
-            f64::from(body.torque),
-            f64::from(body.mass),
-            f64::from(body.inertia),
-            f64::from(body.center_x),
-            f64::from(body.center_y),
-            f64::from(body.linear_damping),
-            f64::from(body.angular_damping),
-            f64::from(body.gravity_scale),
+            body.x,
+            body.y,
+            body.angle,
+            body.velocity_x,
+            body.velocity_y,
+            body.angular_velocity,
+            body.force_x,
+            body.force_y,
+            body.torque,
+            body.mass,
+            body.inertia,
+            body.center_x,
+            body.center_y,
+            body.linear_damping,
+            body.angular_damping,
+            body.gravity_scale,
             body.sleep_timer,
         ],
     );
@@ -600,21 +600,9 @@ pub fn write_physics2d_abi_set_collider_command(
     write_u32(&mut out.data, payload + 4, collider.filter.category_bits);
     write_u32(&mut out.data, payload + 8, collider.filter.mask_bits);
     write_i32(&mut out.data, payload + 12, collider.filter.group_index);
-    write_f64(
-        &mut out.data,
-        payload + 16,
-        f64::from(collider.material.density),
-    );
-    write_f64(
-        &mut out.data,
-        payload + 24,
-        f64::from(collider.material.friction),
-    );
-    write_f64(
-        &mut out.data,
-        payload + 32,
-        f64::from(collider.material.restitution),
-    );
+    write_f64(&mut out.data, payload + 16, collider.material.density);
+    write_f64(&mut out.data, payload + 24, collider.material.friction);
+    write_f64(&mut out.data, payload + 32, collider.material.restitution);
     write_shape(
         &mut out.data,
         payload + PHYSICS2D_ABI_SET_COLLIDER_PAYLOAD_OFFSET_SHAPE,
@@ -708,12 +696,12 @@ pub fn write_physics2d_abi_set_joint_command(
         &mut out.data,
         payload + PHYSICS2D_ABI_SET_JOINT_PAYLOAD_OFFSET_COMMON_VALUES,
         &[
-            f64::from(fields.local_anchor_ax),
-            f64::from(fields.local_anchor_ay),
-            f64::from(fields.local_anchor_bx),
-            f64::from(fields.local_anchor_by),
-            f64::from(fields.break_force),
-            f64::from(fields.break_torque),
+            fields.local_anchor_ax,
+            fields.local_anchor_ay,
+            fields.local_anchor_bx,
+            fields.local_anchor_by,
+            fields.break_force,
+            fields.break_torque,
         ],
     );
     write_f64_values(
@@ -778,12 +766,12 @@ pub fn write_physics2d_abi_set_solver_config_command(
         &mut out.data,
         payload + 32,
         &[
-            f64::from(config.sleep_linear_threshold),
-            f64::from(config.sleep_angular_threshold),
-            f64::from(config.time_to_sleep),
-            f64::from(config.penetration_slop),
-            f64::from(config.position_correction),
-            f64::from(config.restitution_threshold),
+            config.sleep_linear_threshold,
+            config.sleep_angular_threshold,
+            config.time_to_sleep,
+            config.penetration_slop,
+            config.position_correction,
+            config.restitution_threshold,
         ],
     );
     finish_command(out, &record);
@@ -808,51 +796,21 @@ fn write_shape(bytes: &mut [u8], at: usize, shape: &CollisionShape2D) {
     let scalars_at = at + PHYSICS2D_ABI_SHAPE_HEADER_BYTE_LENGTH;
     match shape {
         CollisionShape2D::Circle(s) => write_f64_values(bytes, scalars_at, &[s.x, s.y, s.radius]),
-        CollisionShape2D::Aabb(s) => write_f64_values(
-            bytes,
-            scalars_at,
-            &[
-                f64::from(s.min_x),
-                f64::from(s.min_y),
-                f64::from(s.max_x),
-                f64::from(s.max_y),
-            ],
-        ),
+        CollisionShape2D::Aabb(s) => {
+            write_f64_values(bytes, scalars_at, &[s.min_x, s.min_y, s.max_x, s.max_y])
+        }
         CollisionShape2D::Obb(s) => write_f64_values(
             bytes,
             scalars_at,
-            &[
-                f64::from(s.x),
-                f64::from(s.y),
-                f64::from(s.half_w),
-                f64::from(s.half_h),
-                f64::from(s.rotation),
-            ],
+            &[s.x, s.y, s.half_w, s.half_h, s.rotation],
         ),
-        CollisionShape2D::Capsule(s) => write_f64_values(
-            bytes,
-            scalars_at,
-            &[
-                f64::from(s.x0),
-                f64::from(s.y0),
-                f64::from(s.x1),
-                f64::from(s.y1),
-                f64::from(s.radius),
-            ],
-        ),
-        CollisionShape2D::Polygon(s) => write_f64_values(bytes, scalars_at, &s.points),
-        CollisionShape2D::Segment(s) => write_f64_values(
-            bytes,
-            scalars_at,
-            &[
-                f64::from(s.x0),
-                f64::from(s.y0),
-                f64::from(s.x1),
-                f64::from(s.y1),
-            ],
-        ),
-        CollisionShape2D::Point(s) => {
-            write_f64_values(bytes, scalars_at, &[f64::from(s.x), f64::from(s.y)])
+        CollisionShape2D::Capsule(s) => {
+            write_f64_values(bytes, scalars_at, &[s.x0, s.y0, s.x1, s.y1, s.radius])
         }
+        CollisionShape2D::Polygon(s) => write_f64_values(bytes, scalars_at, &s.points),
+        CollisionShape2D::Segment(s) => {
+            write_f64_values(bytes, scalars_at, &[s.x0, s.y0, s.x1, s.y1])
+        }
+        CollisionShape2D::Point(s) => write_f64_values(bytes, scalars_at, &[s.x, s.y]),
     }
 }

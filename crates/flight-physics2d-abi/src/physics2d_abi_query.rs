@@ -1,7 +1,7 @@
 //! flight-compiler: target-native
 
 //! The ABI's world queries (TS `physics2DAbiQuery.ts`): thin free functions over the backend seam
-//! that pack hits into a caller-owned query buffer. Query scalars are Physics2D's f32.
+//! that pack hits into a caller-owned query buffer. Query scalars are Physics2D's f64, the same doubles the wire carries.
 
 use flight_collision::CollisionShape2D;
 use flight_physics2d::Physics2DQueryFilter;
@@ -15,8 +15,8 @@ pub fn query_physics2d_abi_point(
     out: &mut Physics2DAbiQueryBuffer,
     abi: &Physics2DAbi,
     world: Physics2DAbiWorldHandle,
-    x: f32,
-    y: f32,
+    x: f64,
+    y: f64,
     filter: Option<&Physics2DQueryFilter>,
 ) -> bool {
     return (abi.query_point)(world, x, y, filter, out);
@@ -29,11 +29,11 @@ pub fn query_physics2d_abi_ray(
     out: &mut Physics2DAbiQueryBuffer,
     abi: &Physics2DAbi,
     world: Physics2DAbiWorldHandle,
-    origin_x: f32,
-    origin_y: f32,
-    direction_x: f32,
-    direction_y: f32,
-    max_fraction: Option<f32>,
+    origin_x: f64,
+    origin_y: f64,
+    direction_x: f64,
+    direction_y: f64,
+    max_fraction: Option<f64>,
     filter: Option<&Physics2DQueryFilter>,
 ) -> bool {
     return (abi.query_ray)(
@@ -42,7 +42,7 @@ pub fn query_physics2d_abi_ray(
         origin_y,
         direction_x,
         direction_y,
-        max_fraction.unwrap_or(f32::INFINITY),
+        max_fraction.unwrap_or(f64::INFINITY),
         false,
         filter,
         out,
@@ -55,11 +55,11 @@ pub fn query_physics2d_abi_ray_closest(
     out: &mut Physics2DAbiQueryBuffer,
     abi: &Physics2DAbi,
     world: Physics2DAbiWorldHandle,
-    origin_x: f32,
-    origin_y: f32,
-    direction_x: f32,
-    direction_y: f32,
-    max_fraction: Option<f32>,
+    origin_x: f64,
+    origin_y: f64,
+    direction_x: f64,
+    direction_y: f64,
+    max_fraction: Option<f64>,
     filter: Option<&Physics2DQueryFilter>,
 ) -> bool {
     return (abi.query_ray)(
@@ -68,7 +68,7 @@ pub fn query_physics2d_abi_ray_closest(
         origin_y,
         direction_x,
         direction_y,
-        max_fraction.unwrap_or(f32::INFINITY),
+        max_fraction.unwrap_or(f64::INFINITY),
         true,
         filter,
         out,
@@ -95,9 +95,9 @@ pub fn query_physics2d_abi_shape_cast(
     abi: &Physics2DAbi,
     world: Physics2DAbiWorldHandle,
     shape: &CollisionShape2D,
-    dx: f32,
-    dy: f32,
-    max_fraction: Option<f32>,
+    dx: f64,
+    dy: f64,
+    max_fraction: Option<f64>,
     filter: Option<&Physics2DQueryFilter>,
 ) -> bool {
     return (abi.query_shape_cast)(

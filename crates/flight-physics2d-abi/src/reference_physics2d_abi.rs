@@ -78,10 +78,10 @@ struct ReferenceCollider {
 // the only surface on which a buffer-based caller learns that a joint it holds an id for is gone.
 #[derive(Clone, Copy)]
 struct ReferenceBrokenJoint {
-    force_x: f32,
-    force_y: f32,
+    force_x: f64,
+    force_y: f64,
     id: u32,
-    torque: f32,
+    torque: f64,
 }
 
 struct ReferenceWorld {
@@ -133,17 +133,17 @@ fn create_joint(
     common: &[f64; 6],
     values: &[f64; PHYSICS2D_ABI_JOINT_KIND_VALUE_COUNT],
 ) -> Option<Physics2DJointRef> {
-    let v = |i: usize| values[i] as f32;
+    let v = |i: usize| values[i];
     let base = Physics2DJointOptions {
         body_a,
         body_b,
-        break_force: Some(common[4] as f32),
-        break_torque: Some(common[5] as f32),
+        break_force: Some(common[4]),
+        break_torque: Some(common[5]),
         collide_connected: Some(flags & PHYSICS2D_ABI_JOINT_FLAG_COLLIDE_CONNECTED != 0),
-        local_anchor_ax: Some(common[0] as f32),
-        local_anchor_ay: Some(common[1] as f32),
-        local_anchor_bx: Some(common[2] as f32),
-        local_anchor_by: Some(common[3] as f32),
+        local_anchor_ax: Some(common[0]),
+        local_anchor_ay: Some(common[1]),
+        local_anchor_bx: Some(common[2]),
+        local_anchor_by: Some(common[3]),
     };
     let enable_motor = flags & PHYSICS2D_ABI_JOINT_FLAG_ENABLE_MOTOR != 0;
     let enable_limit = flags & PHYSICS2D_ABI_JOINT_FLAG_ENABLE_LIMIT != 0;
@@ -231,12 +231,12 @@ fn create_joint(
         return Some(authored_physics2d_mouse_joint(
             &Physics2DMouseJointOptions {
                 body: body_a,
-                break_force: Some(common[4] as f32),
-                break_torque: Some(common[5] as f32),
+                break_force: Some(common[4]),
+                break_torque: Some(common[5]),
                 damping_ratio: Some(v(4)),
                 frequency_hz: Some(v(3)),
-                local_anchor_x: Some(common[2] as f32),
-                local_anchor_y: Some(common[3] as f32),
+                local_anchor_x: Some(common[2]),
+                local_anchor_y: Some(common[3]),
                 max_force: v(2),
                 target_x: v(0),
                 target_y: v(1),
@@ -512,8 +512,8 @@ fn apply_joint_options(out: &mut dyn Physics2DJoint, options: &Physics2DJointOpt
     let out = out.joint_fields_mut();
     out.body_a = options.body_a;
     out.body_b = options.body_b;
-    out.break_force = options.break_force.unwrap_or(f32::INFINITY);
-    out.break_torque = options.break_torque.unwrap_or(f32::INFINITY);
+    out.break_force = options.break_force.unwrap_or(f64::INFINITY);
+    out.break_torque = options.break_torque.unwrap_or(f64::INFINITY);
     out.collide_connected = options.collide_connected.unwrap_or(false);
     out.local_anchor_ax = options.local_anchor_ax.unwrap_or(0.0);
     out.local_anchor_ay = options.local_anchor_ay.unwrap_or(0.0);
@@ -521,7 +521,7 @@ fn apply_joint_options(out: &mut dyn Physics2DJoint, options: &Physics2DJointOpt
     out.local_anchor_by = options.local_anchor_by.unwrap_or(0.0);
 }
 
-fn apply_torque_action(body: &mut RigidBody2D, torque: f32, _unused: f32) -> bool {
+fn apply_torque_action(body: &mut RigidBody2D, torque: f64, _unused: f64) -> bool {
     return apply_physics2d_torque(body, torque);
 }
 
@@ -582,8 +582,8 @@ fn authored_physics2d_mouse_joint(options: &Physics2DMouseJointOptions) -> Physi
         let mut out = out.write().unwrap();
         out.body_a = options.body;
         out.body_b = options.body;
-        out.break_force = options.break_force.unwrap_or(f32::INFINITY);
-        out.break_torque = options.break_torque.unwrap_or(f32::INFINITY);
+        out.break_force = options.break_force.unwrap_or(f64::INFINITY);
+        out.break_torque = options.break_torque.unwrap_or(f64::INFINITY);
         out.damping_ratio = options.damping_ratio.unwrap_or(0.7);
         out.frequency_hz = options.frequency_hz.unwrap_or(5.0);
         out.local_anchor_bx = options.local_anchor_x.unwrap_or(0.0);
@@ -691,9 +691,9 @@ fn authored_physics2d_wheel_joint(options: &Physics2DWheelJointOptions) -> Physi
 
 fn authored_rigid_body2d(
     body_type: Physics2DBodyType,
-    x: f32,
-    y: f32,
-    angle: Option<f32>,
+    x: f64,
+    y: f64,
+    angle: Option<f64>,
 ) -> Ref<RigidBody2D> {
     let out = create_rigid_body2d();
     {
@@ -790,7 +790,7 @@ fn encode_body_flags(body: &RigidBody2D) -> u32 {
 fn execute_body_action(
     state: &mut ReferenceWorld,
     command: &CommandRecord,
-    apply: fn(&mut RigidBody2D, f32, f32) -> bool,
+    apply: fn(&mut RigidBody2D, f64, f64) -> bool,
     scalar_only: bool,
 ) -> Physics2DAbiExecutionStatus {
     if command.byte_length != PHYSICS2D_ABI_COMMAND_BYTE_LENGTH_BODY_ACTION
@@ -810,7 +810,7 @@ fn execute_body_action(
     let Some(body) = state.body_by_id.get(&command.object_id) else {
         return Physics2DAbiExecutionStatus::MissingBody;
     };
-    return if apply(&mut body.write().unwrap(), x as f32, y as f32) {
+    return if apply(&mut body.write().unwrap(), x, y) {
         Physics2DAbiExecutionStatus::Complete
     } else {
         Physics2DAbiExecutionStatus::RejectedMutation
@@ -820,7 +820,7 @@ fn execute_body_action(
 fn execute_body_point_action(
     state: &mut ReferenceWorld,
     command: &CommandRecord,
-    apply: fn(&mut RigidBody2D, f32, f32, f32, f32) -> bool,
+    apply: fn(&mut RigidBody2D, f64, f64, f64, f64) -> bool,
 ) -> Physics2DAbiExecutionStatus {
     if command.byte_length != PHYSICS2D_ABI_COMMAND_BYTE_LENGTH_BODY_ACTION
         || !is_object_id(command.object_id)
@@ -833,10 +833,10 @@ fn execute_body_point_action(
     };
     let applied = apply(
         &mut body.write().unwrap(),
-        read_f64(command.bytes, command.payload) as f32,
-        read_f64(command.bytes, command.payload + 8) as f32,
-        read_f64(command.bytes, command.payload + 16) as f32,
-        read_f64(command.bytes, command.payload + 24) as f32,
+        read_f64(command.bytes, command.payload),
+        read_f64(command.bytes, command.payload + 8),
+        read_f64(command.bytes, command.payload + 16),
+        read_f64(command.bytes, command.payload + 24),
     );
     return if applied {
         Physics2DAbiExecutionStatus::Complete
@@ -1078,12 +1078,7 @@ fn execute_set_body(
     let body = match state.body_by_id.get(&command.object_id) {
         Some(existing) => existing.clone(),
         None => {
-            let body = authored_rigid_body2d(
-                body_type,
-                values[0] as f32,
-                values[1] as f32,
-                Some(values[2] as f32),
-            );
+            let body = authored_rigid_body2d(body_type, values[0], values[1], Some(values[2]));
             add_physics2d_body(&mut state.world, &body);
             let index = body.read().unwrap().index;
             state.body_by_id.insert(command.object_id, body.clone());
@@ -1111,27 +1106,21 @@ fn execute_set_body(
             &body,
             flags & PHYSICS2D_ABI_BODY_FLAG_SLEEP_ENABLED != 0,
         )
-        || !set_physics2d_body_transform(
-            world,
-            &body,
-            values[0] as f32,
-            values[1] as f32,
-            values[2] as f32,
-        )
+        || !set_physics2d_body_transform(world, &body, values[0], values[1], values[2])
     {
         return Physics2DAbiExecutionStatus::RejectedMutation;
     }
 
     let mut body = body.write().unwrap();
-    body.velocity_x = values[3] as f32;
-    body.velocity_y = values[4] as f32;
-    body.angular_velocity = values[5] as f32;
-    body.force_x = values[6] as f32;
-    body.force_y = values[7] as f32;
-    body.torque = values[8] as f32;
-    body.linear_damping = values[13] as f32;
-    body.angular_damping = values[14] as f32;
-    body.gravity_scale = values[15] as f32;
+    body.velocity_x = values[3];
+    body.velocity_y = values[4];
+    body.angular_velocity = values[5];
+    body.force_x = values[6];
+    body.force_y = values[7];
+    body.torque = values[8];
+    body.linear_damping = values[13];
+    body.angular_damping = values[14];
+    body.gravity_scale = values[15];
     body.sleep_timer = values[16];
     if flags & PHYSICS2D_ABI_BODY_FLAG_SLEEPING == 0 {
         wake_physics2d_body(&mut body);
@@ -1181,9 +1170,9 @@ fn execute_set_collider(
     let collider = authored_physics2d_collider(
         &shape,
         &Physics2DMaterial {
-            density: density as f32,
-            friction: friction as f32,
-            restitution: restitution as f32,
+            density: density,
+            friction: friction,
+            restitution: restitution,
         },
         Some(sensor_flag == 1),
         Some(&Physics2DCollisionFilter {
@@ -1230,8 +1219,8 @@ fn execute_set_gravity(
     if !x.is_finite() || !y.is_finite() {
         return Physics2DAbiExecutionStatus::RejectedMutation;
     }
-    state.world.gravity_x = x as f32;
-    state.world.gravity_y = y as f32;
+    state.world.gravity_x = x;
+    state.world.gravity_y = y;
     return Physics2DAbiExecutionStatus::Complete;
 }
 
@@ -1354,13 +1343,13 @@ fn execute_set_solver_config(
         continuous_collision: flags & PHYSICS2D_ABI_SOLVER_CONFIG_FLAG_CONTINUOUS_COLLISION != 0,
         max_ccd_rotation_substeps,
         max_ccd_substeps,
-        penetration_slop: value(3) as f32,
-        position_correction: value(4) as f32,
+        penetration_slop: value(3),
+        position_correction: value(4),
         position_iterations,
-        restitution_threshold: value(5) as f32,
-        sleep_angular_threshold: value(1) as f32,
-        sleep_linear_threshold: value(0) as f32,
-        time_to_sleep: value(2) as f32,
+        restitution_threshold: value(5),
+        sleep_angular_threshold: value(1),
+        sleep_linear_threshold: value(0),
+        time_to_sleep: value(2),
         velocity_iterations,
         warm_starting: flags & PHYSICS2D_ABI_SOLVER_CONFIG_FLAG_WARM_STARTING != 0,
     };
@@ -1520,8 +1509,8 @@ fn invoke_contact_hook(
         throw_range_error("Physics2D ABI contact hook wrote a non-finite friction or restitution");
     }
     contact.enabled = enabled;
-    contact.friction = friction as f32;
-    contact.restitution = restitution as f32;
+    contact.friction = friction;
+    contact.restitution = restitution;
 }
 
 fn is_body_value_block_valid(values: &[f64; PHYSICS2D_ABI_BODY_VALUE_STRIDE]) -> bool {
@@ -1663,7 +1652,7 @@ fn read_joints(state: &mut ReferenceWorld, out: &mut Physics2DAbiJointBuffer) {
         .min(out.flags.len())
         .min(out.values.len() / PHYSICS2D_ABI_JOINT_VALUE_STRIDE);
     let mut written = 0;
-    let dt = state.last_step_dt as f32;
+    let dt = state.last_step_dt;
     for id in &state.joint_ids {
         let Some(joint) = state.joint_by_id.get(id) else {
             continue;
@@ -1679,20 +1668,16 @@ fn read_joints(state: &mut ReferenceWorld, out: &mut Physics2DAbiJointBuffer) {
             out.ids[written] = *id;
             out.flags[written] = 0;
             out.values[at] = if reported {
-                f64::from(state.reaction.force_x)
+                state.reaction.force_x
             } else {
                 0.0
             };
             out.values[at + 1] = if reported {
-                f64::from(state.reaction.force_y)
+                state.reaction.force_y
             } else {
                 0.0
             };
-            out.values[at + 2] = if reported {
-                f64::from(state.reaction.torque)
-            } else {
-                0.0
-            };
+            out.values[at + 2] = if reported { state.reaction.torque } else { 0.0 };
         }
         written += 1;
     }
@@ -1701,9 +1686,9 @@ fn read_joints(state: &mut ReferenceWorld, out: &mut Physics2DAbiJointBuffer) {
             let at = written * PHYSICS2D_ABI_JOINT_VALUE_STRIDE;
             out.ids[written] = broken.id;
             out.flags[written] = PHYSICS2D_ABI_JOINT_FLAG_BROKEN;
-            out.values[at] = f64::from(broken.force_x);
-            out.values[at + 1] = f64::from(broken.force_y);
-            out.values[at + 2] = f64::from(broken.torque);
+            out.values[at] = broken.force_x;
+            out.values[at + 1] = broken.force_y;
+            out.values[at + 2] = broken.torque;
         }
         written += 1;
     }
@@ -1736,7 +1721,7 @@ fn read_shape(command: &CommandRecord, at: usize) -> Option<CollisionShape2D> {
     if !are_finite(&scalars) {
         return None;
     }
-    let s = |i: usize| scalars[i] as f32;
+    let s = |i: usize| scalars[i];
     return match (kind, scalar_count) {
         (PHYSICS2D_ABI_SHAPE_KIND_CIRCLE, 3) => Some(CollisionShape2D::Circle(CollisionCircle2D {
             x: scalars[0],
@@ -1859,22 +1844,22 @@ fn write_body(id: u32, body: &RigidBody2D, out: &mut Physics2DAbiBodyBuffer, at:
     out.flags[at] = encode_body_flags(body);
     let base = at * PHYSICS2D_ABI_BODY_VALUE_STRIDE;
     let values = [
-        f64::from(body.x),
-        f64::from(body.y),
-        f64::from(body.angle),
-        f64::from(body.velocity_x),
-        f64::from(body.velocity_y),
-        f64::from(body.angular_velocity),
-        f64::from(body.force_x),
-        f64::from(body.force_y),
-        f64::from(body.torque),
-        f64::from(body.mass),
-        f64::from(body.inertia),
-        f64::from(body.center_x),
-        f64::from(body.center_y),
-        f64::from(body.linear_damping),
-        f64::from(body.angular_damping),
-        f64::from(body.gravity_scale),
+        body.x,
+        body.y,
+        body.angle,
+        body.velocity_x,
+        body.velocity_y,
+        body.angular_velocity,
+        body.force_x,
+        body.force_y,
+        body.torque,
+        body.mass,
+        body.inertia,
+        body.center_x,
+        body.center_y,
+        body.linear_damping,
+        body.angular_damping,
+        body.gravity_scale,
         body.sleep_timer,
     ];
     out.values[base..base + PHYSICS2D_ABI_BODY_VALUE_STRIDE].copy_from_slice(&values);
@@ -1915,10 +1900,10 @@ fn write_contact(
     out.flags[at] = flags;
 
     let value_base = at * PHYSICS2D_ABI_CONTACT_VALUE_STRIDE;
-    out.values[value_base] = f64::from(contact.normal_x);
-    out.values[value_base + 1] = f64::from(contact.normal_y);
-    out.values[value_base + 2] = f64::from(contact.friction);
-    out.values[value_base + 3] = f64::from(contact.restitution);
+    out.values[value_base] = contact.normal_x;
+    out.values[value_base + 1] = contact.normal_y;
+    out.values[value_base + 2] = contact.friction;
+    out.values[value_base + 3] = contact.restitution;
 
     out.point_starts[at] = point_start as u32;
     let point_count = contact.point_count.min(PHYSICS2D_ABI_MAX_CONTACT_POINTS);
@@ -1928,13 +1913,13 @@ fn write_contact(
         let point_base = (point_start + i) * PHYSICS2D_ABI_CONTACT_POINT_VALUE_STRIDE;
         // A manifold feature id is a 32-bit packed key in the source (Uint32Array slot).
         out.point_feature_ids[point_start + i] = point.feature_id as u32;
-        out.point_values[point_base] = f64::from(point.x);
-        out.point_values[point_base + 1] = f64::from(point.y);
-        out.point_values[point_base + 2] = f64::from(point.depth);
-        out.point_values[point_base + 3] = f64::from(point.r_ax);
-        out.point_values[point_base + 4] = f64::from(point.r_ay);
-        out.point_values[point_base + 5] = f64::from(point.r_bx);
-        out.point_values[point_base + 6] = f64::from(point.r_by);
+        out.point_values[point_base] = point.x;
+        out.point_values[point_base + 1] = point.y;
+        out.point_values[point_base + 2] = point.depth;
+        out.point_values[point_base + 3] = point.r_ax;
+        out.point_values[point_base + 4] = point.r_ay;
+        out.point_values[point_base + 5] = point.r_bx;
+        out.point_values[point_base + 6] = point.r_by;
     }
 }
 
@@ -1968,18 +1953,18 @@ fn write_query_identity(
 fn write_query_values(
     out: &mut Physics2DAbiQueryBuffer,
     at: usize,
-    fraction: f32,
-    x: f32,
-    y: f32,
-    normal_x: f32,
-    normal_y: f32,
+    fraction: f64,
+    x: f64,
+    y: f64,
+    normal_x: f64,
+    normal_y: f64,
 ) {
     let base = at * PHYSICS2D_ABI_QUERY_VALUE_STRIDE;
-    out.values[base] = f64::from(fraction);
-    out.values[base + 1] = f64::from(x);
-    out.values[base + 2] = f64::from(y);
-    out.values[base + 3] = f64::from(normal_x);
-    out.values[base + 4] = f64::from(normal_y);
+    out.values[base] = fraction;
+    out.values[base + 1] = x;
+    out.values[base + 2] = y;
+    out.values[base + 3] = normal_x;
+    out.values[base + 4] = normal_y;
 }
 
 fn write_ray_hits(state: &ReferenceWorld, out: &mut Physics2DAbiQueryBuffer) {
