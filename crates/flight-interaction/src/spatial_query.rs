@@ -29,9 +29,9 @@ pub fn hit_test_area_query(root: &NodeRef, rect: &Rectangle, out: &mut Vec<NodeR
 
 pub fn hit_test_area_query_circle(
     root: &NodeRef,
-    cx: f32,
-    cy: f32,
-    radius: f32,
+    cx: f64,
+    cy: f64,
+    radius: f64,
     out: &mut Vec<NodeRef>,
 ) {
     {

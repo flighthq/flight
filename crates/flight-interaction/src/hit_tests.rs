@@ -32,7 +32,7 @@ pub fn create_hit_test_context() -> HitTestContext {
     };
 }
 
-fn any_hit(ctx: &HitTestContext, node: &NodeRef, x: f32, y: f32, precise: bool) -> bool {
+fn any_hit(ctx: &HitTestContext, node: &NodeRef, x: f64, y: f64, precise: bool) -> bool {
     {
         let n = node.read().unwrap();
         if !n.node_fields().enabled {
@@ -82,8 +82,8 @@ fn any_hit(ctx: &HitTestContext, node: &NodeRef, x: f32, y: f32, precise: bool) 
 fn collect_hits(
     ctx: &HitTestContext,
     node: &NodeRef,
-    x: f32,
-    y: f32,
+    x: f64,
+    y: f64,
     precise: bool,
     out: &mut Vec<NodeRef>,
 ) {
@@ -135,7 +135,7 @@ fn collect_hits(
 }
 
 // flight-lint: allow(f64) D1: clip region API uses f64 path coordinates
-fn contains_node_clip_point(node: &NodeRef, x: f32, y: f32) -> bool {
+fn contains_node_clip_point(node: &NodeRef, x: f64, y: f64) -> bool {
     let clip = {
         let n = node.read().unwrap();
         match n.as_clip_node() {
@@ -156,8 +156,8 @@ fn contains_node_clip_point(node: &NodeRef, x: f32, y: f32) -> bool {
 pub fn describe_graph_hit(
     ctx: &HitTestContext,
     node: &NodeRef,
-    x: f32,
-    y: f32,
+    x: f64,
+    y: f64,
     out: &mut HitTestResult,
 ) {
     out.node = Some(node.clone());
@@ -176,8 +176,8 @@ pub fn describe_graph_hit(
 fn find_first_hit(
     ctx: &HitTestContext,
     node: &NodeRef,
-    x: f32,
-    y: f32,
+    x: f64,
+    y: f64,
     precise: bool,
 ) -> Option<NodeRef> {
     {
@@ -236,8 +236,8 @@ fn find_first_hit(
 pub fn find_graph_hit_target(
     ctx: &HitTestContext,
     source: &NodeRef,
-    x: f32,
-    y: f32,
+    x: f64,
+    y: f64,
 ) -> Option<NodeRef> {
     return find_first_hit(ctx, source, x, y, false);
 }
@@ -246,8 +246,8 @@ pub fn find_graph_hit_target(
 pub fn find_graph_hit_target_precise(
     ctx: &HitTestContext,
     source: &NodeRef,
-    x: f32,
-    y: f32,
+    x: f64,
+    y: f64,
 ) -> Option<NodeRef> {
     return find_first_hit(ctx, source, x, y, true);
 }
@@ -256,8 +256,8 @@ pub fn find_graph_hit_target_precise(
 pub fn find_graph_hit_targets(
     ctx: &HitTestContext,
     source: &NodeRef,
-    x: f32,
-    y: f32,
+    x: f64,
+    y: f64,
     out: &mut Vec<NodeRef>,
 ) {
     out.clear();
@@ -268,8 +268,8 @@ pub fn find_graph_hit_targets(
 pub fn find_graph_hit_targets_precise(
     ctx: &HitTestContext,
     source: &NodeRef,
-    x: f32,
-    y: f32,
+    x: f64,
+    y: f64,
     out: &mut Vec<NodeRef>,
 ) {
     out.clear();
@@ -277,7 +277,7 @@ pub fn find_graph_hit_targets_precise(
 }
 
 // flight-lint: allow(f64) D1: path containment API uses f64 coordinates
-fn hit_area_contains_point(ctx: &HitTestContext, node: &NodeRef, x: f32, y: f32) -> bool {
+fn hit_area_contains_point(ctx: &HitTestContext, node: &NodeRef, x: f64, y: f64) -> bool {
     let state = get_node_interaction_state(node);
     let state = match state {
         Some(s) => s,
@@ -323,7 +323,7 @@ fn hit_area_contains_point(ctx: &HitTestContext, node: &NodeRef, x: f32, y: f32)
     }
 }
 
-pub fn hit_test_graph_local_bounds(source: &NodeRef, x: f32, y: f32) -> bool {
+pub fn hit_test_graph_local_bounds(source: &NodeRef, x: f64, y: f64) -> bool {
     let matrix = get_node_world_matrix(source);
     let mut scratch = create_vector2(0.0, 0.0);
     inverse_matrix_transform_point_xy(&mut scratch, &matrix, x, y);
@@ -335,7 +335,7 @@ pub fn hit_test_graph_local_bounds(source: &NodeRef, x: f32, y: f32) -> bool {
 }
 
 // flight-lint: allow(conform-params) D5: caller-owned hit test context
-pub fn hit_test_graph_point(ctx: &HitTestContext, source: &NodeRef, x: f32, y: f32) -> bool {
+pub fn hit_test_graph_point(ctx: &HitTestContext, source: &NodeRef, x: f64, y: f64) -> bool {
     return any_hit(ctx, source, x, y, false);
 }
 
@@ -343,8 +343,8 @@ pub fn hit_test_graph_point(ctx: &HitTestContext, source: &NodeRef, x: f32, y: f
 pub fn hit_test_graph_point_precise(
     ctx: &HitTestContext,
     source: &NodeRef,
-    x: f32,
-    y: f32,
+    x: f64,
+    y: f64,
 ) -> bool {
     return any_hit(ctx, source, x, y, true);
 }
@@ -363,8 +363,8 @@ pub fn hit_test_node2ds(source: &NodeRef, other: &NodeRef) -> bool {
 pub fn hit_test_node_region(
     ctx: &HitTestContext,
     source: &NodeRef,
-    x: f32,
-    y: f32,
+    x: f64,
+    y: f64,
     precise: bool,
 ) -> bool {
     let state = get_node_interaction_state(source);
@@ -387,7 +387,7 @@ pub fn register_hit_test_precise(ctx: &mut HitTestContext, kind: Kind, f: HitTes
     ctx.exact_registry.insert(kind, f);
 }
 
-fn test_node_geometry(ctx: &HitTestContext, node: &NodeRef, x: f32, y: f32, precise: bool) -> bool {
+fn test_node_geometry(ctx: &HitTestContext, node: &NodeRef, x: f64, y: f64, precise: bool) -> bool {
     let kind = node.read().unwrap().node_fields().kind.clone();
     if precise {
         if let Some(exact) = ctx.exact_registry.get(&kind) {

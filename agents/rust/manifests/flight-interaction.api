@@ -16,15 +16,15 @@ src/contract.rs: pub use crate::register_tilemap_hit_test::*;
 src/contract.rs: pub use crate::spatial_query::*;
 src/contract.rs: pub use crate::sprite_hit_tests::*;
 src/contract.rs: pub use crate::types::*;
-src/display_hit_tests.rs: pub fn default_html_view_hit_test_handler(_source: &NodeRef, _x: f32, _y: f32) -> bool
-src/display_hit_tests.rs: pub fn default_movie_clip_hit_test_handler(_source: &NodeRef, _x: f32, _y: f32) -> bool
-src/display_hit_tests.rs: pub fn default_node2d_hit_test_handler(_source: &NodeRef, _x: f32, _y: f32) -> bool
-src/display_hit_tests.rs: pub fn default_rich_text_hit_test_handler(source: &NodeRef, x: f32, y: f32) -> bool
-src/display_hit_tests.rs: pub fn default_shape_hit_test_handler(source: &NodeRef, x: f32, y: f32) -> bool
-src/display_hit_tests.rs: pub fn default_text_hit_test_handler(source: &NodeRef, x: f32, y: f32) -> bool
 src/display_object_overlap.rs: pub fn contains_node2d(outer: &NodeRef, inner: &NodeRef, revisions: &mut NodeRevisionState,) -> bool
 src/display_object_overlap.rs: pub fn get_node2d_overlap_rectangle(out: &mut Rectangle, source: &NodeRef, other: &NodeRef, revisions: &mut NodeRevisionState,)
 src/display_object_overlap.rs: pub fn hit_test_node2ds_shape(source: &NodeRef, other: &NodeRef, revisions: &mut NodeRevisionState,) -> bool
+src/display_hit_tests.rs: pub fn default_html_view_hit_test_handler(_source: &NodeRef, _x: f64, _y: f64) -> bool
+src/display_hit_tests.rs: pub fn default_movie_clip_hit_test_handler(_source: &NodeRef, _x: f64, _y: f64) -> bool
+src/display_hit_tests.rs: pub fn default_node2d_hit_test_handler(_source: &NodeRef, _x: f64, _y: f64) -> bool
+src/display_hit_tests.rs: pub fn default_rich_text_hit_test_handler(source: &NodeRef, x: f64, y: f64) -> bool
+src/display_hit_tests.rs: pub fn default_shape_hit_test_handler(source: &NodeRef, x: f64, y: f64) -> bool
+src/display_hit_tests.rs: pub fn default_text_hit_test_handler(source: &NodeRef, x: f64, y: f64) -> bool
 src/enable_interaction_guards.rs: pub fn disable_interaction_guards()
 src/enable_interaction_guards.rs: pub fn enable_interaction_guards()
 src/enable_interaction_guards.rs: pub fn explain_interaction_hit_eligibility(node: &NodeRef) -> InteractionHitEligibility
@@ -44,40 +44,40 @@ src/focus_manager.rs: pub fn set_focused_node_ref(manager: &Ref<FocusManager>, n
 src/hit_tests.rs: #[derive(Clone)] pub struct HitTestContext { registry: HashMap<Kind, HitTestFunction>, exact_registry: HashMap<Kind, HitTestPreciseFunction>, }
 src/hit_tests.rs: impl HitTestContext :: fn new() -> Self
 src/hit_tests.rs: pub fn create_hit_test_context() -> HitTestContext
-src/hit_tests.rs: pub fn describe_graph_hit(ctx: &HitTestContext, node: &NodeRef, x: f32, y: f32, out: &mut HitTestResult,)
-src/hit_tests.rs: pub fn find_graph_hit_target(ctx: &HitTestContext, source: &NodeRef, x: f32, y: f32,) -> Option<NodeRef>
-src/hit_tests.rs: pub fn find_graph_hit_target_precise(ctx: &HitTestContext, source: &NodeRef, x: f32, y: f32,) -> Option<NodeRef>
-src/hit_tests.rs: pub fn find_graph_hit_targets(ctx: &HitTestContext, source: &NodeRef, x: f32, y: f32, out: &mut Vec<NodeRef>,)
-src/hit_tests.rs: pub fn find_graph_hit_targets_precise(ctx: &HitTestContext, source: &NodeRef, x: f32, y: f32, out: &mut Vec<NodeRef>,)
-src/hit_tests.rs: pub fn hit_test_graph_local_bounds(source: &NodeRef, x: f32, y: f32) -> bool
-src/hit_tests.rs: pub fn hit_test_graph_point(ctx: &HitTestContext, source: &NodeRef, x: f32, y: f32,) -> bool
-src/hit_tests.rs: pub fn hit_test_graph_point_precise(ctx: &HitTestContext, source: &NodeRef, x: f32, y: f32,) -> bool
+src/hit_tests.rs: pub fn hit_test_graph_point(ctx: &HitTestContext, source: &NodeRef, x: f64, y: f64,) -> bool
+src/hit_tests.rs: pub fn describe_graph_hit(ctx: &HitTestContext, node: &NodeRef, x: f64, y: f64, out: &mut HitTestResult,)
+src/hit_tests.rs: pub fn find_graph_hit_target(ctx: &HitTestContext, source: &NodeRef, x: f64, y: f64,) -> Option<NodeRef>
+src/hit_tests.rs: pub fn find_graph_hit_target_precise(ctx: &HitTestContext, source: &NodeRef, x: f64, y: f64,) -> Option<NodeRef>
+src/hit_tests.rs: pub fn find_graph_hit_targets(ctx: &HitTestContext, source: &NodeRef, x: f64, y: f64, out: &mut Vec<NodeRef>,)
+src/hit_tests.rs: pub fn find_graph_hit_targets_precise(ctx: &HitTestContext, source: &NodeRef, x: f64, y: f64, out: &mut Vec<NodeRef>,)
+src/hit_tests.rs: pub fn hit_test_graph_local_bounds(source: &NodeRef, x: f64, y: f64) -> bool
+src/hit_tests.rs: pub fn hit_test_graph_point_precise(ctx: &HitTestContext, source: &NodeRef, x: f64, y: f64,) -> bool
 src/hit_tests.rs: pub fn hit_test_node2ds(source: &NodeRef, other: &NodeRef) -> bool
-src/hit_tests.rs: pub fn hit_test_node_region(ctx: &HitTestContext, source: &NodeRef, x: f32, y: f32, precise: bool,) -> bool
+src/hit_tests.rs: pub fn hit_test_node_region(ctx: &HitTestContext, source: &NodeRef, x: f64, y: f64, precise: bool,) -> bool
 src/hit_tests.rs: pub fn register_hit_test(ctx: &mut HitTestContext, kind: Kind, f: HitTestFunction)
 src/hit_tests.rs: pub fn register_hit_test_precise(ctx: &mut HitTestContext, kind: Kind, f: HitTestPreciseFunction,)
 src/interaction_manager.rs: pub fn capture_interaction_pointer(manager: &mut InteractionManager, pointer_id: i32, target: NodeRef,)
-src/interaction_manager.rs: pub fn connect_input_to_interaction(input: &crate::types::InteractionInputSource, manager: Ref<InteractionManager>, coord_scale: f32,) -> Arc<dyn Fn() + Send + Sync>
+src/interaction_manager.rs: pub fn connect_input_to_interaction(input: &crate::types::InteractionInputSource, manager: Ref<InteractionManager>, coord_scale: f64,) -> Arc<dyn Fn() + Send + Sync>
 src/interaction_manager.rs: pub fn connect_interaction_dispatch_layer(manager: &mut InteractionManager, layer: InteractionDispatchLayer, options: &InteractionDispatchLayerOptions,)
 src/interaction_manager.rs: pub fn connect_interaction_signal(manager: &mut InteractionManager, target: &NodeRef, name: InteractionSignalName, _slot: AnyInteractionSignalSlot,)
 src/interaction_manager.rs: pub fn create_interaction_manager(root: NodeRef, options: Option<&InteractionManagerOptions>,) -> Ref<InteractionManager>
 src/interaction_manager.rs: pub fn create_interaction_signals() -> InteractionSignals
 src/interaction_manager.rs: pub fn disconnect_interaction_signal(manager: &mut InteractionManager, _target: &NodeRef, name: InteractionSignalName, _slot: &AnyInteractionSignalSlot,)
-src/interaction_manager.rs: pub fn dispatch_interaction_context_menu(manager: &Ref<InteractionManager>, x: f32, y: f32, button: i32, options: Option<&InteractionPointerOptions>,)
+src/interaction_manager.rs: pub fn dispatch_interaction_context_menu(manager: &Ref<InteractionManager>, x: f64, y: f64, button: i32, options: Option<&InteractionPointerOptions>,)
 src/interaction_manager.rs: pub fn dispatch_interaction_key_down(manager: &Ref<InteractionManager>, key: &str, key_code: i32, modifiers: Option<&KeyboardEventData>,)
 src/interaction_manager.rs: pub fn dispatch_interaction_key_up(manager: &Ref<InteractionManager>, key: &str, key_code: i32, modifiers: Option<&KeyboardEventData>,)
-src/interaction_manager.rs: pub fn dispatch_interaction_pointer_cancel(manager: &Ref<InteractionManager>, x: f32, y: f32, options: Option<&InteractionPointerOptions>,)
-src/interaction_manager.rs: pub fn dispatch_interaction_pointer_down(manager: &Ref<InteractionManager>, x: f32, y: f32, button: i32, options: Option<&InteractionPointerOptions>,)
-src/interaction_manager.rs: pub fn dispatch_interaction_pointer_move(manager: &Ref<InteractionManager>, x: f32, y: f32, button: i32, options: Option<&InteractionPointerOptions>,)
-src/interaction_manager.rs: pub fn dispatch_interaction_pointer_up(manager: &Ref<InteractionManager>, x: f32, y: f32, button: i32, time: Option<f64>, options: Option<&InteractionPointerOptions>,)
-src/interaction_manager.rs: pub fn dispatch_interaction_wheel(manager: &Ref<InteractionManager>, x: f32, y: f32, delta_x: f32, delta_y: f32, options: Option<&InteractionPointerOptions>,)
+src/interaction_manager.rs: pub fn dispatch_interaction_pointer_cancel(manager: &Ref<InteractionManager>, x: f64, y: f64, options: Option<&InteractionPointerOptions>,)
+src/interaction_manager.rs: pub fn dispatch_interaction_pointer_down(manager: &Ref<InteractionManager>, x: f64, y: f64, button: i32, options: Option<&InteractionPointerOptions>,)
+src/interaction_manager.rs: pub fn dispatch_interaction_pointer_move(manager: &Ref<InteractionManager>, x: f64, y: f64, button: i32, options: Option<&InteractionPointerOptions>,)
+src/interaction_manager.rs: pub fn dispatch_interaction_pointer_up(manager: &Ref<InteractionManager>, x: f64, y: f64, button: i32, time: Option<f64>, options: Option<&InteractionPointerOptions>,)
+src/interaction_manager.rs: pub fn dispatch_interaction_wheel(manager: &Ref<InteractionManager>, x: f64, y: f64, delta_x: f64, delta_y: f64, options: Option<&InteractionPointerOptions>,)
 src/interaction_manager.rs: pub fn enable_interaction_signals(source: &NodeRef) -> Ref<InteractionSignals>
 src/interaction_manager.rs: pub fn get_interaction_signals(source: &NodeRef) -> Option<Ref<InteractionSignals>>
 src/interaction_manager.rs: pub fn initialize_interaction_manager(out: &mut InteractionManager, root: NodeRef, options: &InteractionManagerOptions,)
 src/interaction_manager.rs: pub fn initialize_interaction_signals(out: &mut InteractionSignals)
 src/interaction_manager.rs: pub fn invalidate_interaction_cursor(manager: &Ref<InteractionManager>)
 src/interaction_manager.rs: pub fn release_interaction_pointer(manager: &mut InteractionManager, pointer_id: i32)
-src/interaction_spatial_index.rs: pub fn find_spatial_interaction_target(manager: &Ref<InteractionManager>, ctx: &HitTestContext, x: f32, y: f32, precise: bool, candidates: &[NodeRef],) -> Option<NodeRef>
+src/interaction_spatial_index.rs: pub fn find_spatial_interaction_target(manager: &Ref<InteractionManager>, ctx: &HitTestContext, x: f64, y: f64, precise: bool, candidates: &[NodeRef],) -> Option<NodeRef>
 src/interaction_spatial_index.rs: pub fn refresh_interaction_spatial_index(manager: &InteractionManager, candidates: &mut Vec<NodeRef>,)
 src/lib.rs: pub mod contract
 src/lib.rs: pub use display_hit_tests::default_html_view_hit_test_handler;
@@ -226,10 +226,10 @@ src/register_sprite_hit_test.rs: pub fn register_sprite_hit_test(ctx: &mut HitTe
 src/register_text_hit_test.rs: pub fn register_text_hit_test(ctx: &mut HitTestContext)
 src/register_tilemap_hit_test.rs: pub fn register_tilemap_hit_test(ctx: &mut HitTestContext)
 src/spatial_query.rs: pub fn hit_test_area_query(root: &NodeRef, rect: &Rectangle, out: &mut Vec<NodeRef>, revisions: &mut NodeRevisionState,)
-src/spatial_query.rs: pub fn hit_test_area_query_circle(root: &NodeRef, cx: f32, cy: f32, radius: f32, out: &mut Vec<NodeRef>, revisions: &mut NodeRevisionState,)
-src/sprite_hit_tests.rs: pub fn default_quad_batch_hit_test_handler(source: &NodeRef, x: f32, y: f32) -> bool
-src/sprite_hit_tests.rs: pub fn default_sprite_hit_test_handler(source: &NodeRef, x: f32, y: f32) -> bool
-src/sprite_hit_tests.rs: pub fn default_tilemap_hit_test_handler(source: &NodeRef, x: f32, y: f32) -> bool
+src/spatial_query.rs: pub fn hit_test_area_query_circle(root: &NodeRef, cx: f64, cy: f64, radius: f64, out: &mut Vec<NodeRef>, revisions: &mut NodeRevisionState,)
+src/sprite_hit_tests.rs: pub fn default_quad_batch_hit_test_handler(source: &NodeRef, x: f64, y: f64) -> bool
+src/sprite_hit_tests.rs: pub fn default_sprite_hit_test_handler(source: &NodeRef, x: f64, y: f64) -> bool
+src/sprite_hit_tests.rs: pub fn default_tilemap_hit_test_handler(source: &NodeRef, x: f64, y: f64) -> bool
 src/types.rs: #[derive(Clone, Copy, Debug, PartialEq, Eq)] pub enum FocusDirection { Down, Left, Right, Up, }
 src/types.rs: #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)] pub enum InteractionSignalName { OnClick, OnContextMenu, OnDoubleClick, OnFocusIn, OnFocusOut, OnKeyDown, OnKeyUp, OnPointerCancel, OnPointerDoubleClick, OnPointerDown, OnPointerMove, OnPointerOut, OnPointerOver, OnPointerRollOut, OnPointerRollOver, OnPointerUp, OnReleaseOutside, OnWheel, }
 src/types.rs: impl Default for FocusManagerOptions
@@ -251,23 +251,23 @@ src/types.rs: pub struct FocusManager { pub focused: Option<NodeRef>, pub root: 
 src/types.rs: pub struct FocusManagerOptions { pub wrap: Option<bool>, }
 src/types.rs: pub struct FocusNavigationInput { pub on_key_down: Signal<crate::types::KeyboardEventData>, }
 src/types.rs: pub struct FocusNavigationOptions { pub arrow_keys: Option<bool>, }
-src/types.rs: pub struct HitTestResult { pub local_x: f32, pub local_y: f32, pub node: Option<NodeRef>, pub sub_index: i32, }
+src/types.rs: pub struct HitTestResult { pub local_x: f64, pub local_y: f64, pub node: Option<NodeRef>, pub sub_index: i32, }
 src/types.rs: pub struct InteractionDispatchLayerEntry { pub layer: InteractionDispatchLayer, pub priority: i32, }
 src/types.rs: pub struct InteractionDispatchLayerOptions { pub priority: Option<i32>, }
 src/types.rs: pub struct InteractionHitEligibility { pub eligible: bool, pub has_eligible_in_subtree: bool, }
-src/types.rs: pub struct InteractionManager { pub cursor_backend: Option<Arc<dyn CursorBackend>>, pub cursor_target: Option<NodeRef>, pub dispatch_layers: Option<Vec<InteractionDispatchLayerEntry>>, pub double_click_delay: f64, pub double_click_distance: f32, pub enabled: bool, pub hit_test_ctx: crate::hit_tests::HitTestContext, pub pointer_captures: HashMap<i32, NodeRef>, pub pointer_states: HashMap<i32, InteractionPointerState>, pub precise: bool, pub root: NodeRef, pub spatial_index: Option<Ref<flight_spatial::SpatialIndex2D>>, pub signal_subscriber_counts: HashMap<InteractionSignalName, u32>, pub suppress_touch_hover: bool, pub tracked_signal_slots: HashMap<usize, HashMap<InteractionSignalName, HashMap<SlotId, SlotId>>>, pub tracked_subscribers_only: bool, }
-src/types.rs: pub struct InteractionManagerOptions { pub cursor_backend: Option<Arc<dyn CursorBackend>>, pub double_click_delay: Option<f64>, pub double_click_distance: Option<f32>, pub enabled: Option<bool>, pub precise: Option<bool>, pub spatial_index: Option<Ref<flight_spatial::SpatialIndex2D>>, pub suppress_touch_hover: Option<bool>, pub tracked_subscribers_only: Option<bool>, }
+src/types.rs: pub struct InteractionManager { pub cursor_backend: Option<Arc<dyn CursorBackend>>, pub cursor_target: Option<NodeRef>, pub dispatch_layers: Option<Vec<InteractionDispatchLayerEntry>>, pub double_click_delay: f64, pub double_click_distance: f64, pub enabled: bool, pub hit_test_ctx: crate::hit_tests::HitTestContext, pub pointer_captures: HashMap<i32, NodeRef>, pub pointer_states: HashMap<i32, InteractionPointerState>, pub precise: bool, pub root: NodeRef, pub spatial_index: Option<Ref<flight_spatial::SpatialIndex2D>>, pub signal_subscriber_counts: HashMap<InteractionSignalName, u32>, pub suppress_touch_hover: bool, pub tracked_signal_slots: HashMap<usize, HashMap<InteractionSignalName, HashMap<SlotId, SlotId>>>, pub tracked_subscribers_only: bool, }
+src/types.rs: pub struct InteractionManagerOptions { pub cursor_backend: Option<Arc<dyn CursorBackend>>, pub double_click_delay: Option<f64>, pub double_click_distance: Option<f64>, pub enabled: Option<bool>, pub precise: Option<bool>, pub spatial_index: Option<Ref<flight_spatial::SpatialIndex2D>>, pub suppress_touch_hover: Option<bool>, pub tracked_subscribers_only: Option<bool>, }
 src/types.rs: pub struct InteractionPointerOptions { pub alt_key: Option<bool>, pub buttons: Option<i32>, pub ctrl_key: Option<bool>, pub meta_key: Option<bool>, pub pointer_id: Option<i32>, pub pointer_type: Option<PointerType>, pub shift_key: Option<bool>, pub time_stamp: Option<f64>, }
-src/types.rs: pub struct InteractionPointerState { pub last_click_target: Option<NodeRef>, pub last_click_time: f64, pub last_pointer_click_button: i32, pub last_pointer_click_interaction_state: Option<Arc<NodeInteractionState>>, pub last_pointer_click_target: Option<NodeRef>, pub last_pointer_click_time: f64, pub last_pointer_click_x: f32, pub last_pointer_click_y: f32, pub pointer_down_target: Option<NodeRef>, pub pointer_over_target: Option<NodeRef>, }
+src/types.rs: pub struct InteractionPointerState { pub last_click_target: Option<NodeRef>, pub last_click_time: f64, pub last_pointer_click_button: i32, pub last_pointer_click_interaction_state: Option<Arc<NodeInteractionState>>, pub last_pointer_click_target: Option<NodeRef>, pub last_pointer_click_time: f64, pub last_pointer_click_x: f64, pub last_pointer_click_y: f64, pub pointer_down_target: Option<NodeRef>, pub pointer_over_target: Option<NodeRef>, }
 src/types.rs: pub struct InteractionSignals { pub on_click: Signal<PointerEventData>, pub on_context_menu: Signal<PointerEventData>, pub on_double_click: Signal<PointerEventData>, pub on_focus_in: Signal<FocusEventData>, pub on_focus_out: Signal<FocusEventData>, pub on_key_down: Signal<KeyboardEventData>, pub on_key_up: Signal<KeyboardEventData>, pub on_pointer_cancel: Signal<PointerEventData>, pub on_pointer_double_click: Signal<PointerEventData>, pub on_pointer_down: Signal<PointerEventData>, pub on_pointer_move: Signal<PointerEventData>, pub on_pointer_out: Signal<PointerEventData>, pub on_pointer_over: Signal<PointerEventData>, pub on_pointer_roll_out: Signal<PointerEventData>, pub on_pointer_roll_over: Signal<PointerEventData>, pub on_pointer_up: Signal<PointerEventData>, pub on_release_outside: Signal<PointerEventData>, pub on_wheel: Signal<PointerEventData>, }
 src/types.rs: pub struct KeyboardEventData { pub alt_key: bool, pub ctrl_key: bool, pub key: String, pub key_code: i32, pub meta_key: bool, pub shift_key: bool, }
 src/types.rs: pub struct NodeInteractionState { pub children_hit_test_enabled: bool, pub cursor: Option<Cursor>, pub focusable: bool, pub hit_area: Option<HitArea>, pub hit_test_enabled: bool, pub pointer_double_click_enabled: bool, pub tab_index: i32, }
-src/types.rs: pub struct PointerEventData { pub alt_key: bool, pub button: i32, pub buttons: i32, pub ctrl_key: bool, pub current_target: Option<NodeRef>, pub delta_x: f32, pub delta_y: f32, pub local_x: f32, pub local_y: f32, pub meta_key: bool, pub pointer_id: i32, pub pointer_type: PointerType, pub shift_key: bool, pub target: Option<NodeRef>, pub world_x: f32, pub world_y: f32, pub x: f32, pub y: f32, }
+src/types.rs: pub struct PointerEventData { pub alt_key: bool, pub button: i32, pub buttons: i32, pub ctrl_key: bool, pub current_target: Option<NodeRef>, pub delta_x: f64, pub delta_y: f64, pub local_x: f64, pub local_y: f64, pub meta_key: bool, pub pointer_id: i32, pub pointer_type: PointerType, pub shift_key: bool, pub target: Option<NodeRef>, pub world_x: f64, pub world_y: f64, pub x: f64, pub y: f64, }
 src/types.rs: pub trait CursorBackend: Send + Sync { fn set_cursor(&self, cursor: Option<&str>); }
 src/types.rs: pub type AnyInteractionSignalSlot = Arc<dyn Fn(&PointerEventData) + Send + Sync>;
 src/types.rs: pub type Cursor = String;
-src/types.rs: pub type HitTestFunction = Arc<dyn Fn(&NodeRef, f32, f32) -> bool + Send + Sync>;
-src/types.rs: pub type HitTestPreciseFunction = Arc<dyn Fn(&NodeRef, f32, f32) -> i32 + Send + Sync>;
+src/types.rs: pub type HitTestFunction = Arc<dyn Fn(&NodeRef, f64, f64) -> bool + Send + Sync>;
+src/types.rs: pub type HitTestPreciseFunction = Arc<dyn Fn(&NodeRef, f64, f64) -> i32 + Send + Sync>;
 src/types.rs: pub type InteractionConnectGuard = Arc<dyn Fn(&NodeRef, InteractionSignalName) + Send + Sync>;
 src/types.rs: pub type InteractionDispatchLayer = Arc<dyn Fn(&NodeRef, InteractionSignalName, &PointerEventData) -> bool + Send + Sync>;
 src/types.rs: pub type InteractionInputSource = Ref<flight_input::InputManager>;

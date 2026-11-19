@@ -23,7 +23,8 @@ pub fn register_text_hit_test(ctx: &mut HitTestContext) {
     );
 }
 
-fn resolve_text_char_index(source: &NodeRef, x: f32, y: f32) -> i32 {
+// flight-lint: allow(f32) the local point narrows into textlayout's f32 query lane (PASSed textlayout decision)
+fn resolve_text_char_index(source: &NodeRef, x: f64, y: f64) -> i32 {
     if !hit_test_graph_local_bounds(source, x, y) {
         return -1;
     }
@@ -35,6 +36,10 @@ fn resolve_text_char_index(source: &NodeRef, x: f32, y: f32) -> i32 {
     let mut local_point = create_vector2(0.0, 0.0);
     inverse_matrix_transform_point_xy(&mut local_point, &matrix, x, y);
     let layout_guard = layout.read().unwrap();
-    return compute_rich_text_char_index_at_point(&layout_guard, local_point.x, local_point.y)
-        as i32;
+    // The local point narrows into textlayout's f32 query lane.
+    return compute_rich_text_char_index_at_point(
+        &layout_guard,
+        local_point.x as f32,
+        local_point.y as f32,
+    ) as i32;
 }

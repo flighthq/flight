@@ -48,8 +48,8 @@ fn collect_spatial_candidates(node: &NodeRef, out: &mut Vec<NodeRef>) {
 pub fn find_spatial_interaction_target(
     manager: &Ref<InteractionManager>,
     ctx: &HitTestContext,
-    x: f32,
-    y: f32,
+    x: f64,
+    y: f64,
     precise: bool,
     candidates: &[NodeRef],
 ) -> Option<NodeRef> {

@@ -11,7 +11,7 @@ use flight_shape::{MorphShape, Scale9Shape, Shape, get_shape_fill_regions};
 use crate::hit_tests::{HitTestContext, register_hit_test_precise};
 
 // flight-lint: allow(f64) D1: path containment API uses f64 coordinates
-fn hit_test_shape_fill(source: &NodeRef, x: f32, y: f32) -> i32 {
+fn hit_test_shape_fill(source: &NodeRef, x: f64, y: f64) -> i32 {
     let node = source.read().unwrap();
     let commands = if let Some(shape) = node.as_any().downcast_ref::<Shape>() {
         shape.data.commands.clone()

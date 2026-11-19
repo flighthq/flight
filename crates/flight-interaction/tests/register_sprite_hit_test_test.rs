@@ -26,7 +26,7 @@ fn stub_readback() -> Arc<HostBitmapReadbackCapability> {
     });
 }
 
-fn sprite_node_with_bounds(x: f32, y: f32, w: f32, h: f32) -> NodeRef {
+fn sprite_node_with_bounds(x: f64, y: f64, w: f64, h: f64) -> NodeRef {
     let sprite: NodeRef = create_sprite();
     {
         let mut guard = sprite.write().unwrap();
@@ -94,10 +94,10 @@ fn counting_readback(
 }
 
 fn sprite_with_image_texture(
-    x: f32,
-    y: f32,
-    w: f32,
-    h: f32,
+    x: f64,
+    y: f64,
+    w: f64,
+    h: f64,
     image: &Arc<RwLock<ImageResource>>,
 ) -> NodeRef {
     let sprite = sprite_node_with_bounds(x, y, w, h);

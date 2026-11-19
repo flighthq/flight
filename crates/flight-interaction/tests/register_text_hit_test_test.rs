@@ -12,7 +12,7 @@ use flight_text::contract::{TextLayoutContext, create_text_layout_context};
 use flight_text::create_text_label;
 use flight_textlayout::set_text_layout_measure_provider;
 
-fn text_node_with_bounds(x: f32, y: f32, w: f32, h: f32) -> NodeRef {
+fn text_node_with_bounds(x: f64, y: f64, w: f64, h: f64) -> NodeRef {
     let text: NodeRef = create_text_label(None);
     {
         let mut guard = text.write().unwrap();
@@ -46,7 +46,7 @@ fn measured_context() -> Arc<RwLock<TextLayoutContext>> {
     return context;
 }
 
-fn text_node_with_measure(text: &str, w: f32, h: f32) -> NodeRef {
+fn text_node_with_measure(text: &str, w: f64, h: f64) -> NodeRef {
     let context = measured_context();
     let label = create_text_label(Some(context));
     {

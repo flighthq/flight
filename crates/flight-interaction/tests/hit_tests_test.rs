@@ -34,6 +34,31 @@ mod describe_graph_hit {
         };
         describe_graph_hit(&ctx, &root, 0.0, 0.0, &mut result);
     }
+
+    #[test]
+    fn reports_a_quarter_unit_local_point_on_a_node_at_one_billion() {
+        // f32 spacing at 1e9 is 64: an f32 pointer would land on the node origin.
+        let root = interaction_fixture::interactive_node();
+        as_node2d_ref(&root)
+            .unwrap()
+            .write()
+            .unwrap()
+            .node2d_fields_mut()
+            .x = 1.0e9;
+        let ctx = flight_interaction::hit_tests::create_hit_test_context();
+        let mut result = HitTestResult {
+            local_x: 0.0,
+            local_y: 0.0,
+            node: None,
+            sub_index: -1,
+        };
+        describe_graph_hit(&ctx, &root, 1.0e9 + 0.25, 0.0, &mut result);
+        assert_eq!(result.local_x, 0.25);
+        // 0.1 has no exact f32: an f32 local result would read back 0.10000000149011612.
+        let origin = interaction_fixture::interactive_node();
+        describe_graph_hit(&ctx, &origin, 0.1, 0.0, &mut result);
+        assert_eq!(result.local_x, 0.1);
+    }
 }
 
 mod find_graph_hit_target {

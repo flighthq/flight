@@ -571,6 +571,7 @@ fn same_type_transition_value(
 }
 
 // flight-lint: allow(f64) D1: NodeInteractiveStateTransitionValue uses f64; Node2DFields uses f32; conversion is required
+// flight-lint: allow(f32) node alpha is the f32 appearance lane; spatial properties write f64
 fn write_node_property(
     node: &NodeRef,
     property: NodeInteractiveStateProperty,
@@ -586,10 +587,10 @@ fn write_node_property(
             fields.alpha = v as f32;
         }
         (NodeInteractiveStateProperty::ScaleX, NodeInteractiveStateTransitionValue::Number(v)) => {
-            fields.scale_x = v as f32;
+            fields.scale_x = v;
         }
         (NodeInteractiveStateProperty::ScaleY, NodeInteractiveStateTransitionValue::Number(v)) => {
-            fields.scale_y = v as f32;
+            fields.scale_y = v;
         }
         (
             NodeInteractiveStateProperty::Visible,
@@ -598,10 +599,10 @@ fn write_node_property(
             fields.visible = v;
         }
         (NodeInteractiveStateProperty::X, NodeInteractiveStateTransitionValue::Number(v)) => {
-            fields.x = v as f32;
+            fields.x = v;
         }
         (NodeInteractiveStateProperty::Y, NodeInteractiveStateTransitionValue::Number(v)) => {
-            fields.y = v as f32;
+            fields.y = v;
         }
         _ => {}
     }

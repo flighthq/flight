@@ -12,7 +12,7 @@ use crate::types::{
     FocusDirection, FocusEventData, FocusManager, FocusManagerOptions, KeyboardEventData,
 };
 
-const DIRECTION_EPSILON: f32 = 0.0001;
+const DIRECTION_EPSILON: f64 = 0.0001;
 
 pub fn create_focus_manager(root: NodeRef, options: &FocusManagerOptions) -> FocusManager {
     return FocusManager {
@@ -122,7 +122,7 @@ pub fn connect_focus_navigation(
     });
 }
 
-fn direction_score(direction: FocusDirection, ox: f32, oy: f32, cx: f32, cy: f32) -> f32 {
+fn direction_score(direction: FocusDirection, ox: f64, oy: f64, cx: f64, cy: f64) -> f64 {
     let dx = cx - ox;
     let dy = cy - oy;
     let (along, perpendicular) = match direction {
@@ -132,7 +132,7 @@ fn direction_score(direction: FocusDirection, ox: f32, oy: f32, cx: f32, cy: f32
         FocusDirection::Up => (-dy, dx),
     };
     if along <= DIRECTION_EPSILON {
-        return f32::INFINITY;
+        return f64::INFINITY;
     }
     return along + 2.0 * perpendicular.abs();
 }
@@ -185,7 +185,7 @@ pub fn focus_node_in_direction(
     let origin_x = current_bounds.x + current_bounds.width / 2.0;
     let origin_y = current_bounds.y + current_bounds.height / 2.0;
     let mut best: Option<NodeRef> = None;
-    let mut best_score = f32::INFINITY;
+    let mut best_score = f64::INFINITY;
     for candidate in &order {
         if Arc::ptr_eq(candidate, &current) {
             continue;
@@ -205,12 +205,12 @@ pub fn focus_node_in_direction(
     return best;
 }
 
-fn focus_order_key(node: &NodeRef) -> f32 {
+fn focus_order_key(node: &NodeRef) -> f64 {
     let tab_index = get_node_tab_index(node);
     if tab_index < 0 {
-        return f32::INFINITY;
+        return f64::INFINITY;
     }
-    return tab_index as f32;
+    return tab_index as f64;
 }
 
 pub fn focus_previous_node(manager: &mut FocusManager) -> Option<NodeRef> {

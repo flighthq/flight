@@ -38,19 +38,19 @@ pub struct PointerEventData {
     pub buttons: i32,
     pub ctrl_key: bool,
     pub current_target: Option<NodeRef>,
-    pub delta_x: f32,
-    pub delta_y: f32,
-    pub local_x: f32,
-    pub local_y: f32,
+    pub delta_x: f64,
+    pub delta_y: f64,
+    pub local_x: f64,
+    pub local_y: f64,
     pub meta_key: bool,
     pub pointer_id: i32,
     pub pointer_type: PointerType,
     pub shift_key: bool,
     pub target: Option<NodeRef>,
-    pub world_x: f32,
-    pub world_y: f32,
-    pub x: f32,
-    pub y: f32,
+    pub world_x: f64,
+    pub world_y: f64,
+    pub x: f64,
+    pub y: f64,
 }
 
 // ── KeyboardEventData ──
@@ -96,8 +96,8 @@ pub struct NodeInteractionState {
 // ── HitTestResult ──
 
 pub struct HitTestResult {
-    pub local_x: f32,
-    pub local_y: f32,
+    pub local_x: f64,
+    pub local_y: f64,
     pub node: Option<NodeRef>,
     pub sub_index: i32,
 }
@@ -111,8 +111,8 @@ pub struct InteractionHitEligibility {
 
 // ── HitTestFunction / HitTestPreciseFunction ──
 
-pub type HitTestFunction = Arc<dyn Fn(&NodeRef, f32, f32) -> bool + Send + Sync>;
-pub type HitTestPreciseFunction = Arc<dyn Fn(&NodeRef, f32, f32) -> i32 + Send + Sync>;
+pub type HitTestFunction = Arc<dyn Fn(&NodeRef, f64, f64) -> bool + Send + Sync>;
+pub type HitTestPreciseFunction = Arc<dyn Fn(&NodeRef, f64, f64) -> i32 + Send + Sync>;
 
 // ── InteractionSignals ──
 
@@ -172,8 +172,8 @@ pub struct InteractionPointerState {
     pub last_pointer_click_interaction_state: Option<Arc<NodeInteractionState>>,
     pub last_pointer_click_target: Option<NodeRef>,
     pub last_pointer_click_time: f64,
-    pub last_pointer_click_x: f32,
-    pub last_pointer_click_y: f32,
+    pub last_pointer_click_x: f64,
+    pub last_pointer_click_y: f64,
     pub pointer_down_target: Option<NodeRef>,
     pub pointer_over_target: Option<NodeRef>,
 }
@@ -212,7 +212,7 @@ pub struct InteractionManager {
     pub cursor_target: Option<NodeRef>,
     pub dispatch_layers: Option<Vec<InteractionDispatchLayerEntry>>,
     pub double_click_delay: f64,
-    pub double_click_distance: f32,
+    pub double_click_distance: f64,
     pub enabled: bool,
     // flight-lint: allow(conform-extra) D5: caller-owned hit test context replaces TS module-level registries
     pub hit_test_ctx: crate::hit_tests::HitTestContext,
@@ -233,7 +233,7 @@ pub struct InteractionManager {
 pub struct InteractionManagerOptions {
     pub cursor_backend: Option<Arc<dyn CursorBackend>>,
     pub double_click_delay: Option<f64>,
-    pub double_click_distance: Option<f32>,
+    pub double_click_distance: Option<f64>,
     pub enabled: Option<bool>,
     pub precise: Option<bool>,
     pub spatial_index: Option<Ref<flight_spatial::SpatialIndex2D>>,

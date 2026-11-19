@@ -88,8 +88,8 @@ fn bitmap_for_image(
 fn hit_test_sprite_alpha(
     host_bitmap_readback: &HostBitmapReadbackCapability,
     source: &NodeRef,
-    x: f32,
-    y: f32,
+    x: f64,
+    y: f64,
     alpha_threshold: u8,
     cache: &Mutex<HashMap<u64, CachedBitmapEntry>>,
 ) -> i32 {
@@ -128,8 +128,8 @@ fn hit_test_sprite_alpha(
     let mut local_point = create_vector2(0.0, 0.0);
     inverse_matrix_transform_point_xy(&mut local_point, &matrix, x, y);
 
-    let px = (uv_offset.x * capture.image_width as f32 + local_point.x).floor() as i32;
-    let py = (uv_offset.y * capture.image_height as f32 + local_point.y).floor() as i32;
+    let px = (uv_offset.x * capture.image_width as f64 + local_point.x).floor() as i32;
+    let py = (uv_offset.y * capture.image_height as f64 + local_point.y).floor() as i32;
     let bmp_fields = capture.bitmap.texture_source_fields();
     if px < 0 || py < 0 || px >= bmp_fields.width as i32 || py >= bmp_fields.height as i32 {
         return -1;

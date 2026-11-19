@@ -18,7 +18,7 @@ pub fn register_tilemap_hit_test(ctx: &mut HitTestContext) {
     );
 }
 
-fn resolve_tilemap_cell_index(source: &NodeRef, x: f32, y: f32) -> i32 {
+fn resolve_tilemap_cell_index(source: &NodeRef, x: f64, y: f64) -> i32 {
     let node = source.read().unwrap();
     let Some(_tilemap) = node.as_any().downcast_ref::<Tilemap>() else {
         return -1;

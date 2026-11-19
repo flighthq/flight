@@ -21,7 +21,7 @@ pub fn register_quad_batch_hit_test(ctx: &mut HitTestContext) {
     );
 }
 
-fn resolve_quad_batch_instance_index(source: &NodeRef, x: f32, y: f32) -> i32 {
+fn resolve_quad_batch_instance_index(source: &NodeRef, x: f64, y: f64) -> i32 {
     let node = source.read().unwrap();
     let Some(qb) = node.as_any().downcast_ref::<QuadBatch>() else {
         return -1;
@@ -71,9 +71,9 @@ fn resolve_quad_batch_instance_index(source: &NodeRef, x: f32, y: f32) -> i32 {
 
         let offset = index * stride;
         if transform_type == QuadTransformType::Vector2 {
-            let qx = lx - transforms[offset];
-            let qy = ly - transforms[offset + 1];
-            if qx >= 0.0 && qy >= 0.0 && qx < width && qy < height {
+            let qx = lx - f64::from(transforms[offset]);
+            let qy = ly - f64::from(transforms[offset + 1]);
+            if qx >= 0.0 && qy >= 0.0 && qx < f64::from(width) && qy < f64::from(height) {
                 return index as i32;
             }
             continue;
@@ -83,7 +83,7 @@ fn resolve_quad_batch_instance_index(source: &NodeRef, x: f32, y: f32) -> i32 {
         inverse_matrix_transform_point_xy(&mut quad_point, &inst_matrix, lx, ly);
         let qx = quad_point.x;
         let qy = quad_point.y;
-        if qx >= 0.0 && qy >= 0.0 && qx < width && qy < height {
+        if qx >= 0.0 && qy >= 0.0 && qx < f64::from(width) && qy < f64::from(height) {
             return index as i32;
         }
     }

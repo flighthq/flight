@@ -7,7 +7,7 @@ use flight_node::NodeRef;
 use flight_textureatlas::create_texture_atlas;
 use flight_tilemap::create_tilemap;
 
-fn tilemap_node(columns: i32, rows: i32, tw: f32, th: f32, tiles: Vec<i16>) -> NodeRef {
+fn tilemap_node(columns: i32, rows: i32, tw: f64, th: f64, tiles: Vec<i16>) -> NodeRef {
     let atlas = create_texture_atlas();
     let tm = create_tilemap();
     {

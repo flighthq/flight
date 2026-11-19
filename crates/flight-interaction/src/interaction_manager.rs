@@ -239,9 +239,9 @@ fn chain_contains(chain: &[NodeRef], node: &NodeRef) -> bool {
 pub fn connect_input_to_interaction(
     input: &crate::types::InteractionInputSource,
     manager: Ref<InteractionManager>,
-    coord_scale: f32,
+    coord_scale: f64,
 ) -> Arc<dyn Fn() + Send + Sync> {
-    let sx = move |v: f32| -> f32 {
+    let sx = move |v: f64| -> f64 {
         return v * coord_scale;
     };
 
@@ -277,7 +277,12 @@ pub fn connect_input_to_interaction(
     let on_pointer_cancel: Arc<dyn Fn(&flight_input::InputPointerData) + Send + Sync> =
         Arc::new(move |data| {
             let opts = input_pointer_to_options(data);
-            dispatch_interaction_pointer_cancel(&mgr, sx(data.x), sx(data.y), Some(&opts));
+            dispatch_interaction_pointer_cancel(
+                &mgr,
+                sx(f64::from(data.x)),
+                sx(f64::from(data.y)),
+                Some(&opts),
+            );
         });
 
     let mgr = manager.clone();
@@ -286,8 +291,8 @@ pub fn connect_input_to_interaction(
             let opts = input_pointer_to_options(data);
             dispatch_interaction_pointer_down(
                 &mgr,
-                sx(data.x),
-                sx(data.y),
+                sx(f64::from(data.x)),
+                sx(f64::from(data.y)),
                 data.button,
                 Some(&opts),
             );
@@ -299,8 +304,8 @@ pub fn connect_input_to_interaction(
             let opts = input_pointer_to_options(data);
             dispatch_interaction_pointer_move(
                 &mgr,
-                sx(data.x),
-                sx(data.y),
+                sx(f64::from(data.x)),
+                sx(f64::from(data.y)),
                 data.button,
                 Some(&opts),
             );
@@ -312,8 +317,8 @@ pub fn connect_input_to_interaction(
             let opts = input_pointer_to_options(data);
             dispatch_interaction_pointer_up(
                 &mgr,
-                sx(data.x),
-                sx(data.y),
+                sx(f64::from(data.x)),
+                sx(f64::from(data.y)),
                 data.button,
                 Some(data.time_stamp),
                 Some(&opts),
@@ -326,10 +331,10 @@ pub fn connect_input_to_interaction(
             let opts = input_pointer_to_options(data);
             dispatch_interaction_wheel(
                 &mgr,
-                sx(data.x),
-                sx(data.y),
-                data.delta_x,
-                data.delta_y,
+                sx(f64::from(data.x)),
+                sx(f64::from(data.y)),
+                f64::from(data.delta_x),
+                f64::from(data.delta_y),
                 Some(&opts),
             );
         });
@@ -438,8 +443,8 @@ pub fn disconnect_interaction_signal(
 
 pub fn dispatch_interaction_context_menu(
     manager: &Ref<InteractionManager>,
-    x: f32,
-    y: f32,
+    x: f64,
+    y: f64,
     button: i32,
     options: Option<&InteractionPointerOptions>,
 ) {
@@ -487,8 +492,8 @@ pub fn dispatch_interaction_key_up(
 
 pub fn dispatch_interaction_pointer_cancel(
     manager: &Ref<InteractionManager>,
-    x: f32,
-    y: f32,
+    x: f64,
+    y: f64,
     options: Option<&InteractionPointerOptions>,
 ) {
     let pointer_id = options.and_then(|o| o.pointer_id).unwrap_or(0);
@@ -531,8 +536,8 @@ pub fn dispatch_interaction_pointer_cancel(
 
 pub fn dispatch_interaction_pointer_down(
     manager: &Ref<InteractionManager>,
-    x: f32,
-    y: f32,
+    x: f64,
+    y: f64,
     button: i32,
     options: Option<&InteractionPointerOptions>,
 ) {
@@ -563,8 +568,8 @@ pub fn dispatch_interaction_pointer_down(
 
 pub fn dispatch_interaction_pointer_move(
     manager: &Ref<InteractionManager>,
-    x: f32,
-    y: f32,
+    x: f64,
+    y: f64,
     button: i32,
     options: Option<&InteractionPointerOptions>,
 ) {
@@ -622,8 +627,8 @@ pub fn dispatch_interaction_pointer_move(
 // flight-lint: allow(f64) D1: click timestamps and double-click delay are JS millisecond-precision doubles
 pub fn dispatch_interaction_pointer_up(
     manager: &Ref<InteractionManager>,
-    x: f32,
-    y: f32,
+    x: f64,
+    y: f64,
     button: i32,
     time: Option<f64>,
     options: Option<&InteractionPointerOptions>,
@@ -696,10 +701,10 @@ pub fn dispatch_interaction_pointer_up(
 
 pub fn dispatch_interaction_wheel(
     manager: &Ref<InteractionManager>,
-    x: f32,
-    y: f32,
-    delta_x: f32,
-    delta_y: f32,
+    x: f64,
+    y: f64,
+    delta_x: f64,
+    delta_y: f64,
     options: Option<&InteractionPointerOptions>,
 ) {
     dispatch_pointer_signal_at(
@@ -746,11 +751,11 @@ fn dispatch_keyboard_signal(
 fn dispatch_pointer_signal_at(
     manager: &Ref<InteractionManager>,
     name: InteractionSignalName,
-    x: f32,
-    y: f32,
+    x: f64,
+    y: f64,
     button: i32,
-    delta_x: f32,
-    delta_y: f32,
+    delta_x: f64,
+    delta_y: f64,
     options: Option<&InteractionPointerOptions>,
 ) {
     let pointer_id = options.and_then(|o| o.pointer_id).unwrap_or(0);
@@ -840,7 +845,7 @@ pub fn enable_interaction_signals(source: &NodeRef) -> Ref<InteractionSignals> {
 }
 
 // Runs the hit tests with no manager lock held: registered hit-test functions are caller code.
-fn find_interaction_target(targeting: &InteractionTargeting, x: f32, y: f32) -> Option<NodeRef> {
+fn find_interaction_target(targeting: &InteractionTargeting, x: f64, y: f64) -> Option<NodeRef> {
     if !targeting.enabled {
         return None;
     }
@@ -968,11 +973,11 @@ fn is_pointer_signal_needed(manager: &InteractionManager, names: &[InteractionSi
 
 fn make_pointer_data(
     target: &NodeRef,
-    x: f32,
-    y: f32,
+    x: f64,
+    y: f64,
     button: i32,
-    delta_x: f32,
-    delta_y: f32,
+    delta_x: f64,
+    delta_y: f64,
     options: Option<&InteractionPointerOptions>,
 ) -> PointerEventData {
     return PointerEventData {

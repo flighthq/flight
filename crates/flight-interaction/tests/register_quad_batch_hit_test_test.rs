@@ -10,10 +10,10 @@ use flight_textureatlas::{
     set_texture_atlas_region,
 };
 
-fn quad_batch_with_one_instance(x: f32, y: f32, region_w: f32, region_h: f32) -> NodeRef {
+fn quad_batch_with_one_instance(x: f64, y: f64, region_w: f64, region_h: f64) -> NodeRef {
     let region_options = TextureAtlasRegionOptions {
-        width: Some(region_w),
-        height: Some(region_h),
+        width: Some(region_w as f32),
+        height: Some(region_h as f32),
         id: None,
         name: None,
         original_height: None,
@@ -38,7 +38,7 @@ fn quad_batch_with_one_instance(x: f32, y: f32, region_w: f32, region_h: f32) ->
         guard.data.atlas = Some(atlas);
         guard.data.ids = vec![0];
         guard.data.instance_count = 1;
-        guard.data.transforms = vec![x, y];
+        guard.data.transforms = vec![x as f32, y as f32];
     }
     let qb: NodeRef = batch;
     enable_node_interaction_state(&qb);
