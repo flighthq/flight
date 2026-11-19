@@ -101,6 +101,30 @@ static PRODUCIBLE_TYPES: OnceLock<Mutex<BTreeSet<String>>> = OnceLock::new();
 // Signal owners C only holds as a shared `Ref` handle; set once before the signal inventory report.
 static REF_OWNED_SIGNAL_OWNERS: OnceLock<BTreeSet<String>> = OnceLock::new();
 
+// Node kinds are discovered from the SDK's implementation macros before any ABI lowering. This
+// keeps every concrete node producer on the one FlightNode carrier without a hand-maintained list
+// that can silently miss a newly exported node kind.
+static NODE_TYPES: OnceLock<BTreeMap<String, NodeKind>> = OnceLock::new();
+
+// A borrowed T can use a Ref<T> handle only when T has no owned-value producer. Dual-produced
+// types deliberately retain their historical raw-pointer borrowing ABI in this item and are
+// reported with the exact generated functions that borrow them.
+static BORROW_PRODUCTION: OnceLock<BorrowProduction> = OnceLock::new();
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+enum NodeKind {
+    Node,
+    Node2D,
+    Node3D,
+}
+
+#[derive(Default)]
+struct BorrowProduction {
+    ref_producers: BTreeMap<String, BTreeSet<String>>,
+    owned_producers: BTreeMap<String, BTreeSet<String>>,
+    borrowers: BTreeMap<String, BTreeSet<String>>,
+}
+
 #[derive(Clone, Debug, PartialEq)]
 enum TypeDefinition {
     // A struct or enum and whether its derive list includes `Copy`.
@@ -810,6 +834,232 @@ const DECLARED_CARRIERS: &[DeclaredCarrier] = &[DeclaredCarrier {
     create_name: "flight_create_wgpu_scene_2d_render_proxies",
     free_name: "flight_free_wgpu_scene_2d_render_proxies",
 }];
+
+fn collect_node_types(crates_dir: &Path) -> BTreeMap<String, NodeKind> {
+    fn insert(out: &mut BTreeMap<String, NodeKind>, name: String, kind: NodeKind) {
+        match out.insert(name.clone(), kind) {
+            Some(previous) if previous != kind => {
+                panic!("node type {name} was classified as both {previous:?} and {kind:?}")
+            }
+            _ => {}
+        }
+    }
+
+    fn simple_type_name(ty: &syn::Type) -> Option<String> {
+        let syn::Type::Path(path) = ty else {
+            return None;
+        };
+        return path
+            .path
+            .segments
+            .last()
+            .map(|segment| segment.ident.to_string());
+    }
+
+    fn first_macro_type(mac: &syn::Macro) -> Option<String> {
+        let tokens = mac.tokens.to_string();
+        let name: String = tokens
+            .chars()
+            .skip_while(|character| character.is_whitespace())
+            .take_while(|character| character.is_alphanumeric() || *character == '_')
+            .collect();
+        return (!name.is_empty()).then_some(name);
+    }
+
+    fn visit_items(items: &[syn::Item], out: &mut BTreeMap<String, NodeKind>) {
+        for item in items {
+            match item {
+                syn::Item::Macro(item) => {
+                    let Some(name) = item
+                        .mac
+                        .path
+                        .segments
+                        .last()
+                        .map(|part| part.ident.to_string())
+                    else {
+                        continue;
+                    };
+                    let kind = match name.as_str() {
+                        "impl_node2d" | "impl_shape_node2d" => Some(NodeKind::Node2D),
+                        "impl_node3d" => Some(NodeKind::Node3D),
+                        _ => None,
+                    };
+                    if let Some(kind) = kind
+                        && let Some(ty) = first_macro_type(&item.mac)
+                    {
+                        insert(out, ty, kind);
+                    }
+                }
+                syn::Item::Impl(item) => {
+                    let is_node = item
+                        .trait_
+                        .as_ref()
+                        .and_then(|(_, path, _)| path.segments.last())
+                        .is_some_and(|segment| segment.ident == "Node");
+                    if is_node && let Some(ty) = simple_type_name(&item.self_ty) {
+                        out.entry(ty).or_insert(NodeKind::Node);
+                    }
+                }
+                syn::Item::Mod(item) => {
+                    if let Some((_, items)) = &item.content {
+                        visit_items(items, out);
+                    }
+                }
+                _ => {}
+            }
+        }
+    }
+
+    let mut out = BTreeMap::new();
+    for dir_name in SCAN_CRATES {
+        let src_dir = crates_dir.join(dir_name).join("src");
+        let Ok(entries) = fs::read_dir(src_dir) else {
+            continue;
+        };
+        let mut entries: Vec<_> = entries
+            .filter_map(Result::ok)
+            .filter(|entry| entry.path().extension().is_some_and(|ext| ext == "rs"))
+            .collect();
+        entries.sort_by_key(|entry| entry.file_name());
+        for entry in entries {
+            let content = fs::read_to_string(entry.path()).unwrap();
+            if let Ok(file) = syn::parse_file(&content) {
+                visit_items(&file.items, &mut out);
+            }
+        }
+    }
+    return out;
+}
+
+fn simple_ref_inner(ty: &str) -> Option<String> {
+    let resolved = strip_crate_paths(&strip_lifetimes(&resolve_type_alias(ty.trim())));
+    let value = resolved
+        .strip_prefix("Option<")
+        .and_then(|rest| rest.strip_suffix('>'))
+        .unwrap_or(&resolved)
+        .trim();
+    let inner = value.strip_prefix("Ref<")?.strip_suffix('>')?.trim();
+    (!inner.contains('<') && !inner.contains("dyn ") && !inner.contains("::"))
+        .then(|| inner.to_string())
+}
+
+fn simple_owned_return(ty: &str) -> Option<String> {
+    let resolved = strip_crate_paths(&strip_lifetimes(&resolve_type_alias(ty.trim())));
+    let value = resolved
+        .strip_prefix("Option<")
+        .and_then(|rest| rest.strip_suffix('>'))
+        .unwrap_or(&resolved)
+        .trim();
+    if value.starts_with("Ref<") || value.starts_with("Arc<") {
+        return None;
+    }
+    let value = value
+        .strip_prefix("Box<")
+        .and_then(|rest| rest.strip_suffix('>'))
+        .unwrap_or(value)
+        .trim();
+    if value.is_empty()
+        || value.contains('<')
+        || value.contains("::")
+        || value.starts_with('&')
+        || value.starts_with('[')
+        || value.starts_with('(')
+        || is_scalar(value)
+        || is_known_enum(value)
+        || value == "String"
+    {
+        return None;
+    }
+    return Some(value.to_string());
+}
+
+fn simple_borrowed_type(ty: &str) -> Option<String> {
+    let resolved = strip_crate_paths(&strip_lifetimes(&resolve_type_alias(ty.trim())));
+    let inner = resolved
+        .strip_prefix("&mut ")
+        .or_else(|| resolved.strip_prefix('&'))?
+        .trim();
+    if inner.is_empty()
+        || inner.contains('<')
+        || inner.contains("::")
+        || inner.starts_with('[')
+        || inner.starts_with("dyn ")
+        || is_scalar(inner)
+        || is_known_enum(inner)
+        || inner == "str"
+    {
+        return None;
+    }
+    return Some(inner.to_string());
+}
+
+fn collect_borrow_production(crates_dir: &Path) -> BorrowProduction {
+    let mut out = BorrowProduction::default();
+    for dir_name in SCAN_CRATES {
+        let src_dir = crates_dir.join(dir_name).join("src");
+        if !src_dir.exists() {
+            continue;
+        }
+        for function in collect_pub_fns(&src_dir) {
+            if function.lacks_public_export || explicit_skip_category(&function.name).is_some() {
+                continue;
+            }
+            if let Some(ret) = &function.ret {
+                if let Some(ty) = simple_ref_inner(ret) {
+                    out.ref_producers
+                        .entry(ty)
+                        .or_default()
+                        .insert(function.name.clone());
+                } else if let Some(ty) = simple_owned_return(ret) {
+                    out.owned_producers
+                        .entry(ty)
+                        .or_default()
+                        .insert(function.name.clone());
+                }
+            }
+            for parameter in &function.params {
+                if let Some(ty) = simple_borrowed_type(&parameter.ty) {
+                    out.borrowers
+                        .entry(ty)
+                        .or_default()
+                        .insert(function.name.clone());
+                }
+            }
+        }
+    }
+    return out;
+}
+
+fn is_ref_only_borrow_type(ty: &str) -> bool {
+    let Some(inventory) = BORROW_PRODUCTION.get() else {
+        return false;
+    };
+    return inventory.ref_producers.contains_key(ty) && !inventory.owned_producers.contains_key(ty);
+}
+
+fn generate_dual_produced_report(inventory: &BorrowProduction) -> String {
+    let mut out = String::from(
+        "type\tref_producers\towned_producers\taffected_borrowers\tborrower_functions\n",
+    );
+    for ty in inventory
+        .ref_producers
+        .keys()
+        .filter(|ty| inventory.owned_producers.contains_key(*ty))
+    {
+        let ref_count = inventory.ref_producers[ty].len();
+        let owned_count = inventory.owned_producers[ty].len();
+        let borrowers = inventory.borrowers.get(ty).cloned().unwrap_or_default();
+        writeln!(
+            out,
+            "{ty}\t{ref_count}\t{owned_count}\t{}\t{}",
+            borrowers.len(),
+            borrowers.into_iter().collect::<Vec<_>>().join(",")
+        )
+        .unwrap();
+    }
+    return out;
+}
+
 fn main() {
     // The C consumer test builds and links its executable with the same target and rustc Cargo
     // builds this crate with.
@@ -830,11 +1080,15 @@ fn main() {
     let crates_dir = manifest_dir.parent().unwrap();
     let out_dir = PathBuf::from(env::var("OUT_DIR").unwrap());
 
-    let mut all_output = String::from("use flight_sdk;\n\n");
+    let mut all_output =
+        String::from("use flight_sdk;\nuse flight_sdk::{Node as _, Node2D as _, Node3D as _};\n\n");
     all_output.push_str(generate_checked_slice_support());
+    all_output.push_str(generate_node_handle_support());
     all_output.push_str(generate_shape_bounds_context_support());
     all_output.push_str(generate_owned_byte_reader_support());
     let mut boxed_types: BTreeSet<String> = BTreeSet::new();
+    boxed_types.insert("FlightNode".to_string());
+    boxed_types.insert("FlightNodeArray".to_string());
     let mut vec_ref_handle_specs: BTreeSet<VecRefHandleSpec> = BTreeSet::new();
     let mut seen_names: BTreeSet<String> = BTreeSet::new();
     let mut stats_total_fns = 0usize;
@@ -904,6 +1158,14 @@ fn main() {
     }
     let _ = KNOWN_ENUMS.set(known_enums);
     let _ = TYPE_DEFINITIONS.set(type_definitions);
+    let _ = NODE_TYPES.set(collect_node_types(crates_dir));
+    let borrow_production = collect_borrow_production(crates_dir);
+    fs::write(
+        out_dir.join("ffi_dual_produced_types.tsv"),
+        generate_dual_produced_report(&borrow_production),
+    )
+    .unwrap();
+    let _ = BORROW_PRODUCTION.set(borrow_production);
 
     let mut host_capability_inventory = Vec::new();
     for dir_name in SCAN_CRATES {
@@ -3463,6 +3725,9 @@ fn generate_field_accessors(
     fields: &[StructField],
     seen_names: &mut BTreeSet<String>,
 ) -> String {
+    if matches!(struct_name, "NodeFields" | "Node2DFields" | "Node3DFields") {
+        return generate_node_field_accessors(struct_name, fields, seen_names);
+    }
     let snake = to_snake_case(struct_name);
     let qualified = qualify_type(struct_name);
     let mut output = String::new();
@@ -3491,6 +3756,242 @@ fn generate_field_accessors(
         }
     }
     output
+}
+
+fn generate_node_field_accessors(
+    struct_name: &str,
+    fields: &[StructField],
+    seen_names: &mut BTreeSet<String>,
+) -> String {
+    let snake = to_snake_case(struct_name);
+    let mut output = String::new();
+    let (view, field_read, field_write) = match struct_name {
+        "NodeFields" => (
+            "Some(&node.node)",
+            "guard.node_fields()",
+            "guard.node_fields_mut()",
+        ),
+        "Node2DFields" => (
+            "node.node2d.as_ref()",
+            "guard.node2d_fields()",
+            "guard.node2d_fields_mut()",
+        ),
+        "Node3DFields" => (
+            "node.node3d.as_ref()",
+            "guard.node3d_fields()",
+            "guard.node3d_fields_mut()",
+        ),
+        _ => unreachable!(),
+    };
+
+    for field in fields {
+        let getter_name = format!("flight_get_{snake}_{}", field.name);
+        let setter_name = format!("flight_set_{snake}_{}", field.name);
+        let ffi_ty = &field.ty;
+        if seen_names.insert(getter_name.clone()) {
+            writeln!(
+                output,
+                "#[unsafe(no_mangle)]\npub unsafe extern \"C\" fn {getter_name}(node: *const FlightNode) -> {ffi_ty} {{\n    let Some(node) = (unsafe {{ ffi_node_handle(node) }}) else {{ return Default::default(); }};\n    let Some(view) = {view} else {{ return Default::default(); }};\n    let guard = view.read().unwrap_or_else(std::sync::PoisonError::into_inner);\n    {field_read}.{}\n}}",
+                field.name
+            )
+            .unwrap();
+        }
+        if seen_names.insert(setter_name.clone()) {
+            writeln!(
+                output,
+                "#[unsafe(no_mangle)]\npub unsafe extern \"C\" fn {setter_name}(node: *mut FlightNode, value: {ffi_ty}) -> {ffi_ty} {{\n    let Some(node) = (unsafe {{ ffi_node_handle(node) }}) else {{ return Default::default(); }};\n    let Some(view) = {view} else {{ return Default::default(); }};\n    let mut guard = view.write().unwrap_or_else(std::sync::PoisonError::into_inner);\n    {field_write}.{} = value;\n    value\n}}",
+                field.name
+            )
+            .unwrap();
+        }
+    }
+
+    if struct_name == "NodeFields" {
+        let extras = [
+            "flight_get_node_fields_kind",
+            "flight_set_node_fields_kind",
+            "flight_get_node_fields_name",
+            "flight_set_node_fields_name",
+        ];
+        if extras
+            .iter()
+            .all(|name| seen_names.insert((*name).to_string()))
+        {
+            output.push_str(
+                r#"#[doc = "flight-ffi ownership|owned-return|flight_free_string|std::ffi::c_char"]
+#[unsafe(no_mangle)]
+pub unsafe extern "C" fn flight_get_node_fields_kind(node: *const FlightNode) -> *mut std::ffi::c_char {
+    let Some(node) = (unsafe { ffi_node_handle(node) }) else { return std::ptr::null_mut(); };
+    let guard = node.node.read().unwrap_or_else(std::sync::PoisonError::into_inner);
+    std::ffi::CString::new(guard.node_fields().kind.as_str()).unwrap_or_default().into_raw()
+}
+#[unsafe(no_mangle)]
+pub unsafe extern "C" fn flight_set_node_fields_kind(node: *mut FlightNode, value: *const std::ffi::c_char) -> bool {
+    let Some(node) = (unsafe { ffi_node_handle(node) }) else { return false; };
+    let value = if value.is_null() { String::new() } else { match unsafe { std::ffi::CStr::from_ptr(value) }.to_str() { Ok(value) => value.to_owned(), Err(_) => return false } };
+    node.node.write().unwrap_or_else(std::sync::PoisonError::into_inner).node_fields_mut().kind = value;
+    true
+}
+#[doc = "flight-ffi ownership|owned-return|flight_free_string|std::ffi::c_char"]
+#[unsafe(no_mangle)]
+pub unsafe extern "C" fn flight_get_node_fields_name(node: *const FlightNode) -> *mut std::ffi::c_char {
+    let Some(node) = (unsafe { ffi_node_handle(node) }) else { return std::ptr::null_mut(); };
+    let guard = node.node.read().unwrap_or_else(std::sync::PoisonError::into_inner);
+    match guard.node_fields().name.as_deref() {
+        Some(value) => std::ffi::CString::new(value).unwrap_or_default().into_raw(),
+        None => std::ptr::null_mut(),
+    }
+}
+#[unsafe(no_mangle)]
+pub unsafe extern "C" fn flight_set_node_fields_name(node: *mut FlightNode, value: *const std::ffi::c_char) -> bool {
+    let Some(node) = (unsafe { ffi_node_handle(node) }) else { return false; };
+    let value = if value.is_null() { None } else { match unsafe { std::ffi::CStr::from_ptr(value) }.to_str() { Ok(value) => Some(value.to_owned()), Err(_) => return false } };
+    node.node.write().unwrap_or_else(std::sync::PoisonError::into_inner).node_fields_mut().name = value;
+    true
+}
+"#,
+            );
+        }
+    }
+
+    if struct_name == "Node2DFields" {
+        let extras = [
+            "flight_has_node2_dfields_blend_mode",
+            "flight_get_node2_dfields_blend_mode",
+            "flight_set_node2_dfields_blend_mode",
+            "flight_get_node2_dfields_clip",
+            "flight_set_node2_dfields_clip",
+            "flight_get_node2_dfields_material",
+            "flight_set_node2_dfields_material",
+            "flight_get_node2_dfields_material_data",
+            "flight_set_node2_dfields_material_data",
+            "flight_free_material2_d_ref",
+            "flight_free_material_data_ref",
+        ];
+        if extras
+            .iter()
+            .all(|name| seen_names.insert((*name).to_string()))
+        {
+            output.push_str(generate_node2d_field_extras());
+        }
+    }
+
+    if struct_name == "Node3DFields" {
+        for (field, components) in [
+            ("position", &["x", "y", "z"][..]),
+            ("rotation", &["x", "y", "z", "w"][..]),
+            ("scale", &["x", "y", "z"][..]),
+        ] {
+            for component in components {
+                let getter = format!("flight_get_node3_dfields_{field}_{component}");
+                let setter = format!("flight_set_node3_dfields_{field}_{component}");
+                if seen_names.insert(getter.clone()) {
+                    writeln!(output, "#[unsafe(no_mangle)]\npub unsafe extern \"C\" fn {getter}(node: *const FlightNode) -> f64 {{\n    let Some(node) = (unsafe {{ ffi_node_handle(node) }}) else {{ return 0.0; }};\n    let Some(view) = node.node3d.as_ref() else {{ return 0.0; }};\n    view.read().unwrap_or_else(std::sync::PoisonError::into_inner).node3d_fields().{field}.{component}\n}}").unwrap();
+                }
+                if seen_names.insert(setter.clone()) {
+                    writeln!(output, "#[unsafe(no_mangle)]\npub unsafe extern \"C\" fn {setter}(node: *mut FlightNode, value: f64) -> f64 {{\n    let Some(node) = (unsafe {{ ffi_node_handle(node) }}) else {{ return 0.0; }};\n    let Some(view) = node.node3d.as_ref() else {{ return 0.0; }};\n    view.write().unwrap_or_else(std::sync::PoisonError::into_inner).node3d_fields_mut().{field}.{component} = value;\n    value\n}}").unwrap();
+                }
+            }
+        }
+    }
+    return output;
+}
+
+fn generate_node2d_field_extras() -> &'static str {
+    r#"#[unsafe(no_mangle)]
+pub unsafe extern "C" fn flight_has_node2_dfields_blend_mode(node: *const FlightNode) -> bool {
+    let Some(node) = (unsafe { ffi_node_handle(node) }) else { return false; };
+    let Some(view) = node.node2d.as_ref() else { return false; };
+    view.read().unwrap_or_else(std::sync::PoisonError::into_inner).node2d_fields().blend_mode.is_some()
+}
+#[unsafe(no_mangle)]
+pub unsafe extern "C" fn flight_get_node2_dfields_blend_mode(node: *const FlightNode) -> i32 {
+    let Some(node) = (unsafe { ffi_node_handle(node) }) else { return -1; };
+    let Some(view) = node.node2d.as_ref() else { return -1; };
+    let guard = view.read().unwrap_or_else(std::sync::PoisonError::into_inner);
+    match guard.node2d_fields().blend_mode.as_deref() {
+        None => -1,
+        Some(flight_sdk::BLEND_MODE_ADD) => 0,
+        Some(flight_sdk::BLEND_MODE_DARKEN) => 1,
+        Some(flight_sdk::BLEND_MODE_LIGHTEN) => 2,
+        Some(flight_sdk::BLEND_MODE_MULTIPLY) => 3,
+        Some(flight_sdk::BLEND_MODE_NORMAL) => 4,
+        Some(flight_sdk::BLEND_MODE_SCREEN) => 5,
+        Some(_) => -2,
+    }
+}
+#[unsafe(no_mangle)]
+pub unsafe extern "C" fn flight_set_node2_dfields_blend_mode(node: *mut FlightNode, value: i32, present: bool) -> bool {
+    let Some(node) = (unsafe { ffi_node_handle(node) }) else { return false; };
+    let Some(view) = node.node2d.as_ref() else { return false; };
+    let value = if !present { None } else { Some(match value {
+        0 => flight_sdk::BLEND_MODE_ADD,
+        1 => flight_sdk::BLEND_MODE_DARKEN,
+        2 => flight_sdk::BLEND_MODE_LIGHTEN,
+        3 => flight_sdk::BLEND_MODE_MULTIPLY,
+        4 => flight_sdk::BLEND_MODE_NORMAL,
+        5 => flight_sdk::BLEND_MODE_SCREEN,
+        _ => return false,
+    }.to_owned()) };
+    view.write().unwrap_or_else(std::sync::PoisonError::into_inner).node2d_fields_mut().blend_mode = value;
+    true
+}
+#[doc = "flight-ffi ownership|owned-return|flight_free_clip_region_ref|flight_sdk::Ref<flight_sdk::ClipRegion>"]
+#[unsafe(no_mangle)]
+pub unsafe extern "C" fn flight_get_node2_dfields_clip(node: *const FlightNode) -> *mut std::ffi::c_void {
+    let Some(node) = (unsafe { ffi_node_handle(node) }) else { return std::ptr::null_mut(); };
+    let Some(view) = node.node2d.as_ref() else { return std::ptr::null_mut(); };
+    let guard = view.read().unwrap_or_else(std::sync::PoisonError::into_inner);
+    match guard.node2d_fields().clip.clone() {
+        Some(value) => Box::into_raw(Box::new(value)) as *mut std::ffi::c_void,
+        None => std::ptr::null_mut(),
+    }
+}
+#[unsafe(no_mangle)]
+pub unsafe extern "C" fn flight_set_node2_dfields_clip(node: *mut FlightNode, value: *const std::ffi::c_void) -> bool {
+    let Some(node) = (unsafe { ffi_node_handle(node) }) else { return false; };
+    let Some(view) = node.node2d.as_ref() else { return false; };
+    let value = if value.is_null() { None } else { Some(unsafe { &*(value as *const flight_sdk::Ref<flight_sdk::ClipRegion>) }.clone()) };
+    view.write().unwrap_or_else(std::sync::PoisonError::into_inner).node2d_fields_mut().clip = value;
+    true
+}
+#[doc = "flight-ffi ownership|owned-return|flight_free_material2_d_ref|flight_sdk::Ref<dyn flight_sdk::Material2D>"]
+#[unsafe(no_mangle)]
+pub unsafe extern "C" fn flight_get_node2_dfields_material(node: *const FlightNode) -> *mut std::ffi::c_void {
+    let Some(node) = (unsafe { ffi_node_handle(node) }) else { return std::ptr::null_mut(); };
+    let Some(view) = node.node2d.as_ref() else { return std::ptr::null_mut(); };
+    let guard = view.read().unwrap_or_else(std::sync::PoisonError::into_inner);
+    match guard.node2d_fields().material.clone() { Some(value) => Box::into_raw(Box::new(value)) as *mut std::ffi::c_void, None => std::ptr::null_mut() }
+}
+#[unsafe(no_mangle)]
+pub unsafe extern "C" fn flight_set_node2_dfields_material(node: *mut FlightNode, value: *const std::ffi::c_void) -> bool {
+    let Some(node) = (unsafe { ffi_node_handle(node) }) else { return false; };
+    let Some(view) = node.node2d.as_ref() else { return false; };
+    let value = if value.is_null() { None } else { Some(unsafe { &*(value as *const flight_sdk::Ref<dyn flight_sdk::Material2D>) }.clone()) };
+    view.write().unwrap_or_else(std::sync::PoisonError::into_inner).node2d_fields_mut().material = value;
+    true
+}
+#[doc = "flight-ffi ownership|owned-return|flight_free_material_data_ref|flight_sdk::Ref<dyn flight_sdk::MaterialData>"]
+#[unsafe(no_mangle)]
+pub unsafe extern "C" fn flight_get_node2_dfields_material_data(node: *const FlightNode) -> *mut std::ffi::c_void {
+    let Some(node) = (unsafe { ffi_node_handle(node) }) else { return std::ptr::null_mut(); };
+    let Some(view) = node.node2d.as_ref() else { return std::ptr::null_mut(); };
+    let guard = view.read().unwrap_or_else(std::sync::PoisonError::into_inner);
+    match guard.node2d_fields().material_data.clone() { Some(value) => Box::into_raw(Box::new(value)) as *mut std::ffi::c_void, None => std::ptr::null_mut() }
+}
+#[unsafe(no_mangle)]
+pub unsafe extern "C" fn flight_set_node2_dfields_material_data(node: *mut FlightNode, value: *const std::ffi::c_void) -> bool {
+    let Some(node) = (unsafe { ffi_node_handle(node) }) else { return false; };
+    let Some(view) = node.node2d.as_ref() else { return false; };
+    let value = if value.is_null() { None } else { Some(unsafe { &*(value as *const flight_sdk::Ref<dyn flight_sdk::MaterialData>) }.clone()) };
+    view.write().unwrap_or_else(std::sync::PoisonError::into_inner).node2d_fields_mut().material_data = value;
+    true
+}
+#[unsafe(no_mangle)]
+pub unsafe extern "C" fn flight_free_material2_d_ref(value: *mut flight_sdk::Ref<dyn flight_sdk::Material2D>) { if !value.is_null() { unsafe { drop(Box::from_raw(value)); } } }
+#[unsafe(no_mangle)]
+pub unsafe extern "C" fn flight_free_material_data_ref(value: *mut flight_sdk::Ref<dyn flight_sdk::MaterialData>) { if !value.is_null() { unsafe { drop(Box::from_raw(value)); } } }
+"#
 }
 
 fn extract_dyn_trait(ty: &str) -> Option<String> {
@@ -3735,6 +4236,9 @@ fn generate_ffi_wrapper(func: &ParsedFn) -> Option<(String, Option<String>)> {
 
         let ty = resolved_ty;
         if let Some(trait_name) = extract_dyn_trait(&ty) {
+            if matches!(trait_name.as_str(), "Node" | "Node2D" | "Node3D") {
+                continue;
+            }
             if let Some((_, ref_alias)) = DYN_OPAQUE_TRAITS.iter().find(|(n, _)| *n == trait_name) {
                 let qualified_ref = qualify_type(ref_alias);
                 let name = &param.name;
@@ -3762,6 +4266,10 @@ fn generate_ffi_wrapper(func: &ParsedFn) -> Option<(String, Option<String>)> {
         (None, None) => (String::new(), FfiReturn::Void),
         (None, Some(ty)) => map_return_to_ffi(ty)?,
     };
+    let invalid_return = invalid_parameter_return(&call_wrap);
+    for binding in &mut guard_bindings {
+        *binding = binding.replace(INVALID_NODE_RETURN, invalid_return);
+    }
     // A returned disposer maps only for an allowlisted, callback-free call; the type alone is not
     // consent.
     if matches!(call_wrap, FfiReturn::DisposerReturn) {
@@ -3800,6 +4308,9 @@ fn generate_ffi_wrapper(func: &ParsedFn) -> Option<(String, Option<String>)> {
             | FfiReturn::OptionBoxReturn
             | FfiReturn::ArcRefReturn
             | FfiReturn::OptionArcRefReturn
+            | FfiReturn::NodeReturn(_)
+            | FfiReturn::OptionNodeReturn(_)
+            | FfiReturn::NodeArrayReturn(_)
             | FfiReturn::ArrayOutReturn(_)
             | FfiReturn::PortsOutcomeReturn(_)
     ) && boxed_ty.is_none()
@@ -3961,6 +4472,9 @@ fn generate_mono_wrappers(func: &ParsedFn) -> Vec<(String, String, Option<String
             | FfiReturn::OptionBoxReturn
             | FfiReturn::ArcRefReturn
             | FfiReturn::OptionArcRefReturn
+            | FfiReturn::NodeReturn(_)
+            | FfiReturn::OptionNodeReturn(_)
+            | FfiReturn::NodeArrayReturn(_)
             | FfiReturn::ArrayOutReturn(_)
             | FfiReturn::PortsOutcomeReturn(_)
     ) && boxed_ty.is_none()
@@ -4040,6 +4554,10 @@ fn generate_mono_wrappers(func: &ParsedFn) -> Vec<(String, String, Option<String
         if !ok {
             continue;
         }
+        let invalid_return = invalid_parameter_return(&call_wrap);
+        for binding in &mut bindings {
+            *binding = binding.replace(INVALID_NODE_RETURN, invalid_return);
+        }
         append_tuple_out_params(&mut ffi_params, &call_wrap);
         append_borrowed_slice_out_param(&mut ffi_params, &call_wrap);
 
@@ -4094,6 +4612,9 @@ enum FfiReturn {
     OptionStringReturn,
     ArcRefReturn,
     OptionArcRefReturn,
+    NodeReturn(NodeReturnSpec),
+    OptionNodeReturn(NodeReturnSpec),
+    NodeArrayReturn(NodeKind),
     EnumReturn,
     OptionEnumReturn,
     OptionF32Return,
@@ -4154,6 +4675,12 @@ struct AsyncCallbackSpec {
 struct VecReturnSpec {
     element_ty: String,
     element_is_ref: bool,
+}
+
+#[derive(Clone)]
+struct NodeReturnSpec {
+    kind: NodeKind,
+    concrete: Option<String>,
 }
 
 struct HashMapReturnSpec {
@@ -4225,6 +4752,53 @@ fn append_async_callback_params(ffi_params: &mut Vec<String>, call_wrap: &FfiRet
         spec.value_ty
     ));
     ffi_params.push("complete_ctx: *mut std::ffi::c_void".to_string());
+}
+
+fn invalid_parameter_return(value: &FfiReturn) -> &'static str {
+    match value {
+        FfiReturn::SharedClone(value) => invalid_parameter_return(value),
+        FfiReturn::Void
+        | FfiReturn::TupleReturn(_)
+        | FfiReturn::OptionTupleReturn(_)
+        | FfiReturn::BorrowedSliceReturn
+        | FfiReturn::AsyncCallback(_)
+        | FfiReturn::ArrayOutReturn(_) => "return;",
+        FfiReturn::OptionEnumReturn | FfiReturn::OptionU32Return | FfiReturn::OptionBoolReturn => {
+            "return -1;"
+        }
+        FfiReturn::OptionF32Return => "return f32::NAN;",
+        FfiReturn::OptionF64Return => "return f64::NAN;",
+        FfiReturn::OptionI32Return => "return i64::MIN;",
+        FfiReturn::Direct | FfiReturn::EnumReturn | FfiReturn::OperationOutcomeReturn => {
+            "return Default::default();"
+        }
+        FfiReturn::BoxReturn
+        | FfiReturn::OptionBoxReturn
+        | FfiReturn::StringReturn
+        | FfiReturn::OptionStringReturn
+        | FfiReturn::ArcRefReturn
+        | FfiReturn::OptionArcRefReturn
+        | FfiReturn::NodeReturn(_)
+        | FfiReturn::OptionNodeReturn(_)
+        | FfiReturn::NodeArrayReturn(_)
+        | FfiReturn::OwnedByteReaderReturn
+        | FfiReturn::EffectInputSliceReturn
+        | FfiReturn::EffectKindSliceReturn
+        | FfiReturn::VecReturn(_)
+        | FfiReturn::OptionVecReturn(_)
+        | FfiReturn::HashMapReturn(_)
+        | FfiReturn::OptionHashMapReturn(_)
+        | FfiReturn::BoxSliceReturn(_)
+        | FfiReturn::OptionBoxSliceReturn(_)
+        | FfiReturn::SliceReturn(_)
+        | FfiReturn::RefReturn
+        | FfiReturn::OptionRefReturn
+        | FfiReturn::OptionBorrowedRefReturn
+        | FfiReturn::NestedVecReturn(_)
+        | FfiReturn::PortsOutcomeReturn(_)
+        | FfiReturn::StringRecordReturn
+        | FfiReturn::DisposerReturn => "return std::ptr::null_mut();",
+    }
 }
 
 // The value a callback receives alongside a non-null error: null for handles, false, NaN, -1 for
@@ -4322,6 +4896,30 @@ fn generate_return_body(call_wrap: &FfiReturn, call: &str, preamble: &str) -> St
                  None => std::ptr::null_mut(),\n    \
                  }}"
         ),
+        FfiReturn::NodeReturn(spec) => {
+            let constructor = node_handle_constructor(spec, call);
+            format!("{preamble}    return Box::into_raw(Box::new({constructor}));")
+        }
+        FfiReturn::OptionNodeReturn(spec) => {
+            let constructor = node_handle_constructor(spec, "node");
+            format!(
+                "{preamble}    match {call} {{\n        \
+                     Some(node) => Box::into_raw(Box::new({constructor})),\n        \
+                     None => std::ptr::null_mut(),\n    \
+                     }}"
+            )
+        }
+        FfiReturn::NodeArrayReturn(kind) => {
+            let map = match kind {
+                NodeKind::Node => "ffi_node_ref_from_node",
+                NodeKind::Node2D => "ffi_node_ref_from_node2d",
+                NodeKind::Node3D => "ffi_node_ref_from_node3d",
+            };
+            format!(
+                "{preamble}    let values = {call}.into_iter().map({map}).collect();\n    \
+                     return Box::into_raw(Box::new(FlightNodeArray {{ values }}));"
+            )
+        }
         FfiReturn::EnumReturn => format!("{preamble}    return {call} as u32;"),
         FfiReturn::OptionEnumReturn => format!(
             "{preamble}    match {call} {{\n        \
@@ -4473,6 +5071,21 @@ fn generate_return_body(call_wrap: &FfiReturn, call: &str, preamble: &str) -> St
             body
         }
     }
+}
+
+fn node_handle_constructor(spec: &NodeReturnSpec, value: &str) -> String {
+    if spec.concrete.is_some() {
+        return match spec.kind {
+            NodeKind::Node => format!("ffi_node_from_concrete({value})"),
+            NodeKind::Node2D => format!("ffi_node_from_concrete_2d({value})"),
+            NodeKind::Node3D => format!("ffi_node_from_concrete_3d({value})"),
+        };
+    }
+    return match spec.kind {
+        NodeKind::Node => format!("ffi_node_from_node_ref({value})"),
+        NodeKind::Node2D => format!("ffi_node_from_node2d_ref({value})"),
+        NodeKind::Node3D => format!("ffi_node_from_node3d_ref({value})"),
+    };
 }
 
 // A boxed `Vec<T>` or `Box<[T]>` result handle reads through `_result_len` / `_result_get` and is
@@ -5115,6 +5728,92 @@ pub unsafe extern "C" fn flight_is_storage_set_items_result_ok(result: *const fl
 "#
 }
 
+fn generate_node_handle_support() -> &'static str {
+    r#"pub struct FfiNodeHandle {
+    node: flight_sdk::NodeRef,
+    node2d: Option<flight_sdk::Node2DRef>,
+    node3d: Option<flight_sdk::Node3DRef>,
+    concrete: Option<Box<dyn std::any::Any + Send + Sync>>,
+}
+pub type FlightNode = FfiNodeHandle;
+
+pub struct FlightNodeArray {
+    values: Vec<flight_sdk::NodeRef>,
+}
+
+fn ffi_node_from_node_ref(node: flight_sdk::NodeRef) -> FlightNode {
+    let node2d = flight_sdk::as_node2d_ref(&node);
+    let node3d = flight_sdk::as_node3d_ref(&node);
+    FlightNode { node, node2d, node3d, concrete: None }
+}
+fn ffi_node_from_node2d_ref(node2d: flight_sdk::Node2DRef) -> FlightNode {
+    let node: flight_sdk::NodeRef = node2d.clone();
+    FlightNode { node, node2d: Some(node2d), node3d: None, concrete: None }
+}
+fn ffi_node_from_node3d_ref(node3d: flight_sdk::Node3DRef) -> FlightNode {
+    let node: flight_sdk::NodeRef = node3d.clone();
+    FlightNode { node, node2d: None, node3d: Some(node3d), concrete: None }
+}
+fn ffi_node_from_concrete<T: flight_sdk::Node + 'static>(value: flight_sdk::Ref<T>) -> FlightNode {
+    let node: flight_sdk::NodeRef = value.clone();
+    FlightNode { node, node2d: None, node3d: None, concrete: Some(Box::new(value)) }
+}
+fn ffi_node_from_concrete_2d<T: flight_sdk::Node2D + 'static>(value: flight_sdk::Ref<T>) -> FlightNode {
+    let node: flight_sdk::NodeRef = value.clone();
+    let node2d: flight_sdk::Node2DRef = value.clone();
+    FlightNode { node, node2d: Some(node2d), node3d: None, concrete: Some(Box::new(value)) }
+}
+fn ffi_node_from_concrete_3d<T: flight_sdk::Node3D + 'static>(value: flight_sdk::Ref<T>) -> FlightNode {
+    let node: flight_sdk::NodeRef = value.clone();
+    let node3d: flight_sdk::Node3DRef = value.clone();
+    FlightNode { node, node2d: None, node3d: Some(node3d), concrete: Some(Box::new(value)) }
+}
+fn ffi_node_ref_from_node(value: flight_sdk::NodeRef) -> flight_sdk::NodeRef { value }
+fn ffi_node_ref_from_node2d(value: flight_sdk::Node2DRef) -> flight_sdk::NodeRef { value }
+fn ffi_node_ref_from_node3d(value: flight_sdk::Node3DRef) -> flight_sdk::NodeRef { value }
+unsafe fn ffi_node_handle<'a>(node: *const FlightNode) -> Option<&'a FlightNode> {
+    if node.is_null() { return None; }
+    Some(unsafe { &*node })
+}
+fn ffi_node_concrete<T: flight_sdk::Node + 'static>(node: &FlightNode) -> Option<flight_sdk::Ref<T>> {
+    node.concrete.as_ref()?.downcast_ref::<flight_sdk::Ref<T>>().cloned()
+}
+#[unsafe(no_mangle)]
+pub unsafe extern "C" fn flight_node_equals(a: *const FlightNode, b: *const FlightNode) -> bool {
+    let (Some(a), Some(b)) = (unsafe { ffi_node_handle(a) }, unsafe { ffi_node_handle(b) }) else { return false; };
+    std::sync::Arc::ptr_eq(&a.node, &b.node)
+}
+#[doc = "flight-ffi ownership|owned-return|flight_free_node_array|FlightNodeArray"]
+#[unsafe(no_mangle)]
+pub unsafe extern "C" fn flight_node_array_create() -> *mut FlightNodeArray {
+    Box::into_raw(Box::new(FlightNodeArray { values: Vec::new() }))
+}
+#[unsafe(no_mangle)]
+pub unsafe extern "C" fn flight_node_array_len(nodes: *const FlightNodeArray) -> usize {
+    if nodes.is_null() { return 0; }
+    unsafe { &*nodes }.values.len()
+}
+#[doc = "flight-ffi ownership|owned-return|flight_free_node|FlightNode"]
+#[unsafe(no_mangle)]
+pub unsafe extern "C" fn flight_node_array_get(nodes: *const FlightNodeArray, index: usize) -> *mut FlightNode {
+    if nodes.is_null() { return std::ptr::null_mut(); }
+    let Some(node) = unsafe { &*nodes }.values.get(index) else { return std::ptr::null_mut(); };
+    Box::into_raw(Box::new(ffi_node_from_node_ref(node.clone())))
+}
+#[unsafe(no_mangle)]
+pub unsafe extern "C" fn flight_node_array_push(nodes: *mut FlightNodeArray, node: *const FlightNode) -> bool {
+    if nodes.is_null() { return false; }
+    let Some(node) = (unsafe { ffi_node_handle(node) }) else { return false; };
+    unsafe { &mut *nodes }.values.push(node.node.clone());
+    true
+}
+#[unsafe(no_mangle)]
+pub unsafe extern "C" fn flight_node_array_clear(nodes: *mut FlightNodeArray) {
+    if !nodes.is_null() { unsafe { &mut *nodes }.values.clear(); }
+}
+"#
+}
+
 // A requirement collector is either caller-owned (`create`/`destroy`) or a callback-scoped view
 // installed by `collect_scene2d_requirements`. The registry makes both forms type/provenance
 // checked; the scoped form unregisters on unwind and never owns the SDK Vec it views.
@@ -5737,6 +6436,12 @@ fn opaque_type_slug(ty: &str) -> String {
 }
 
 fn boxed_free_suffix(qualified_type: &str) -> String {
+    if qualified_type == "FlightNode" {
+        return "node".to_string();
+    }
+    if qualified_type == "FlightNodeArray" {
+        return "node_array".to_string();
+    }
     if let Some((element, length)) = qualified_type
         .strip_prefix('[')
         .and_then(|rest| rest.strip_suffix(']'))
@@ -5806,6 +6511,8 @@ fn boxed_type_for_return(value: &FfiReturn, value_ty: Option<&str>) -> Option<St
     match value {
         FfiReturn::BoxReturn | FfiReturn::OptionBoxReturn => boxed_value_type(value_ty?),
         FfiReturn::ArcRefReturn | FfiReturn::OptionArcRefReturn => arc_ref_boxed_type(value_ty?),
+        FfiReturn::NodeReturn(_) | FfiReturn::OptionNodeReturn(_) => Some("FlightNode".to_string()),
+        FfiReturn::NodeArrayReturn(_) => Some("FlightNodeArray".to_string()),
         FfiReturn::ArrayOutReturn(element) => Some(element.clone()),
         FfiReturn::PortsOutcomeReturn(port) => Some(format!("flight_sdk::Ref<{port}>")),
         _ => None,
@@ -6011,7 +6718,10 @@ fn wrapper_ownership_doc(
         FfiReturn::BoxReturn
         | FfiReturn::OptionBoxReturn
         | FfiReturn::ArcRefReturn
-        | FfiReturn::OptionArcRefReturn => {
+        | FfiReturn::OptionArcRefReturn
+        | FfiReturn::NodeReturn(_)
+        | FfiReturn::OptionNodeReturn(_)
+        | FfiReturn::NodeArrayReturn(_) => {
             let owned_type = boxed_type?;
             Some(ownership_doc(
                 delivery,
@@ -7228,6 +7938,334 @@ fn map_opaque_fallback_param(name: &str, ty: &str) -> Option<MappedParam> {
     None
 }
 
+const INVALID_NODE_RETURN: &str = "__FLIGHT_INVALID_NODE_RETURN__";
+
+fn node_param_selection(name: &str, inner: &str) -> Option<(NodeReturnSpec, Vec<String>, String)> {
+    let spec = node_return_spec(inner)?;
+    let clean = name.trim_start_matches('_');
+    let handle = format!("ffi_node_{clean}");
+    let value = format!("node_{clean}");
+    let selected = if let Some(concrete) = &spec.concrete {
+        format!("ffi_node_concrete::<flight_sdk::{concrete}>({handle})")
+    } else {
+        match spec.kind {
+            NodeKind::Node => format!("Some({handle}.node.clone())"),
+            NodeKind::Node2D => format!("{handle}.node2d.clone()"),
+            NodeKind::Node3D => format!("{handle}.node3d.clone()"),
+        }
+    };
+    let bindings = vec![
+        format!(
+            "    let Some({handle}) = (unsafe {{ ffi_node_handle({name}) }}) else {{ {INVALID_NODE_RETURN} }};"
+        ),
+        format!("    let Some({value}) = {selected} else {{ {INVALID_NODE_RETURN} }};"),
+    ];
+    return Some((spec, bindings, value));
+}
+
+fn map_node_param(name: &str, ty: &str) -> Option<Option<MappedParam>> {
+    let clean = name.trim_start_matches('_');
+
+    if let Some(inner) = ty
+        .strip_prefix("&mut Ref<")
+        .and_then(|rest| rest.strip_suffix('>'))
+    {
+        let (_, bindings, value) = node_param_selection(name, inner.trim())?;
+        return Some(Some(MappedParam {
+            ffi_params: vec![(name.to_string(), "*mut FlightNode".to_string())],
+            bindings,
+            call_expr: format!("&mut {value}"),
+        }));
+    }
+    if let Some(inner) = ty
+        .strip_prefix("&Ref<")
+        .and_then(|rest| rest.strip_suffix('>'))
+    {
+        let (_, bindings, value) = node_param_selection(name, inner.trim())?;
+        return Some(Some(MappedParam {
+            ffi_params: vec![(name.to_string(), "*const FlightNode".to_string())],
+            bindings,
+            call_expr: format!("&{value}"),
+        }));
+    }
+    if let Some(inner) = ty
+        .strip_prefix("Option<&Ref<")
+        .and_then(|rest| rest.strip_suffix(">>"))
+    {
+        let spec = node_return_spec(inner.trim())?;
+        let selected = if let Some(concrete) = &spec.concrete {
+            format!("ffi_node_concrete::<flight_sdk::{concrete}>(ffi_node_{clean})")
+        } else {
+            match spec.kind {
+                NodeKind::Node => format!("Some(ffi_node_{clean}.node.clone())"),
+                NodeKind::Node2D => format!("ffi_node_{clean}.node2d.clone()"),
+                NodeKind::Node3D => format!("ffi_node_{clean}.node3d.clone()"),
+            }
+        };
+        return Some(Some(MappedParam {
+            ffi_params: vec![(name.to_string(), "*const FlightNode".to_string())],
+            bindings: vec![
+                format!("    let ffi_node_{clean} = unsafe {{ ffi_node_handle({name}) }};"),
+                format!(
+                    "    let node_{clean} = match ffi_node_{clean} {{ None => None, Some(ffi_node_{clean}) => match {selected} {{ Some(value) => Some(value), None => {{ {INVALID_NODE_RETURN} }} }} }};"
+                ),
+            ],
+            call_expr: format!("node_{clean}.as_ref()"),
+        }));
+    }
+    if let Some(inner) = ty
+        .strip_prefix("Ref<")
+        .and_then(|rest| rest.strip_suffix('>'))
+    {
+        let (_, bindings, value) = node_param_selection(name, inner.trim())?;
+        return Some(Some(MappedParam {
+            ffi_params: vec![(name.to_string(), "*const FlightNode".to_string())],
+            bindings,
+            call_expr: value,
+        }));
+    }
+
+    if let Some(inner) = ty
+        .strip_prefix("Option<Ref<")
+        .and_then(|rest| rest.strip_suffix(">>"))
+    {
+        let spec = node_return_spec(inner.trim())?;
+        let selected = if let Some(concrete) = &spec.concrete {
+            format!("ffi_node_concrete::<flight_sdk::{concrete}>(ffi_node_{clean})")
+        } else {
+            match spec.kind {
+                NodeKind::Node => format!("Some(ffi_node_{clean}.node.clone())"),
+                NodeKind::Node2D => format!("ffi_node_{clean}.node2d.clone()"),
+                NodeKind::Node3D => format!("ffi_node_{clean}.node3d.clone()"),
+            }
+        };
+        return Some(Some(MappedParam {
+            ffi_params: vec![(name.to_string(), "*const FlightNode".to_string())],
+            bindings: vec![
+                format!("    let ffi_node_{clean} = unsafe {{ ffi_node_handle({name}) }};"),
+                format!(
+                    "    let node_{clean} = match ffi_node_{clean} {{ None => None, Some(ffi_node_{clean}) => match {selected} {{ Some(value) => Some(value), None => {{ {INVALID_NODE_RETURN} }} }} }};"
+                ),
+            ],
+            call_expr: format!("node_{clean}"),
+        }));
+    }
+
+    let (mutable, trait_name) = if let Some(inner) = ty.strip_prefix("&mut dyn ") {
+        (true, inner.trim())
+    } else if let Some(inner) = ty.strip_prefix("&dyn ") {
+        (false, inner.trim())
+    } else {
+        (false, "")
+    };
+    let trait_kind = match trait_name {
+        "Node" => Some(NodeKind::Node),
+        "Node2D" => Some(NodeKind::Node2D),
+        "Node3D" => Some(NodeKind::Node3D),
+        _ => None,
+    };
+    if let Some(kind) = trait_kind {
+        let arc_ty = match kind {
+            NodeKind::Node => "flight_sdk::NodeRef",
+            NodeKind::Node2D => "flight_sdk::Node2DRef",
+            NodeKind::Node3D => "flight_sdk::Node3DRef",
+        };
+        let selected = match kind {
+            NodeKind::Node => format!("Some(ffi_node_{clean}.node.clone())"),
+            NodeKind::Node2D => format!("ffi_node_{clean}.node2d.clone()"),
+            NodeKind::Node3D => format!("ffi_node_{clean}.node3d.clone()"),
+        };
+        let guard = if mutable { "write" } else { "read" };
+        let reference = if mutable { "&mut *" } else { "&*" };
+        let mut bindings = vec![
+            format!(
+                "    let Some(ffi_node_{clean}) = (unsafe {{ ffi_node_handle({name}) }}) else {{ {INVALID_NODE_RETURN} }};"
+            ),
+            format!(
+                "    let Some(arc_{clean}): Option<{arc_ty}> = {selected} else {{ {INVALID_NODE_RETURN} }};"
+            ),
+        ];
+        bindings.push(if mutable {
+            format!("    let mut guard_{clean} = arc_{clean}.{guard}().unwrap_or_else(std::sync::PoisonError::into_inner);")
+        } else {
+            format!("    let guard_{clean} = arc_{clean}.{guard}().unwrap_or_else(std::sync::PoisonError::into_inner);")
+        });
+        bindings.push(format!(
+            "    let dyn_{clean}: {}dyn flight_sdk::{trait_name} = {reference}guard_{clean};",
+            if mutable { "&mut " } else { "&" }
+        ));
+        return Some(Some(MappedParam {
+            ffi_params: vec![(
+                name.to_string(),
+                if mutable {
+                    "*mut FlightNode"
+                } else {
+                    "*const FlightNode"
+                }
+                .to_string(),
+            )],
+            bindings,
+            call_expr: format!("dyn_{clean}"),
+        }));
+    }
+
+    let (mutable, inner) = if let Some(inner) = ty.strip_prefix("&mut ") {
+        (true, inner.trim())
+    } else if let Some(inner) = ty.strip_prefix('&') {
+        (false, inner.trim())
+    } else {
+        (false, "")
+    };
+    if !inner.is_empty()
+        && NODE_TYPES
+            .get()
+            .is_some_and(|types| types.contains_key(inner))
+    {
+        let (_, mut bindings, value) = node_param_selection(name, inner)?;
+        bindings.push(if mutable {
+            format!("    let mut guard_{clean} = {value}.write().unwrap_or_else(std::sync::PoisonError::into_inner);")
+        } else {
+            format!("    let guard_{clean} = {value}.read().unwrap_or_else(std::sync::PoisonError::into_inner);")
+        });
+        return Some(Some(MappedParam {
+            ffi_params: vec![(
+                name.to_string(),
+                if mutable {
+                    "*mut FlightNode"
+                } else {
+                    "*const FlightNode"
+                }
+                .to_string(),
+            )],
+            bindings,
+            call_expr: if mutable {
+                format!("&mut *guard_{clean}")
+            } else {
+                format!("&*guard_{clean}")
+            },
+        }));
+    }
+
+    if let Some(inner) = ty
+        .strip_prefix("&[")
+        .and_then(|rest| rest.strip_suffix(']'))
+        && let Some(kind) = node_ref_kind(inner.trim())
+    {
+        let (mut bindings, call_expr) = match kind {
+            NodeKind::Node => (
+                vec![format!("    let nodes_{clean} = unsafe {{ &*{name} }};")],
+                format!("nodes_{clean}.values.as_slice()"),
+            ),
+            NodeKind::Node2D | NodeKind::Node3D => {
+                let projection = if kind == NodeKind::Node2D {
+                    "flight_sdk::as_node2d_ref"
+                } else {
+                    "flight_sdk::as_node3d_ref"
+                };
+                (
+                    vec![
+                        format!("    let nodes_{clean} = unsafe {{ &*{name} }};"),
+                        format!(
+                            "    let Some(node_views_{clean}) = nodes_{clean}.values.iter().map({projection}).collect::<Option<Vec<_>>>() else {{ {INVALID_NODE_RETURN} }};"
+                        ),
+                    ],
+                    format!("node_views_{clean}.as_slice()"),
+                )
+            }
+        };
+        bindings.insert(
+            0,
+            format!("    if {name}.is_null() {{ {INVALID_NODE_RETURN} }}"),
+        );
+        return Some(Some(MappedParam {
+            ffi_params: vec![(name.to_string(), "*const FlightNodeArray".to_string())],
+            bindings,
+            call_expr,
+        }));
+    }
+
+    if let Some(inner) = ty
+        .strip_prefix("Option<&[")
+        .and_then(|rest| rest.strip_suffix("]>"))
+        && let Some(kind) = node_ref_kind(inner.trim())
+    {
+        let view_ty = match kind {
+            NodeKind::Node => "flight_sdk::NodeRef",
+            NodeKind::Node2D => "flight_sdk::Node2DRef",
+            NodeKind::Node3D => "flight_sdk::Node3DRef",
+        };
+        let projection = match kind {
+            NodeKind::Node => "Some(node.clone())",
+            NodeKind::Node2D => "flight_sdk::as_node2d_ref(node)",
+            NodeKind::Node3D => "flight_sdk::as_node3d_ref(node)",
+        };
+        return Some(Some(MappedParam {
+            ffi_params: vec![(name.to_string(), "*const FlightNodeArray".to_string())],
+            bindings: vec![format!(
+                "    let node_views_{clean}: Option<Vec<{view_ty}>> = if {name}.is_null() {{ None }} else {{ let nodes = unsafe {{ &*{name} }}; match nodes.values.iter().map(|node| {projection}).collect::<Option<Vec<_>>>() {{ Some(values) => Some(values), None => {{ {INVALID_NODE_RETURN} }} }} }};"
+            )],
+            call_expr: format!("node_views_{clean}.as_deref()"),
+        }));
+    }
+
+    if let Some(inner) = ty
+        .strip_prefix("&mut Vec<")
+        .and_then(|rest| rest.strip_suffix('>'))
+        && node_ref_kind(inner.trim()) == Some(NodeKind::Node)
+    {
+        return Some(Some(MappedParam {
+            ffi_params: vec![(name.to_string(), "*mut FlightNodeArray".to_string())],
+            bindings: vec![
+                format!("    if {name}.is_null() {{ {INVALID_NODE_RETURN} }}"),
+                format!("    let nodes_{clean} = unsafe {{ &mut *{name} }};"),
+            ],
+            call_expr: format!("&mut nodes_{clean}.values"),
+        }));
+    }
+
+    return None;
+}
+
+fn map_ref_only_borrow(name: &str, ty: &str) -> Option<MappedParam> {
+    let clean = name.trim_start_matches('_');
+    let (mutable, inner) = if let Some(inner) = ty.strip_prefix("&mut ") {
+        (true, inner.trim())
+    } else if let Some(inner) = ty.strip_prefix('&') {
+        (false, inner.trim())
+    } else {
+        return None;
+    };
+    if !is_ref_only_borrow_type(inner) {
+        return None;
+    }
+    let qualified = qualify_type(inner);
+    let pointer = if mutable {
+        "*mut std::ffi::c_void"
+    } else {
+        "*const std::ffi::c_void"
+    };
+    let mut bindings = vec![
+        format!("    if {name}.is_null() {{ {INVALID_NODE_RETURN} }}"),
+        format!(
+            "    let arc_{clean} = unsafe {{ &*({name} as *const flight_sdk::Ref<{qualified}>) }};"
+        ),
+    ];
+    bindings.push(if mutable {
+        format!("    let mut guard_{clean} = arc_{clean}.write().unwrap_or_else(std::sync::PoisonError::into_inner);")
+    } else {
+        format!("    let guard_{clean} = arc_{clean}.read().unwrap_or_else(std::sync::PoisonError::into_inner);")
+    });
+    return Some(MappedParam {
+        ffi_params: vec![(name.to_string(), pointer.to_string())],
+        bindings,
+        call_expr: if mutable {
+            format!("&mut *guard_{clean}")
+        } else {
+            format!("&*guard_{clean}")
+        },
+    });
+}
+
 fn map_param_to_ffi(name: &str, ty: &str) -> Option<MappedParam> {
     let ty = strip_crate_paths(&strip_lifetimes(&resolve_type_alias(ty.trim())));
     // An explicit reference lifetime can sit between `&` and a typed-array alias, so run the alias
@@ -7235,6 +8273,13 @@ fn map_param_to_ffi(name: &str, ty: &str) -> Option<MappedParam> {
     let ty = resolve_type_alias(&ty);
     let ty = ty.as_str();
     let lifetime_data_ty = ty.strip_suffix("<>").unwrap_or(ty);
+
+    if let Some(mapped) = map_node_param(name, ty) {
+        return mapped;
+    }
+    if let Some(mapped) = map_ref_only_borrow(name, ty) {
+        return Some(mapped);
+    }
 
     // A borrowed SDK type that C only ever holds as its shared `Ref` handle crosses as that
     // handle, locked for the duration of the call, so no unlocked pointee is ever exposed.
@@ -8181,8 +9226,16 @@ fn map_param_to_ffi(name: &str, ty: &str) -> Option<MappedParam> {
                     format!("{QUALIFIER}::{inner}")
                 };
                 let qualified_ref = format!("{QUALIFIER}::Ref<{qualified_inner}>");
-                ffi_fn_params.push("*const std::ffi::c_void".to_string());
-                ffi_fn_args_str.push(format!("{arg_name} as *const _ as *const std::ffi::c_void"));
+                if let Some(spec) = node_return_spec(inner) {
+                    let constructor =
+                        node_handle_constructor(&spec, &format!("{arg_name}.clone()"));
+                    ffi_fn_params.push("*const FlightNode".to_string());
+                    ffi_fn_args_str.push(format!("&{constructor} as *const FlightNode"));
+                } else {
+                    ffi_fn_params.push("*const std::ffi::c_void".to_string());
+                    ffi_fn_args_str
+                        .push(format!("{arg_name} as *const _ as *const std::ffi::c_void"));
+                }
                 outer_closure_params.push(format!("{arg_name}: &{qualified_ref}"));
             } else if *is_ref && resolved_cty.starts_with('[') && resolved_cty.ends_with(']') {
                 let elem = resolved_cty[1..resolved_cty.len() - 1].trim();
@@ -8440,6 +9493,24 @@ fn map_param_to_ffi(name: &str, ty: &str) -> Option<MappedParam> {
     None
 }
 
+fn node_return_spec(inner: &str) -> Option<NodeReturnSpec> {
+    let inner = inner.trim();
+    let kind = match inner {
+        "dyn Node" => NodeKind::Node,
+        "dyn Node2D" => NodeKind::Node2D,
+        "dyn Node3D" => NodeKind::Node3D,
+        _ => *NODE_TYPES.get()?.get(inner)?,
+    };
+    let concrete = (!inner.starts_with("dyn ")).then(|| inner.to_string());
+    return Some(NodeReturnSpec { kind, concrete });
+}
+
+fn node_ref_kind(ty: &str) -> Option<NodeKind> {
+    let resolved = resolve_type_alias(ty.trim());
+    let inner = resolved.strip_prefix("Ref<")?.strip_suffix('>')?;
+    return node_return_spec(inner).map(|spec| spec.kind);
+}
+
 fn map_return_to_ffi(ty: &str) -> Option<(String, FfiReturn)> {
     let ty = strip_crate_paths(&strip_lifetimes(&resolve_type_alias(ty.trim())));
     let ty = ty.as_str();
@@ -8515,6 +9586,44 @@ fn map_return_to_ffi(ty: &str) -> Option<(String, FfiReturn)> {
             " -> *mut std::ffi::c_char".to_string(),
             FfiReturn::OptionStringReturn,
         ));
+    }
+
+    // Every abstract or concrete node Ref returns the one opaque FlightNode carrier.
+    if let Some(inner) = ty.strip_prefix("Ref<") {
+        if let Some(inner) = inner.strip_suffix('>') {
+            let inner = inner.trim();
+            if let Some(spec) = node_return_spec(inner) {
+                return Some((
+                    " -> *mut FlightNode".to_string(),
+                    FfiReturn::NodeReturn(spec),
+                ));
+            }
+        }
+    }
+
+    if let Some(inner) = ty.strip_prefix("Option<Ref<") {
+        if let Some(inner) = inner.strip_suffix(">>") {
+            let inner = inner.trim();
+            if let Some(spec) = node_return_spec(inner) {
+                return Some((
+                    " -> *mut FlightNode".to_string(),
+                    FfiReturn::OptionNodeReturn(spec),
+                ));
+            }
+        }
+    }
+
+    // A heterogeneous node vector is one opaque node-array handle, never an array of raw Ref
+    // carriers. Items recovered from it are ordinary owned FlightNode handles.
+    if let Some(inner) = ty.strip_prefix("Vec<") {
+        if let Some(inner) = inner.strip_suffix('>')
+            && let Some(kind) = node_ref_kind(inner.trim())
+        {
+            return Some((
+                " -> *mut FlightNodeArray".to_string(),
+                FfiReturn::NodeArrayReturn(kind),
+            ));
+        }
     }
 
     // Ref<T> -> *mut c_void (boxed Arc handle)
