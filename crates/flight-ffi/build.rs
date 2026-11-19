@@ -1362,6 +1362,16 @@ fn collect_glob_names(
 }
 
 fn parse_pub_fns(content: &str, out: &mut Vec<ParsedFn>) {
+    for sig in collect_pub_fn_signatures(content) {
+        if let Some(parsed) = parse_fn_signature(&sig) {
+            out.push(parsed);
+        }
+    }
+}
+
+// Top-level `pub fn` / `pub async fn` signatures, each joined onto one line up to its opening brace.
+fn collect_pub_fn_signatures(content: &str) -> Vec<String> {
+    let mut out = Vec::new();
     let lines: Vec<&str> = content.lines().collect();
     let mut i = 0;
     let mut brace_depth: i32 = 0;
@@ -1398,11 +1408,9 @@ fn parse_pub_fns(content: &str, out: &mut Vec<ParsedFn>) {
             i += 1;
         }
         i += 1;
-
-        if let Some(parsed) = parse_fn_signature(&sig) {
-            out.push(parsed);
-        }
+        out.push(sig);
     }
+    return out;
 }
 
 fn parse_fn_signature(sig: &str) -> Option<ParsedFn> {
