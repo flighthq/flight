@@ -16,6 +16,19 @@ mod create_signal {
         let signal: Signal<()> = create_signal();
         assert!(!has_signal_slots(&signal));
     }
+
+    #[test]
+    fn dropping_the_last_handle_frees_the_emitter_and_registration_state() {
+        let signal: Signal<()> = create_signal();
+        let emit = std::sync::Arc::downgrade(&signal.emit);
+        let data = std::sync::Arc::downgrade(&signal.data);
+        connect_signal(&signal, std::sync::Arc::new(|_: &()| {}), None);
+        let connection = connect_signal_tracked(&signal, std::sync::Arc::new(|_: &()| {}), None);
+        drop(signal);
+        assert!(emit.upgrade().is_none());
+        assert!(data.upgrade().is_none());
+        assert!(!is_signal_connection_connected(&connection));
+    }
 }
 
 mod initialize_signal {
