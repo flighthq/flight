@@ -111,7 +111,7 @@ pub fn initialize_marquee_selection(out: &mut MarqueeSelection) {
     initialize_marquee_selection_core(out);
 }
 
-pub fn begin_marquee_selection(selection: &mut MarqueeSelection, start_x: f32, start_y: f32) {
+pub fn begin_marquee_selection(selection: &mut MarqueeSelection, start_x: f64, start_y: f64) {
     begin_marquee_selection_core(selection, start_x, start_y);
 }
 
@@ -123,7 +123,7 @@ pub fn get_marquee_rectangle(selection: &MarqueeSelection) -> &Rectangle {
     return get_marquee_rectangle_core(selection);
 }
 
-pub fn update_marquee_selection(selection: &mut MarqueeSelection, current_x: f32, current_y: f32) {
+pub fn update_marquee_selection(selection: &mut MarqueeSelection, current_x: f64, current_y: f64) {
     update_marquee_selection_core(selection, current_x, current_y);
 }
 

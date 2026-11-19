@@ -52,14 +52,13 @@ src/lib.rs: pub use contract::select_all_nodes;
 src/lib.rs: pub use contract::select_node;
 src/lib.rs: pub use contract::toggle_node_selection;
 src/lib.rs: pub use contract::update_marquee_selection;
-src/marquee_selection.rs: impl MarqueeSelection :: fn begin(&mut self, start_x: f32, start_y: f32)
+src/marquee_selection.rs: impl MarqueeSelection :: fn begin(&mut self, start_x: f64, start_y: f64)
 src/marquee_selection.rs: impl MarqueeSelection :: fn end(&mut self) -> &Rectangle
 src/marquee_selection.rs: impl MarqueeSelection :: fn find_nodes(&self, out: &mut Vec<NodeRef>, candidates: &[NodeRef], mode: Option<MarqueeSelectionMode>,)
 src/marquee_selection.rs: impl MarqueeSelection :: fn new() -> Self
 src/marquee_selection.rs: impl MarqueeSelection :: fn rectangle(&self) -> &Rectangle
-src/marquee_selection.rs: impl MarqueeSelection :: fn update(&mut self, current_x: f32, current_y: f32)
 src/marquee_selection.rs: impl MarqueeSelectionMode :: fn as_str(self) -> &'static str
-src/marquee_selection.rs: pub fn begin_marquee_selection(selection: &mut MarqueeSelection, start_x: f32, start_y: f32)
+src/marquee_selection.rs: pub fn begin_marquee_selection(selection: &mut MarqueeSelection, start_x: f64, start_y: f64)
 src/marquee_selection.rs: pub fn create_marquee_selection() -> MarqueeSelection
 src/marquee_selection.rs: pub fn end_marquee_selection(selection: &mut MarqueeSelection) -> &Rectangle
 src/marquee_selection.rs: pub fn find_nodes_in_marquee_selection(out: &mut Vec<NodeRef>, selection: &MarqueeSelection, candidates: &[NodeRef], mode: Option<MarqueeSelectionMode>,)
@@ -67,11 +66,12 @@ src/marquee_selection.rs: pub fn get_marquee_rectangle(selection: &MarqueeSelect
 src/marquee_selection.rs: pub fn get_marquee_selection_mode_string(value: MarqueeSelectionMode) -> &'static str
 src/marquee_selection.rs: pub fn initialize_marquee_selection(out: &mut MarqueeSelection)
 src/marquee_selection.rs: pub fn parse_marquee_selection_mode(value: &str) -> Option<MarqueeSelectionMode>
-src/marquee_selection.rs: pub fn update_marquee_selection(selection: &mut MarqueeSelection, current_x: f32, current_y: f32)
+src/marquee_selection.rs: pub fn update_marquee_selection(selection: &mut MarqueeSelection, current_x: f64, current_y: f64)
 src/pointer_selection_policy.rs: impl SelectionState :: fn apply_pointer_selection_policy(&self, hit: Option<&NodeRef>, modifiers: &SelectionModifierState,)
 src/pointer_selection_policy.rs: impl SelectionState :: fn apply_pointer_up_selection_policy(&self, hit: Option<&NodeRef>, modifiers: &SelectionModifierState, did_drag: bool,)
 src/pointer_selection_policy.rs: pub fn apply_pointer_selection_policy(state: &SelectionState, hit: Option<&NodeRef>, modifiers: &SelectionModifierState,)
 src/pointer_selection_policy.rs: pub fn apply_pointer_up_selection_policy(state: &SelectionState, hit: Option<&NodeRef>, modifiers: &SelectionModifierState, did_drag: bool,)
+src/marquee_selection.rs: impl MarqueeSelection :: fn update(&mut self, current_x: f64, current_y: f64)
 src/selection_state.rs: impl SelectionState :: fn active_node(&self) -> Option<NodeRef>
 src/selection_state.rs: impl SelectionState :: fn add_node(&self, node: &NodeRef)
 src/selection_state.rs: impl SelectionState :: fn clear(&self)
@@ -130,6 +130,6 @@ src/types.rs: impl Entity for SelectionState :: fn entity_runtime_mut(&mut self)
 src/types.rs: pub struct LassoSelection { runtime: EntityRuntimeSlot, pub(crate) state: LassoSelectionRuntime, }
 src/types.rs: pub struct LassoSelectionRuntime { pub active: bool, pub path: Path, }
 src/types.rs: pub struct MarqueeSelection { runtime: EntityRuntimeSlot, pub(crate) state: MarqueeSelectionRuntime, }
-src/types.rs: pub struct MarqueeSelectionRuntime { pub active: bool, pub rectangle: Rectangle, pub start_x: f32, pub start_y: f32, }
+src/types.rs: pub struct MarqueeSelectionRuntime { pub active: bool, pub rectangle: Rectangle, pub start_x: f64, pub start_y: f64, }
 src/types.rs: pub struct SelectionState { runtime: EntityRuntimeSlot, pub(crate) state: Ref<SelectionStateRuntime>, }
 src/types.rs: pub struct SelectionStateRuntime { pub active_node: Option<NodeRef>, pub selected_node_set: Vec<NodeRef>, pub selected_nodes: Vec<NodeRef>, pub signals: SelectionSignals, }

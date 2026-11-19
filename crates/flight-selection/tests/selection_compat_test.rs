@@ -993,6 +993,21 @@ mod update_marquee_selection {
     use super::*;
 
     #[test]
+    fn keeps_a_half_unit_drag_at_one_billion() {
+        // f32 spacing at 1e9 is 64, so both corners would round to 1e9 and the width would vanish.
+        let mut marquee = create_marquee_selection();
+        begin_marquee_selection(&mut marquee, 1.0e9, 0.0);
+
+        update_marquee_selection(&mut marquee, 1_000_000_000.5, 2.0);
+
+        assert_eq!(1_000_000_000.5_f64 as f32 - 1.0e9_f32, 0.0);
+        assert_eq!(
+            get_marquee_rectangle(&marquee),
+            &create_rectangle(1.0e9, 0.0, 0.5, 2.0)
+        );
+    }
+
+    #[test]
     fn normalizes_a_reverse_drag_into_positive_rectangle_dimensions() {
         let mut marquee = create_marquee_selection();
         begin_marquee_selection(&mut marquee, 10.0, 20.0);

@@ -40,8 +40,8 @@ pub enum MarqueeSelectionModeRaw {
 pub struct MarqueeSelectionRuntime {
     pub active: bool,
     pub rectangle: Rectangle,
-    pub start_x: f32,
-    pub start_y: f32,
+    pub start_x: f64,
+    pub start_y: f64,
 }
 
 /// Pointer modifiers consumed by the base selection policy.

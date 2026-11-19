@@ -91,8 +91,8 @@ pub(crate) fn initialize_marquee_selection_core(out: &mut MarqueeSelection) {
 
 pub(crate) fn begin_marquee_selection_core(
     selection: &mut MarqueeSelection,
-    start_x: f32,
-    start_y: f32,
+    start_x: f64,
+    start_y: f64,
 ) {
     selection.state.active = true;
     selection.state.start_x = start_x;
@@ -142,10 +142,10 @@ pub(crate) fn get_marquee_rectangle_core(selection: &MarqueeSelection) -> &Recta
 
 fn set_marquee_rectangle(
     rectangle: &mut Rectangle,
-    start_x: f32,
-    start_y: f32,
-    end_x: f32,
-    end_y: f32,
+    start_x: f64,
+    start_y: f64,
+    end_x: f64,
+    end_y: f64,
 ) {
     rectangle.x = start_x.min(end_x);
     rectangle.y = start_y.min(end_y);
@@ -155,8 +155,8 @@ fn set_marquee_rectangle(
 
 pub(crate) fn update_marquee_selection_core(
     selection: &mut MarqueeSelection,
-    current_x: f32,
-    current_y: f32,
+    current_x: f64,
+    current_y: f64,
 ) {
     if !selection.state.active {
         return;
@@ -175,7 +175,7 @@ impl MarqueeSelection {
         return create_marquee_selection_core();
     }
 
-    pub fn begin(&mut self, start_x: f32, start_y: f32) {
+    pub fn begin(&mut self, start_x: f64, start_y: f64) {
         begin_marquee_selection_core(self, start_x, start_y);
     }
 
@@ -196,7 +196,7 @@ impl MarqueeSelection {
         return get_marquee_rectangle_core(self);
     }
 
-    pub fn update(&mut self, current_x: f32, current_y: f32) {
+    pub fn update(&mut self, current_x: f64, current_y: f64) {
         update_marquee_selection_core(self, current_x, current_y);
     }
 }
