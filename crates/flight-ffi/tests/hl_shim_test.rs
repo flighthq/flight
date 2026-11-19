@@ -1063,10 +1063,10 @@ fn task_m_contract_docs_stay_attached_to_native_symbols() {
             "HL_PRIM vbyte * HL_NAME(flight_connect_signal_at_frame_rate)(vbyte * arg0, double arg1, vbyte * arg2, vbyte * arg3, vbyte * arg4) { return (vbyte *)flight_connect_signal_at_frame_rate((void *)arg0, (double)arg1, (void (*)(void *, double))arg2, (void *)arg3, (void (*)(void *))arg4); }",
         ),
         (
-            "Handler and error contexts are retained until flight_clear_geolocation_watch(id); caller must keep them alive through the clear call.",
+            "Handler and error contexts are retained until flight_clear_geolocation_watch(id); each nullable release callback then receives its context exactly once, when the host drops that callback, and the caller must keep a context alive until it is released.",
             None,
-            "int32_t flight_watch_geolocation_position(void * arg0, void (*arg1)(void *, void *), void * arg2, void * arg3, void (*arg4)(void *, uint32_t), void * arg5);",
-            "HL_PRIM int HL_NAME(flight_watch_geolocation_position)(vbyte * arg0, vbyte * arg1, vbyte * arg2, vbyte * arg3, vbyte * arg4, vbyte * arg5) { return (int)flight_watch_geolocation_position((void *)arg0, (void (*)(void *, void *))arg1, (void *)arg2, (void *)arg3, (void (*)(void *, uint32_t))arg4, (void *)arg5); }",
+            "int32_t flight_watch_geolocation_position(void * arg0, void (*arg1)(void *, void *), void * arg2, void (*arg3)(void *), void * arg4, void (*arg5)(void *, uint32_t), void * arg6, void (*arg7)(void *));",
+            "HL_PRIM int HL_NAME(flight_watch_geolocation_position)(vbyte * arg0, vbyte * arg1, vbyte * arg2, vbyte * arg3, vbyte * arg4, vbyte * arg5, vbyte * arg6, vbyte * arg7) { return (int)flight_watch_geolocation_position((void *)arg0, (void (*)(void *, void *))arg1, (void *)arg2, (void (*)(void *))arg3, (void *)arg4, (void (*)(void *, uint32_t))arg5, (void *)arg6, (void (*)(void *))arg7); }",
         ),
         (
             "data_kind tag: 0 means bytes; 1 means UTF-8 text; all other tags are invalid.",

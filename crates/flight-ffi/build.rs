@@ -1,3 +1,4 @@
+mod callback_alias;
 mod native_bindings;
 mod public_perimeter;
 mod reachability;
@@ -70,6 +71,23 @@ fn get_binding_name(name: &str) -> String {
         .trim_start_matches('_')
         .to_string()
 }
+
+// The callback aliases a parameter may be spelled with and still lower as a C callback: each is
+// resolved from its one source definition to its `Arc<dyn Fn(..)>` target. The list is policy, not
+// discovery: the scanned crates define about three hundred callback aliases, most of them host
+// capability or registry handler shapes that other policies keep out of the C surface, so each one
+// is admitted by name. IpcInvokeHandler (returns a future) and IpcMessageListener (takes
+// `&[AnySlot]`) are absent because their payloads have no C lowering yet, aliased or not.
+const LOWERED_CALLBACK_ALIASES: &[&str] = &[
+    "AnyInteractionSignalSlot",
+    "FileWatchListener",
+    "InputRepeatCallback",
+    "SignalSlot",
+];
+
+// The checked definitions of `LOWERED_CALLBACK_ALIASES`; set once after scanning.
+static CALLBACK_ALIASES: OnceLock<BTreeMap<String, callback_alias::CallbackAlias>> =
+    OnceLock::new();
 
 // Every named type's definitions, from source, for by-value ownership; each is flagged with whether
 // its crate root re-exports it by name, which picks the SDK's meaning when two crates share a name.
@@ -830,6 +848,7 @@ fn main() {
 
     let mut enum_definitions: BTreeMap<String, Vec<KnownEnum>> = BTreeMap::new();
     let mut type_definitions = BTreeMap::new();
+    let mut callback_definitions = BTreeMap::new();
     for dir_name in SCAN_CRATES {
         let src_dir = crates_dir.join(dir_name).join("src");
         if !src_dir.exists() {
@@ -858,8 +877,16 @@ fn main() {
             let content = fs::read_to_string(entry.path()).unwrap();
             parse_simple_enums(&content, dir_name, &mut enum_definitions);
             parse_type_definitions(&content, &exported_types, &mut type_definitions);
+            let file = syn::parse_file(&content).unwrap_or_else(|error| {
+                panic!("failed to parse {}: {error}", entry.path().display())
+            });
+            callback_alias::collect_callback_aliases(&file, dir_name, &mut callback_definitions);
         }
     }
+    let callback_aliases =
+        callback_alias::check_callback_aliases(&callback_definitions, LOWERED_CALLBACK_ALIASES)
+            .unwrap_or_else(|error| panic!("{error}"));
+    let _ = CALLBACK_ALIASES.set(callback_aliases);
     let known_enums: BTreeMap<String, KnownEnum> = enum_definitions
         .into_iter()
         .filter_map(|(name, mut definitions)| {
@@ -3828,7 +3855,7 @@ fn generate_ffi_wrapper(func: &ParsedFn) -> Option<(String, Option<String>)> {
         ));
     }
     if func.name == "watch_geolocation_position" {
-        notes.push_str("#[doc = \"flight-ffi contract|Handler and error contexts are retained until flight_clear_geolocation_watch(id); caller must keep them alive through the clear call.\"]\n");
+        notes.push_str("#[doc = \"flight-ffi contract|Handler and error contexts are retained until flight_clear_geolocation_watch(id); each nullable release callback then receives its context exactly once, when the host drops that callback, and the caller must keep a context alive until it is released.\"]\n");
     }
     if func.name == "write_file_atomic" {
         notes.push_str("#[doc = \"flight-ffi contract|data_kind tag: 0 means bytes; 1 means UTF-8 text; all other tags are invalid.\"]\n");
@@ -6638,6 +6665,12 @@ fn resolve_type_alias(ty: &str) -> String {
         unqualified = inner.trim().to_string();
     }
     let ty = unqualified.as_str();
+    if let Some(resolved) = CALLBACK_ALIASES
+        .get()
+        .and_then(|aliases| callback_alias::resolve_callback_alias(ty, aliases))
+    {
+        return resolved;
+    }
     let slice_aliases: &[(&str, &str)] = &[
         ("Uint8Array", "[u8]"),
         ("Int8Array", "[i8]"),
@@ -6787,6 +6820,9 @@ fn resolve_type_alias(ty: &str) -> String {
     }
     ty.to_string()
 }
+
+// The nullable release callback a retained callback context is handed to exactly once.
+const FFI_RELEASE_FN_TYPE: &str = "Option<extern \"C\" fn(*mut std::ffi::c_void)>";
 
 struct MappedParam {
     ffi_params: Vec<(String, String)>,
@@ -8030,21 +8066,22 @@ fn map_param_to_ffi(name: &str, ty: &str) -> Option<MappedParam> {
                         format!("extern \"C\" fn({}){ffi_ret}", ffi_fn_params.join(", "));
                     let outer_params_str = outer_closure_params.join(", ");
                     let arc_call_args = if ffi_fn_args_str.is_empty() {
-                        "__ctx as *mut std::ffi::c_void".to_string()
+                        "__guard.ctx()".to_string()
                     } else {
-                        format!(
-                            "__ctx as *mut std::ffi::c_void, {}",
-                            ffi_fn_args_str.join(", ")
-                        )
+                        format!("__guard.ctx(), {}", ffi_fn_args_str.join(", "))
                     };
                     let option_fn_sig = format!("Option<{ffi_fn_sig}>");
+                    let release_name = format!("{name}_release");
+                    // A NULL callback retains nothing, so the context stays the caller's and its
+                    // release never runs.
                     let closure_body = format!(
-                        "match {fn_name} {{ None => None, Some(__f_inner) => {{ let __ctx = {ctx_name} as usize; let __f = __f_inner as usize; Some(std::sync::Arc::new(move |{outer_params_str}| {{ let __fp: {ffi_fn_sig} = unsafe {{ std::mem::transmute(__f) }}; __fp({arc_call_args}) }})) }} }}"
+                        "match {fn_name} {{ None => None, Some(__f_inner) => {{ let __guard = FfiSignalCallbackRelease {{ ctx: {ctx_name} as usize, release: {release_name} }}; let __f = __f_inner as usize; Some(std::sync::Arc::new(move |{outer_params_str}| {{ let __fp: {ffi_fn_sig} = unsafe {{ std::mem::transmute(__f) }}; __fp({arc_call_args}) }})) }} }}"
                     );
                     return Some(MappedParam {
                         ffi_params: vec![
                             (fn_name, option_fn_sig),
                             (ctx_name, "*mut std::ffi::c_void".to_string()),
+                            (release_name, FFI_RELEASE_FN_TYPE.to_string()),
                         ],
                         bindings: Vec::new(),
                         call_expr: closure_body,
@@ -8140,12 +8177,9 @@ fn map_param_to_ffi(name: &str, ty: &str) -> Option<MappedParam> {
             format!("{ctx_name}, {}", ffi_fn_args_str.join(", "))
         };
         let arc_call_args = if ffi_fn_args_str.is_empty() {
-            "__ctx as *mut std::ffi::c_void".to_string()
+            "__guard.ctx()".to_string()
         } else {
-            format!(
-                "__ctx as *mut std::ffi::c_void, {}",
-                ffi_fn_args_str.join(", ")
-            )
+            format!("__guard.ctx(), {}", ffi_fn_args_str.join(", "))
         };
         let direct_callback_call = if let Some(qualified) = &opaque_option_return {
             format!(
@@ -8161,20 +8195,29 @@ fn map_param_to_ffi(name: &str, ty: &str) -> Option<MappedParam> {
         } else {
             format!("__fp({arc_call_args})")
         };
+        // A retained (`Arc`) callback owns its context through a release guard: the SDK may keep
+        // the closure past this call, so `{name}_release(ctx)` runs exactly once, when the SDK drops
+        // its last handle to it. A borrowed (`&dyn Fn`) callback is only called during this call
+        // and takes no release.
+        let release_name = format!("{name}_release");
         let closure_body = if parsed.is_arc {
             format!(
-                "{{ let __ctx = {ctx_name} as usize; let __f = {fn_name} as usize; std::sync::Arc::new(move |{outer_params_str}| {{ let __fp: {ffi_fn_sig} = unsafe {{ std::mem::transmute(__f) }}; {arc_callback_call} }}) }}"
+                "{{ let __guard = FfiSignalCallbackRelease {{ ctx: {ctx_name} as usize, release: {release_name} }}; let __f = {fn_name} as usize; std::sync::Arc::new(move |{outer_params_str}| {{ let __fp: {ffi_fn_sig} = unsafe {{ std::mem::transmute(__f) }}; {arc_callback_call} }}) }}"
             )
         } else if parsed.is_mut {
             format!("&mut |{outer_params_str}| {direct_callback_call}")
         } else {
             format!("&|{outer_params_str}| {direct_callback_call}")
         };
+        let mut ffi_params = vec![
+            (fn_name, ffi_fn_sig),
+            (ctx_name, "*mut std::ffi::c_void".to_string()),
+        ];
+        if parsed.is_arc {
+            ffi_params.push((release_name, FFI_RELEASE_FN_TYPE.to_string()));
+        }
         return Some(MappedParam {
-            ffi_params: vec![
-                (fn_name, ffi_fn_sig),
-                (ctx_name, "*mut std::ffi::c_void".to_string()),
-            ],
+            ffi_params,
             bindings: Vec::new(),
             call_expr: closure_body,
         });

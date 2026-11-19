@@ -28,6 +28,9 @@ enum Contract {
         mutable: bool,
         nullable: bool,
     },
+    // A retained callback lowered to `{p}_fn`, `{p}_ctx` and `{p}_release`, whose release guard
+    // hands the context back exactly once.
+    CallbackParam(&'static str),
     ClonedParam(&'static str),
     CopiedParam(&'static str),
     CheckedEnumParam(&'static str),
@@ -862,25 +865,25 @@ const TASK_K_CANDIDATES: &[Candidate] = &[
         "on_tray_balloon_event",
         "SignalSlot<TrayBalloonEvent>",
         Signal,
-        Contract::ClonedParam("listener")
+        Contract::CallbackParam("listener")
     ),
     generated!(
         "on_tray_drop",
         "SignalSlot<TrayDropEvent>",
         Signal,
-        Contract::ClonedParam("listener")
+        Contract::CallbackParam("listener")
     ),
     generated!(
         "on_tray_interaction",
         "SignalSlot<TrayInteractionEvent>",
         Signal,
-        Contract::ClonedParam("listener")
+        Contract::CallbackParam("listener")
     ),
     generated!(
         "on_tray_menu_selection",
         "SignalSlot<TrayMenuSelectionEvent>",
         Signal,
-        Contract::ClonedParam("listener")
+        Contract::CallbackParam("listener")
     ),
     // HashMap carriers (6).
     ownership_skip!(
@@ -1628,6 +1631,27 @@ fn task_k_generated_surface_satisfies_every_inventory_contract() {
                         || format!("{} loses nullable {parameter}", candidate.function),
                     );
                 }
+            }
+            Contract::CallbackParam(parameter) => {
+                push_error(
+                    &mut errors,
+                    [
+                        format!("{parameter}_fn: extern \"C\" fn("),
+                        format!("{parameter}_ctx: *mut std::ffi::c_void"),
+                        format!("{parameter}_release: Option<extern \"C\" fn(*mut std::ffi::c_void)>"),
+                        format!(
+                            "FfiSignalCallbackRelease {{ ctx: {parameter}_ctx as usize, release: {parameter}_release }}"
+                        ),
+                    ]
+                    .iter()
+                    .all(|needle| block.contains(needle.as_str())),
+                    || {
+                        format!(
+                            "{} does not lower callback {parameter} to a released fn/ctx/release triple",
+                            candidate.function
+                        )
+                    },
+                );
             }
             Contract::ClonedParam(parameter) => {
                 push_error(

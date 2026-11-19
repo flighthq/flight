@@ -1,6 +1,6 @@
 format|ffi-reachability-baseline|1
 policy|host_capability|feature-gated native host crates supply borrowed Host*Capability carriers
-summary|policy-exempt|264|unreachable|3104|blocking-carriers|831
+summary|policy-exempt|264|unreachable|3102|blocking-carriers|824
 carrier|1|*const Option<String>
 carrier|1|*const Option<flight_sdk::Ref<dyn flight_sdk::Node2D>>
 carrier|2|*const flight_sdk::AbcInstruction
@@ -8,7 +8,6 @@ carrier|1|*const flight_sdk::AccessibilityNode
 carrier|1|*const flight_sdk::AddNodeChildCommand
 carrier|3|*const flight_sdk::AmbientLightReading
 carrier|6|*const flight_sdk::AnimationStateMachine
-carrier|1|*const flight_sdk::AnyInteractionSignalSlot
 carrier|1|*const flight_sdk::AppLoginItemLike
 carrier|5|*const flight_sdk::AppLoop
 carrier|18|*const flight_sdk::AppWindow
@@ -92,7 +91,6 @@ carrier|1|*const flight_sdk::EffectInput
 carrier|3|*const flight_sdk::EffectRef
 carrier|1|*const flight_sdk::EmissiveModifierOptions
 carrier|1|*const flight_sdk::EntityRuntimeWriteGuard
-carrier|1|*const flight_sdk::FileWatchListener
 carrier|2|*const flight_sdk::FlightDocumentInteractiveStates
 carrier|2|*const flight_sdk::FlowGuardState
 carrier|1|*const flight_sdk::FocusManagerOptions
@@ -135,7 +133,6 @@ carrier|1|*const flight_sdk::InputGamepadConnectData
 carrier|12|*const flight_sdk::InputIngressSource
 carrier|12|*const flight_sdk::InputKeyboardData
 carrier|1|*const flight_sdk::InputManager
-carrier|1|*const flight_sdk::InputRepeatCallback
 carrier|4|*const flight_sdk::InputTargetHandle
 carrier|1|*const flight_sdk::InputTextData
 carrier|1|*const flight_sdk::InteractionDispatchLayer
@@ -299,10 +296,6 @@ carrier|2|*const flight_sdk::ShapeStrokeRegion
 carrier|6|*const flight_sdk::ShapedGlyph
 carrier|5|*const flight_sdk::ShapedRun
 carrier|1|*const flight_sdk::ShellExternalUrlPolicy
-carrier|1|*const flight_sdk::SignalSlot<flight_sdk::TrayBalloonEvent>
-carrier|1|*const flight_sdk::SignalSlot<flight_sdk::TrayDropEvent>
-carrier|1|*const flight_sdk::SignalSlot<flight_sdk::TrayInteractionEvent>
-carrier|1|*const flight_sdk::SignalSlot<flight_sdk::TrayMenuSelectionEvent>
 carrier|14|*const flight_sdk::Skeleton2D
 carrier|2|*const flight_sdk::Skeleton2DAnimationTargetBinderRegistry
 carrier|1|*const flight_sdk::Skeleton2DConstraintRef
@@ -764,7 +757,7 @@ carrier|1|Box<flight_sdk::Physics2DJointSolverRef>
 carrier|1|Box<flight_sdk::Ref<Vec<Option<flight_sdk::Ref<dyn flight_sdk::Node>>>>>
 carrier|1|Box<flight_sdk::Ref<dyn flight_sdk::Adjustment>>
 carrier|3|Box<flight_sdk::Ref<dyn flight_sdk::Modifier>>
-carrier|136|Box<flight_sdk::Ref<dyn flight_sdk::Node>>
+carrier|137|Box<flight_sdk::Ref<dyn flight_sdk::Node>>
 carrier|2|Box<flight_sdk::Ref<flight_sdk::AnimationBlendTree>>
 carrier|1|Box<flight_sdk::Ref<flight_sdk::AnimationClip>>
 carrier|2|Box<flight_sdk::Ref<flight_sdk::AnimationPlayer>>
@@ -806,7 +799,7 @@ carrier|2|Box<flight_sdk::Ref<flight_sdk::SocketGuardState>>
 carrier|12|Box<flight_sdk::Ref<flight_sdk::StatechartInstanceRaw>>
 carrier|1|Box<flight_sdk::Ref<flight_sdk::StatechartRaw>>
 carrier|4|Box<flight_sdk::Ref<flight_sdk::TextFormat>>
-carrier|16|Box<flight_sdk::Ref<flight_sdk::TrayIcon>>
+carrier|20|Box<flight_sdk::Ref<flight_sdk::TrayIcon>>
 carrier|16|Box<flight_sdk::Ref<flight_sdk::VideoChannel>>
 carrier|1|Box<flight_sdk::Ref<flight_sdk::WindowResizeTargetHandle>>
 carrier|1|Box<flight_sdk::Ref<flight_sdk::text::contract::TextLayoutContext>>
@@ -1298,7 +1291,7 @@ unreachable|flight_connect_focus_navigation|*const flight_sdk::FocusNavigationIn
 unreachable|flight_connect_input_to_interaction|Box<flight_sdk::Ref<flight_sdk::InteractionManager>>
 unreachable|flight_connect_input_to_text_input|*const flight_sdk::TextInputSource
 unreachable|flight_connect_interaction_dispatch_layer|*const flight_sdk::InteractionDispatchLayer
-unreachable|flight_connect_interaction_signal|*const flight_sdk::AnyInteractionSignalSlot
+unreachable|flight_connect_interaction_signal|Box<flight_sdk::Ref<dyn flight_sdk::Node>>
 unreachable|flight_connect_signal_at_frame_rate|Box<flight_sdk::Signal<flight_sdk::FrameTick>>
 unreachable|flight_contains_node2d|Box<flight_sdk::Ref<dyn flight_sdk::Node>>
 unreachable|flight_contains_node_child|Box<flight_sdk::Ref<dyn flight_sdk::Node>>
@@ -2856,10 +2849,10 @@ unreachable|flight_measure_text|*const flight_sdk::TextFormat
 unreachable|flight_normalize_effect|*const flight_sdk::EffectRef
 unreachable|flight_on_ipc_invoke|*const flight_sdk::IpcInvokeHandler
 unreachable|flight_on_ipc_message|*const flight_sdk::IpcMessageListener
-unreachable|flight_on_tray_balloon_event|*const flight_sdk::SignalSlot<flight_sdk::TrayBalloonEvent>
-unreachable|flight_on_tray_drop|*const flight_sdk::SignalSlot<flight_sdk::TrayDropEvent>
-unreachable|flight_on_tray_interaction|*const flight_sdk::SignalSlot<flight_sdk::TrayInteractionEvent>
-unreachable|flight_on_tray_menu_selection|*const flight_sdk::SignalSlot<flight_sdk::TrayMenuSelectionEvent>
+unreachable|flight_on_tray_balloon_event|Box<flight_sdk::Ref<flight_sdk::TrayIcon>>
+unreachable|flight_on_tray_drop|Box<flight_sdk::Ref<flight_sdk::TrayIcon>>
+unreachable|flight_on_tray_interaction|Box<flight_sdk::Ref<flight_sdk::TrayIcon>>
+unreachable|flight_on_tray_menu_selection|Box<flight_sdk::Ref<flight_sdk::TrayIcon>>
 unreachable|flight_once_ipc_message|*const flight_sdk::IpcMessageListener
 unreachable|flight_open_tcp_socket|*const flight_sdk::TcpSocketOptions
 unreachable|flight_order_modifier_stack|Box<flight_sdk::Ref<dyn flight_sdk::Modifier>>
@@ -4099,7 +4092,6 @@ unreachable|flight_sort_strings|*const flight_sdk::LocaleInput
 unreachable|flight_spritesheet_all_formats|*const flight_sdk::SpritesheetFormatRegistry
 unreachable|flight_starling_spritesheet_format|*const flight_sdk::SpritesheetFormatRegistry
 unreachable|flight_starling_texture_atlas_format|*const flight_sdk::TextureAtlasFormatRegistry
-unreachable|flight_start_input_key_repeat_timer|*const flight_sdk::InputRepeatCallback
 unreachable|flight_start_tray_icon_animation|*const flight_sdk::TrayAnimationState
 unreachable|flight_step_particle_objects|*mut flight_sdk::ParticleObject
 unreachable|flight_step_physics2d|*const flight_sdk::CollisionRegistry2D
@@ -4163,7 +4155,6 @@ unreachable|flight_validate_spritesheet|Box<Vec<flight_sdk::SpritesheetValidatio
 unreachable|flight_validate_spritesheet_data|Box<Vec<flight_sdk::SpritesheetValidationDiagnostic>>
 unreachable|flight_wake_physics2d_body|*mut flight_sdk::RigidBody2D
 unreachable|flight_walk_node_descendants|Box<flight_sdk::Ref<dyn flight_sdk::Node>>
-unreachable|flight_watch_path|*const flight_sdk::FileWatchListener
 unreachable|flight_write_collision_convex_hull_faces3d|Box<Vec<usize>>
 unreachable|flight_write_collision_distance3d|*const flight_sdk::CollisionRegistry3D
 unreachable|flight_write_dialog_handle_binary_file|Box<flight_sdk::Ref<flight_sdk::FileDialogHandle>>

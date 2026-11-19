@@ -7,6 +7,13 @@ struct AsyncResult {
     value: bool,
 }
 
+// A callback context: the values its callback received and how often it was released.
+#[derive(Default)]
+struct Recorded<T> {
+    values: Vec<T>,
+    releases: usize,
+}
+
 #[test]
 fn callback_collections_and_path_segments_execute_with_bounded_contexts() {
     let curve = unsafe {
@@ -152,28 +159,43 @@ fn retained_callbacks_have_explicit_signal_and_geolocation_teardown() {
         }),
         prompt_for_access: None,
     };
-    let mut positions = Vec::new();
-    let mut errors = Vec::new();
+    let mut positions = Recorded::<f32>::default();
+    let mut errors = Recorded::<u32>::default();
     let id = unsafe {
         crate::flight_watch_geolocation_position(
             &host,
             z_geolocation_position,
-            (&mut positions as *mut Vec<f32>).cast(),
+            (&mut positions as *mut Recorded<f32>).cast(),
+            Some(z_record_release::<f32>),
             std::ptr::null(),
             Some(z_geolocation_error),
-            (&mut errors as *mut Vec<u32>).cast(),
+            (&mut errors as *mut Recorded<u32>).cast(),
+            Some(z_record_release::<u32>),
         )
     };
     assert_eq!(id, 7);
-    assert!(positions.is_empty());
-    assert!(errors.is_empty());
+    assert!(positions.values.is_empty());
+    assert!(errors.values.is_empty());
+    assert_eq!(
+        (positions.releases, errors.releases),
+        (0, 0),
+        "retained callbacks keep their contexts"
+    );
     let mut position = flight_sdk::GeolocationPosition::default();
     position.latitude = 51.5;
     retained_position.lock().unwrap().as_ref().unwrap()(&position);
     retained_error.lock().unwrap().as_ref().unwrap()(flight_sdk::GeolocationErrorReason::Denied);
-    assert_eq!(positions, [51.5_f32]);
-    assert_eq!(errors, [flight_sdk::GeolocationErrorReason::Denied as u32]);
+    assert_eq!(positions.values, [51.5_f32]);
+    assert_eq!(
+        errors.values,
+        [flight_sdk::GeolocationErrorReason::Denied as u32]
+    );
     unsafe { crate::flight_clear_geolocation_watch(&host, id) };
+    assert_eq!(
+        (positions.releases, errors.releases),
+        (1, 1),
+        "dropping each retained callback releases its context exactly once"
+    );
     assert!(retained_position.lock().unwrap().is_none());
     assert!(retained_error.lock().unwrap().is_none());
     assert!(
@@ -194,8 +216,12 @@ fn retained_callbacks_have_explicit_signal_and_geolocation_teardown() {
             .upgrade()
             .is_none()
     );
-    assert_eq!(positions, [51.5_f32]);
-    assert_eq!(errors, [flight_sdk::GeolocationErrorReason::Denied as u32]);
+    assert_eq!(positions.values, [51.5_f32]);
+    assert_eq!(
+        errors.values,
+        [flight_sdk::GeolocationErrorReason::Denied as u32]
+    );
+    assert_eq!((positions.releases, errors.releases), (1, 1));
 }
 
 #[test]
@@ -336,14 +362,22 @@ fn z_empty_file_system() -> flight_sdk::HostFileSystemCapability {
 }
 
 extern "C" fn z_geolocation_error(context: *mut c_void, reason: u32) {
-    unsafe { &mut *(context as *mut Vec<u32>) }.push(reason);
+    unsafe { &mut *(context as *mut Recorded<u32>) }
+        .values
+        .push(reason);
 }
 
 extern "C" fn z_geolocation_position(
     context: *mut c_void,
     position: *const flight_sdk::GeolocationPosition,
 ) {
-    unsafe { &mut *(context as *mut Vec<f32>) }.push(unsafe { (*position).latitude });
+    unsafe { &mut *(context as *mut Recorded<f32>) }
+        .values
+        .push(unsafe { (*position).latitude });
+}
+
+extern "C" fn z_record_release<T>(context: *mut c_void) {
+    unsafe { &mut *(context as *mut Recorded<T>) }.releases += 1;
 }
 
 extern "C" fn z_sample_particle_color(_context: *mut c_void, value: f32, out: *mut f32) -> bool {
