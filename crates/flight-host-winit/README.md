@@ -10,27 +10,33 @@ All host verbs and all borrowed capabilities must be used on the thread that cal
 
 ## Capability table
 
-| Contract | Filled | Notes |
-| --- | --- | --- |
-| `HostWindowCapabilities.appearance` | yes | title; icon and opacity remain unavailable |
-| `focus` | yes | focus request |
-| `fullscreen` | yes | borderless fullscreen on the current monitor |
-| `geometry` | yes | bounds, position, size, centering, move/resize subscriptions |
-| `lifecycle` | yes | open/configure, close, close-request subscription |
-| `size_constraints` | yes | minimum/maximum inner size and resizability |
-| `state` | yes | maximize, minimize, restore |
-| `visibility` | yes | show/hide; winit has no portable visibility-change notification |
-| `z_order` | yes | normal/always-on-top |
-| `attach`, `content_protection`, `hierarchy`, `progress`, `shadow`, `shell` | no | no coherent portable one-window implementation in this host |
-| cursor mutation | no slot | the current `HostWindowCapabilities` contract has no cursor facet |
-| `HostAppLoopCapability` | yes | monotonic `now`; request/cancel callbacks run at pump and run frame points |
-| `HostLifecycleCapability` | yes | active/inactive/background plus resumed/suspended/focus notifications |
-| `HostScreenCapabilities.query` | yes | monitor enumeration, current monitor, scale factor, tracked cursor position |
-| screen change/details/permission | no | winit exposes no portable permission or monitor-change subscription |
-| `HostInputIngressCapability` | yes | keyboard, pointer/touch, relative pointer, wheel, committed/composing text |
-| gamepad ingress | inert | the SDK field is required, but winit has no gamepad API; attach returns an inert release |
-| `HostSurfaceCapabilities` | yes | logical display size and backing-size reconfiguration |
-| `HostWgpuCapability` | yes | host-owned device, immediate acquisition, surface attachment and live extent |
+| Contract | Filled | Borrowed getter | Notes |
+| --- | --- | --- | --- |
+| `HostWindowCapabilities.appearance` | yes | `get_winit_host_window_appearance_capability` | title; icon and opacity remain unavailable |
+| `focus` | yes | `get_winit_host_window_focus_capability` | focus request |
+| `fullscreen` | yes | `get_winit_host_window_fullscreen_capability` | borderless fullscreen on the current monitor |
+| `geometry` | yes | `get_winit_host_window_geometry_capability` | bounds, position, size, centering, move/resize subscriptions |
+| `lifecycle` | yes | `get_winit_host_window_lifecycle_capability` | open/configure, close, close-request subscription |
+| `size_constraints` | yes | `get_winit_host_window_size_constraints_capability` | minimum/maximum inner size and resizability |
+| `state` | yes | `get_winit_host_window_state_capability` | maximize, minimize, restore |
+| `visibility` | yes | `get_winit_host_window_visibility_capability` | show/hide; winit has no portable visibility-change notification |
+| `z_order` | yes | `get_winit_host_window_z_order_capability` | normal/always-on-top |
+| `attach`, `content_protection`, `hierarchy`, `progress`, `shadow`, `shell` | no | — | no coherent portable one-window implementation in this host |
+| cursor mutation | no slot | — | the current `HostWindowCapabilities` contract has no cursor facet |
+| `HostAppLoopCapability` | yes | `get_winit_host_app_loop_capability` | monotonic `now`; request/cancel callbacks run at pump and run frame points |
+| `HostLifecycleCapability` | yes | `get_winit_host_lifecycle_capability` | active/inactive/background plus resumed/suspended/focus notifications |
+| `HostScreenCapabilities.query` | yes | `get_winit_host_screen_query_capability` | monitor enumeration, current monitor, scale factor, tracked cursor position |
+| screen change/details/permission | no | — | winit exposes no portable permission or monitor-change subscription |
+| `HostInputIngressCapability` | yes | `get_winit_host_input_ingress_capability` | keyboard, pointer/touch, relative pointer, wheel, committed/composing text |
+| gamepad ingress | inert | — | the SDK field is required, but winit has no gamepad API; attach returns an inert release |
+| `HostSurfaceCapabilities.display` | yes | `get_winit_host_surface_display_capability` | logical display-size requests |
+| `HostSurfaceCapabilities.resize` | yes | `get_winit_host_surface_resize_capability` | backing-size reconfiguration |
+| `HostWgpuCapability` | yes | `get_winit_host_wgpu_capability` | immediate acquisition, surface attachment and live extent |
+
+`create_winit_host_surface` returns an owned clone of the host's one canonical `SurfaceRef`; callers
+may release their clone independently. `get_winit_host_wgpu_device` borrows the host-owned device.
+All capability and device borrows remain valid only while the `WinitHost` remains alive, and every
+filled leaf carries the same provider identity as the host's surface and device.
 
 The host chooses a non-sRGB presentation format when the adapter offers one. Resize and scale-factor
 events update the live presentation extent and reconfigure the surface. A zero-sized (minimized)

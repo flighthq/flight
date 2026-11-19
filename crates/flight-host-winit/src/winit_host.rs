@@ -41,9 +41,9 @@ use flight_screen::{
 };
 use flight_surface::{
     HostSurfaceCapabilities, HostSurfaceDisplayCapability, HostSurfaceResizeCapability,
-    HostWgpuCapability, SurfaceRef, WgpuHostAcquisition, WgpuHostAcquisitionOptions,
+    HostWgpuCapability, SurfaceBase, SurfaceRef, WgpuHostAcquisition, WgpuHostAcquisitionOptions,
     WgpuHostAcquisitionOwnership, WgpuPresentationSurface, WgpuProviderFuture,
-    WgpuSurfaceAttachResult, WgpuSurfaceAttachment, create_wgpu_host_acquisition,
+    WgpuSurfaceAttachResult, WgpuSurfaceAttachment, allocate_surface, create_wgpu_host_acquisition,
     get_surface_handle,
 };
 use futures::executor::block_on;
@@ -163,6 +163,7 @@ pub struct WinitHost {
     wgpu_capability: HostWgpuCapability,
     input_source: InputIngressSource,
     native_window: NativeWindowHandle,
+    surface: SurfaceRef,
 }
 
 /// The stage at which host creation or event-loop execution failed.
@@ -707,9 +708,13 @@ pub fn create_winit_host(options: &WinitHostOptions) -> Result<WinitHost, WinitH
         handle: source_handle.clone(),
     };
     let native_window = NativeWindowHandle {
+        provider: provider.clone(),
+        handle: source_handle.clone(),
+    };
+    let surface: SurfaceRef = allocate_surface::<SurfaceBase>(Some(NativeSurfaceHandle {
         provider,
         handle: source_handle,
-    };
+    }));
 
     return Ok(WinitHost {
         created_thread: std::thread::current().id(),
@@ -728,7 +733,28 @@ pub fn create_winit_host(options: &WinitHostOptions) -> Result<WinitHost, WinitH
         wgpu_capability,
         input_source,
         native_window,
+        surface,
     });
+}
+
+/// Builds the plain options record consumed by [`create_winit_host`].
+pub fn create_winit_host_options(
+    title: &str,
+    width: f64,
+    height: f64,
+    visible: bool,
+) -> WinitHostOptions {
+    return WinitHostOptions {
+        title: title.to_string(),
+        width,
+        height,
+        visible,
+    };
+}
+
+/// Returns an owned reference to the host's canonical window surface.
+pub fn create_winit_host_surface(host: &WinitHost) -> SurfaceRef {
+    return host.surface.clone();
 }
 
 fn active_listener<T: ?Sized + Send + Sync + 'static>(
@@ -836,9 +862,30 @@ pub fn get_winit_host_screen_capabilities(host: &WinitHost) -> &HostScreenCapabi
     return &host.screen_capabilities;
 }
 
+/// Borrows the filled monitor and cursor query capability.
+pub fn get_winit_host_screen_query_capability(
+    host: &WinitHost,
+) -> Option<&HostScreenQueryCapability> {
+    return host.screen_capabilities.query.as_ref();
+}
+
 /// Borrows logical/backing surface resize capabilities.
 pub fn get_winit_host_surface_capabilities(host: &WinitHost) -> &HostSurfaceCapabilities {
     return &host.surface_capabilities;
+}
+
+/// Borrows the filled logical display-size capability.
+pub fn get_winit_host_surface_display_capability(
+    host: &WinitHost,
+) -> Option<&HostSurfaceDisplayCapability> {
+    return host.surface_capabilities.display.as_ref();
+}
+
+/// Borrows the filled backing-size reconfiguration capability.
+pub fn get_winit_host_surface_resize_capability(
+    host: &WinitHost,
+) -> Option<&HostSurfaceResizeCapability> {
+    return host.surface_capabilities.resize.as_ref();
 }
 
 /// Borrows the wgpu acquisition and presentation capability.
@@ -846,9 +893,77 @@ pub fn get_winit_host_wgpu_capability(host: &WinitHost) -> &HostWgpuCapability {
     return &host.wgpu_capability;
 }
 
+/// Borrows the host-owned device used by render states and screen render targets.
+pub fn get_winit_host_wgpu_device(host: &WinitHost) -> &WgpuDevice {
+    return &host.application.state.gpu.device;
+}
+
+/// Borrows the filled window appearance capability.
+pub fn get_winit_host_window_appearance_capability(
+    host: &WinitHost,
+) -> Option<&HostWindowAppearanceCapability> {
+    return host.window_capabilities.appearance.as_ref();
+}
+
 /// Borrows the filled window capability group.
 pub fn get_winit_host_window_capabilities(host: &WinitHost) -> &HostWindowCapabilities {
     return &host.window_capabilities;
+}
+
+/// Borrows the filled window focus capability.
+pub fn get_winit_host_window_focus_capability(
+    host: &WinitHost,
+) -> Option<&HostWindowFocusCapability> {
+    return host.window_capabilities.focus.as_ref();
+}
+
+/// Borrows the filled window fullscreen capability.
+pub fn get_winit_host_window_fullscreen_capability(
+    host: &WinitHost,
+) -> Option<&HostWindowFullscreenCapability> {
+    return host.window_capabilities.fullscreen.as_ref();
+}
+
+/// Borrows the filled window geometry capability.
+pub fn get_winit_host_window_geometry_capability(
+    host: &WinitHost,
+) -> Option<&HostWindowGeometryCapability> {
+    return host.window_capabilities.geometry.as_ref();
+}
+
+/// Borrows the filled window lifecycle capability.
+pub fn get_winit_host_window_lifecycle_capability(
+    host: &WinitHost,
+) -> Option<&HostWindowLifecycleCapability> {
+    return host.window_capabilities.lifecycle.as_ref();
+}
+
+/// Borrows the filled window size-constraints capability.
+pub fn get_winit_host_window_size_constraints_capability(
+    host: &WinitHost,
+) -> Option<&HostWindowSizeConstraintsCapability> {
+    return host.window_capabilities.size_constraints.as_ref();
+}
+
+/// Borrows the filled window state capability.
+pub fn get_winit_host_window_state_capability(
+    host: &WinitHost,
+) -> Option<&HostWindowStateCapability> {
+    return host.window_capabilities.state.as_ref();
+}
+
+/// Borrows the filled window visibility capability.
+pub fn get_winit_host_window_visibility_capability(
+    host: &WinitHost,
+) -> Option<&HostWindowVisibilityCapability> {
+    return host.window_capabilities.visibility.as_ref();
+}
+
+/// Borrows the filled window z-order capability.
+pub fn get_winit_host_window_z_order_capability(
+    host: &WinitHost,
+) -> Option<&HostWindowZOrderCapability> {
+    return host.window_capabilities.z_order.as_ref();
 }
 
 fn inactive_input_attach() -> InputIngressAttach {
