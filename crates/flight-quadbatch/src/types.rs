@@ -35,6 +35,7 @@ pub struct QuadBatch {
 /// Instance buffers and shared resources of a batch (TS `QuadBatchData`). Vector lengths preserve
 /// typed-array allocation lengths, while `instance_count` is the independent logical length.
 #[repr(C)]
+// flight-lint: allow(f32) the instance transform buffers are the TS Float32Array lane
 pub struct QuadBatchData {
     runtime: EntityRuntimeSlot,
     pub atlas: Option<Ref<TextureAtlas>>,
@@ -47,6 +48,7 @@ pub struct QuadBatchData {
 
 /// Batch-specific mutable runtime fields (TS `QuadBatchRuntime` past the inherited Node2D tier).
 #[derive(Clone, Debug, Default)]
+// flight-lint: allow(f32) the instance transform buffers are the TS Float32Array lane
 pub struct QuadBatchRuntime {
     pub instance_velocities: Option<Vec<f32>>,
     pub local_bounds_rectangle: Option<Rectangle>,

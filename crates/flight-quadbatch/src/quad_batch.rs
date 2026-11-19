@@ -83,13 +83,14 @@ pub fn initialize_quad_batch_signals(out: &mut QuadBatchSignals) {
 /// Appends one translation-only instance, growing the typed-array lengths when required (TS
 /// `appendQuadBatchInstance`). The fixed two-float write is intentional even for a matrix batch,
 /// matching the source's documented vector-only append operation.
-pub fn append_quad_batch_instance(target: &mut QuadBatch, id: u16, x: f32, y: f32) -> usize {
+// flight-lint: allow(f32) reads or writes the TS Float32Array instance transform lane; coordinates are f64 and narrow once at each store
+pub fn append_quad_batch_instance(target: &mut QuadBatch, id: u16, x: f64, y: f64) -> usize {
     let index = target.data.instance_count;
     resize_quad_batch(target, index + 1);
     target.data.ids[index] = id;
     let offset = index * QUAD_VECTOR2_STRIDE;
-    target.data.transforms[offset] = x;
-    target.data.transforms[offset + 1] = y;
+    target.data.transforms[offset] = x as f32;
+    target.data.transforms[offset + 1] = y as f32;
     if let Some(signals) = get_quad_batch_signals(target) {
         emit_signal(&signals.read().unwrap().on_instance_appended, &index);
     }
@@ -122,6 +123,7 @@ pub fn clone_quad_batch(source: &QuadBatch) -> Ref<QuadBatch> {
 
 /// Stably removes sentinel-id holes from the logical prefix without shrinking buffers (TS
 /// `compactQuadBatch`).
+// flight-lint: allow(f32) reads or writes the TS Float32Array instance transform lane; coordinates are f64 and narrow once at each store
 pub fn compact_quad_batch(target: &mut QuadBatch) {
     let data = &mut target.data;
     if data.instance_count == 0 {
@@ -176,10 +178,10 @@ pub fn compute_quad_batch_local_bounds_rectangle(out: &mut Rectangle, source: &Q
         return;
     }
     let atlas = atlas.read().unwrap();
-    let mut min_x = f32::INFINITY;
-    let mut min_y = f32::INFINITY;
-    let mut max_x = f32::NEG_INFINITY;
-    let mut max_y = f32::NEG_INFINITY;
+    let mut min_x = f64::INFINITY;
+    let mut min_y = f64::INFINITY;
+    let mut max_x = f64::NEG_INFINITY;
+    let mut max_y = f64::NEG_INFINITY;
     match data.transform_type {
         QuadTransformType::Vector2 => {
             for index in 0..data.instance_count {
@@ -198,8 +200,12 @@ pub fn compute_quad_batch_local_bounds_rectangle(out: &mut Rectangle, source: &Q
                 else {
                     continue;
                 };
-                let (width, height) =
-                    logical_region_size(region.width, region.height, region.rotation);
+                let (x, y) = (f64::from(x), f64::from(y));
+                let (width, height) = logical_region_size(
+                    f64::from(region.width),
+                    f64::from(region.height),
+                    region.rotation,
+                );
                 min_x = min_x.min(x);
                 min_y = min_y.min(y);
                 max_x = max_x.max(x + width);
@@ -220,8 +226,11 @@ pub fn compute_quad_batch_local_bounds_rectangle(out: &mut Rectangle, source: &Q
                 else {
                     continue;
                 };
-                let (width, height) =
-                    logical_region_size(region.width, region.height, region.rotation);
+                let (width, height) = logical_region_size(
+                    f64::from(region.width),
+                    f64::from(region.height),
+                    region.rotation,
+                );
                 let (quad_min_x, quad_min_y, quad_max_x, quad_max_y) =
                     transformed_quad_bounds(matrix, width, height);
                 min_x = min_x.min(quad_min_x);
@@ -231,7 +240,7 @@ pub fn compute_quad_batch_local_bounds_rectangle(out: &mut Rectangle, source: &Q
             }
         }
     }
-    if min_x == f32::INFINITY {
+    if min_x == f64::INFINITY {
         set_zero_rectangle(out);
         return;
     }
@@ -251,7 +260,7 @@ fn copy_local_bounds_rectangle(out: &mut Rectangle, source: &dyn Node) {
     }
 }
 
-fn cross_sign(ax: f32, ay: f32, bx: f32, by: f32, px: f32, py: f32) -> bool {
+fn cross_sign(ax: f64, ay: f64, bx: f64, by: f64, px: f64, py: f64) -> bool {
     return (bx - ax) * (py - ay) - (by - ay) * (px - ax) >= 0.0;
 }
 
@@ -311,8 +320,8 @@ pub fn get_quad_batch_instance_transform(
     else {
         return false;
     };
-    out.x = x;
-    out.y = y;
+    out.x = f64::from(x);
+    out.y = f64::from(y);
     return true;
 }
 
@@ -355,7 +364,7 @@ pub fn hit_test_quad_batch_point_exact(source: &QuadBatch, point: &Vector2) -> i
 }
 
 /// Exact polygon hit test at coordinates (TS `hitTestQuadBatchPointExactXY`).
-pub fn hit_test_quad_batch_point_exact_xy(source: &QuadBatch, x: f32, y: f32) -> i32 {
+pub fn hit_test_quad_batch_point_exact_xy(source: &QuadBatch, x: f64, y: f64) -> i32 {
     let data = &source.data;
     let Some(atlas) = &data.atlas else {
         return -1;
@@ -379,8 +388,12 @@ pub fn hit_test_quad_batch_point_exact_xy(source: &QuadBatch, x: f32, y: f32) ->
                 else {
                     continue;
                 };
-                let (width, height) =
-                    logical_region_size(region.width, region.height, region.rotation);
+                let (dx, dy) = (f64::from(dx), f64::from(dy));
+                let (width, height) = logical_region_size(
+                    f64::from(region.width),
+                    f64::from(region.height),
+                    region.rotation,
+                );
                 if x >= dx && x < dx + width && y >= dy && y < dy + height {
                     return index as i32;
                 }
@@ -400,8 +413,11 @@ pub fn hit_test_quad_batch_point_exact_xy(source: &QuadBatch, x: f32, y: f32) ->
                 else {
                     continue;
                 };
-                let (width, height) =
-                    logical_region_size(region.width, region.height, region.rotation);
+                let (width, height) = logical_region_size(
+                    f64::from(region.width),
+                    f64::from(region.height),
+                    region.rotation,
+                );
                 let [x0, y0, x1, y1, x2, y2, x3, y3] =
                     transformed_quad_corners(matrix, width, height);
                 if cross_sign(x0, y0, x1, y1, x, y)
@@ -418,7 +434,7 @@ pub fn hit_test_quad_batch_point_exact_xy(source: &QuadBatch, x: f32, y: f32) ->
 }
 
 /// AABB hit test at coordinates (TS `hitTestQuadBatchPointXY`).
-pub fn hit_test_quad_batch_point_xy(source: &QuadBatch, x: f32, y: f32) -> i32 {
+pub fn hit_test_quad_batch_point_xy(source: &QuadBatch, x: f64, y: f64) -> i32 {
     let data = &source.data;
     let Some(atlas) = &data.atlas else {
         return -1;
@@ -442,8 +458,12 @@ pub fn hit_test_quad_batch_point_xy(source: &QuadBatch, x: f32, y: f32) -> i32 {
                 else {
                     continue;
                 };
-                let (width, height) =
-                    logical_region_size(region.width, region.height, region.rotation);
+                let (dx, dy) = (f64::from(dx), f64::from(dy));
+                let (width, height) = logical_region_size(
+                    f64::from(region.width),
+                    f64::from(region.height),
+                    region.rotation,
+                );
                 if x >= dx && x < dx + width && y >= dy && y < dy + height {
                     return index as i32;
                 }
@@ -463,8 +483,11 @@ pub fn hit_test_quad_batch_point_xy(source: &QuadBatch, x: f32, y: f32) -> i32 {
                 else {
                     continue;
                 };
-                let (width, height) =
-                    logical_region_size(region.width, region.height, region.rotation);
+                let (width, height) = logical_region_size(
+                    f64::from(region.width),
+                    f64::from(region.height),
+                    region.rotation,
+                );
                 let (min_x, min_y, max_x, max_y) = transformed_quad_bounds(matrix, width, height);
                 if x >= min_x && x < max_x && y >= min_y && y < max_y {
                     return index as i32;
@@ -477,6 +500,7 @@ pub fn hit_test_quad_batch_point_xy(source: &QuadBatch, x: f32, y: f32) -> i32 {
 
 /// Visits the logical prefix in order with a borrowed stride-length transform view (TS
 /// `iterateQuadBatchInstances`).
+// flight-lint: allow(f32) reads or writes the TS Float32Array instance transform lane; coordinates are f64 and narrow once at each store
 pub fn iterate_quad_batch_instances(
     source: &QuadBatch,
     visitor: &mut dyn FnMut(usize, u16, &[f32]),
@@ -495,7 +519,7 @@ pub fn iterate_quad_batch_instances(
     }
 }
 
-fn logical_region_size(width: f32, height: f32, rotation: TextureAtlasRotation) -> (f32, f32) {
+fn logical_region_size(width: f64, height: f64, rotation: TextureAtlasRotation) -> (f64, f64) {
     if rotation == TextureAtlasRotation::None {
         return (width, height);
     }
@@ -504,6 +528,7 @@ fn logical_region_size(width: f32, height: f32, rotation: TextureAtlasRotation) 
 
 /// Swap-removes one logical instance and emits its former last index, or `-1` when no swap was
 /// needed (TS `removeQuadBatchInstance`).
+// flight-lint: allow(f32) reads or writes the TS Float32Array instance transform lane; coordinates are f64 and narrow once at each store
 pub fn remove_quad_batch_instance(target: &mut QuadBatch, index: i32) {
     if index < 0 {
         return;
@@ -581,7 +606,8 @@ pub fn resize_quad_batch(target: &mut QuadBatch, instance_count: usize) {
 }
 
 /// Writes one translation-only instance inside the logical prefix (TS `setQuadBatchInstance`).
-pub fn set_quad_batch_instance(target: &mut QuadBatch, index: i32, id: u16, x: f32, y: f32) {
+// flight-lint: allow(f32) reads or writes the TS Float32Array instance transform lane; coordinates are f64 and narrow once at each store
+pub fn set_quad_batch_instance(target: &mut QuadBatch, index: i32, id: u16, x: f64, y: f64) {
     if index < 0 || index as usize >= target.data.instance_count {
         return;
     }
@@ -591,26 +617,28 @@ pub fn set_quad_batch_instance(target: &mut QuadBatch, index: i32, id: u16, x: f
     };
     *target_id = id;
     let offset = index * QUAD_VECTOR2_STRIDE;
+    // The transform buffer is the TS Float32Array instance lane: each coordinate narrows once.
     if let Some(target_x) = target.data.transforms.get_mut(offset) {
-        *target_x = x;
+        *target_x = x as f32;
     }
     if let Some(target_y) = target.data.transforms.get_mut(offset + 1) {
-        *target_y = y;
+        *target_y = y as f32;
     }
 }
 
 /// Writes one full affine instance inside the logical prefix (TS
 /// `setQuadBatchInstanceMatrix`).
+// flight-lint: allow(f32) reads or writes the TS Float32Array instance transform lane; coordinates are f64 and narrow once at each store
 pub fn set_quad_batch_instance_matrix(
     target: &mut QuadBatch,
     index: i32,
     id: u16,
-    a: f32,
-    b: f32,
-    c: f32,
-    d: f32,
-    tx: f32,
-    ty: f32,
+    a: f64,
+    b: f64,
+    c: f64,
+    d: f64,
+    tx: f64,
+    ty: f64,
 ) {
     if index < 0 || index as usize >= target.data.instance_count {
         return;
@@ -628,11 +656,13 @@ pub fn set_quad_batch_instance_matrix(
     else {
         return;
     };
-    matrix.copy_from_slice(&[a, b, c, d, tx, ty]);
+    // The transform buffer is the TS Float32Array instance lane: each element narrows once.
+    matrix.copy_from_slice(&[a as f32, b as f32, c as f32, d as f32, tx as f32, ty as f32]);
 }
 
 /// Copies a contiguous transform range into the logical prefix (TS
 /// `setQuadBatchInstanceRange`).
+// flight-lint: allow(f32) reads or writes the TS Float32Array instance transform lane; coordinates are f64 and narrow once at each store
 pub fn set_quad_batch_instance_range(
     target: &mut QuadBatch,
     start_index: i32,
@@ -701,6 +731,7 @@ pub fn set_quad_batch_local_bounds_rectangle(target: &Ref<QuadBatch>, rect: &Rec
 
 /// Re-strides the transform buffer while preserving its typed-array allocation semantics (TS
 /// `setQuadBatchTransformType`).
+// flight-lint: allow(f32) reads or writes the TS Float32Array instance transform lane; coordinates are f64 and narrow once at each store
 pub fn set_quad_batch_transform_type(target: &mut QuadBatch, new_type: QuadTransformType) {
     let data = &mut target.data;
     if data.transform_type == new_type {
@@ -746,7 +777,8 @@ fn set_zero_rectangle(out: &mut Rectangle) {
     out.height = 0.0;
 }
 
-fn transformed_quad_bounds(matrix: &[f32], width: f32, height: f32) -> (f32, f32, f32, f32) {
+// flight-lint: allow(f32) reads or writes the TS Float32Array instance transform lane; coordinates are f64 and narrow once at each store
+fn transformed_quad_bounds(matrix: &[f32], width: f64, height: f64) -> (f64, f64, f64, f64) {
     let [x0, y0, x1, y1, x2, y2, x3, y3] = transformed_quad_corners(matrix, width, height);
     return (
         x0.min(x1).min(x2).min(x3),
@@ -756,13 +788,14 @@ fn transformed_quad_bounds(matrix: &[f32], width: f32, height: f32) -> (f32, f32
     );
 }
 
-fn transformed_quad_corners(matrix: &[f32], width: f32, height: f32) -> [f32; 8] {
-    let a = matrix[0];
-    let b = matrix[1];
-    let c = matrix[2];
-    let d = matrix[3];
-    let tx = matrix[4];
-    let ty = matrix[5];
+// flight-lint: allow(f32) reads or writes the TS Float32Array instance transform lane; coordinates are f64 and narrow once at each store
+fn transformed_quad_corners(matrix: &[f32], width: f64, height: f64) -> [f64; 8] {
+    let a = f64::from(matrix[0]);
+    let b = f64::from(matrix[1]);
+    let c = f64::from(matrix[2]);
+    let d = f64::from(matrix[3]);
+    let tx = f64::from(matrix[4]);
+    let ty = f64::from(matrix[5]);
     return [
         tx,
         ty,

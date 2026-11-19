@@ -3,7 +3,7 @@ src/contract.rs: pub use super::types::*;
 src/lib.rs: pub mod contract
 src/lib.rs: pub use contract::*;
 src/quad_batch.rs: pub const QUAD_BATCH_DELETED_ID: u16
-src/quad_batch.rs: pub fn append_quad_batch_instance(target: &mut QuadBatch, id: u16, x: f32, y: f32) -> usize
+src/quad_batch.rs: pub fn append_quad_batch_instance(target: &mut QuadBatch, id: u16, x: f64, y: f64) -> usize
 src/quad_batch.rs: pub fn clear_quad_batch(target: &mut QuadBatch)
 src/quad_batch.rs: pub fn clone_quad_batch(source: &QuadBatch) -> Ref<QuadBatch>
 src/quad_batch.rs: pub fn compact_quad_batch(target: &mut QuadBatch)
@@ -21,8 +21,8 @@ src/quad_batch.rs: pub fn get_quad_batch_signals(source: &QuadBatch) -> Option<R
 src/quad_batch.rs: pub fn get_quad_batch_transform_stride(transform_type: QuadTransformType) -> usize
 src/quad_batch.rs: pub fn hit_test_quad_batch_point(source: &QuadBatch, point: &Vector2) -> i32
 src/quad_batch.rs: pub fn hit_test_quad_batch_point_exact(source: &QuadBatch, point: &Vector2) -> i32
-src/quad_batch.rs: pub fn hit_test_quad_batch_point_exact_xy(source: &QuadBatch, x: f32, y: f32) -> i32
-src/quad_batch.rs: pub fn hit_test_quad_batch_point_xy(source: &QuadBatch, x: f32, y: f32) -> i32
+src/quad_batch.rs: pub fn hit_test_quad_batch_point_exact_xy(source: &QuadBatch, x: f64, y: f64) -> i32
+src/quad_batch.rs: pub fn hit_test_quad_batch_point_xy(source: &QuadBatch, x: f64, y: f64) -> i32
 src/quad_batch.rs: pub fn initialize_quad_batch(out: &mut QuadBatch)
 src/quad_batch.rs: pub fn initialize_quad_batch_data(out: &mut QuadBatchData)
 src/quad_batch.rs: pub fn initialize_quad_batch_signals(out: &mut QuadBatchSignals)
@@ -30,8 +30,8 @@ src/quad_batch.rs: pub fn iterate_quad_batch_instances(source: &QuadBatch, visit
 src/quad_batch.rs: pub fn remove_quad_batch_instance(target: &mut QuadBatch, index: i32)
 src/quad_batch.rs: pub fn reserve_quad_batch(target: &mut QuadBatch, capacity: usize)
 src/quad_batch.rs: pub fn resize_quad_batch(target: &mut QuadBatch, instance_count: usize)
-src/quad_batch.rs: pub fn set_quad_batch_instance(target: &mut QuadBatch, index: i32, id: u16, x: f32, y: f32)
-src/quad_batch.rs: pub fn set_quad_batch_instance_matrix(target: &mut QuadBatch, index: i32, id: u16, a: f32, b: f32, c: f32, d: f32, tx: f32, ty: f32,)
+src/quad_batch.rs: pub fn set_quad_batch_instance(target: &mut QuadBatch, index: i32, id: u16, x: f64, y: f64)
+src/quad_batch.rs: pub fn set_quad_batch_instance_matrix(target: &mut QuadBatch, index: i32, id: u16, a: f64, b: f64, c: f64, d: f64, tx: f64, ty: f64,)
 src/quad_batch.rs: pub fn set_quad_batch_instance_range(target: &mut QuadBatch, start_index: i32, count: i32, source: &Float32Array,)
 src/quad_batch.rs: pub fn set_quad_batch_instance_tint(target: &mut QuadBatch, index: i32, rgba: u32)
 src/quad_batch.rs: pub fn set_quad_batch_local_bounds_rectangle(target: &Ref<QuadBatch>, rect: &Rectangle)

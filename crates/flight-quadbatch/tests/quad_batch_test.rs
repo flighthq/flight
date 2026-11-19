@@ -79,8 +79,8 @@ mod append_quad_batch_instance {
             let appended = append_quad_batch_instance(
                 &mut batch.write().unwrap(),
                 index as u16,
-                index as f32,
-                (index * 2) as f32,
+                index as f64,
+                (index * 2) as f64,
             );
             assert_eq!(appended, index);
         }
@@ -679,6 +679,24 @@ mod hit_test_quad_batch_point_exact_xy {
 
 mod hit_test_quad_batch_point_xy {
     use super::*;
+
+    #[test]
+    fn hits_a_point_just_inside_the_right_edge_in_double_precision() {
+        // 100 - 1e-9 rounds to 100.0 in f32, which would fall on the exclusive right edge.
+        let batch = batch_with_data(|d| {
+            d.atlas = Some(make_quad_atlas(vec![make_quad_region(0, 100.0, 100.0)]));
+            d.ids = vec![0];
+            d.instance_count = 1;
+            d.transforms = vec![0.0, 0.0];
+            d.transform_type = QuadTransformType::Vector2;
+        });
+        let x = 100.0 - 1e-9;
+        assert_eq!(x as f32, 100.0);
+        assert_eq!(
+            hit_test_quad_batch_point_xy(&batch.read().unwrap(), x, 50.0),
+            0
+        );
+    }
 
     #[test]
     fn returns_first_half_open_hit_and_skips_invalid_ids() {
