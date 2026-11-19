@@ -516,7 +516,7 @@ mod write_physics2d_joint_reaction {
         let at_step_size = settle(&mut world, &joint, SETTLE_STEPS);
 
         let mut halved = create_physics2d_joint_reaction();
-        write(&mut halved, &world, &joint, (DT * 2.0));
+        write(&mut halved, &world, &joint, DT * 2.0);
         assert!(
             close(halved.force_y, at_step_size.force_y / 2.0, 9),
             "{} vs {}",

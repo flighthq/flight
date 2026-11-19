@@ -87,7 +87,7 @@ mod write_physics2d_soft_row_parameters {
         write_physics2d_soft_row_parameters(&mut light, 1.0, 2.0, 0.3, 1.0 / 60.0, 0.0);
         write_physics2d_soft_row_parameters(&mut heavy, 4.0, 2.0, 0.3, 1.0 / 60.0, 0.0);
         assert!(
-            close(heavy[2], (light[2] / 4.0)),
+            close(heavy[2], light[2] / 4.0),
             "{} vs {}",
             heavy[2],
             light[2] / 4.0
