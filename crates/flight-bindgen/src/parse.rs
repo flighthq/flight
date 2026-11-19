@@ -64,6 +64,7 @@ pub const SCAN_CRATES: &[&str] = &[
     "flight-image-codec",
     "flight-importdiagnostics",
     "flight-input",
+    "flight-interaction",
     "flight-intl",
     "flight-ipc",
     "flight-keyboard",
