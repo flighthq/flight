@@ -469,6 +469,172 @@ const GUARD_POLICY_SKIP_FNS: &[&str] = &["enable_scene3d_resource_failure_guards
 // Task M's retained callback has an explicit teardown path: its returned disposer disconnects the
 // signal slot, after which C may release the callback context and free the disposer handle.
 const RETAINED_CALLBACK_DISPOSER_FNS: &[&str] = &["connect_signal_at_frame_rate"];
+// Item C: the decision for every `Signal<T>` payload on the public perimeter. `connect` emits one
+// `flight_connect_<payload>_signal` wrapper whose callback argument follows Task M's lowering
+// rules (unit, scalar, checked enum as u32, `&PlainStruct` and `&Ref<T>` as borrowed handles);
+// `skip:<reason>` names a payload the callback contract cannot carry. The build fails when the
+// inventory holds a payload with no entry here or an entry names a payload that no longer exists,
+// so a new public payload is never silently omitted.
+const SIGNAL_PAYLOAD_POLICIES: &[(&str, &str)] = &[
+    ("()", "connect"),
+    (
+        "(Notification, String)",
+        "skip:tuple payload has no Task M callback carrier",
+    ),
+    (
+        "(Notification, String, String)",
+        "skip:tuple payload has no Task M callback carrier",
+    ),
+    (
+        "(Ref<TreeViewControllerItem>, bool)",
+        "skip:tuple payload has no Task M callback carrier",
+    ),
+    (
+        "(RenderRegistryTable, Kind)",
+        "skip:tuple payload has no Task M callback carrier",
+    ),
+    (
+        "(String, Unknown)",
+        "skip:dynamic `Unknown` payload has no C representation",
+    ),
+    (
+        "(String, Unknown, usize)",
+        "skip:dynamic `Unknown` payload has no C representation",
+    ),
+    (
+        "(String, usize, f64)",
+        "skip:tuple payload has no Task M callback carrier",
+    ),
+    (
+        "(Unknown, String)",
+        "skip:dynamic `Unknown` payload has no C representation",
+    ),
+    (
+        "(f32, f32)",
+        "skip:tuple payload has no Task M callback carrier",
+    ),
+    (
+        "(i32, i32, i16)",
+        "skip:tuple payload has no Task M callback carrier",
+    ),
+    (
+        "(i32, i32, i32)",
+        "skip:tuple payload has no Task M callback carrier",
+    ),
+    (
+        "(i32, i32, i32, i32)",
+        "skip:tuple payload has no Task M callback carrier",
+    ),
+    (
+        "(usize, i32)",
+        "skip:tuple payload has no Task M callback carrier",
+    ),
+    ("AmbientLightReading", "connect"),
+    ("AnimationClipEvent", "connect"),
+    ("AppLifecycleState", "connect"),
+    (
+        "AppLifecycleStateBag",
+        "skip:dynamic `Unknown` payload has no C representation",
+    ),
+    ("AppMemoryPressure", "connect"),
+    ("ConnectivityConnectionType", "connect"),
+    ("ConnectivityStatus", "connect"),
+    ("FrameTick", "connect"),
+    ("InputGamepadAxisData", "connect"),
+    ("InputGamepadButtonData", "connect"),
+    ("InputGamepadConnectData", "connect"),
+    ("InputKeyboardData", "connect"),
+    ("InputPointerData", "connect"),
+    ("InputTextData", "connect"),
+    ("InstancedMeshInstanceRemoved", "connect"),
+    ("LogEntry", "connect"),
+    ("MediaSessionActionDetails", "connect"),
+    ("MidiInputMessage", "connect"),
+    ("MidiPort", "connect"),
+    ("MotionReading", "connect"),
+    (
+        "NodeRef",
+        "skip:node payload waits for Item B's FlightNode carrier",
+    ),
+    ("Notification", "connect"),
+    (
+        "Option<HostTextShaperCapability>",
+        "skip:host capability construction is withdrawn from the alpha ABI (Task S)",
+    ),
+    (
+        "Option<NodeRef>",
+        "skip:node payload waits for Item B's FlightNode carrier",
+    ),
+    (
+        "Option<Ref<GuiDialogEntry>>",
+        "skip:optional handle payload has no Task M callback carrier",
+    ),
+    (
+        "Option<Ref<TreeViewControllerItem>>",
+        "skip:optional handle payload has no Task M callback carrier",
+    ),
+    ("OrientationReading", "connect"),
+    ("ParticleDeathEvent", "connect"),
+    ("ParticleSpawnEvent", "connect"),
+    ("PowerStatus", "connect"),
+    ("PowerThermalState", "connect"),
+    ("PressureReading", "connect"),
+    ("ProximityReading", "connect"),
+    ("QuaternionReading", "connect"),
+    ("Ref<AssetLoadProgress>", "connect"),
+    ("Ref<GuiDialogCloseResult>", "connect"),
+    ("Ref<LoadProgress>", "connect"),
+    ("Ref<NetProgress>", "connect"),
+    ("Ref<Scene3DDocumentLoadProgress>", "connect"),
+    ("Ref<ShareResult>", "connect"),
+    ("Ref<TreeViewControllerItem>", "connect"),
+    (
+        "ResourceLoadReports",
+        "skip:collection payload has no Task M callback carrier",
+    ),
+    ("RotationRateReading", "connect"),
+    ("Scene2DAudioResourceLoadProgress", "connect"),
+    ("Scene2DDocumentFetchProgress", "connect"),
+    ("Scene2DImageResourceLoadProgress", "connect"),
+    ("Scene3DResourceEvent", "connect"),
+    ("Scene3DResourceLoadProgress", "connect"),
+    ("ScreenChangeEvent", "connect"),
+    ("ScreenInfo", "connect"),
+    ("ScreenPermissionState", "connect"),
+    ("SocketCloseInfo", "connect"),
+    ("SocketMessage", "connect"),
+    ("StatusBarInfo", "connect"),
+    ("StorageChange", "connect"),
+    (
+        "String",
+        "skip:string payload has no Task M borrowed-string callback carrier",
+    ),
+    ("TextFieldChangeEvent", "connect"),
+    ("TextFieldLinkEvent", "connect"),
+    ("TextFieldScrollEvent", "connect"),
+    ("TimelineFrameEvent", "connect"),
+    ("TrayBalloonEvent", "connect"),
+    ("TrayDropEvent", "connect"),
+    ("TrayInteractionEvent", "connect"),
+    ("TrayMenuSelectionEvent", "connect"),
+    (
+        "Unknown",
+        "skip:dynamic `Unknown` payload has no C representation",
+    ),
+    (
+        "Vec<NodeRef>",
+        "skip:node payload waits for Item B's FlightNode carrier",
+    ),
+    (
+        "Vec<String>",
+        "skip:collection payload has no Task M callback carrier",
+    ),
+    ("bool", "connect"),
+    ("f32", "connect"),
+    ("f64", "connect"),
+    ("i32", "connect"),
+    ("usize", "connect"),
+];
 // The default shape-bounds handler values: each decodes one command's arguments from a
 // `&dyn ShapeCommandArgumentCursor` into calls on a `&mut dyn ShapeBoundsContext`. Their purpose is
 // to compose `ShapeBoundsCommand` registrations, an extension point. The only cursor implementation
@@ -712,6 +878,24 @@ fn main() {
         generate_host_capability_inventory_report(&host_capability_inventory),
     )
     .unwrap();
+
+    let mut signal_inventory = Vec::new();
+    for dir_name in SCAN_CRATES {
+        let src_dir = crates_dir.join(dir_name).join("src");
+        if src_dir.exists() {
+            signal_inventory.extend(collect_signal_inventory(dir_name, &src_dir, crates_dir));
+        }
+    }
+    signal_inventory.sort_by(|a, b| {
+        (&a.owner, &a.source, &a.item, &a.payload).cmp(&(&b.owner, &b.source, &b.item, &b.payload))
+    });
+    let signal_inventory_report = generate_signal_inventory_report(&signal_inventory);
+    fs::write(
+        out_dir.join("signal_inventory.txt"),
+        &signal_inventory_report,
+    )
+    .unwrap();
+    check_signal_inventory(&signal_inventory, &signal_inventory_report);
 
     // Discover owned producers to a fixed point. A wrapper is eligible to produce a handle only
     // after every owned handle it consumes is already producible; consequently a consumer cycle
@@ -1162,6 +1346,17 @@ struct HostCapabilityInventoryField {
 struct HostCapabilityCallback {
     optional: bool,
     signature: String,
+}
+
+// One `Signal<T>` occurrence on the public perimeter (Item C): a pub field of a root-exported
+// struct, or a parameter or return of a TS-public function. `declared` is the full type the signal
+// is nested in (`Signal<T>`, `Ref<Signal<T>>`, `Option<Ref<Signal<T>>>`, a callback return, ...).
+struct SignalInventoryEntry {
+    owner: String,
+    source: PathBuf,
+    item: String,
+    declared: String,
+    payload: String,
 }
 
 // These leaves were briefly emitted during Task S. Capability construction is withdrawn from the
@@ -2040,6 +2235,395 @@ fn collect_rust_source_files(dir: &Path) -> Vec<PathBuf> {
     let mut sources = Vec::new();
     visit(dir, &mut sources);
     sources
+}
+
+// Every `Signal<T>` on the public perimeter of one crate: pub fields of root-exported structs and
+// parameters/returns of TS-public functions. A function's own generic parameter (`Signal<T>` in
+// flight-signals) is the generic API, not a payload, and is not recorded.
+fn collect_signal_inventory(
+    owner: &str,
+    src_dir: &Path,
+    crates_dir: &Path,
+) -> Vec<SignalInventoryEntry> {
+    let lib_path = src_dir.join("lib.rs");
+    if !lib_path.exists() {
+        return Vec::new();
+    }
+    let public_types = collect_root_exported_item_names(&lib_path, src_dir);
+    let ts_exports = collect_ts_exports(src_dir);
+    let mut inventory = Vec::new();
+    for source in collect_rust_source_files(src_dir) {
+        let content = fs::read_to_string(&source).unwrap();
+        let file = syn::parse_file(&content)
+            .unwrap_or_else(|error| panic!("failed to parse {}: {error}", source.display()));
+        let relative = source
+            .strip_prefix(crates_dir)
+            .unwrap_or(&source)
+            .to_path_buf();
+        let mut record = |item: String, ty: &syn::Type, generics: &BTreeSet<String>| {
+            for payload in find_signal_payloads(ty) {
+                if generics.contains(&payload) {
+                    continue;
+                }
+                inventory.push(SignalInventoryEntry {
+                    owner: owner.to_string(),
+                    source: relative.clone(),
+                    item: item.clone(),
+                    declared: compact_type_text(&rust_type_text(ty)),
+                    payload: compact_type_text(&payload),
+                });
+            }
+        };
+        for item in &file.items {
+            match item {
+                syn::Item::Struct(item) => {
+                    let name = item.ident.to_string();
+                    if !matches!(item.vis, syn::Visibility::Public(_))
+                        || !public_types.contains(&name)
+                    {
+                        continue;
+                    }
+                    let syn::Fields::Named(fields) = &item.fields else {
+                        continue;
+                    };
+                    for field in &fields.named {
+                        if !matches!(field.vis, syn::Visibility::Public(_)) {
+                            continue;
+                        }
+                        let field_name = field.ident.as_ref().unwrap().to_string();
+                        record(format!("{name}.{field_name}"), &field.ty, &BTreeSet::new());
+                    }
+                }
+                syn::Item::Fn(item) => {
+                    let name = item.sig.ident.to_string();
+                    if !matches!(item.vis, syn::Visibility::Public(_))
+                        || !ts_exports
+                            .public
+                            .contains(&public_perimeter::get_export_key(&name))
+                    {
+                        continue;
+                    }
+                    let generics: BTreeSet<String> = item
+                        .sig
+                        .generics
+                        .type_params()
+                        .map(|param| param.ident.to_string())
+                        .collect();
+                    for input in &item.sig.inputs {
+                        if let syn::FnArg::Typed(input) = input {
+                            let param = input.pat.to_token_stream().to_string();
+                            record(format!("fn {name}({param})"), &input.ty, &generics);
+                        }
+                    }
+                    if let syn::ReturnType::Type(_, ty) = &item.sig.output {
+                        record(format!("fn {name} -> return"), ty, &generics);
+                    }
+                }
+                _ => {}
+            }
+        }
+    }
+    inventory
+}
+
+// Item C gate. Every inventory payload needs a policy, every policy needs a payload, and the
+// committed `signal_inventory.txt` must equal the generated report; set
+// `FLIGHT_FFI_UPDATE_SIGNAL_INVENTORY=1` to rewrite the committed copy after reviewing the delta.
+fn check_signal_inventory(inventory: &[SignalInventoryEntry], report: &str) {
+    let payloads: BTreeSet<&str> = inventory
+        .iter()
+        .map(|entry| entry.payload.as_str())
+        .collect();
+    let policies: BTreeSet<&str> = SIGNAL_PAYLOAD_POLICIES
+        .iter()
+        .map(|(payload, _)| *payload)
+        .collect();
+    let unclassified: Vec<&&str> = payloads.difference(&policies).collect();
+    assert!(
+        unclassified.is_empty(),
+        "public Signal<T> payloads with no SIGNAL_PAYLOAD_POLICIES entry (add a connect or a named skip): {unclassified:?}"
+    );
+    let stale: Vec<&&str> = policies.difference(&payloads).collect();
+    assert!(
+        stale.is_empty(),
+        "SIGNAL_PAYLOAD_POLICIES names payloads absent from the public perimeter: {stale:?}"
+    );
+    for (payload, decision) in SIGNAL_PAYLOAD_POLICIES {
+        if let Some(reason) = decision.strip_prefix("skip:") {
+            assert!(
+                !reason.trim().is_empty(),
+                "skipped signal payload {payload} needs a reason"
+            );
+        } else {
+            assert_eq!(
+                *decision, "connect",
+                "unknown signal payload decision {decision:?} for {payload}"
+            );
+            assert!(
+                get_signal_payload_class(payload).is_some(),
+                "signal payload {payload} is marked connect but has no Task M callback lowering"
+            );
+        }
+    }
+    let manifest_dir = PathBuf::from(env::var("CARGO_MANIFEST_DIR").unwrap());
+    let committed_path = manifest_dir.join("signal_inventory.txt");
+    println!("cargo::rerun-if-changed={}", committed_path.display());
+    println!("cargo::rerun-if-env-changed=FLIGHT_FFI_UPDATE_SIGNAL_INVENTORY");
+    if env::var("FLIGHT_FFI_UPDATE_SIGNAL_INVENTORY").is_ok_and(|value| value == "1") {
+        fs::write(&committed_path, report).unwrap();
+        return;
+    }
+    let committed = fs::read_to_string(&committed_path).unwrap_or_default();
+    assert!(
+        committed == report,
+        "{} is stale: the public Signal<T> perimeter changed. Review the generated inventory, then rebuild with FLIGHT_FFI_UPDATE_SIGNAL_INVENTORY=1",
+        committed_path.display()
+    );
+}
+
+// Task M's callback lowering class for one signal payload, or `None` when it has none.
+fn get_signal_payload_class(payload: &str) -> Option<&'static str> {
+    if payload == "()" {
+        return Some("unit");
+    }
+    if is_scalar(payload) {
+        return Some("scalar");
+    }
+    if is_known_enum(payload) {
+        return Some("enum-u32");
+    }
+    if let Some(inner) = payload
+        .strip_prefix("Ref<")
+        .and_then(|rest| rest.strip_suffix('>'))
+    {
+        return (!inner.contains('<') && !inner.contains(',')).then_some("borrowed-ref-handle");
+    }
+    if !payload.contains('<')
+        && !payload.contains('(')
+        && !payload.contains(',')
+        && payload != "String"
+    {
+        return Some("borrowed-struct");
+    }
+    None
+}
+
+// The wrapper stem for a connectable payload: `()` -> `unit`, `Ref<NetProgress>` ->
+// `net_progress`, `Scene2DDocumentFetchProgress` -> `scene2d_document_fetch_progress`.
+fn get_signal_payload_stem(payload: &str) -> String {
+    if payload == "()" {
+        return "unit".to_string();
+    }
+    let name = payload
+        .strip_prefix("Ref<")
+        .and_then(|rest| rest.strip_suffix('>'))
+        .unwrap_or(payload);
+    let chars: Vec<char> = name.chars().collect();
+    let mut out = String::new();
+    for (index, &character) in chars.iter().enumerate() {
+        if character.is_ascii_uppercase() && index > 0 {
+            let previous = chars[index - 1];
+            let next_is_lower = chars
+                .get(index + 1)
+                .is_some_and(|next| next.is_ascii_lowercase());
+            if previous.is_ascii_lowercase() || (previous.is_ascii_uppercase() && next_is_lower) {
+                out.push('_');
+            }
+        }
+        out.push(character.to_ascii_lowercase());
+    }
+    out
+}
+
+// Every item name a crate root (`lib.rs`) re-exports, read with `syn` so grouped
+// (`pub use contract::{A, B};`), renamed and glob (`pub use contract::*;`, `pub use crate::m::*;`)
+// forms all count. `collect_exported_type_names` predates grouped root exports and feeds wrapper
+// generation, so it is left unchanged; this reader serves the signal inventory only.
+fn collect_root_exported_item_names(lib_path: &Path, src_dir: &Path) -> BTreeSet<String> {
+    fn module_file(src_dir: &Path, path: &[String]) -> Option<PathBuf> {
+        let module = path
+            .iter()
+            .rfind(|segment| segment.as_str() != "crate" && segment.as_str() != "self")?;
+        let file = src_dir.join(format!("{module}.rs"));
+        return file.exists().then_some(file);
+    }
+    fn visit_tree(
+        tree: &syn::UseTree,
+        prefix: &mut Vec<String>,
+        src_dir: &Path,
+        seen: &mut BTreeSet<PathBuf>,
+        names: &mut BTreeSet<String>,
+    ) {
+        match tree {
+            syn::UseTree::Path(path) => {
+                prefix.push(path.ident.to_string());
+                visit_tree(&path.tree, prefix, src_dir, seen, names);
+                prefix.pop();
+            }
+            syn::UseTree::Name(name) => {
+                names.insert(name.ident.to_string());
+            }
+            syn::UseTree::Rename(rename) => {
+                names.insert(rename.rename.to_string());
+            }
+            syn::UseTree::Glob(_) => {
+                if let Some(file) = module_file(src_dir, prefix) {
+                    collect_module(&file, src_dir, seen, names);
+                }
+            }
+            syn::UseTree::Group(group) => {
+                for item in &group.items {
+                    visit_tree(item, prefix, src_dir, seen, names);
+                }
+            }
+        }
+    }
+    fn collect_module(
+        file: &Path,
+        src_dir: &Path,
+        seen: &mut BTreeSet<PathBuf>,
+        names: &mut BTreeSet<String>,
+    ) {
+        if !seen.insert(file.to_path_buf()) {
+            return;
+        }
+        let content = fs::read_to_string(file).unwrap();
+        let Ok(parsed) = syn::parse_file(&content) else {
+            return;
+        };
+        for item in &parsed.items {
+            match item {
+                syn::Item::Struct(item) if matches!(item.vis, syn::Visibility::Public(_)) => {
+                    names.insert(item.ident.to_string());
+                }
+                syn::Item::Use(item) if matches!(item.vis, syn::Visibility::Public(_)) => {
+                    visit_tree(&item.tree, &mut Vec::new(), src_dir, seen, names);
+                }
+                _ => {}
+            }
+        }
+    }
+    let mut names = BTreeSet::new();
+    let content = fs::read_to_string(lib_path).unwrap();
+    if let Ok(parsed) = syn::parse_file(&content) {
+        let mut seen = BTreeSet::new();
+        for item in &parsed.items {
+            if let syn::Item::Use(item) = item
+                && matches!(item.vis, syn::Visibility::Public(_))
+            {
+                visit_tree(&item.tree, &mut Vec::new(), src_dir, &mut seen, &mut names);
+            }
+        }
+    }
+    names
+}
+
+// `Ref < Signal < () > >` -> `Ref<Signal<()>>`: token text without the spacing `quote` inserts.
+fn compact_type_text(text: &str) -> String {
+    let mut out = text.split_whitespace().collect::<Vec<_>>().join(" ");
+    for (from, to) in [
+        (" <", "<"),
+        ("< ", "<"),
+        (" >", ">"),
+        (" ,", ","),
+        (" :: ", "::"),
+        (":: ", "::"),
+        (" ::", "::"),
+        ("& ", "&"),
+        ("( ", "("),
+        (" )", ")"),
+    ] {
+        while out.contains(from) {
+            out = out.replace(from, to);
+        }
+    }
+    out
+}
+
+// The payload type text of every `Signal<T>` anywhere inside `ty` (nested generics, references,
+// tuples, callback parameters and returns).
+fn find_signal_payloads(ty: &syn::Type) -> Vec<String> {
+    struct SignalFinder {
+        payloads: Vec<String>,
+    }
+    impl<'ast> syn::visit::Visit<'ast> for SignalFinder {
+        fn visit_type_path(&mut self, path: &'ast syn::TypePath) {
+            if let Some(segment) = path.path.segments.last()
+                && segment.ident == "Signal"
+                && let syn::PathArguments::AngleBracketed(arguments) = &segment.arguments
+                && let Some(syn::GenericArgument::Type(payload)) = arguments.args.first()
+            {
+                self.payloads.push(rust_type_text(payload));
+            }
+            syn::visit::visit_type_path(self, path);
+        }
+    }
+    let mut finder = SignalFinder {
+        payloads: Vec::new(),
+    };
+    syn::visit::Visit::visit_type(&mut finder, ty);
+    finder.payloads
+}
+
+fn generate_signal_inventory_report(inventory: &[SignalInventoryEntry]) -> String {
+    let owners: BTreeSet<&str> = inventory.iter().map(|entry| entry.owner.as_str()).collect();
+    let payloads: BTreeSet<&str> = inventory
+        .iter()
+        .map(|entry| entry.payload.as_str())
+        .collect();
+    let fields = inventory
+        .iter()
+        .filter(|entry| !entry.item.starts_with("fn "))
+        .count();
+    let functions = inventory.len() - fields;
+    let ref_wrapped = inventory
+        .iter()
+        .filter(|entry| {
+            entry.declared.starts_with("Ref<Signal")
+                || entry.declared.starts_with("Option<Ref<Signal")
+        })
+        .count();
+    let mut report = String::new();
+    writeln!(
+        report,
+        "Signal inventory: {} occurrences in {} crates ({fields} fields, {functions} function parameters/returns, {ref_wrapped} Ref-wrapped), {} payload types",
+        inventory.len(),
+        owners.len(),
+        payloads.len()
+    )
+    .unwrap();
+    for entry in inventory {
+        writeln!(
+            report,
+            "signal|{}|{}|{}|{}|{}",
+            entry.owner,
+            entry.source.display(),
+            entry.item,
+            entry.declared,
+            entry.payload
+        )
+        .unwrap();
+    }
+    let mut counts: BTreeMap<&str, usize> = BTreeMap::new();
+    for entry in inventory {
+        *counts.entry(entry.payload.as_str()).or_default() += 1;
+    }
+    for (payload, count) in counts {
+        writeln!(report, "payload|{payload}|{count}").unwrap();
+    }
+    for (payload, decision) in SIGNAL_PAYLOAD_POLICIES {
+        match decision.strip_prefix("skip:") {
+            Some(reason) => writeln!(report, "policy|{payload}|skip|{reason}").unwrap(),
+            None => writeln!(
+                report,
+                "policy|{payload}|flight_connect_{}_signal|{}",
+                get_signal_payload_stem(payload),
+                get_signal_payload_class(payload).unwrap_or("none")
+            )
+            .unwrap(),
+        }
+    }
+    report
 }
 
 fn generate_host_capability_inventory_report(inventory: &[HostCapabilityInventory]) -> String {

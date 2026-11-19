@@ -1,0 +1,409 @@
+Signal inventory: 236 occurrences in 47 crates (232 fields, 4 function parameters/returns, 30 Ref-wrapped), 86 payload types
+signal|flight-animation|flight-animation/src/types.rs|AnimationPlayer.on_event|Option<Signal<AnimationClipEvent>>|AnimationClipEvent
+signal|flight-animation|flight-animation/src/types.rs|AnimationPlayer.on_finished|Option<Signal<()>>|()
+signal|flight-animation|flight-animation/src/types.rs|AnimationPlayer.on_looped|Option<Signal<()>>|()
+signal|flight-app|flight-app/src/loop_types.rs|AppLoop.on_activate|Option<Signal<()>>|()
+signal|flight-app|flight-app/src/loop_types.rs|AppLoop.on_deactivate|Option<Signal<()>>|()
+signal|flight-app|flight-app/src/loop_types.rs|AppLoop.on_error|Option<Signal<Unknown>>|Unknown
+signal|flight-app|flight-app/src/loop_types.rs|AppLoop.on_exit|Signal<()>|()
+signal|flight-app|flight-app/src/loop_types.rs|AppLoop.on_fixed_update|Option<Signal<f64>>|f64
+signal|flight-app|flight-app/src/loop_types.rs|AppLoop.on_render|Signal<()>|()
+signal|flight-app|flight-app/src/loop_types.rs|AppLoop.on_update|Signal<f64>|f64
+signal|flight-app|flight-app/src/types.rs|AppEvents.on_activate|Signal<()>|()
+signal|flight-app|flight-app/src/types.rs|AppEvents.on_all_windows_closed|Signal<()>|()
+signal|flight-app|flight-app/src/types.rs|AppEvents.on_open_file|Signal<String>|String
+signal|flight-app|flight-app/src/types.rs|AppEvents.on_quit_request|Signal<()>|()
+signal|flight-app|flight-app/src/types.rs|AppEvents.on_ready|Signal<()>|()
+signal|flight-app|flight-app/src/types.rs|AppEvents.on_second_instance|Signal<Vec<String>>|Vec<String>
+signal|flight-app|flight-app/src/window_types.rs|AppWindow.on_activate|Signal<()>|()
+signal|flight-app|flight-app/src/window_types.rs|AppWindow.on_close|Signal<()>|()
+signal|flight-app|flight-app/src/window_types.rs|AppWindow.on_close_request|Signal<()>|()
+signal|flight-app|flight-app/src/window_types.rs|AppWindow.on_deactivate|Signal<()>|()
+signal|flight-app|flight-app/src/window_types.rs|AppWindow.on_drop_file|Signal<String>|String
+signal|flight-app|flight-app/src/window_types.rs|AppWindow.on_focus_in|Signal<()>|()
+signal|flight-app|flight-app/src/window_types.rs|AppWindow.on_focus_out|Signal<()>|()
+signal|flight-app|flight-app/src/window_types.rs|AppWindow.on_fullscreen_changed|Signal<()>|()
+signal|flight-app|flight-app/src/window_types.rs|AppWindow.on_maximize|Signal<()>|()
+signal|flight-app|flight-app/src/window_types.rs|AppWindow.on_minimize|Signal<()>|()
+signal|flight-app|flight-app/src/window_types.rs|AppWindow.on_move|Signal<()>|()
+signal|flight-app|flight-app/src/window_types.rs|AppWindow.on_orientation_changed|Signal<()>|()
+signal|flight-app|flight-app/src/window_types.rs|AppWindow.on_render_context_lost|Signal<()>|()
+signal|flight-app|flight-app/src/window_types.rs|AppWindow.on_render_context_restored|Signal<()>|()
+signal|flight-app|flight-app/src/window_types.rs|AppWindow.on_resize|Signal<()>|()
+signal|flight-app|flight-app/src/window_types.rs|AppWindow.on_restore|Signal<()>|()
+signal|flight-assets|flight-assets/src/types.rs|AssetGroupLoadOptions.progress|Option<Ref<Signal<Ref<AssetLoadProgress>>>>|Ref<AssetLoadProgress>
+signal|flight-clipboard|flight-clipboard/src/types.rs|ClipboardWatch.on_change|Signal<()>|()
+signal|flight-clock|flight-clock/src/clock_signals.rs|fn enable_clock_signals -> return|Signal<FrameTick>|FrameTick
+signal|flight-clock|flight-clock/src/types.rs|Clock.on_tick|Option<Signal<FrameTick>>|FrameTick
+signal|flight-command|flight-command/src/command_history_signals.rs|fn enable_command_history_signals -> return|Signal<()>|()
+signal|flight-command|flight-command/src/command_history_signals.rs|fn get_command_history_signals -> return|Option<Signal<()>>|()
+signal|flight-command|flight-command/src/types.rs|CommandHistory.on_change|Option<Signal<()>>|()
+signal|flight-connectivity|flight-connectivity/src/types.rs|Connectivity.on_change|Signal<ConnectivityStatus>|ConnectivityStatus
+signal|flight-connectivity|flight-connectivity/src/types.rs|Connectivity.on_connection_type_change|Signal<ConnectivityConnectionType>|ConnectivityConnectionType
+signal|flight-connectivity|flight-connectivity/src/types.rs|Connectivity.on_metered_change|Signal<bool>|bool
+signal|flight-connectivity|flight-connectivity/src/types.rs|Connectivity.on_offline|Signal<()>|()
+signal|flight-connectivity|flight-connectivity/src/types.rs|Connectivity.on_online|Signal<()>|()
+signal|flight-gizmo|flight-gizmo/src/types.rs|GizmoSignals.on_rotate|Signal<f32>|f32
+signal|flight-gizmo|flight-gizmo/src/types.rs|GizmoSignals.on_scale|Signal<(f32, f32)>|(f32, f32)
+signal|flight-gizmo|flight-gizmo/src/types.rs|GizmoSignals.on_transform_begin|Signal<()>|()
+signal|flight-gizmo|flight-gizmo/src/types.rs|GizmoSignals.on_transform_end|Signal<()>|()
+signal|flight-gizmo|flight-gizmo/src/types.rs|GizmoSignals.on_translate|Signal<(f32, f32)>|(f32, f32)
+signal|flight-gui|flight-gui/src/button_controller.rs|ButtonControllerSignals.on_click|Ref<Signal<()>>|()
+signal|flight-gui|flight-gui/src/button_controller.rs|ButtonControllerSignals.on_press|Ref<Signal<()>>|()
+signal|flight-gui|flight-gui/src/button_controller.rs|ButtonControllerSignals.on_release|Ref<Signal<()>>|()
+signal|flight-gui|flight-gui/src/combo_box_controller.rs|ComboBoxControllerSignals.on_change|Ref<Signal<i32>>|i32
+signal|flight-gui|flight-gui/src/combo_box_controller.rs|ComboBoxControllerSignals.on_open_change|Ref<Signal<bool>>|bool
+signal|flight-gui|flight-gui/src/gui_dialog.rs|GuiDialogSignals.on_active_change|Ref<Signal<Option<Ref<GuiDialogEntry>>>>|Option<Ref<GuiDialogEntry>>
+signal|flight-gui|flight-gui/src/gui_dialog.rs|GuiDialogSignals.on_close|Ref<Signal<Ref<GuiDialogCloseResult>>>|Ref<GuiDialogCloseResult>
+signal|flight-gui|flight-gui/src/gui_dialog.rs|GuiDialogSignals.on_queue_change|Ref<Signal<()>>|()
+signal|flight-gui|flight-gui/src/list_controller.rs|ListControllerSignals.on_activate|Ref<Signal<i32>>|i32
+signal|flight-gui|flight-gui/src/list_controller.rs|ListControllerSignals.on_select|Ref<Signal<i32>>|i32
+signal|flight-gui|flight-gui/src/radio_group_controller.rs|RadioGroupControllerSignals.on_change|Ref<Signal<i32>>|i32
+signal|flight-gui|flight-gui/src/scroll_bar_controller.rs|ScrollBarControllerSignals.on_change|Ref<Signal<f32>>|f32
+signal|flight-gui|flight-gui/src/scroll_view_controller.rs|ScrollViewControllerSignals.on_scroll|Ref<Signal<(f32, f32)>>|(f32, f32)
+signal|flight-gui|flight-gui/src/slider_controller.rs|SliderControllerSignals.on_change|Ref<Signal<f32>>|f32
+signal|flight-gui|flight-gui/src/split_pane_controller.rs|SplitPaneControllerSignals.on_change|Ref<Signal<f32>>|f32
+signal|flight-gui|flight-gui/src/tab_bar_controller.rs|TabBarControllerSignals.on_change|Ref<Signal<i32>>|i32
+signal|flight-gui|flight-gui/src/text_input_controller.rs|TextInputControllerSignals.on_change|Ref<Signal<String>>|String
+signal|flight-gui|flight-gui/src/text_input_controller.rs|TextInputControllerSignals.on_submit|Ref<Signal<String>>|String
+signal|flight-gui|flight-gui/src/toggle_controller.rs|ToggleControllerSignals.on_change|Ref<Signal<bool>>|bool
+signal|flight-gui|flight-gui/src/tree_view_controller.rs|TreeViewControllerSignals.on_activate|Ref<Signal<Ref<TreeViewControllerItem>>>|Ref<TreeViewControllerItem>
+signal|flight-gui|flight-gui/src/tree_view_controller.rs|TreeViewControllerSignals.on_expand_change|Ref<Signal<(Ref<TreeViewControllerItem>, bool)>>|(Ref<TreeViewControllerItem>, bool)
+signal|flight-gui|flight-gui/src/tree_view_controller.rs|TreeViewControllerSignals.on_select|Ref<Signal<Option<Ref<TreeViewControllerItem>>>>|Option<Ref<TreeViewControllerItem>>
+signal|flight-gui|flight-gui/src/window_controller.rs|WindowControllerSignals.on_close|Ref<Signal<()>>|()
+signal|flight-gui|flight-gui/src/window_controller.rs|WindowControllerSignals.on_move|Ref<Signal<(f32, f32)>>|(f32, f32)
+signal|flight-gui|flight-gui/src/window_controller.rs|WindowControllerSignals.on_resize|Ref<Signal<(f32, f32)>>|(f32, f32)
+signal|flight-input|flight-input/src/types.rs|InputManager.on_gamepad_axis_move|Signal<InputGamepadAxisData>|InputGamepadAxisData
+signal|flight-input|flight-input/src/types.rs|InputManager.on_gamepad_button_down|Signal<InputGamepadButtonData>|InputGamepadButtonData
+signal|flight-input|flight-input/src/types.rs|InputManager.on_gamepad_button_up|Signal<InputGamepadButtonData>|InputGamepadButtonData
+signal|flight-input|flight-input/src/types.rs|InputManager.on_gamepad_connect|Signal<InputGamepadConnectData>|InputGamepadConnectData
+signal|flight-input|flight-input/src/types.rs|InputManager.on_gamepad_disconnect|Signal<InputGamepadConnectData>|InputGamepadConnectData
+signal|flight-input|flight-input/src/types.rs|InputManager.on_key_down|Signal<InputKeyboardData>|InputKeyboardData
+signal|flight-input|flight-input/src/types.rs|InputManager.on_key_up|Signal<InputKeyboardData>|InputKeyboardData
+signal|flight-input|flight-input/src/types.rs|InputManager.on_pointer_cancel|Signal<InputPointerData>|InputPointerData
+signal|flight-input|flight-input/src/types.rs|InputManager.on_pointer_down|Signal<InputPointerData>|InputPointerData
+signal|flight-input|flight-input/src/types.rs|InputManager.on_pointer_move|Signal<InputPointerData>|InputPointerData
+signal|flight-input|flight-input/src/types.rs|InputManager.on_pointer_move_relative|Signal<InputPointerData>|InputPointerData
+signal|flight-input|flight-input/src/types.rs|InputManager.on_pointer_up|Signal<InputPointerData>|InputPointerData
+signal|flight-input|flight-input/src/types.rs|InputManager.on_text_edit|Signal<InputTextData>|InputTextData
+signal|flight-input|flight-input/src/types.rs|InputManager.on_text_input|Signal<InputTextData>|InputTextData
+signal|flight-input|flight-input/src/types.rs|InputManager.on_wheel|Signal<InputPointerData>|InputPointerData
+signal|flight-input|flight-input/src/types.rs|InputSignals.on_gamepad_axis_move|Signal<InputGamepadAxisData>|InputGamepadAxisData
+signal|flight-input|flight-input/src/types.rs|InputSignals.on_gamepad_button_down|Signal<InputGamepadButtonData>|InputGamepadButtonData
+signal|flight-input|flight-input/src/types.rs|InputSignals.on_gamepad_button_up|Signal<InputGamepadButtonData>|InputGamepadButtonData
+signal|flight-input|flight-input/src/types.rs|InputSignals.on_gamepad_connect|Signal<InputGamepadConnectData>|InputGamepadConnectData
+signal|flight-input|flight-input/src/types.rs|InputSignals.on_gamepad_disconnect|Signal<InputGamepadConnectData>|InputGamepadConnectData
+signal|flight-input|flight-input/src/types.rs|InputSignals.on_key_down|Signal<InputKeyboardData>|InputKeyboardData
+signal|flight-input|flight-input/src/types.rs|InputSignals.on_key_up|Signal<InputKeyboardData>|InputKeyboardData
+signal|flight-input|flight-input/src/types.rs|InputSignals.on_pointer_cancel|Signal<InputPointerData>|InputPointerData
+signal|flight-input|flight-input/src/types.rs|InputSignals.on_pointer_down|Signal<InputPointerData>|InputPointerData
+signal|flight-input|flight-input/src/types.rs|InputSignals.on_pointer_move|Signal<InputPointerData>|InputPointerData
+signal|flight-input|flight-input/src/types.rs|InputSignals.on_pointer_move_relative|Signal<InputPointerData>|InputPointerData
+signal|flight-input|flight-input/src/types.rs|InputSignals.on_pointer_up|Signal<InputPointerData>|InputPointerData
+signal|flight-input|flight-input/src/types.rs|InputSignals.on_text_edit|Signal<InputTextData>|InputTextData
+signal|flight-input|flight-input/src/types.rs|InputSignals.on_text_input|Signal<InputTextData>|InputTextData
+signal|flight-input|flight-input/src/types.rs|InputSignals.on_wheel|Signal<InputPointerData>|InputPointerData
+signal|flight-keyboard|flight-keyboard/src/types.rs|SoftKeyboard.on_hide|Signal<()>|()
+signal|flight-keyboard|flight-keyboard/src/types.rs|SoftKeyboard.on_resize|Signal<f32>|f32
+signal|flight-keyboard|flight-keyboard/src/types.rs|SoftKeyboard.on_show|Signal<f32>|f32
+signal|flight-lifecycle|flight-lifecycle/src/types.rs|AppLifecycle.on_back_button|Signal<()>|()
+signal|flight-lifecycle|flight-lifecycle/src/types.rs|AppLifecycle.on_memory_warning|Signal<AppMemoryPressure>|AppMemoryPressure
+signal|flight-lifecycle|flight-lifecycle/src/types.rs|AppLifecycle.on_pause|Signal<()>|()
+signal|flight-lifecycle|flight-lifecycle/src/types.rs|AppLifecycle.on_restore_state|Signal<AppLifecycleStateBag>|AppLifecycleStateBag
+signal|flight-lifecycle|flight-lifecycle/src/types.rs|AppLifecycle.on_resume|Signal<()>|()
+signal|flight-lifecycle|flight-lifecycle/src/types.rs|AppLifecycle.on_save_state|Signal<AppLifecycleStateBag>|AppLifecycleStateBag
+signal|flight-lifecycle|flight-lifecycle/src/types.rs|AppLifecycle.on_state_change|Signal<AppLifecycleState>|AppLifecycleState
+signal|flight-loader|flight-loader/src/types.rs|LoadOptions.progress|Option<Ref<Signal<Ref<LoadProgress>>>>|Ref<LoadProgress>
+signal|flight-loader|flight-loader/src/types.rs|ResourceLoader.on_cancel|Signal<()>|()
+signal|flight-loader|flight-loader/src/types.rs|ResourceLoader.on_complete|Signal<ResourceLoadReports>|ResourceLoadReports
+signal|flight-loader|flight-loader/src/types.rs|ResourceLoader.on_error|Signal<(Unknown, String)>|(Unknown, String)
+signal|flight-loader|flight-loader/src/types.rs|ResourceLoader.on_pause|Signal<()>|()
+signal|flight-loader|flight-loader/src/types.rs|ResourceLoader.on_progress|Signal<f32>|f32
+signal|flight-loader|flight-loader/src/types.rs|ResourceLoader.on_resume|Signal<()>|()
+signal|flight-loader|flight-loader/src/types.rs|ResourceLoaderItemSignals.on_item_complete|Signal<(String, Unknown)>|(String, Unknown)
+signal|flight-loader|flight-loader/src/types.rs|ResourceLoaderItemSignals.on_item_error|Signal<(String, Unknown, usize)>|(String, Unknown, usize)
+signal|flight-loader|flight-loader/src/types.rs|ResourceLoaderItemSignals.on_item_retry|Signal<(String, usize, f64)>|(String, usize, f64)
+signal|flight-loader|flight-loader/src/types.rs|ResourceLoaderItemSignals.on_item_start|Signal<String>|String
+signal|flight-log|flight-log/src/log.rs|LogSignals.on_log_entry|Signal<LogEntry>|LogEntry
+signal|flight-log|flight-log/src/log.rs|LogSignals.on_log_error|Signal<LogEntry>|LogEntry
+signal|flight-media|flight-media/src/types.rs|AudioChannel.on_complete|Signal<()>|()
+signal|flight-media|flight-media/src/types.rs|MediaChannelSignals.on_buffering|Signal<()>|()
+signal|flight-media|flight-media/src/types.rs|MediaChannelSignals.on_complete|Signal<()>|()
+signal|flight-media|flight-media/src/types.rs|MediaChannelSignals.on_error|Signal<String>|String
+signal|flight-media|flight-media/src/types.rs|MediaChannelSignals.on_loop|Signal<()>|()
+signal|flight-media|flight-media/src/types.rs|MediaChannelSignals.on_pause|Signal<()>|()
+signal|flight-media|flight-media/src/types.rs|MediaChannelSignals.on_play|Signal<()>|()
+signal|flight-media|flight-media/src/types.rs|MediaChannelSignals.on_ready|Signal<()>|()
+signal|flight-media|flight-media/src/types.rs|MediaChannelSignals.on_seeked|Signal<()>|()
+signal|flight-media|flight-media/src/types.rs|MediaChannelSignals.on_stop|Signal<()>|()
+signal|flight-media|flight-media/src/types.rs|VideoChannel.on_complete|Signal<()>|()
+signal|flight-mediasession|flight-mediasession/src/types.rs|MediaSessionActionSignal.on_action|Signal<MediaSessionActionDetails>|MediaSessionActionDetails
+signal|flight-menu|flight-menu/src/types.rs|MenuHighlight.on_menu_item_highlight|Signal<String>|String
+signal|flight-menu|flight-menu/src/types.rs|MenuSelect.on_menu_item_select|Signal<String>|String
+signal|flight-menu|flight-menu/src/types.rs|MenuSignals.on_context_menu_close|Signal<()>|()
+signal|flight-menu|flight-menu/src/types.rs|MenuSignals.on_context_menu_open|Signal<()>|()
+signal|flight-midi|flight-midi/src/types.rs|MidiAccessStateSubscription.on_midi_access_state_change|Signal<MidiPort>|MidiPort
+signal|flight-midi|flight-midi/src/types.rs|MidiInputMessageSubscription.on_midi_input_message|Signal<MidiInputMessage>|MidiInputMessage
+signal|flight-midi|flight-midi/src/types.rs|MidiPortStateSubscription.on_midi_port_state_change|Signal<MidiPort>|MidiPort
+signal|flight-net|flight-net/src/types.rs|NetRequestOptions.progress|Option<Ref<Signal<Ref<NetProgress>>>>|Ref<NetProgress>
+signal|flight-node|flight-node/src/types.rs|NodeSignals.on_child_added|Signal<NodeRef>|NodeRef
+signal|flight-node|flight-node/src/types.rs|NodeSignals.on_child_removed|Signal<NodeRef>|NodeRef
+signal|flight-node|flight-node/src/types.rs|NodeSignals.on_children_changed|Signal<()>|()
+signal|flight-node|flight-node/src/types.rs|NodeSignals.on_children_order_changed|Signal<()>|()
+signal|flight-node|flight-node/src/types.rs|NodeSignals.on_parent_changed|Signal<()>|()
+signal|flight-notification|flight-notification/src/types.rs|NotificationActionSubscription.on_notification_action|Signal<(Notification, String)>|(Notification, String)
+signal|flight-notification|flight-notification/src/types.rs|NotificationClickSubscription.on_notification_click|Signal<Notification>|Notification
+signal|flight-notification|flight-notification/src/types.rs|NotificationDismissSubscription.on_notification_dismiss|Signal<Notification>|Notification
+signal|flight-notification|flight-notification/src/types.rs|NotificationReceivedSubscription.on_notification_received|Signal<Notification>|Notification
+signal|flight-notification|flight-notification/src/types.rs|NotificationReplySubscription.on_notification_reply|Signal<(Notification, String, String)>|(Notification, String, String)
+signal|flight-particles|flight-particles/src/types.rs|ParticleEmitterSignals.on_emitter_complete|Signal<()>|()
+signal|flight-particles|flight-particles/src/types.rs|ParticleEmitterSignals.on_particle_death|Signal<ParticleDeathEvent>|ParticleDeathEvent
+signal|flight-particles|flight-particles/src/types.rs|ParticleEmitterSignals.on_particle_spawn|Signal<ParticleSpawnEvent>|ParticleSpawnEvent
+signal|flight-power|flight-power/src/types.rs|Power.on_change|Option<Signal<PowerStatus>>|PowerStatus
+signal|flight-power|flight-power/src/types.rs|Power.on_charging|Option<Signal<()>>|()
+signal|flight-power|flight-power/src/types.rs|Power.on_discharging|Option<Signal<()>>|()
+signal|flight-power|flight-power/src/types.rs|Power.on_idle_state_change|Option<Signal<()>>|()
+signal|flight-power|flight-power/src/types.rs|Power.on_lock_screen|Option<Signal<()>>|()
+signal|flight-power|flight-power/src/types.rs|Power.on_resume|Option<Signal<()>>|()
+signal|flight-power|flight-power/src/types.rs|Power.on_suspend|Option<Signal<()>>|()
+signal|flight-power|flight-power/src/types.rs|Power.on_thermal_state_change|Option<Signal<PowerThermalState>>|PowerThermalState
+signal|flight-power|flight-power/src/types.rs|Power.on_unlock_screen|Option<Signal<()>>|()
+signal|flight-preferences|flight-preferences/src/types.rs|StorageSignals.on_change|Signal<StorageChange>|StorageChange
+signal|flight-protocol|flight-protocol/src/types.rs|ProtocolHandler.on_open_url|Signal<String>|String
+signal|flight-quadbatch|flight-quadbatch/src/types.rs|QuadBatchSignals.on_cleared|Signal<()>|()
+signal|flight-quadbatch|flight-quadbatch/src/types.rs|QuadBatchSignals.on_instance_appended|Signal<usize>|usize
+signal|flight-quadbatch|flight-quadbatch/src/types.rs|QuadBatchSignals.on_instance_removed|Signal<(usize, i32)>|(usize, i32)
+signal|flight-render|flight-render/src/types.rs|RenderCacheAdapterSignals.on_prepare|Signal<()>|()
+signal|flight-render|flight-render/src/types.rs|RenderRegistrySignals.on_registry_miss|Signal<(RenderRegistryTable, Kind)>|(RenderRegistryTable, Kind)
+signal|flight-scene2d|flight-scene2d/src/types.rs|Scene2DSignals.on_fullscreen_changed|Signal<()>|()
+signal|flight-scene2d|flight-scene2d/src/types.rs|Scene2DSignals.on_orientation_changed|Signal<()>|()
+signal|flight-scene2d|flight-scene2d/src/types.rs|Scene2DSignals.on_resize|Signal<()>|()
+signal|flight-scene2d-resources|flight-scene2d-resources/src/types.rs|LoadScene2DAudioResourcesOptions.progress|Option<Signal<Scene2DAudioResourceLoadProgress>>|Scene2DAudioResourceLoadProgress
+signal|flight-scene2d-resources|flight-scene2d-resources/src/types.rs|LoadScene2DImageResourcesOptions.progress|Option<Signal<Scene2DImageResourceLoadProgress>>|Scene2DImageResourceLoadProgress
+signal|flight-scene2d-resources|flight-scene2d-resources/src/types.rs|Scene2DDocumentLoadOptions.progress|Option<Signal<Scene2DDocumentFetchProgress>>|Scene2DDocumentFetchProgress
+signal|flight-scene3d|flight-scene3d/src/instanced_mesh.rs|InstancedMeshSignals.on_cleared|Signal<()>|()
+signal|flight-scene3d|flight-scene3d/src/instanced_mesh.rs|InstancedMeshSignals.on_instance_appended|Signal<i32>|i32
+signal|flight-scene3d|flight-scene3d/src/instanced_mesh.rs|InstancedMeshSignals.on_instance_removed|Signal<InstancedMeshInstanceRemoved>|InstancedMeshInstanceRemoved
+signal|flight-scene3d-resources|flight-scene3d-resources/src/types.rs|GltfScene3DDocumentLoadOptions.progress|Option<Ref<Signal<Ref<Scene3DDocumentLoadProgress>>>>|Ref<Scene3DDocumentLoadProgress>
+signal|flight-scene3d-resources|flight-scene3d-resources/src/types.rs|LoadScene3DResourcesOptions.progress|Option<Signal<Scene3DResourceLoadProgress>>|Scene3DResourceLoadProgress
+signal|flight-scene3d-resources|flight-scene3d-resources/src/types.rs|Scene3DDocumentLoadOptions.progress|Option<Ref<Signal<Ref<Scene3DDocumentLoadProgress>>>>|Ref<Scene3DDocumentLoadProgress>
+signal|flight-scene3d-resources|flight-scene3d-resources/src/types.rs|Scene3DResourceSignals.on_resource_failed|Signal<Scene3DResourceEvent>|Scene3DResourceEvent
+signal|flight-scene3d-resources|flight-scene3d-resources/src/types.rs|Scene3DResourceSignals.on_resource_resolved|Signal<Scene3DResourceEvent>|Scene3DResourceEvent
+signal|flight-screen|flight-screen/src/types.rs|ScreenPermissionChange.on_change|Signal<ScreenPermissionState>|ScreenPermissionState
+signal|flight-screen|flight-screen/src/types.rs|ScreenSignals.on_screen_added|Signal<ScreenInfo>|ScreenInfo
+signal|flight-screen|flight-screen/src/types.rs|ScreenSignals.on_screen_metrics_changed|Signal<ScreenChangeEvent>|ScreenChangeEvent
+signal|flight-screen|flight-screen/src/types.rs|ScreenSignals.on_screen_removed|Signal<ScreenInfo>|ScreenInfo
+signal|flight-selection|flight-selection/src/selection_compat.rs|SelectionSignals.on_active_change|Signal<Option<NodeRef>>|Option<NodeRef>
+signal|flight-selection|flight-selection/src/selection_compat.rs|SelectionSignals.on_change|Signal<Vec<NodeRef>>|Vec<NodeRef>
+signal|flight-sensors|flight-sensors/src/types.rs|Sensors.on_absolute_orientation|Signal<OrientationReading>|OrientationReading
+signal|flight-sensors|flight-sensors/src/types.rs|Sensors.on_accelerometer|Signal<MotionReading>|MotionReading
+signal|flight-sensors|flight-sensors/src/types.rs|Sensors.on_ambient_light|Signal<AmbientLightReading>|AmbientLightReading
+signal|flight-sensors|flight-sensors/src/types.rs|Sensors.on_barometer|Signal<PressureReading>|PressureReading
+signal|flight-sensors|flight-sensors/src/types.rs|Sensors.on_gravity|Signal<MotionReading>|MotionReading
+signal|flight-sensors|flight-sensors/src/types.rs|Sensors.on_gyroscope|Signal<RotationRateReading>|RotationRateReading
+signal|flight-sensors|flight-sensors/src/types.rs|Sensors.on_linear_acceleration|Signal<MotionReading>|MotionReading
+signal|flight-sensors|flight-sensors/src/types.rs|Sensors.on_magnetometer|Signal<MotionReading>|MotionReading
+signal|flight-sensors|flight-sensors/src/types.rs|Sensors.on_orientation|Signal<OrientationReading>|OrientationReading
+signal|flight-sensors|flight-sensors/src/types.rs|Sensors.on_proximity|Signal<ProximityReading>|ProximityReading
+signal|flight-sensors|flight-sensors/src/types.rs|Sensors.on_quaternion|Signal<QuaternionReading>|QuaternionReading
+signal|flight-share|flight-share/src/types.rs|ShareSignals.on_share_result|Signal<Ref<ShareResult>>|Ref<ShareResult>
+signal|flight-shortcut|flight-shortcut/src/types.rs|GlobalShortcut.on_trigger|Signal<()>|()
+signal|flight-signals|flight-signals/src/throttle.rs|fn connect_signal_at_frame_rate(source)|&Signal<FrameTick>|FrameTick
+signal|flight-socket|flight-socket/src/types.rs|SocketSignals.on_socket_close|Signal<SocketCloseInfo>|SocketCloseInfo
+signal|flight-socket|flight-socket/src/types.rs|SocketSignals.on_socket_error|Signal<()>|()
+signal|flight-socket|flight-socket/src/types.rs|SocketSignals.on_socket_message|Signal<SocketMessage>|SocketMessage
+signal|flight-socket|flight-socket/src/types.rs|SocketSignals.on_socket_open|Signal<()>|()
+signal|flight-spritesheet|flight-spritesheet/src/types.rs|SpritesheetPlayer.on_complete|Signal<()>|()
+signal|flight-spritesheet|flight-spritesheet/src/types.rs|SpritesheetPlayer.on_loop|Signal<()>|()
+signal|flight-statechart|flight-statechart/src/types.rs|StatechartSignals.on_state_change|Signal<(i32, i32, i32)>|(i32, i32, i32)
+signal|flight-statusbar|flight-statusbar/src/types.rs|StatusBar.on_change|Signal<StatusBarInfo>|StatusBarInfo
+signal|flight-text|flight-text/src/types.rs|TextFieldSignals.on_text_field_change|Signal<TextFieldChangeEvent>|TextFieldChangeEvent
+signal|flight-text|flight-text/src/types.rs|TextFieldSignals.on_text_field_link|Signal<TextFieldLinkEvent>|TextFieldLinkEvent
+signal|flight-text|flight-text/src/types.rs|TextFieldSignals.on_text_field_scroll|Signal<TextFieldScrollEvent>|TextFieldScrollEvent
+signal|flight-textinput|flight-textinput/src/types.rs|TextInputSource.on_key_down|Signal<InputKeyboardData>|InputKeyboardData
+signal|flight-textinput|flight-textinput/src/types.rs|TextInputSource.on_text_input|Signal<InputTextData>|InputTextData
+signal|flight-textshaper|flight-textshaper/src/types.rs|TextShaperSignals.on_backend_changed|Signal<Option<HostTextShaperCapability>>|Option<HostTextShaperCapability>
+signal|flight-tilemap|flight-tilemap/src/types.rs|TilemapSignals.on_cleared|Signal<()>|()
+signal|flight-tilemap|flight-tilemap/src/types.rs|TilemapSignals.on_tile_changed|Signal<(i32, i32, i16)>|(i32, i32, i16)
+signal|flight-tilemap|flight-tilemap/src/types.rs|TilemapSignals.on_tiles_changed|Signal<(i32, i32, i32, i32)>|(i32, i32, i32, i32)
+signal|flight-timeline|flight-timeline/src/types.rs|TimelineSignals.on_complete|Signal<()>|()
+signal|flight-timeline|flight-timeline/src/types.rs|TimelineSignals.on_enter_frame|Signal<TimelineFrameEvent>|TimelineFrameEvent
+signal|flight-timeline|flight-timeline/src/types.rs|TimelineSignals.on_exit_frame|Signal<TimelineFrameEvent>|TimelineFrameEvent
+signal|flight-timeline|flight-timeline/src/types.rs|TimelineSignals.on_frame_constructed|Signal<TimelineFrameEvent>|TimelineFrameEvent
+signal|flight-timeline|flight-timeline/src/types.rs|TimelineSignals.on_loop|Signal<()>|()
+signal|flight-tray|flight-tray/src/types.rs|HostTrayBalloonEventsCapability.get_signal|Arc<dyn Fn (&Ref<TrayIcon>) -> Option<Signal<TrayBalloonEvent>> + Send + Sync>|TrayBalloonEvent
+signal|flight-tray|flight-tray/src/types.rs|HostTrayDropEventsCapability.get_signal|Arc<dyn Fn (&Ref<TrayIcon>) -> Option<Signal<TrayDropEvent>> + Send + Sync>|TrayDropEvent
+signal|flight-tray|flight-tray/src/types.rs|HostTrayInteractionEventsCapability.get_signal|Arc<dyn Fn (&Ref<TrayIcon>) -> Option<Signal<TrayInteractionEvent>> + Send + Sync>|TrayInteractionEvent
+signal|flight-tray|flight-tray/src/types.rs|HostTrayMenuSelectionEventsCapability.get_signal|Arc<dyn Fn (&Ref<TrayIcon>) -> Option<Signal<TrayMenuSelectionEvent>> + Send + Sync>|TrayMenuSelectionEvent
+payload|()|82
+payload|(Notification, String)|1
+payload|(Notification, String, String)|1
+payload|(Ref<TreeViewControllerItem>, bool)|1
+payload|(RenderRegistryTable, Kind)|1
+payload|(String, Unknown)|1
+payload|(String, Unknown, usize)|1
+payload|(String, usize, f64)|1
+payload|(Unknown, String)|1
+payload|(f32, f32)|5
+payload|(i32, i32, i16)|1
+payload|(i32, i32, i32)|1
+payload|(i32, i32, i32, i32)|1
+payload|(usize, i32)|1
+payload|AmbientLightReading|1
+payload|AnimationClipEvent|1
+payload|AppLifecycleState|1
+payload|AppLifecycleStateBag|2
+payload|AppMemoryPressure|1
+payload|ConnectivityConnectionType|1
+payload|ConnectivityStatus|1
+payload|FrameTick|3
+payload|InputGamepadAxisData|2
+payload|InputGamepadButtonData|4
+payload|InputGamepadConnectData|4
+payload|InputKeyboardData|5
+payload|InputPointerData|12
+payload|InputTextData|5
+payload|InstancedMeshInstanceRemoved|1
+payload|LogEntry|2
+payload|MediaSessionActionDetails|1
+payload|MidiInputMessage|1
+payload|MidiPort|2
+payload|MotionReading|4
+payload|NodeRef|2
+payload|Notification|3
+payload|Option<HostTextShaperCapability>|1
+payload|Option<NodeRef>|1
+payload|Option<Ref<GuiDialogEntry>>|1
+payload|Option<Ref<TreeViewControllerItem>>|1
+payload|OrientationReading|2
+payload|ParticleDeathEvent|1
+payload|ParticleSpawnEvent|1
+payload|PowerStatus|1
+payload|PowerThermalState|1
+payload|PressureReading|1
+payload|ProximityReading|1
+payload|QuaternionReading|1
+payload|Ref<AssetLoadProgress>|1
+payload|Ref<GuiDialogCloseResult>|1
+payload|Ref<LoadProgress>|1
+payload|Ref<NetProgress>|1
+payload|Ref<Scene3DDocumentLoadProgress>|2
+payload|Ref<ShareResult>|1
+payload|Ref<TreeViewControllerItem>|1
+payload|ResourceLoadReports|1
+payload|RotationRateReading|1
+payload|Scene2DAudioResourceLoadProgress|1
+payload|Scene2DDocumentFetchProgress|1
+payload|Scene2DImageResourceLoadProgress|1
+payload|Scene3DResourceEvent|2
+payload|Scene3DResourceLoadProgress|1
+payload|ScreenChangeEvent|1
+payload|ScreenInfo|2
+payload|ScreenPermissionState|1
+payload|SocketCloseInfo|1
+payload|SocketMessage|1
+payload|StatusBarInfo|1
+payload|StorageChange|1
+payload|String|9
+payload|TextFieldChangeEvent|1
+payload|TextFieldLinkEvent|1
+payload|TextFieldScrollEvent|1
+payload|TimelineFrameEvent|3
+payload|TrayBalloonEvent|1
+payload|TrayDropEvent|1
+payload|TrayInteractionEvent|1
+payload|TrayMenuSelectionEvent|1
+payload|Unknown|1
+payload|Vec<NodeRef>|1
+payload|Vec<String>|1
+payload|bool|3
+payload|f32|7
+payload|f64|2
+payload|i32|6
+payload|usize|1
+policy|()|flight_connect_unit_signal|unit
+policy|(Notification, String)|skip|tuple payload has no Task M callback carrier
+policy|(Notification, String, String)|skip|tuple payload has no Task M callback carrier
+policy|(Ref<TreeViewControllerItem>, bool)|skip|tuple payload has no Task M callback carrier
+policy|(RenderRegistryTable, Kind)|skip|tuple payload has no Task M callback carrier
+policy|(String, Unknown)|skip|dynamic `Unknown` payload has no C representation
+policy|(String, Unknown, usize)|skip|dynamic `Unknown` payload has no C representation
+policy|(String, usize, f64)|skip|tuple payload has no Task M callback carrier
+policy|(Unknown, String)|skip|dynamic `Unknown` payload has no C representation
+policy|(f32, f32)|skip|tuple payload has no Task M callback carrier
+policy|(i32, i32, i16)|skip|tuple payload has no Task M callback carrier
+policy|(i32, i32, i32)|skip|tuple payload has no Task M callback carrier
+policy|(i32, i32, i32, i32)|skip|tuple payload has no Task M callback carrier
+policy|(usize, i32)|skip|tuple payload has no Task M callback carrier
+policy|AmbientLightReading|flight_connect_ambient_light_reading_signal|borrowed-struct
+policy|AnimationClipEvent|flight_connect_animation_clip_event_signal|borrowed-struct
+policy|AppLifecycleState|flight_connect_app_lifecycle_state_signal|enum-u32
+policy|AppLifecycleStateBag|skip|dynamic `Unknown` payload has no C representation
+policy|AppMemoryPressure|flight_connect_app_memory_pressure_signal|enum-u32
+policy|ConnectivityConnectionType|flight_connect_connectivity_connection_type_signal|enum-u32
+policy|ConnectivityStatus|flight_connect_connectivity_status_signal|borrowed-struct
+policy|FrameTick|flight_connect_frame_tick_signal|borrowed-struct
+policy|InputGamepadAxisData|flight_connect_input_gamepad_axis_data_signal|borrowed-struct
+policy|InputGamepadButtonData|flight_connect_input_gamepad_button_data_signal|borrowed-struct
+policy|InputGamepadConnectData|flight_connect_input_gamepad_connect_data_signal|borrowed-struct
+policy|InputKeyboardData|flight_connect_input_keyboard_data_signal|borrowed-struct
+policy|InputPointerData|flight_connect_input_pointer_data_signal|borrowed-struct
+policy|InputTextData|flight_connect_input_text_data_signal|borrowed-struct
+policy|InstancedMeshInstanceRemoved|flight_connect_instanced_mesh_instance_removed_signal|borrowed-struct
+policy|LogEntry|flight_connect_log_entry_signal|borrowed-struct
+policy|MediaSessionActionDetails|flight_connect_media_session_action_details_signal|borrowed-struct
+policy|MidiInputMessage|flight_connect_midi_input_message_signal|borrowed-struct
+policy|MidiPort|flight_connect_midi_port_signal|borrowed-struct
+policy|MotionReading|flight_connect_motion_reading_signal|borrowed-struct
+policy|NodeRef|skip|node payload waits for Item B's FlightNode carrier
+policy|Notification|flight_connect_notification_signal|borrowed-struct
+policy|Option<HostTextShaperCapability>|skip|host capability construction is withdrawn from the alpha ABI (Task S)
+policy|Option<NodeRef>|skip|node payload waits for Item B's FlightNode carrier
+policy|Option<Ref<GuiDialogEntry>>|skip|optional handle payload has no Task M callback carrier
+policy|Option<Ref<TreeViewControllerItem>>|skip|optional handle payload has no Task M callback carrier
+policy|OrientationReading|flight_connect_orientation_reading_signal|borrowed-struct
+policy|ParticleDeathEvent|flight_connect_particle_death_event_signal|borrowed-struct
+policy|ParticleSpawnEvent|flight_connect_particle_spawn_event_signal|borrowed-struct
+policy|PowerStatus|flight_connect_power_status_signal|borrowed-struct
+policy|PowerThermalState|flight_connect_power_thermal_state_signal|enum-u32
+policy|PressureReading|flight_connect_pressure_reading_signal|borrowed-struct
+policy|ProximityReading|flight_connect_proximity_reading_signal|borrowed-struct
+policy|QuaternionReading|flight_connect_quaternion_reading_signal|borrowed-struct
+policy|Ref<AssetLoadProgress>|flight_connect_asset_load_progress_signal|borrowed-ref-handle
+policy|Ref<GuiDialogCloseResult>|flight_connect_gui_dialog_close_result_signal|borrowed-ref-handle
+policy|Ref<LoadProgress>|flight_connect_load_progress_signal|borrowed-ref-handle
+policy|Ref<NetProgress>|flight_connect_net_progress_signal|borrowed-ref-handle
+policy|Ref<Scene3DDocumentLoadProgress>|flight_connect_scene3d_document_load_progress_signal|borrowed-ref-handle
+policy|Ref<ShareResult>|flight_connect_share_result_signal|borrowed-ref-handle
+policy|Ref<TreeViewControllerItem>|flight_connect_tree_view_controller_item_signal|borrowed-ref-handle
+policy|ResourceLoadReports|skip|collection payload has no Task M callback carrier
+policy|RotationRateReading|flight_connect_rotation_rate_reading_signal|borrowed-struct
+policy|Scene2DAudioResourceLoadProgress|flight_connect_scene2d_audio_resource_load_progress_signal|borrowed-struct
+policy|Scene2DDocumentFetchProgress|flight_connect_scene2d_document_fetch_progress_signal|borrowed-struct
+policy|Scene2DImageResourceLoadProgress|flight_connect_scene2d_image_resource_load_progress_signal|borrowed-struct
+policy|Scene3DResourceEvent|flight_connect_scene3d_resource_event_signal|borrowed-struct
+policy|Scene3DResourceLoadProgress|flight_connect_scene3d_resource_load_progress_signal|borrowed-struct
+policy|ScreenChangeEvent|flight_connect_screen_change_event_signal|borrowed-struct
+policy|ScreenInfo|flight_connect_screen_info_signal|borrowed-struct
+policy|ScreenPermissionState|flight_connect_screen_permission_state_signal|enum-u32
+policy|SocketCloseInfo|flight_connect_socket_close_info_signal|borrowed-struct
+policy|SocketMessage|flight_connect_socket_message_signal|borrowed-struct
+policy|StatusBarInfo|flight_connect_status_bar_info_signal|borrowed-struct
+policy|StorageChange|flight_connect_storage_change_signal|borrowed-struct
+policy|String|skip|string payload has no Task M borrowed-string callback carrier
+policy|TextFieldChangeEvent|flight_connect_text_field_change_event_signal|borrowed-struct
+policy|TextFieldLinkEvent|flight_connect_text_field_link_event_signal|borrowed-struct
+policy|TextFieldScrollEvent|flight_connect_text_field_scroll_event_signal|borrowed-struct
+policy|TimelineFrameEvent|flight_connect_timeline_frame_event_signal|borrowed-struct
+policy|TrayBalloonEvent|flight_connect_tray_balloon_event_signal|borrowed-struct
+policy|TrayDropEvent|flight_connect_tray_drop_event_signal|borrowed-struct
+policy|TrayInteractionEvent|flight_connect_tray_interaction_event_signal|borrowed-struct
+policy|TrayMenuSelectionEvent|flight_connect_tray_menu_selection_event_signal|borrowed-struct
+policy|Unknown|skip|dynamic `Unknown` payload has no C representation
+policy|Vec<NodeRef>|skip|node payload waits for Item B's FlightNode carrier
+policy|Vec<String>|skip|collection payload has no Task M callback carrier
+policy|bool|flight_connect_bool_signal|scalar
+policy|f32|flight_connect_f32_signal|scalar
+policy|f64|flight_connect_f64_signal|scalar
+policy|i32|flight_connect_i32_signal|scalar
+policy|usize|flight_connect_usize_signal|scalar
