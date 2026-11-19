@@ -22,6 +22,35 @@ mod get_glyph_atlas_dirty_region {
     use super::*;
 
     #[test]
+    fn reports_texel_coordinates_above_two_to_the_24_exactly() {
+        // A one-texel-tall, unpadded atlas places glyph 66 at x = 2^24 + 1, which f32 rounds to 2^24.
+        let wide = (1_u32 << 24) + 1;
+        let mock = mock_rasterizer(move |codepoint| (if codepoint == 65 { wide } else { 3 }, 1));
+        let mut options = atlas_options(mock.backend, wide + 3, 1);
+        options.padding = Some(0);
+        let atlas = create_glyph_atlas(&options);
+        get_glyph_atlas_entry(&atlas, 65).unwrap();
+        clear_glyph_atlas_dirty(&atlas);
+        get_glyph_atlas_entry(&atlas, 66).unwrap();
+        let region = get_glyph_atlas_dirty_region(&atlas).unwrap();
+        assert_eq!(wide as f32 as f64, f64::from(1_u32 << 24));
+        assert_eq!(region.x, f64::from(wide));
+        assert_eq!(region.width, 3.0);
+    }
+
+    #[test]
+    fn reports_a_dirty_extent_above_two_to_the_24_exactly() {
+        let wide = (1_u32 << 24) + 1;
+        let mock = mock_rasterizer(move |_codepoint| (wide, 1));
+        let mut options = atlas_options(mock.backend, wide, 1);
+        options.padding = Some(0);
+        let atlas = create_glyph_atlas(&options);
+        get_glyph_atlas_entry(&atlas, 65).unwrap();
+        let region = get_glyph_atlas_dirty_region(&atlas).unwrap();
+        assert_eq!(region.width, f64::from(wide));
+    }
+
+    #[test]
     fn covers_the_union_of_every_new_glyph_rectangle() {
         let mock = mock_rasterizer(|codepoint| {
             return if codepoint == 65 { (8, 8) } else { (10, 10) };
@@ -32,15 +61,15 @@ mod get_glyph_atlas_dirty_region {
         let first = first.read().unwrap();
         let second = second.read().unwrap();
         let region = get_glyph_atlas_dirty_region(&atlas).unwrap();
-        assert_eq!(region.x, first.x.min(second.x) as f32);
-        assert_eq!(region.y, first.y.min(second.y) as f32);
+        assert_eq!(region.x, first.x.min(second.x) as f64);
+        assert_eq!(region.y, first.y.min(second.y) as f64);
         assert_eq!(
             region.width,
-            (first.x + first.width).max(second.x + second.width) as f32 - region.x
+            (first.x + first.width).max(second.x + second.width) as f64 - region.x
         );
         assert_eq!(
             region.height,
-            (first.y + first.height).max(second.y + second.height) as f32 - region.y
+            (first.y + first.height).max(second.y + second.height) as f64 - region.y
         );
     }
 
@@ -59,9 +88,9 @@ mod get_glyph_atlas_dirty_region {
         let entry = get_glyph_atlas_entry(&atlas, 66).unwrap();
         let entry = entry.read().unwrap();
         let region = get_glyph_atlas_dirty_region(&atlas).unwrap();
-        assert_eq!(region.x, entry.x as f32);
-        assert_eq!(region.y, entry.y as f32);
-        assert_eq!(region.width, entry.width as f32);
-        assert_eq!(region.height, entry.height as f32);
+        assert_eq!(region.x, entry.x as f64);
+        assert_eq!(region.y, entry.y as f64);
+        assert_eq!(region.width, entry.width as f64);
+        assert_eq!(region.height, entry.height as f64);
     }
 }
