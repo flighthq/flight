@@ -61,7 +61,7 @@ fn apply_fields(target: &NodeRef, node_fields: &FlightDocumentFields) {
         node.node2d_fields_mut().alpha = *alpha as f32;
     }
     if let Some(FlightDocumentValue::Number(x)) = get_record_value(node_fields, "x") {
-        node.node2d_fields_mut().x = *x as f32;
+        node.node2d_fields_mut().x = *x;
     }
 }
 
@@ -121,7 +121,7 @@ fn create_test_schemas() -> FlightDocumentSchemaRegistry {
 fn materialized_child_alpha_and_x(
     document: &FlightDocument,
     substituted: FlightDocumentScene,
-) -> (f32, f32) {
+) -> (f32, f64) {
     let document = FlightDocument {
         default_scene: document.default_scene,
         resources: document.resources.clone(),
