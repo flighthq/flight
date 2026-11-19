@@ -34,15 +34,15 @@ fn random_gaussian_pair_outputs_are_typed_hashlink_references() {
     let (header, shim) = generated();
     assert_line(
         &header,
-        "void flight_random_gaussian_pair(float (*arg0)(void *), void * arg1, float arg2, float arg3, float * arg4, float * arg5);",
+        "void flight_random_gaussian_pair(double (*arg0)(void *), void * arg1, double arg2, double arg3, double * arg4, double * arg5);",
     );
     assert_line(
         &shim,
-        "HL_PRIM void HL_NAME(flight_random_gaussian_pair)(vbyte * arg0, vbyte * arg1, float arg2, float arg3, float * arg4, float * arg5) { flight_random_gaussian_pair((float (*)(void *))arg0, (void *)arg1, (float)arg2, (float)arg3, (float *)arg4, (float *)arg5); }",
+        "HL_PRIM void HL_NAME(flight_random_gaussian_pair)(vbyte * arg0, vbyte * arg1, double arg2, double arg3, double * arg4, double * arg5) { flight_random_gaussian_pair((double (*)(void *))arg0, (void *)arg1, (double)arg2, (double)arg3, (double *)arg4, (double *)arg5); }",
     );
     assert_line(
         &shim,
-        "DEFINE_PRIM(_VOID, flight_random_gaussian_pair, _BYTES _BYTES _F32 _F32 _REF(_F32) _REF(_F32));",
+        "DEFINE_PRIM(_VOID, flight_random_gaussian_pair, _BYTES _BYTES _F64 _F64 _REF(_F64) _REF(_F64));",
     );
     // Only tuple and outcome-reason outputs are references; a new `_REF` carrier must be a
     // deliberate ABI change.
@@ -61,7 +61,7 @@ fn random_gaussian_pair_outputs_are_typed_hashlink_references() {
             "DEFINE_PRIM(_BOOL, flight_remove_accessibility_node, _BYTES _BYTES _REF(_I32));",
             "DEFINE_PRIM(_BOOL, flight_set_accessibility_focus, _BYTES _BYTES _REF(_I32));",
             "DEFINE_PRIM(_BOOL, flight_set_accessibility_node, _BYTES _BYTES _REF(_I32));",
-            "DEFINE_PRIM(_VOID, flight_random_gaussian_pair, _BYTES _BYTES _F32 _F32 _REF(_F32) _REF(_F32));",
+            "DEFINE_PRIM(_VOID, flight_random_gaussian_pair, _BYTES _BYTES _F64 _F64 _REF(_F64) _REF(_F64));",
         ]
     );
 }

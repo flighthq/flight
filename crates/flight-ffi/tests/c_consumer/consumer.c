@@ -96,23 +96,24 @@ static void check_owned_byte_readers(void) {
 }
 
 struct gaussian_samples {
-  float values[2];
+  double values[2];
   int index;
 };
 
-static float gaussian_sample(void *context) {
+static double gaussian_sample(void *context) {
   struct gaussian_samples *samples = context;
-  float sample = samples->values[samples->index];
+  double sample = samples->values[samples->index];
   samples->index = (samples->index + 1) % 2;
   return sample;
 }
 
 static void check_tuple_execution(void) {
-  struct gaussian_samples samples = {{0.60653066f, 0.0f}, 0};
-  float first = -1.0f;
-  float second = -1.0f;
-  flight_random_gaussian_pair(gaussian_sample, &samples, 0.0f, 1.0f, &first, &second);
-  expect(near(first, 1.0f) && near(second, 0.0f), "random_gaussian_pair writes both tuple outputs");
+  struct gaussian_samples samples = {{0.60653066, 0.0}, 0};
+  double first = -1.0;
+  double second = -1.0;
+  flight_random_gaussian_pair(gaussian_sample, &samples, 0.0, 1.0, &first, &second);
+  expect(fabs(first - 1.0) < 1e-5 && fabs(second) < 1e-5,
+         "random_gaussian_pair writes both tuple outputs");
 }
 
 static void check_effect_metadata_snapshots(void) {
