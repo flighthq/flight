@@ -9,9 +9,10 @@ pub struct BindgenOptions {
     pub help: bool,
 }
 
-// Parses the arguments after the program name. Every flag must be known and appear at most once,
-// and every value flag must carry a value: a stale or misspelled flag (the retired `--ffi-names`)
-// is an error instead of silently producing unfiltered output.
+// Parses the arguments after the program name. Every flag must be known and appear at most once
+// (`-h` and `--help` are one flag), and every value flag must carry a value that is not itself an
+// option token: a stale or misspelled flag (the retired `--ffi-names`) or a swallowed flag
+// (`--out -h`) is an error instead of silently producing unfiltered or misplaced output.
 pub fn parse_bindgen_args(args: &[String]) -> Result<BindgenOptions, String> {
     let mut target: Option<String> = None;
     let mut out_dir: Option<PathBuf> = None;
@@ -22,6 +23,11 @@ pub fn parse_bindgen_args(args: &[String]) -> Result<BindgenOptions, String> {
     while index < args.len() {
         let flag = args[index].as_str();
         if flag == "--help" || flag == "-h" {
+            if help {
+                return Err(format!(
+                    "`{flag}` given more than once (`-h` and `--help` are one flag)"
+                ));
+            }
             help = true;
             index += 1;
             continue;
@@ -36,9 +42,12 @@ pub fn parse_bindgen_args(args: &[String]) -> Result<BindgenOptions, String> {
         if slot_is_set {
             return Err(format!("`{flag}` given more than once"));
         }
-        let Some(value) = args.get(index + 1).filter(|value| !value.starts_with("--")) else {
+        let Some(value) = args.get(index + 1) else {
             return Err(format!("`{flag}` requires a value"));
         };
+        if value.starts_with('-') {
+            return Err(format!("`{flag}` requires a value, got option `{value}`"));
+        }
         match flag {
             "--target" => target = Some(value.clone()),
             "--out" => out_dir = Some(PathBuf::from(value)),
@@ -74,4 +83,6 @@ usage: flight-bindgen [--target <target>] [--out <dir>] [--offsets <offsets.json
   --offsets  struct layout JSON emitted by flight-offsets
   --ffi-dir  flight-ffi build output holding flight_ffi.h and flight_hl.c; native externs are
              filtered by, policy-checked against, and verified against that surface
-  --help     print this message";
+  --help     print this message (also -h)
+
+Each flag may appear once, and a value may not start with `-` (write `./-name` for such a path).";

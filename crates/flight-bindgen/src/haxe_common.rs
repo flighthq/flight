@@ -602,9 +602,33 @@ mod portable_module_tests {
         assert_eq!(
             errors,
             [
-                "unexpected native skip flight_get_audio_bus_gain: generic _hl extern disagrees with flight-ffi"
+                "unexpected native skip flight_get_audio_bus_gain: generic _hl extern disagrees with flight-ffi",
+                "unexpected never accessor AudioBus.gain:get: native symbol exists without accessor shape",
             ]
         );
+    }
+    #[test]
+    fn native_binding_policy_fails_when_an_accessor_carrier_drifts_on_hashlink_only() {
+        let hl = POLICY_HL.replace(
+            "DEFINE_PRIM(_F32, flight_get_audio_bus_gain, _BYTES);",
+            "DEFINE_PRIM(_F64, flight_get_audio_bus_gain, _BYTES);",
+        );
+        let mut surface = policy_surface(POLICY_HEADER, &hl);
+        // Only the auto-generated field accessor remains: no module function shares its symbol.
+        let mut exports = policy_exports();
+        exports[0]
+            .fns
+            .retain(|func| func.name != "get_audio_bus_gain");
+        let errors =
+            enforce_native_binding_policy(&exports, &mut surface, POLICY_SKIPS, POLICY_NEVER)
+                .unwrap_err();
+        assert_eq!(
+            errors,
+            [
+                "unexpected never accessor AudioBus.gain:get: native symbol exists without accessor shape"
+            ]
+        );
+        assert!(surface.native_skips.is_empty());
     }
     #[test]
     fn native_binding_policy_fails_when_a_reviewed_skip_stops_applying() {

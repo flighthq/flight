@@ -62,8 +62,40 @@ mod parse_bindgen_args {
         );
         assert_eq!(
             parse_bindgen_args(&args(&["--ffi-dir", "--target", "haxe"])),
-            Err("`--ffi-dir` requires a value".to_string())
+            Err("`--ffi-dir` requires a value, got option `--target`".to_string())
         );
+    }
+    #[test]
+    fn rejects_a_repeated_help_flag_in_either_spelling() {
+        for repeated in [
+            ["--help", "--help"],
+            ["-h", "--help"],
+            ["--help", "-h"],
+            ["-h", "-h"],
+        ] {
+            let error = parse_bindgen_args(&args(&repeated)).unwrap_err();
+            assert!(
+                error.contains("given more than once"),
+                "{repeated:?}: {error}"
+            );
+        }
+    }
+    #[test]
+    fn rejects_every_option_token_used_as_a_value() {
+        for flag in ["--target", "--out", "--offsets", "--ffi-dir"] {
+            for token in ["-h", "--help", "--out", "--ffi-names", "-x"] {
+                assert_eq!(
+                    parse_bindgen_args(&args(&[flag, token])),
+                    Err(format!("`{flag}` requires a value, got option `{token}`")),
+                    "{flag} {token}"
+                );
+            }
+        }
+    }
+    #[test]
+    fn accepts_a_lone_help_in_either_spelling() {
+        assert!(parse_bindgen_args(&args(&["-h"])).unwrap().help);
+        assert!(parse_bindgen_args(&args(&["--help"])).unwrap().help);
     }
     #[test]
     fn rejects_an_unknown_target() {

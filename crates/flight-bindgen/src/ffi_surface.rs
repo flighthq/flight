@@ -146,24 +146,30 @@ pub fn declaration_matches_ffi_surface(
         .all(|ext| check_native_extern(ext, backend, surface).is_ok());
 }
 
-// A field accessor is only bound when the symbol named like one also has accessor shape:
-// `T get(handle)` and `T set(handle, T)`. An SDK function may share the name with different
-// parameters (`set_audio_bus_gain(mixer, bus, ramp, gain)`), and binding it as a setter would
-// call it with the wrong arity. Each direction is judged on its own.
+// A field accessor is only bound when the symbol named like one also has accessor shape on BOTH
+// native surfaces: `T get(handle)` and `T set(handle, T)` in flight_ffi.h, and the matching
+// `DEFINE_PRIM` carriers in flight_hl.c. An SDK function may share the name with different
+// parameters (`set_audio_bus_gain(mixer, bus, ramp, gain)`), and binding it as a setter would call
+// it with the wrong arity; a carrier that drifted on one surface only must not bind either. Each
+// direction is judged on its own.
 pub fn get_ffi_field_access(
     surface: &FfiSurface,
     getter_symbol: &str,
     setter_symbol: &str,
     rust_ty: &str,
 ) -> FieldAccess {
-    let Some(c_ty) = rust_scalar_to_c(rust_ty) else {
+    let (Some(c_ty), Some(hl_ty)) = (rust_scalar_to_c(rust_ty), rust_scalar_to_hl(rust_ty)) else {
         return FieldAccess::default();
     };
-    let getter = surface.c.get(getter_symbol);
-    let setter = surface.c.get(setter_symbol);
+    let c_get = surface.c.get(getter_symbol);
+    let c_set = surface.c.get(setter_symbol);
+    let hl_get = surface.hl.get(getter_symbol);
+    let hl_set = surface.hl.get(setter_symbol);
     return FieldAccess {
-        get: getter.is_some_and(|s| s.ret == c_ty && s.params == ["void *"]),
-        set: setter.is_some_and(|s| s.ret == c_ty && s.params == ["void *", c_ty]),
+        get: c_get.is_some_and(|s| s.ret == c_ty && s.params == ["void *"])
+            && hl_get.is_some_and(|s| s.ret == hl_ty && s.params == ["_BYTES"]),
+        set: c_set.is_some_and(|s| s.ret == c_ty && s.params == ["void *", c_ty])
+            && hl_set.is_some_and(|s| s.ret == hl_ty && s.params == ["_BYTES", hl_ty]),
     };
 }
 
@@ -383,6 +389,17 @@ fn rust_scalar_to_c(rust_ty: &str) -> Option<&'static str> {
         "usize" => "size_t",
         _ => return None,
     })
+}
+
+fn rust_scalar_to_hl(rust_ty: &str) -> Option<&'static str> {
+    return Some(match rust_ty {
+        "f32" => "_F32",
+        "f64" => "_F64",
+        "bool" => "_BOOL",
+        "i8" | "i16" | "i32" | "u8" | "u16" | "u32" | "usize" => "_I32",
+        "i64" | "u64" => "_I64",
+        _ => return None,
+    });
 }
 
 fn split_top_level(list: &str) -> Vec<String> {

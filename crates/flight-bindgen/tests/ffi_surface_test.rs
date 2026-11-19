@@ -133,6 +133,35 @@ mod get_ffi_field_access {
         assert_eq!(scale, NO_ACCESS);
     }
     #[test]
+    fn rejects_a_direction_whose_hashlink_carrier_drifted_alone() {
+        let mut surface = fixture_surface();
+        surface.hl = parse_hl_primitives(&HL_SHIM.replace(
+            "DEFINE_PRIM(_BOOL, flight_get_audio_bus_muted, _BYTES);",
+            "DEFINE_PRIM(_I32, flight_get_audio_bus_muted, _BYTES);",
+        ));
+        let muted = get_ffi_field_access(
+            &surface,
+            "flight_get_audio_bus_muted",
+            "flight_set_audio_bus_muted",
+            "bool",
+        );
+        assert_eq!(
+            muted,
+            FieldAccess {
+                get: false,
+                set: true
+            }
+        );
+        surface.hl.remove("flight_set_audio_bus_muted");
+        let muted = get_ffi_field_access(
+            &surface,
+            "flight_get_audio_bus_muted",
+            "flight_set_audio_bus_muted",
+            "bool",
+        );
+        assert_eq!(muted, NO_ACCESS);
+    }
+    #[test]
     fn rejects_a_field_type_that_disagrees_with_the_native_carrier() {
         let surface = fixture_surface();
         let gain = get_ffi_field_access(
