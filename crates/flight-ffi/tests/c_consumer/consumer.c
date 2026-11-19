@@ -706,6 +706,21 @@ static void check_node_carriers(void) {
   uint32_t revision = flight_get_node_local_transform_revision(sprite);
   expect(near(flight_set_node2_dfields_x(sprite, 9.5f), 9.5f), "Node2DFields writes through FlightNode");
   expect(near(flight_get_node2_dfields_x(sprite), 9.5f), "Node2DFields reads through FlightNode");
+  expect(flight_set_node2_dfields_y(sprite, -4.25) == -4.25 && flight_get_node2_dfields_y(sprite) == -4.25,
+         "Node2DFields preserves y");
+  expect(flight_set_node2_dfields_rotation(sprite, 45.0) == 45.0 &&
+             flight_get_node2_dfields_rotation(sprite) == 45.0,
+         "Node2DFields preserves rotation");
+  expect(flight_set_node2_dfields_scale_x(sprite, 1.5) == 1.5 && flight_get_node2_dfields_scale_x(sprite) == 1.5,
+         "Node2DFields preserves scale x");
+  expect(flight_set_node2_dfields_scale_y(sprite, 0.75) == 0.75 &&
+             flight_get_node2_dfields_scale_y(sprite) == 0.75,
+         "Node2DFields preserves scale y");
+  expect(near(flight_set_node2_dfields_alpha(sprite, 0.625f), 0.625f) &&
+             near(flight_get_node2_dfields_alpha(sprite), 0.625f),
+         "Node2DFields preserves alpha");
+  expect(!flight_set_node2_dfields_visible(sprite, false) && !flight_get_node2_dfields_visible(sprite),
+         "Node2DFields preserves visibility");
   expect(flight_get_node_local_transform_revision(sprite) == revision, "field writes do not implicitly invalidate");
   flight_invalidate_node_local_transform(sprite);
   expect(flight_get_node_local_transform_revision(sprite) == revision + 1,
@@ -724,14 +739,30 @@ static void check_node_carriers(void) {
          "absent blend mode has the documented sentinel");
   expect(flight_get_text_label_string(sprite) == NULL, "a wrong concrete node kind returns its pointer sentinel");
 
+  FlightNode *added = flight_add_node_child(container, sprite);
+  expect(flight_node_equals(added, sprite), "add child returns the inserted node identity");
+  flight_free_node(added);
+  added = flight_add_node_child_at(container, shape, 0);
+  expect(flight_node_equals(added, shape), "add child at returns the inserted node identity");
+  flight_free_node(added);
+
   FlightNodeArray *children = flight_node_array_create();
-  expect(flight_node_array_push(children, sprite), "node array accepts sprite");
-  expect(flight_node_array_push(children, shape), "node array accepts shape");
   expect(flight_node_array_push(children, bitmap_text), "node array accepts bitmap text");
   expect(flight_node_array_push(children, text_label), "node array accepts text");
   flight_add_node_children(container, children);
   flight_free_node_array(children);
   expect(flight_get_node_child_count(container) == 4, "a freed input array leaves retained hierarchy children");
+
+  FlightNode *parent = flight_get_node_parent(sprite);
+  expect(flight_node_equals(parent, container), "get parent preserves FlightNode identity");
+  flight_free_node(parent);
+  FlightNode *root = flight_get_node_root(text_label);
+  expect(flight_node_equals(root, container), "get root preserves FlightNode identity");
+  flight_free_node(root);
+
+  flight_swap_node_children(container, sprite, shape);
+  expect(flight_get_node_child_index(container, sprite) == 0 && flight_get_node_child_index(container, shape) == 1,
+         "swap children reorders node handles");
 
   FlightNodeArray *snapshot = flight_node_array_create();
   flight_get_node_children(snapshot, container);
@@ -762,6 +793,7 @@ static void check_node_carriers(void) {
 
   flight_free_node_array(snapshot);
   flight_free_node(container);
+  expect(flight_get_node2_dfields_x(sprite) == 9.5, "a child remains usable after its parent handle is freed");
   flight_free_node(sprite);
   flight_free_node(shape);
   flight_free_node(bitmap_text);

@@ -176,6 +176,16 @@ fn z_compile_link_and_run(
         .debug(false)
         .out_dir(&work_dir)
         .get_compiler();
+    let asan_runtime = address_sanitizer.then(|| {
+        let mut locate = compiler.to_command();
+        locate.arg("-print-file-name=libasan.so");
+        let located = run(&mut locate, "locate the address sanitizer runtime");
+        let path = String::from_utf8(located.stdout).unwrap();
+        let path = path.trim();
+        assert_ne!(path, "libasan.so", "compiler did not locate libasan.so");
+        assert!(Path::new(path).is_file(), "missing {path}");
+        path.to_owned()
+    });
     let mut compile = compiler.to_command();
     compile
         .args(["-std=c11", "-Wall", "-Wextra", "-Wpedantic", "-Werror"])
@@ -203,13 +213,14 @@ fn z_compile_link_and_run(
         .arg("-o")
         .arg(&executable);
     if address_sanitizer {
-        link.arg("-C").arg("link-arg=-fsanitize=address");
+        link.arg("-C").arg("link-arg=-lasan");
     }
     run(&mut link, "link the C consumer");
 
     let mut executable_command = Command::new(&executable);
-    if address_sanitizer {
-        executable_command.env("ASAN_OPTIONS", "detect_leaks=0:halt_on_error=1");
+    if let Some(asan_runtime) = asan_runtime {
+        executable_command.env("LD_PRELOAD", asan_runtime);
+        executable_command.env("ASAN_OPTIONS", "detect_leaks=1:halt_on_error=1");
     }
     let ran = run(&mut executable_command, "run the C consumer");
     return Some(String::from_utf8_lossy(&ran.stdout).into_owned());
