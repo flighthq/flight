@@ -368,6 +368,52 @@ mod write_wgpu_quad_uniforms {
     use super::*;
 
     #[test]
+    fn takes_f64_quad_geometry_with_f32_uvs_and_narrows_each_position_once_into_the_uniform_ring() {
+        // A mixed-lane API contract (f64 x/y geometry, declared f32 u/v) plus the single storage
+        // narrowing of non-f32 positions.
+        let contract: fn(
+            &mut WgpuRenderState,
+            f32,
+            &flight_geometry::Matrix,
+            Option<&flight_materials::ColorScaleBias>,
+            f64,
+            f64,
+            f64,
+            f64,
+            f32,
+            f32,
+            f32,
+            f32,
+            bool,
+        ) -> u32 = write_wgpu_quad_uniforms;
+        let mut state = create_wgpu_render_state_for_test(None);
+        let pass = begin_wgpu_screen_render_pass_for_test(&mut state, None, None, false);
+        let t = create_matrix(1.0, 0.0, 0.0, 1.0, 0.0, 0.0);
+        let offset = contract(
+            pass.state,
+            1.0,
+            &t,
+            None,
+            0.1,
+            100.1,
+            16_777_217.0,
+            2.5,
+            0.3,
+            0.0,
+            1.0,
+            1.0,
+            false,
+        );
+        let float_base = (offset >> 2) as usize;
+        let data = &get_wgpu_render_state_runtime(pass.state).uniform_data;
+        assert_eq!(
+            &data[float_base + 24..float_base + 29],
+            &[0.1_f32, 100.1_f32, 16_777_217.0_f64 as f32, 2.5, 0.3_f32]
+        );
+        end_wgpu_render_pass(pass);
+    }
+
+    #[test]
     fn advances_uniform_offset_by_uniform_stride() {
         let mut state = create_wgpu_render_state_for_test(None);
         let pass = begin_wgpu_screen_render_pass_for_test(&mut state, None, None, false);

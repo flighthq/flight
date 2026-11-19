@@ -474,14 +474,15 @@ pub fn set_wgpu_matrix_from_transform(
 /// Writes a quad's uniforms with no color adjustment (TS `writeWgpuMatrixOnlyUniforms`); returns the
 /// slot's byte offset.
 // flight-lint: allow(conform-params) the source's renderProxy argument contributes only its alpha
+// flight-lint: allow(f64) quad geometry and UVs are f64 CPU values (foreman-536d86b7); the f32 uniform ring is the single narrowing
 pub fn write_wgpu_matrix_only_uniforms(
     state: &mut WgpuRenderState,
     alpha: f32,
     transform: &Matrix,
-    x0: f32,
-    y0: f32,
-    x1: f32,
-    y1: f32,
+    x0: f64,
+    y0: f64,
+    x1: f64,
+    y1: f64,
     u0: f32,
     v0: f32,
     u1: f32,
@@ -497,15 +498,16 @@ pub fn write_wgpu_matrix_only_uniforms(
 /// offset of the slot written, the dynamic offset a draw binds. Integer fields share the float
 /// ring's bytes (host byte order; see `explain_wgpu_uniform_endianness`).
 // flight-lint: allow(conform-params) the source's renderProxy argument contributes only its alpha and transform
+// flight-lint: allow(f64) quad geometry and UVs are f64 CPU values (foreman-536d86b7); the f32 uniform ring is the single narrowing
 pub fn write_wgpu_quad_uniforms(
     state: &mut WgpuRenderState,
     alpha: f32,
     transform: &Matrix,
     color_scale_bias: Option<&ColorScaleBias>,
-    x0: f32,
-    y0: f32,
-    x1: f32,
-    y1: f32,
+    x0: f64,
+    y0: f64,
+    x1: f64,
+    y1: f64,
     u0: f32,
     v0: f32,
     u1: f32,
@@ -553,11 +555,12 @@ pub fn write_wgpu_quad_uniforms(
     data[float_base + 21] = color_scale_bias.map(|c| c.green_bias).unwrap_or(0.0);
     data[float_base + 22] = color_scale_bias.map(|c| c.blue_bias).unwrap_or(0.0);
     data[float_base + 23] = color_scale_bias.map(|c| c.alpha_bias).unwrap_or(0.0);
-    // quad corners at float 24–31 (byte 96–127)
-    data[float_base + 24] = x0;
-    data[float_base + 25] = y0;
-    data[float_base + 26] = x1;
-    data[float_base + 27] = y1;
+    // quad corners at float 24–31 (byte 96–127): the f64 positions narrow exactly once here; the UVs
+    // are already the declared f32 texture-coordinate lane
+    data[float_base + 24] = x0 as f32;
+    data[float_base + 25] = y0 as f32;
+    data[float_base + 26] = x1 as f32;
+    data[float_base + 27] = y1 as f32;
     data[float_base + 28] = u0;
     data[float_base + 29] = v0;
     data[float_base + 30] = u1;

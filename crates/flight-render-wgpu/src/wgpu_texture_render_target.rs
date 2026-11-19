@@ -164,6 +164,7 @@ pub fn destroy_wgpu_texture_render_target(target: &WgpuTextureRenderTarget) {
 /// with the cache offset `transform` (TS `drawWgpuTextureRenderTargetResult`). Target textures are
 /// stored bottom-left origin, so the v range is flipped.
 // flight-lint: allow(conform-params) the source's renderProxy argument contributes its alpha, color adjustment and transform
+// flight-lint: allow(f64) quad geometry and UVs are f64 CPU values (foreman-536d86b7); the f32 uniform ring is the single narrowing
 pub fn draw_wgpu_texture_render_target_result(
     state: &mut WgpuRenderState,
     alpha: f32,
@@ -224,8 +225,8 @@ pub fn draw_wgpu_texture_render_target_result(
         &entry,
         0.0,
         0.0,
-        target.width as f32,
-        target.height as f32,
+        f64::from(target.width),
+        f64::from(target.height),
         0.0,
         1.0,
         1.0,

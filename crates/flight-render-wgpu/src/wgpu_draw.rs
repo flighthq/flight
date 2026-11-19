@@ -532,14 +532,15 @@ pub fn destroy_wgpu_video_texture(
 
 /// Draws one textured quad with the proxy's transform, alpha and color adjustment (TS
 /// `drawWgpuQuad`). No-op outside a pass.
+// flight-lint: allow(f64) quad geometry and UVs are f64 CPU values (foreman-536d86b7); the f32 uniform ring is the single narrowing
 pub fn draw_wgpu_quad(
     state: &mut WgpuRenderState,
     render_proxy: &RenderProxy2D<WgpuRenderState>,
     texture_entry: &Ref<WgpuTextureEntry>,
-    x0: f32,
-    y0: f32,
-    x1: f32,
-    y1: f32,
+    x0: f64,
+    y0: f64,
+    x1: f64,
+    y1: f64,
     u0: f32,
     v0: f32,
     u1: f32,
@@ -571,16 +572,17 @@ pub fn draw_wgpu_quad(
 
 /// Draws one textured quad with an explicit transform (TS `drawWgpuQuadWithTransform`).
 // flight-lint: allow(conform-params) the source's renderProxy argument contributes its alpha and color adjustment
+// flight-lint: allow(f64) quad geometry and UVs are f64 CPU values (foreman-536d86b7); the f32 uniform ring is the single narrowing
 pub fn draw_wgpu_quad_with_transform(
     state: &mut WgpuRenderState,
     alpha: f32,
     color_scale_bias: Option<&ColorScaleBias>,
     transform: &Matrix,
     texture_entry: &Ref<WgpuTextureEntry>,
-    x0: f32,
-    y0: f32,
-    x1: f32,
-    y1: f32,
+    x0: f64,
+    y0: f64,
+    x1: f64,
+    y1: f64,
     u0: f32,
     v0: f32,
     u1: f32,

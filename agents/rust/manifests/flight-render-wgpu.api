@@ -251,8 +251,8 @@ src/wgpu_draw.rs: pub fn bind_wgpu_texture(state: &mut WgpuRenderState, image_so
 src/wgpu_draw.rs: pub fn bind_wgpu_video_texture(state: &mut WgpuRenderState, video_texture: &dyn TextureVariant,) -> Option<Ref<WgpuTextureEntry>>
 src/wgpu_draw.rs: pub fn create_wgpu_texture_entry(state: &WgpuRenderState, width: u32, height: u32, canvas: &HostImageSource,) -> Option<Ref<WgpuTextureEntry>>
 src/wgpu_draw.rs: pub fn destroy_wgpu_video_texture(state: &mut WgpuRenderState, video_texture: &dyn TextureVariant,) -> bool
-src/wgpu_draw.rs: pub fn draw_wgpu_quad(state: &mut WgpuRenderState, render_proxy: &RenderProxy2D<WgpuRenderState>, texture_entry: &Ref<WgpuTextureEntry>, x0: f32, y0: f32, x1: f32, y1: f32, u0: f32, v0: f32, u1: f32, v1: f32,)
-src/wgpu_draw.rs: pub fn draw_wgpu_quad_with_transform(state: &mut WgpuRenderState, alpha: f32, color_scale_bias: Option<&ColorScaleBias>, transform: &Matrix, texture_entry: &Ref<WgpuTextureEntry>, x0: f32, y0: f32, x1: f32, y1: f32, u0: f32, v0: f32, u1: f32, v1: f32,)
+src/wgpu_draw.rs: pub fn draw_wgpu_quad(state: &mut WgpuRenderState, render_proxy: &RenderProxy2D<WgpuRenderState>, texture_entry: &Ref<WgpuTextureEntry>, x0: f64, y0: f64, x1: f64, y1: f64, u0: f32, v0: f32, u1: f32, v1: f32,)
+src/wgpu_draw.rs: pub fn draw_wgpu_quad_with_transform(state: &mut WgpuRenderState, alpha: f32, color_scale_bias: Option<&ColorScaleBias>, transform: &Matrix, texture_entry: &Ref<WgpuTextureEntry>, x0: f64, y0: f64, x1: f64, y1: f64, u0: f32, v0: f32, u1: f32, v1: f32,)
 src/wgpu_draw.rs: pub fn enable_wgpu_blend_mode_support(state: &mut WgpuRenderState)
 src/wgpu_draw.rs: pub fn get_wgpu_render_proxy_color_scale_bias(render_proxy: &RenderProxy2D<WgpuRenderState>,) -> Option<ColorScaleBias>
 src/wgpu_draw.rs: pub fn initialize_wgpu_texture_entry(out: &mut WgpuTextureEntry, texture: wgpu::Texture, view: wgpu::TextureView,)
@@ -363,8 +363,8 @@ src/wgpu_shader.rs: pub fn get_wgpu_blend_state(blend_mode: Option<&BlendMode>) 
 src/wgpu_shader.rs: pub fn get_wgpu_pipeline(state: &mut WgpuRenderState, blend_mode: Option<&BlendMode>, stencil_mode: WgpuStencilMode,) -> wgpu::RenderPipeline
 src/wgpu_shader.rs: pub fn initialize_wgpu_bind_group_layouts(out: &mut WgpuBindGroupLayouts, device: &WgpuNativeDevice,)
 src/wgpu_shader.rs: pub fn set_wgpu_matrix_from_transform(matrix_array: &mut [f32; 9], t: &Matrix, viewport: &WgpuRenderPassViewport,)
-src/wgpu_shader.rs: pub fn write_wgpu_matrix_only_uniforms(state: &mut WgpuRenderState, alpha: f32, transform: &Matrix, x0: f32, y0: f32, x1: f32, y1: f32, u0: f32, v0: f32, u1: f32, v1: f32,) -> u32
-src/wgpu_shader.rs: pub fn write_wgpu_quad_uniforms(state: &mut WgpuRenderState, alpha: f32, transform: &Matrix, color_scale_bias: Option<&ColorScaleBias>, x0: f32, y0: f32, x1: f32, y1: f32, u0: f32, v0: f32, u1: f32, v1: f32, straight_texture_alpha: bool,) -> u32
+src/wgpu_shader.rs: pub fn write_wgpu_matrix_only_uniforms(state: &mut WgpuRenderState, alpha: f32, transform: &Matrix, x0: f64, y0: f64, x1: f64, y1: f64, u0: f32, v0: f32, u1: f32, v1: f32,) -> u32
+src/wgpu_shader.rs: pub fn write_wgpu_quad_uniforms(state: &mut WgpuRenderState, alpha: f32, transform: &Matrix, color_scale_bias: Option<&ColorScaleBias>, x0: f64, y0: f64, x1: f64, y1: f64, u0: f32, v0: f32, u1: f32, v1: f32, straight_texture_alpha: bool,) -> u32
 src/wgpu_shader_binding.rs: pub fn get_wgpu_shader(state: &WgpuRenderState, render_proxy: &RenderProxy2D<WgpuRenderState>,) -> Option<WgpuBitmapShader>
 src/wgpu_shader_binding.rs: pub fn resolve_wgpu_shader(state: &WgpuRenderState, render_proxy: &RenderProxy2D<WgpuRenderState>,) -> Option<WgpuBitmapShader>
 src/wgpu_shader_binding.rs: pub fn set_wgpu_shader(state: &mut WgpuRenderState, proxies: &mut RenderProxies2D<WgpuRenderState>, node: &NodeRef, shader: Option<WgpuBitmapShader>,)
