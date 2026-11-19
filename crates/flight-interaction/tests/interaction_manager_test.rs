@@ -30,6 +30,32 @@ mod connect_input_to_interaction {
         return flight_input::create_input_manager();
     }
 
+    fn test_pointer_data() -> flight_input::InputPointerData {
+        return flight_input::InputPointerData {
+            alt_key: false,
+            button: 0,
+            buttons: 1,
+            ctrl_key: false,
+            delta_x: 0.0,
+            delta_y: 0.0,
+            height: 1.0,
+            is_primary: true,
+            meta_key: false,
+            pointer_id: 0,
+            pointer_type: flight_input::PointerType::Mouse,
+            pressure: 0.5,
+            shift_key: false,
+            tilt_x: 0.0,
+            tilt_y: 0.0,
+            time_stamp: 0.0,
+            twist: 0.0,
+            wheel_mode: flight_input::MouseWheelMode::Unknown,
+            width: 1.0,
+            x: 1.0,
+            y: 1.0,
+        };
+    }
+
     fn test_keyboard_data(key: &str) -> flight_input::InputKeyboardData {
         return flight_input::InputKeyboardData {
             alt_key: false,
@@ -119,6 +145,38 @@ mod connect_input_to_interaction {
         );
         drop(dispose);
         assert_eq!(Arc::strong_count(&mgr), 1);
+    }
+
+    #[test]
+    fn input_dispatch_lets_a_slot_reenter_the_manager() {
+        z_run_within_deadline(|| {
+            let (root, children) = interaction_fixture::tree_with_children(1);
+            let child = children[0].clone();
+            let mgr = interaction_fixture::shared_manager_for(&root);
+            capture_interaction_pointer(&mut mgr.write().unwrap(), 0, child.clone());
+            mgr.write()
+                .unwrap()
+                .signal_subscriber_counts
+                .insert(InteractionSignalName::OnPointerDown, 1);
+            let weak = Arc::downgrade(&mgr);
+            flight_signals::connect_signal(
+                &interaction_fixture::signals_for(&child)
+                    .read()
+                    .unwrap()
+                    .on_pointer_down,
+                Arc::new(move |_| {
+                    let manager = weak.upgrade().unwrap();
+                    assert!(manager.read().unwrap().enabled);
+                    manager.write().unwrap().precise = true;
+                }),
+                None,
+            );
+            let input = test_input_source();
+            let _dispose = connect_input_to_interaction(&input, mgr.clone(), 1.0);
+            let data = test_pointer_data();
+            flight_signals::emit_signal(&input.read().unwrap().on_pointer_down, &data);
+            assert!(mgr.read().unwrap().precise);
+        });
     }
 }
 
@@ -231,8 +289,8 @@ mod dispatch_interaction_context_menu {
     #[test]
     fn does_not_panic() {
         let root = interaction_fixture::node();
-        let mut mgr = interaction_fixture::manager_for(&root);
-        dispatch_interaction_context_menu(&mut mgr, 0.0, 0.0, 0, None);
+        let mgr = interaction_fixture::shared_manager_for(&root);
+        dispatch_interaction_context_menu(&mgr, 0.0, 0.0, 0, None);
     }
 }
 
@@ -242,8 +300,31 @@ mod dispatch_interaction_key_down {
     #[test]
     fn does_not_panic() {
         let root = interaction_fixture::node();
-        let mut mgr = interaction_fixture::manager_for(&root);
-        dispatch_interaction_key_down(&mut mgr, "Enter", 13, None);
+        let mgr = interaction_fixture::shared_manager_for(&root);
+        dispatch_interaction_key_down(&mgr, "Enter", 13, None);
+    }
+
+    #[test]
+    fn a_key_slot_may_reenter_the_manager() {
+        z_run_within_deadline(|| {
+            let root = interaction_fixture::node();
+            let mgr = interaction_fixture::shared_manager_for(&root);
+            let weak = Arc::downgrade(&mgr);
+            flight_signals::connect_signal(
+                &interaction_fixture::signals_for(&root)
+                    .read()
+                    .unwrap()
+                    .on_key_down,
+                Arc::new(move |_| {
+                    let manager = weak.upgrade().unwrap();
+                    assert!(manager.read().unwrap().enabled);
+                    manager.write().unwrap().precise = true;
+                }),
+                None,
+            );
+            dispatch_interaction_key_down(&mgr, "Enter", 13, None);
+            assert!(mgr.read().unwrap().precise);
+        });
     }
 }
 
@@ -253,8 +334,8 @@ mod dispatch_interaction_key_up {
     #[test]
     fn does_not_panic() {
         let root = interaction_fixture::node();
-        let mut mgr = interaction_fixture::manager_for(&root);
-        dispatch_interaction_key_up(&mut mgr, "Enter", 13, None);
+        let mgr = interaction_fixture::shared_manager_for(&root);
+        dispatch_interaction_key_up(&mgr, "Enter", 13, None);
     }
 }
 
@@ -264,8 +345,34 @@ mod dispatch_interaction_pointer_cancel {
     #[test]
     fn does_not_panic() {
         let root = interaction_fixture::node();
-        let mut mgr = interaction_fixture::manager_for(&root);
-        dispatch_interaction_pointer_cancel(&mut mgr, 0.0, 0.0, None);
+        let mgr = interaction_fixture::shared_manager_for(&root);
+        dispatch_interaction_pointer_cancel(&mgr, 0.0, 0.0, None);
+    }
+
+    #[test]
+    fn delivers_cancel_then_out_and_roll_out_and_clears_capture() {
+        let (root, children) = interaction_fixture::tree_with_children(1);
+        let child = children[0].clone();
+        let mgr = interaction_fixture::shared_manager_for(&root);
+        let deliveries = z_record_deliveries(&mgr);
+        capture_interaction_pointer(&mut mgr.write().unwrap(), 0, child.clone());
+        dispatch_interaction_pointer_move(&mgr, 1.0, 1.0, 0, None);
+        dispatch_interaction_pointer_down(&mgr, 1.0, 1.0, 0, None);
+        deliveries.lock().unwrap().clear();
+        dispatch_interaction_pointer_cancel(&mgr, 1.0, 1.0, None);
+        assert_eq!(
+            *deliveries.lock().unwrap(),
+            [
+                z_delivery(InteractionSignalName::OnPointerCancel, &child),
+                z_delivery(InteractionSignalName::OnPointerOut, &child),
+                z_delivery(InteractionSignalName::OnPointerRollOut, &child),
+                z_delivery(InteractionSignalName::OnPointerRollOut, &root),
+            ]
+        );
+        let manager = mgr.read().unwrap();
+        assert!(manager.pointer_captures.is_empty());
+        assert!(manager.pointer_states[&0].pointer_over_target.is_none());
+        assert!(manager.cursor_target.is_none());
     }
 }
 
@@ -275,8 +382,47 @@ mod dispatch_interaction_pointer_down {
     #[test]
     fn on_empty_tree_does_not_panic() {
         let root = interaction_fixture::node();
-        let mut mgr = interaction_fixture::manager_for(&root);
-        dispatch_interaction_pointer_down(&mut mgr, 5.0, 5.0, 0, None);
+        let mgr = interaction_fixture::shared_manager_for(&root);
+        dispatch_interaction_pointer_down(&mgr, 5.0, 5.0, 0, None);
+    }
+
+    #[test]
+    fn a_layer_and_a_signal_slot_may_reenter_the_manager() {
+        z_run_within_deadline(|| {
+            let (root, children) = interaction_fixture::tree_with_children(1);
+            let child = children[0].clone();
+            let mgr = interaction_fixture::shared_manager_for(&root);
+            capture_interaction_pointer(&mut mgr.write().unwrap(), 0, child.clone());
+            let (weak, captured) = (Arc::downgrade(&mgr), child.clone());
+            connect_interaction_dispatch_layer(
+                &mut mgr.write().unwrap(),
+                Arc::new(move |_, _, _| {
+                    let manager = weak.upgrade().unwrap();
+                    assert!(manager.read().unwrap().enabled);
+                    capture_interaction_pointer(&mut manager.write().unwrap(), 9, captured.clone());
+                    return true;
+                }),
+                &InteractionDispatchLayerOptions { priority: None },
+            );
+            let weak = Arc::downgrade(&mgr);
+            flight_signals::connect_signal(
+                &interaction_fixture::signals_for(&child)
+                    .read()
+                    .unwrap()
+                    .on_pointer_down,
+                Arc::new(move |_| {
+                    let manager = weak.upgrade().unwrap();
+                    assert!(manager.read().unwrap().pointer_captures.contains_key(&9));
+                    manager.write().unwrap().double_click_delay = 123.0;
+                }),
+                None,
+            );
+            dispatch_interaction_pointer_down(&mgr, 1.0, 1.0, 0, None);
+            let manager = mgr.read().unwrap();
+            assert!(manager.pointer_captures.contains_key(&9));
+            assert_eq!(manager.double_click_delay, 123.0);
+            assert!(manager.pointer_states[&0].pointer_down_target.is_some());
+        });
     }
 }
 
@@ -286,8 +432,29 @@ mod dispatch_interaction_pointer_move {
     #[test]
     fn on_empty_tree_does_not_panic() {
         let root = interaction_fixture::node();
-        let mut mgr = interaction_fixture::manager_for(&root);
-        dispatch_interaction_pointer_move(&mut mgr, 5.0, 5.0, 0, None);
+        let mgr = interaction_fixture::shared_manager_for(&root);
+        dispatch_interaction_pointer_move(&mgr, 5.0, 5.0, 0, None);
+    }
+
+    #[test]
+    fn delivers_roll_over_then_over_then_move_and_sets_the_cursor_target() {
+        let (root, children) = interaction_fixture::tree_with_children(1);
+        let child = children[0].clone();
+        let mgr = interaction_fixture::shared_manager_for(&root);
+        let deliveries = z_record_deliveries(&mgr);
+        capture_interaction_pointer(&mut mgr.write().unwrap(), 0, child.clone());
+        dispatch_interaction_pointer_move(&mgr, 1.0, 1.0, 0, None);
+        assert_eq!(
+            *deliveries.lock().unwrap(),
+            [
+                z_delivery(InteractionSignalName::OnPointerRollOver, &root),
+                z_delivery(InteractionSignalName::OnPointerRollOver, &child),
+                z_delivery(InteractionSignalName::OnPointerOver, &child),
+                z_delivery(InteractionSignalName::OnPointerMove, &child),
+            ]
+        );
+        let manager = mgr.read().unwrap();
+        assert!(Arc::ptr_eq(manager.cursor_target.as_ref().unwrap(), &child));
     }
 }
 
@@ -297,8 +464,55 @@ mod dispatch_interaction_pointer_up {
     #[test]
     fn on_empty_tree_does_not_panic() {
         let root = interaction_fixture::node();
-        let mut mgr = interaction_fixture::manager_for(&root);
-        dispatch_interaction_pointer_up(&mut mgr, 5.0, 5.0, 0, None, None);
+        let mgr = interaction_fixture::shared_manager_for(&root);
+        dispatch_interaction_pointer_up(&mgr, 5.0, 5.0, 0, None, None);
+    }
+
+    // flight-lint: allow(f64) click timestamps are JS millisecond-precision doubles
+    #[test]
+    fn delivers_up_then_click_and_a_double_click_within_the_delay() {
+        let (root, children) = interaction_fixture::tree_with_children(1);
+        let child = children[0].clone();
+        let mgr = interaction_fixture::shared_manager_for(&root);
+        let deliveries = z_record_deliveries(&mgr);
+        capture_interaction_pointer(&mut mgr.write().unwrap(), 0, child.clone());
+        dispatch_interaction_pointer_down(&mgr, 1.0, 1.0, 0, None);
+        dispatch_interaction_pointer_up(&mgr, 1.0, 1.0, 0, Some(100.0), None);
+        dispatch_interaction_pointer_down(&mgr, 1.0, 1.0, 0, None);
+        dispatch_interaction_pointer_up(&mgr, 1.0, 1.0, 0, Some(200.0), None);
+        let down = z_delivery(InteractionSignalName::OnPointerDown, &child);
+        let up = z_delivery(InteractionSignalName::OnPointerUp, &child);
+        let click = z_delivery(InteractionSignalName::OnClick, &child);
+        let double = z_delivery(InteractionSignalName::OnDoubleClick, &child);
+        assert_eq!(
+            *deliveries.lock().unwrap(),
+            [down, up, click, down, up, click, double]
+        );
+        let manager = mgr.read().unwrap();
+        assert!(manager.pointer_states[&0].last_click_target.is_none());
+        assert!(manager.pointer_states[&0].pointer_down_target.is_none());
+    }
+
+    // flight-lint: allow(f64) click timestamps are JS millisecond-precision doubles
+    #[test]
+    fn delivers_release_outside_when_the_pointer_leaves_the_down_target() {
+        let (root, children) = interaction_fixture::tree_with_children(1);
+        let child = children[0].clone();
+        let mgr = interaction_fixture::shared_manager_for(&root);
+        let deliveries = z_record_deliveries(&mgr);
+        capture_interaction_pointer(&mut mgr.write().unwrap(), 0, child.clone());
+        dispatch_interaction_pointer_down(&mgr, 1.0, 1.0, 0, None);
+        release_interaction_pointer(&mut mgr.write().unwrap(), 0);
+        dispatch_interaction_pointer_up(&mgr, 1.0, 1.0, 0, Some(100.0), None);
+        assert_eq!(
+            *deliveries.lock().unwrap(),
+            [
+                z_delivery(InteractionSignalName::OnPointerDown, &child),
+                z_delivery(InteractionSignalName::OnReleaseOutside, &child),
+            ]
+        );
+        let manager = mgr.read().unwrap();
+        assert!(manager.pointer_states[&0].last_click_target.is_none());
     }
 }
 
@@ -308,8 +522,8 @@ mod dispatch_interaction_wheel {
     #[test]
     fn does_not_panic() {
         let root = interaction_fixture::node();
-        let mut mgr = interaction_fixture::manager_for(&root);
-        dispatch_interaction_wheel(&mut mgr, 0.0, 0.0, 0.0, 0.0, None);
+        let mgr = interaction_fixture::shared_manager_for(&root);
+        dispatch_interaction_wheel(&mgr, 0.0, 0.0, 0.0, 0.0, None);
     }
 }
 
@@ -362,8 +576,26 @@ mod invalidate_interaction_cursor {
     #[test]
     fn does_not_panic() {
         let root = interaction_fixture::node();
-        let mut mgr = interaction_fixture::manager_for(&root);
-        invalidate_interaction_cursor(&mut mgr);
+        let mgr = interaction_fixture::shared_manager_for(&root);
+        invalidate_interaction_cursor(&mgr);
+    }
+
+    #[test]
+    fn the_cursor_backend_may_reenter_the_manager() {
+        z_run_within_deadline(|| {
+            let (root, children) = interaction_fixture::tree_with_children(1);
+            let mgr = interaction_fixture::shared_manager_for(&root);
+            let backend = Arc::new(ReenteringCursor {
+                manager: Arc::downgrade(&mgr),
+                calls: std::sync::Mutex::new(0),
+            });
+            mgr.write().unwrap().cursor_backend = Some(backend.clone());
+            capture_interaction_pointer(&mut mgr.write().unwrap(), 0, children[0].clone());
+            dispatch_interaction_pointer_move(&mgr, 1.0, 1.0, 0, None);
+            invalidate_interaction_cursor(&mgr);
+            assert_eq!(*backend.calls.lock().unwrap(), 2);
+            assert!(mgr.read().unwrap().precise);
+        });
     }
 }
 
@@ -379,4 +611,63 @@ mod release_interaction_pointer {
         release_interaction_pointer(&mut mgr, 0);
         assert!(!mgr.pointer_captures.contains_key(&0));
     }
+}
+
+// A cursor backend that re-enters the manager it is installed on.
+struct ReenteringCursor {
+    manager: std::sync::Weak<RwLock<InteractionManager>>,
+    calls: std::sync::Mutex<usize>,
+}
+
+impl CursorBackend for ReenteringCursor {
+    fn set_cursor(&self, _cursor: Option<&str>) {
+        z_reenter_from_cursor(self);
+    }
+}
+
+fn z_delivery(
+    name: InteractionSignalName,
+    target: &flight_node::NodeRef,
+) -> (InteractionSignalName, usize) {
+    return (name, Arc::as_ptr(target) as *const () as usize);
+}
+
+// Records every pointer delivery a dispatch makes, in order, through a pass-through dispatch layer.
+fn z_record_deliveries(
+    manager: &flight_entity::Ref<InteractionManager>,
+) -> Arc<std::sync::Mutex<Vec<(InteractionSignalName, usize)>>> {
+    let deliveries = Arc::new(std::sync::Mutex::new(Vec::new()));
+    let recorded = deliveries.clone();
+    connect_interaction_dispatch_layer(
+        &mut manager.write().unwrap(),
+        Arc::new(move |target, name, _| {
+            recorded.lock().unwrap().push(z_delivery(name, target));
+            return true;
+        }),
+        &InteractionDispatchLayerOptions { priority: None },
+    );
+    return deliveries;
+}
+
+fn z_reenter_from_cursor(cursor: &ReenteringCursor) {
+    let manager = cursor.manager.upgrade().unwrap();
+    assert!(manager.read().unwrap().enabled);
+    manager.write().unwrap().precise = true;
+    *cursor.calls.lock().unwrap() += 1;
+}
+
+// Runs `test` on its own thread and fails instead of hanging when it deadlocks.
+fn z_run_within_deadline(test: impl FnOnce() + Send + 'static) {
+    let (done, finished) = std::sync::mpsc::channel();
+    let worker = std::thread::spawn(move || {
+        test();
+        done.send(()).unwrap();
+    });
+    if finished
+        .recv_timeout(std::time::Duration::from_secs(5))
+        .is_err()
+    {
+        panic!("interaction dispatch deadlocked or panicked");
+    }
+    worker.join().unwrap();
 }

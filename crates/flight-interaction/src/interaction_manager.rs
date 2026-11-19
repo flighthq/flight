@@ -12,14 +12,15 @@ use flight_signals::{
 };
 
 use crate::hit_tests::{
-    create_hit_test_context, find_graph_hit_target, find_graph_hit_target_precise,
+    HitTestContext, create_hit_test_context, find_graph_hit_target, find_graph_hit_target_precise,
 };
 use crate::node_interaction_state::get_node_cursor;
 use crate::types::{
-    AnyInteractionSignalSlot, InteractionDispatchLayer, InteractionDispatchLayerEntry,
-    InteractionDispatchLayerOptions, InteractionManager, InteractionManagerOptions,
-    InteractionPointerOptions, InteractionPointerState, InteractionSignalName, InteractionSignals,
-    KeyboardEventData, PointerEventData, create_interaction_manager_options,
+    AnyInteractionSignalSlot, CursorBackend, InteractionDispatchLayer,
+    InteractionDispatchLayerEntry, InteractionDispatchLayerOptions, InteractionManager,
+    InteractionManagerOptions, InteractionPointerOptions, InteractionPointerState,
+    InteractionSignalName, InteractionSignals, KeyboardEventData, PointerEventData,
+    create_interaction_manager_options,
 };
 
 const CANCEL_SIGNAL_NAMES: &[InteractionSignalName] = &[
@@ -53,6 +54,52 @@ const UP_SIGNAL_NAMES: &[InteractionSignalName] = &[
     InteractionSignalName::OnPointerUp,
     InteractionSignalName::OnReleaseOutside,
 ];
+
+// One event a dispatch delivers after the manager is unlocked.
+enum InteractionDelivery {
+    Cursor {
+        backend: Arc<dyn CursorBackend>,
+        cursor: Option<String>,
+    },
+    Keyboard {
+        name: InteractionSignalName,
+        data: KeyboardEventData,
+    },
+    Pointer {
+        target: NodeRef,
+        name: InteractionSignalName,
+        data: PointerEventData,
+        bubble: bool,
+    },
+}
+
+// What one dispatch decided while the manager was locked: its state is already updated, and these
+// deliveries run afterwards, in order, with the lock released.
+struct InteractionDispatchPlan {
+    deliveries: Vec<InteractionDelivery>,
+    layers: Option<Vec<InteractionDispatchLayer>>,
+    root: NodeRef,
+}
+
+// What hit testing needs, captured under a short read lock so registered hit tests run unlocked.
+struct InteractionTargeting {
+    captured: Option<NodeRef>,
+    enabled: bool,
+    hit_test_ctx: HitTestContext,
+    precise: bool,
+    root: NodeRef,
+}
+
+fn create_interaction_dispatch_plan(manager: &InteractionManager) -> InteractionDispatchPlan {
+    return InteractionDispatchPlan {
+        deliveries: Vec::new(),
+        layers: manager
+            .dispatch_layers
+            .as_ref()
+            .map(|entries| entries.iter().map(|entry| entry.layer.clone()).collect()),
+        root: manager.root.clone(),
+    };
+}
 
 /// Creates a manager for `root` (TS `createInteractionManager`). `None` selects the default
 /// options. The manager is returned as the shared handle the input and focus connectors retain.
@@ -150,13 +197,15 @@ pub fn initialize_interaction_signals(out: &mut InteractionSignals) {
     out.on_wheel = create_signal();
 }
 
-fn apply_interaction_cursor(manager: &InteractionManager, target: Option<&NodeRef>) {
-    let backend = match &manager.cursor_backend {
-        Some(b) => b,
-        None => return,
-    };
+// The cursor the backend should show for `target`, captured with the backend for delivery once
+// the manager is unlocked; `None` when there is no backend.
+fn capture_interaction_cursor(
+    manager: &InteractionManager,
+    target: Option<&NodeRef>,
+) -> Option<InteractionDelivery> {
+    let backend = manager.cursor_backend.clone()?;
     let cursor = resolve_interaction_cursor(target, &manager.root);
-    backend.set_cursor(cursor.as_deref());
+    return Some(InteractionDelivery::Cursor { backend, cursor });
 }
 
 pub fn capture_interaction_pointer(
@@ -165,6 +214,19 @@ pub fn capture_interaction_pointer(
     target: NodeRef,
 ) {
     manager.pointer_captures.insert(pointer_id, target);
+}
+
+fn capture_interaction_targeting(
+    manager: &InteractionManager,
+    pointer_id: i32,
+) -> InteractionTargeting {
+    return InteractionTargeting {
+        captured: manager.pointer_captures.get(&pointer_id).cloned(),
+        enabled: manager.enabled,
+        hit_test_ctx: manager.hit_test_ctx.clone(),
+        precise: manager.precise,
+        root: manager.root.clone(),
+    };
 }
 
 fn chain_contains(chain: &[NodeRef], node: &NodeRef) -> bool {
@@ -186,7 +248,6 @@ pub fn connect_input_to_interaction(
     let mgr = manager.clone();
     let on_key_down: Arc<dyn Fn(&flight_input::InputKeyboardData) + Send + Sync> =
         Arc::new(move |data| {
-            let mut m = mgr.write().unwrap();
             let modifiers = KeyboardEventData {
                 alt_key: data.alt_key,
                 ctrl_key: data.ctrl_key,
@@ -195,13 +256,12 @@ pub fn connect_input_to_interaction(
                 meta_key: data.meta_key,
                 shift_key: data.shift_key,
             };
-            dispatch_interaction_key_down(&mut m, &data.key, data.key_code, Some(&modifiers));
+            dispatch_interaction_key_down(&mgr, &data.key, data.key_code, Some(&modifiers));
         });
 
     let mgr = manager.clone();
     let on_key_up: Arc<dyn Fn(&flight_input::InputKeyboardData) + Send + Sync> =
         Arc::new(move |data| {
-            let mut m = mgr.write().unwrap();
             let modifiers = KeyboardEventData {
                 alt_key: data.alt_key,
                 ctrl_key: data.ctrl_key,
@@ -210,24 +270,22 @@ pub fn connect_input_to_interaction(
                 meta_key: data.meta_key,
                 shift_key: data.shift_key,
             };
-            dispatch_interaction_key_up(&mut m, &data.key, data.key_code, Some(&modifiers));
+            dispatch_interaction_key_up(&mgr, &data.key, data.key_code, Some(&modifiers));
         });
 
     let mgr = manager.clone();
     let on_pointer_cancel: Arc<dyn Fn(&flight_input::InputPointerData) + Send + Sync> =
         Arc::new(move |data| {
-            let mut m = mgr.write().unwrap();
             let opts = input_pointer_to_options(data);
-            dispatch_interaction_pointer_cancel(&mut m, sx(data.x), sx(data.y), Some(&opts));
+            dispatch_interaction_pointer_cancel(&mgr, sx(data.x), sx(data.y), Some(&opts));
         });
 
     let mgr = manager.clone();
     let on_pointer_down: Arc<dyn Fn(&flight_input::InputPointerData) + Send + Sync> =
         Arc::new(move |data| {
-            let mut m = mgr.write().unwrap();
             let opts = input_pointer_to_options(data);
             dispatch_interaction_pointer_down(
-                &mut m,
+                &mgr,
                 sx(data.x),
                 sx(data.y),
                 data.button,
@@ -238,10 +296,9 @@ pub fn connect_input_to_interaction(
     let mgr = manager.clone();
     let on_pointer_move: Arc<dyn Fn(&flight_input::InputPointerData) + Send + Sync> =
         Arc::new(move |data| {
-            let mut m = mgr.write().unwrap();
             let opts = input_pointer_to_options(data);
             dispatch_interaction_pointer_move(
-                &mut m,
+                &mgr,
                 sx(data.x),
                 sx(data.y),
                 data.button,
@@ -252,10 +309,9 @@ pub fn connect_input_to_interaction(
     let mgr = manager.clone();
     let on_pointer_up: Arc<dyn Fn(&flight_input::InputPointerData) + Send + Sync> =
         Arc::new(move |data| {
-            let mut m = mgr.write().unwrap();
             let opts = input_pointer_to_options(data);
             dispatch_interaction_pointer_up(
-                &mut m,
+                &mgr,
                 sx(data.x),
                 sx(data.y),
                 data.button,
@@ -267,10 +323,9 @@ pub fn connect_input_to_interaction(
     let mgr = manager.clone();
     let on_wheel: Arc<dyn Fn(&flight_input::InputPointerData) + Send + Sync> =
         Arc::new(move |data| {
-            let mut m = mgr.write().unwrap();
             let opts = input_pointer_to_options(data);
             dispatch_interaction_wheel(
-                &mut m,
+                &mgr,
                 sx(data.x),
                 sx(data.y),
                 data.delta_x,
@@ -333,6 +388,40 @@ pub fn connect_interaction_signal(
     let _ = target;
 }
 
+// Runs a plan's deliveries in order with no manager lock held, so dispatch layers, node signal
+// slots and the cursor backend may read or mutate the manager they were dispatched from.
+fn deliver_interaction_dispatch_plan(plan: InteractionDispatchPlan) {
+    for delivery in &plan.deliveries {
+        match delivery {
+            InteractionDelivery::Pointer {
+                target,
+                name,
+                data,
+                bubble,
+            } => {
+                let pass = plan
+                    .layers
+                    .as_ref()
+                    .is_none_or(|layers| layers.iter().all(|layer| layer(target, *name, data)));
+                if !pass {
+                    continue;
+                }
+                if *bubble {
+                    emit_interaction_signal(target, &plan.root, *name, data);
+                } else {
+                    emit_interaction_signal_direct(target, *name, data);
+                }
+            }
+            InteractionDelivery::Keyboard { name, data } => {
+                emit_keyboard_signal(&plan.root, &plan.root, *name, data);
+            }
+            InteractionDelivery::Cursor { backend, cursor } => {
+                backend.set_cursor(cursor.as_deref());
+            }
+        }
+    }
+}
+
 // flight-lint: allow(conform-params) D5: caller-owned signal tracking via manager
 pub fn disconnect_interaction_signal(
     manager: &mut InteractionManager,
@@ -348,7 +437,7 @@ pub fn disconnect_interaction_signal(
 }
 
 pub fn dispatch_interaction_context_menu(
-    manager: &mut InteractionManager,
+    manager: &Ref<InteractionManager>,
     x: f32,
     y: f32,
     button: i32,
@@ -367,7 +456,7 @@ pub fn dispatch_interaction_context_menu(
 }
 
 pub fn dispatch_interaction_key_down(
-    manager: &mut InteractionManager,
+    manager: &Ref<InteractionManager>,
     key: &str,
     key_code: i32,
     modifiers: Option<&KeyboardEventData>,
@@ -382,7 +471,7 @@ pub fn dispatch_interaction_key_down(
 }
 
 pub fn dispatch_interaction_key_up(
-    manager: &mut InteractionManager,
+    manager: &Ref<InteractionManager>,
     key: &str,
     key_code: i32,
     modifiers: Option<&KeyboardEventData>,
@@ -396,276 +485,217 @@ pub fn dispatch_interaction_key_up(
     );
 }
 
-fn dispatch_interaction_layers(
-    manager: &InteractionManager,
-    _target: &NodeRef,
-    _name: InteractionSignalName,
-    _data: &PointerEventData,
-) -> bool {
-    let layers = match &manager.dispatch_layers {
-        Some(l) => l,
-        None => return true,
-    };
-    for entry in layers {
-        if !(entry.layer)(_target, _name, _data) {
-            return false;
-        }
-    }
-    return true;
-}
-
 pub fn dispatch_interaction_pointer_cancel(
-    manager: &mut InteractionManager,
+    manager: &Ref<InteractionManager>,
     x: f32,
     y: f32,
     options: Option<&InteractionPointerOptions>,
 ) {
     let pointer_id = options.and_then(|o| o.pointer_id).unwrap_or(0);
-    if let Some(state) = manager.pointer_states.get_mut(&pointer_id) {
-        reset_interaction_click_state(state);
-    }
-    if !is_pointer_signal_needed(manager, CANCEL_SIGNAL_NAMES) {
-        return;
-    }
-    get_interaction_pointer_state(manager, pointer_id);
-    let state = manager.pointer_states.get(&pointer_id).unwrap();
-    let captured = manager.pointer_captures.get(&pointer_id).cloned();
-    let old_target = state.pointer_over_target.clone();
-    let target = captured
-        .or_else(|| state.pointer_down_target.clone())
-        .or_else(|| old_target.clone());
-    let state = manager.pointer_states.get_mut(&pointer_id).unwrap();
-    state.pointer_down_target = None;
-    state.pointer_over_target = None;
-    manager.pointer_captures.remove(&pointer_id);
-
-    if let Some(ref target_node) = target {
-        let data = make_pointer_data(target_node, x, y, -1, 0.0, 0.0, options);
-        let root = manager.root.clone();
-        let pass = manager.dispatch_layers.is_none()
-            || dispatch_interaction_layers(
-                manager,
-                target_node,
-                InteractionSignalName::OnPointerCancel,
-                &data,
-            );
-        if pass {
-            emit_interaction_signal(
-                target_node,
-                &root,
-                InteractionSignalName::OnPointerCancel,
-                &data,
-            );
+    let plan = {
+        let mut manager = manager.write().unwrap();
+        if let Some(state) = manager.pointer_states.get_mut(&pointer_id) {
+            reset_interaction_click_state(state);
         }
-    }
-    if let Some(ref old) = old_target {
-        dispatch_pointer_rollover_change(manager, Some(old), None);
-    }
+        if !is_pointer_signal_needed(&manager, CANCEL_SIGNAL_NAMES) {
+            return;
+        }
+        let mut plan = create_interaction_dispatch_plan(&manager);
+        get_interaction_pointer_state(&mut manager, pointer_id);
+        let state = manager.pointer_states.get(&pointer_id).unwrap();
+        let captured = manager.pointer_captures.get(&pointer_id).cloned();
+        let old_target = state.pointer_over_target.clone();
+        let target = captured
+            .or_else(|| state.pointer_down_target.clone())
+            .or_else(|| old_target.clone());
+        let state = manager.pointer_states.get_mut(&pointer_id).unwrap();
+        state.pointer_down_target = None;
+        state.pointer_over_target = None;
+        manager.pointer_captures.remove(&pointer_id);
+        if let Some(target_node) = target {
+            let data = make_pointer_data(&target_node, x, y, -1, 0.0, 0.0, options);
+            plan.deliveries.push(InteractionDelivery::Pointer {
+                target: target_node,
+                name: InteractionSignalName::OnPointerCancel,
+                data,
+                bubble: true,
+            });
+        }
+        if let Some(ref old) = old_target {
+            plan_pointer_rollover_change(&mut manager, Some(old), None, &mut plan);
+        }
+        plan
+    };
+    deliver_interaction_dispatch_plan(plan);
 }
 
 pub fn dispatch_interaction_pointer_down(
-    manager: &mut InteractionManager,
+    manager: &Ref<InteractionManager>,
     x: f32,
     y: f32,
     button: i32,
     options: Option<&InteractionPointerOptions>,
 ) {
-    if !is_pointer_signal_needed(manager, DOWN_SIGNAL_NAMES) {
-        return;
-    }
     let pointer_id = options.and_then(|o| o.pointer_id).unwrap_or(0);
-    get_interaction_pointer_state(manager, pointer_id);
-    let target = find_interaction_target(manager, x, y, pointer_id);
-    if target.is_none() {
+    let Some(targeting) = snapshot_interaction_targeting(manager, pointer_id, DOWN_SIGNAL_NAMES)
+    else {
         return;
-    }
-    let target = target.unwrap();
-    let state = manager.pointer_states.get_mut(&pointer_id).unwrap();
-    state.pointer_down_target = Some(target.clone());
-    let data = make_pointer_data(&target, x, y, button, 0.0, 0.0, options);
-    let root = manager.root.clone();
-    let pass = manager.dispatch_layers.is_none()
-        || dispatch_interaction_layers(
-            manager,
-            &target,
-            InteractionSignalName::OnPointerDown,
-            &data,
-        );
-    if pass {
-        emit_interaction_signal(&target, &root, InteractionSignalName::OnPointerDown, &data);
-    }
+    };
+    let Some(target) = find_interaction_target(&targeting, x, y) else {
+        return;
+    };
+    let plan = {
+        let mut manager = manager.write().unwrap();
+        let mut plan = create_interaction_dispatch_plan(&manager);
+        get_interaction_pointer_state(&mut manager, pointer_id).pointer_down_target =
+            Some(target.clone());
+        let data = make_pointer_data(&target, x, y, button, 0.0, 0.0, options);
+        plan.deliveries.push(InteractionDelivery::Pointer {
+            target,
+            name: InteractionSignalName::OnPointerDown,
+            data,
+            bubble: true,
+        });
+        plan
+    };
+    deliver_interaction_dispatch_plan(plan);
 }
 
 pub fn dispatch_interaction_pointer_move(
-    manager: &mut InteractionManager,
+    manager: &Ref<InteractionManager>,
     x: f32,
     y: f32,
     button: i32,
     options: Option<&InteractionPointerOptions>,
 ) {
-    let cursor_needed = manager.enabled && manager.cursor_backend.is_some();
-    if !is_pointer_signal_needed(manager, MOVE_SIGNAL_NAMES) && !cursor_needed {
-        return;
-    }
     let pointer_id = options.and_then(|o| o.pointer_id).unwrap_or(0);
-    get_interaction_pointer_state(manager, pointer_id);
-    let old_target = manager
-        .pointer_states
-        .get(&pointer_id)
-        .and_then(|s| s.pointer_over_target.clone());
-    let target = find_interaction_target(manager, x, y, pointer_id);
-    if target.is_none() && old_target.is_none() {
-        return;
-    }
-
-    let hover = !(manager.suppress_touch_hover
-        && options
-            .and_then(|o| o.pointer_type)
-            .unwrap_or(PointerType::Mouse)
-            == PointerType::Touch);
-    if hover {
-        if let Some(state) = manager.pointer_states.get_mut(&pointer_id) {
-            state.pointer_over_target = target.clone();
+    let targeting = {
+        let guard = manager.read().unwrap();
+        let cursor_needed = guard.enabled && guard.cursor_backend.is_some();
+        if !is_pointer_signal_needed(&guard, MOVE_SIGNAL_NAMES) && !cursor_needed {
+            return;
         }
-    }
-
-    let changed = !node_ref_eq(&target, &old_target);
-    if hover && changed {
-        dispatch_pointer_rollover_change(manager, old_target.as_ref(), target.as_ref());
-    }
-
-    if let Some(ref target_node) = target {
-        let data = make_pointer_data(target_node, x, y, button, 0.0, 0.0, options);
-        let root = manager.root.clone();
-        let pass = manager.dispatch_layers.is_none()
-            || dispatch_interaction_layers(
-                manager,
-                target_node,
-                InteractionSignalName::OnPointerMove,
-                &data,
-            );
-        if pass {
-            emit_interaction_signal(
-                target_node,
-                &root,
-                InteractionSignalName::OnPointerMove,
-                &data,
+        capture_interaction_targeting(&guard, pointer_id)
+    };
+    let target = find_interaction_target(&targeting, x, y);
+    let plan = {
+        let mut manager = manager.write().unwrap();
+        let old_target = get_interaction_pointer_state(&mut manager, pointer_id)
+            .pointer_over_target
+            .clone();
+        if target.is_none() && old_target.is_none() {
+            return;
+        }
+        let mut plan = create_interaction_dispatch_plan(&manager);
+        let hover = !(manager.suppress_touch_hover
+            && options
+                .and_then(|o| o.pointer_type)
+                .unwrap_or(PointerType::Mouse)
+                == PointerType::Touch);
+        if hover {
+            if let Some(state) = manager.pointer_states.get_mut(&pointer_id) {
+                state.pointer_over_target = target.clone();
+            }
+        }
+        if hover && !node_ref_eq(&target, &old_target) {
+            plan_pointer_rollover_change(
+                &mut manager,
+                old_target.as_ref(),
+                target.as_ref(),
+                &mut plan,
             );
         }
-    }
+        if let Some(target_node) = target {
+            let data = make_pointer_data(&target_node, x, y, button, 0.0, 0.0, options);
+            plan.deliveries.push(InteractionDelivery::Pointer {
+                target: target_node,
+                name: InteractionSignalName::OnPointerMove,
+                data,
+                bubble: true,
+            });
+        }
+        plan
+    };
+    deliver_interaction_dispatch_plan(plan);
 }
 
 // flight-lint: allow(f64) D1: click timestamps and double-click delay are JS millisecond-precision doubles
 pub fn dispatch_interaction_pointer_up(
-    manager: &mut InteractionManager,
+    manager: &Ref<InteractionManager>,
     x: f32,
     y: f32,
     button: i32,
     time: Option<f64>,
     options: Option<&InteractionPointerOptions>,
 ) {
-    if !is_pointer_signal_needed(manager, UP_SIGNAL_NAMES) {
-        return;
-    }
     let click_time = time
         .or_else(|| options.and_then(|o| o.time_stamp))
         .unwrap_or(0.0);
     let pointer_id = options.and_then(|o| o.pointer_id).unwrap_or(0);
-    get_interaction_pointer_state(manager, pointer_id);
-    let down_target = manager
-        .pointer_states
-        .get(&pointer_id)
-        .and_then(|s| s.pointer_down_target.clone());
-    let target = find_interaction_target(manager, x, y, pointer_id);
-    if let Some(state) = manager.pointer_states.get_mut(&pointer_id) {
-        state.pointer_down_target = None;
-    }
-    let root = manager.root.clone();
-
-    if let Some(ref target_node) = target {
-        let data = make_pointer_data(target_node, x, y, button, 0.0, 0.0, options);
-        let pass = manager.dispatch_layers.is_none()
-            || dispatch_interaction_layers(
-                manager,
-                target_node,
-                InteractionSignalName::OnPointerUp,
-                &data,
-            );
-        if pass {
-            emit_interaction_signal(
-                target_node,
-                &root,
-                InteractionSignalName::OnPointerUp,
-                &data,
-            );
+    let Some(targeting) = snapshot_interaction_targeting(manager, pointer_id, UP_SIGNAL_NAMES)
+    else {
+        return;
+    };
+    let target = find_interaction_target(&targeting, x, y);
+    let plan = {
+        let mut manager = manager.write().unwrap();
+        let mut plan = create_interaction_dispatch_plan(&manager);
+        let state = get_interaction_pointer_state(&mut manager, pointer_id);
+        let down_target = state.pointer_down_target.take();
+        if let Some(ref target_node) = target {
+            let data = make_pointer_data(target_node, x, y, button, 0.0, 0.0, options);
+            plan.deliveries.push(InteractionDelivery::Pointer {
+                target: target_node.clone(),
+                name: InteractionSignalName::OnPointerUp,
+                data,
+                bubble: true,
+            });
         }
-    }
-
-    if let Some(ref down) = down_target {
-        let data = make_pointer_data(down, x, y, button, 0.0, 0.0, options);
-        if node_ref_eq(&target, &Some(down.clone())) {
-            let pass = manager.dispatch_layers.is_none()
-                || dispatch_interaction_layers(
-                    manager,
-                    down,
-                    InteractionSignalName::OnClick,
-                    &data,
-                );
-            if pass {
-                emit_interaction_signal(down, &root, InteractionSignalName::OnClick, &data);
-            }
-            let state = manager.pointer_states.get_mut(&pointer_id).unwrap();
-            let legacy_elapsed = click_time - state.last_click_time;
-            if node_ref_eq(&state.last_click_target, &target)
-                && legacy_elapsed >= 0.0
-                && legacy_elapsed <= manager.double_click_delay
-            {
-                let pass2 = manager.dispatch_layers.is_none()
-                    || dispatch_interaction_layers(
-                        manager,
-                        down,
-                        InteractionSignalName::OnDoubleClick,
-                        &data,
-                    );
-                if pass2 {
-                    emit_interaction_signal(
-                        down,
-                        &root,
-                        InteractionSignalName::OnDoubleClick,
-                        &data,
-                    );
+        if let Some(down) = down_target {
+            let data = make_pointer_data(&down, x, y, button, 0.0, 0.0, options);
+            if node_ref_eq(&target, &Some(down.clone())) {
+                plan.deliveries.push(InteractionDelivery::Pointer {
+                    target: down.clone(),
+                    name: InteractionSignalName::OnClick,
+                    data: make_pointer_data(&down, x, y, button, 0.0, 0.0, options),
+                    bubble: true,
+                });
+                let double_click_delay = manager.double_click_delay;
+                let state = manager.pointer_states.get_mut(&pointer_id).unwrap();
+                let legacy_elapsed = click_time - state.last_click_time;
+                if node_ref_eq(&state.last_click_target, &target)
+                    && legacy_elapsed >= 0.0
+                    && legacy_elapsed <= double_click_delay
+                {
+                    plan.deliveries.push(InteractionDelivery::Pointer {
+                        target: down,
+                        name: InteractionSignalName::OnDoubleClick,
+                        data,
+                        bubble: true,
+                    });
+                    state.last_click_target = None;
+                    state.last_click_time = f64::NEG_INFINITY;
+                } else {
+                    state.last_click_target = target.clone();
+                    state.last_click_time = click_time;
                 }
-                let state = manager.pointer_states.get_mut(&pointer_id).unwrap();
-                state.last_click_target = None;
-                state.last_click_time = f64::NEG_INFINITY;
             } else {
-                let state = manager.pointer_states.get_mut(&pointer_id).unwrap();
-                state.last_click_target = target.clone();
-                state.last_click_time = click_time;
-            }
-        } else {
-            reset_interaction_click_state(manager.pointer_states.get_mut(&pointer_id).unwrap());
-            let pass = manager.dispatch_layers.is_none()
-                || dispatch_interaction_layers(
-                    manager,
-                    down,
-                    InteractionSignalName::OnReleaseOutside,
-                    &data,
-                );
-            if pass {
-                emit_interaction_signal(
-                    down,
-                    &root,
-                    InteractionSignalName::OnReleaseOutside,
-                    &data,
-                );
+                reset_interaction_click_state(manager.pointer_states.get_mut(&pointer_id).unwrap());
+                plan.deliveries.push(InteractionDelivery::Pointer {
+                    target: down,
+                    name: InteractionSignalName::OnReleaseOutside,
+                    data,
+                    bubble: true,
+                });
             }
         }
-    }
+        plan
+    };
+    deliver_interaction_dispatch_plan(plan);
 }
 
 pub fn dispatch_interaction_wheel(
-    manager: &mut InteractionManager,
+    manager: &Ref<InteractionManager>,
     x: f32,
     y: f32,
     delta_x: f32,
@@ -685,109 +715,36 @@ pub fn dispatch_interaction_wheel(
 }
 
 fn dispatch_keyboard_signal(
-    manager: &mut InteractionManager,
+    manager: &Ref<InteractionManager>,
     name: InteractionSignalName,
     key: &str,
     key_code: i32,
     modifiers: Option<&KeyboardEventData>,
 ) {
-    if !manager.enabled {
-        return;
-    }
-    let data = KeyboardEventData {
-        alt_key: modifiers.map_or(false, |m| m.alt_key),
-        ctrl_key: modifiers.map_or(false, |m| m.ctrl_key),
-        key: key.to_string(),
-        key_code,
-        meta_key: modifiers.map_or(false, |m| m.meta_key),
-        shift_key: modifiers.map_or(false, |m| m.shift_key),
+    let plan = {
+        let manager = manager.read().unwrap();
+        if !manager.enabled {
+            return;
+        }
+        let mut plan = create_interaction_dispatch_plan(&manager);
+        plan.deliveries.push(InteractionDelivery::Keyboard {
+            name,
+            data: KeyboardEventData {
+                alt_key: modifiers.map_or(false, |m| m.alt_key),
+                ctrl_key: modifiers.map_or(false, |m| m.ctrl_key),
+                key: key.to_string(),
+                key_code,
+                meta_key: modifiers.map_or(false, |m| m.meta_key),
+                shift_key: modifiers.map_or(false, |m| m.shift_key),
+            },
+        });
+        plan
     };
-    let root = manager.root.clone();
-    emit_keyboard_signal(&root, &root, name, &data);
-}
-
-fn dispatch_pointer_rollover_change(
-    manager: &mut InteractionManager,
-    old_target: Option<&NodeRef>,
-    target: Option<&NodeRef>,
-) {
-    if let Some(old) = old_target {
-        let data = make_pointer_data(old, 0.0, 0.0, 0, 0.0, 0.0, None);
-        let root = manager.root.clone();
-        let pass = manager.dispatch_layers.is_none()
-            || dispatch_interaction_layers(
-                manager,
-                old,
-                InteractionSignalName::OnPointerOut,
-                &data,
-            );
-        if pass {
-            emit_interaction_signal(old, &root, InteractionSignalName::OnPointerOut, &data);
-        }
-    }
-
-    let old_chain = old_target
-        .map(|t| get_interaction_chain(t, &manager.root))
-        .unwrap_or(Vec::new());
-    let new_chain = target
-        .map(|t| get_interaction_chain(t, &manager.root))
-        .unwrap_or(Vec::new());
-
-    for node in &old_chain {
-        if !chain_contains(&new_chain, node) {
-            let data = make_pointer_data(node, 0.0, 0.0, 0, 0.0, 0.0, None);
-            let pass = manager.dispatch_layers.is_none()
-                || dispatch_interaction_layers(
-                    manager,
-                    node,
-                    InteractionSignalName::OnPointerRollOut,
-                    &data,
-                );
-            if pass {
-                emit_interaction_signal_direct(
-                    node,
-                    InteractionSignalName::OnPointerRollOut,
-                    &data,
-                );
-            }
-        }
-    }
-    for node in new_chain.iter().rev() {
-        if !chain_contains(&old_chain, node) {
-            let data = make_pointer_data(node, 0.0, 0.0, 0, 0.0, 0.0, None);
-            let pass = manager.dispatch_layers.is_none()
-                || dispatch_interaction_layers(
-                    manager,
-                    node,
-                    InteractionSignalName::OnPointerRollOver,
-                    &data,
-                );
-            if pass {
-                emit_interaction_signal_direct(
-                    node,
-                    InteractionSignalName::OnPointerRollOver,
-                    &data,
-                );
-            }
-        }
-    }
-
-    if let Some(t) = target {
-        let data = make_pointer_data(t, 0.0, 0.0, 0, 0.0, 0.0, None);
-        let root = manager.root.clone();
-        let pass = manager.dispatch_layers.is_none()
-            || dispatch_interaction_layers(manager, t, InteractionSignalName::OnPointerOver, &data);
-        if pass {
-            emit_interaction_signal(t, &root, InteractionSignalName::OnPointerOver, &data);
-        }
-    }
-
-    manager.cursor_target = target.cloned();
-    apply_interaction_cursor(manager, target);
+    deliver_interaction_dispatch_plan(plan);
 }
 
 fn dispatch_pointer_signal_at(
-    manager: &mut InteractionManager,
+    manager: &Ref<InteractionManager>,
     name: InteractionSignalName,
     x: f32,
     y: f32,
@@ -796,20 +753,22 @@ fn dispatch_pointer_signal_at(
     delta_y: f32,
     options: Option<&InteractionPointerOptions>,
 ) {
-    if !is_pointer_signal_needed(manager, &[name]) {
-        return;
-    }
     let pointer_id = options.and_then(|o| o.pointer_id).unwrap_or(0);
-    let target = find_interaction_target(manager, x, y, pointer_id);
-    if let Some(ref target_node) = target {
-        let data = make_pointer_data(target_node, x, y, button, delta_x, delta_y, options);
-        let root = manager.root.clone();
-        let pass = manager.dispatch_layers.is_none()
-            || dispatch_interaction_layers(manager, target_node, name, &data);
-        if pass {
-            emit_interaction_signal(target_node, &root, name, &data);
-        }
-    }
+    let Some(targeting) = snapshot_interaction_targeting(manager, pointer_id, &[name]) else {
+        return;
+    };
+    let Some(target) = find_interaction_target(&targeting, x, y) else {
+        return;
+    };
+    let mut plan = create_interaction_dispatch_plan(&manager.read().unwrap());
+    let data = make_pointer_data(&target, x, y, button, delta_x, delta_y, options);
+    plan.deliveries.push(InteractionDelivery::Pointer {
+        target,
+        name,
+        data,
+        bubble: true,
+    });
+    deliver_interaction_dispatch_plan(plan);
 }
 
 fn emit_interaction_signal(
@@ -820,12 +779,7 @@ fn emit_interaction_signal(
 ) {
     let mut current: Option<NodeRef> = Some(target.clone());
     while let Some(ref node) = current {
-        let signals = get_interaction_signals(node);
-        if let Some(ref sigs) = signals {
-            let sigs = sigs.read().unwrap();
-            let signal = get_signal_by_name_pointer(&sigs, name);
-            emit_signal(signal, data);
-        }
+        emit_interaction_signal_direct(node, name, data);
         if Arc::ptr_eq(node, root) {
             break;
         }
@@ -833,16 +787,17 @@ fn emit_interaction_signal(
     }
 }
 
+// The node's signal is cloned under its group's read lock and emitted after the lock drops, so a
+// slot may reach the same signal group again.
 fn emit_interaction_signal_direct(
     target: &NodeRef,
     name: InteractionSignalName,
     data: &PointerEventData,
 ) {
-    let signals = get_interaction_signals(target);
-    if let Some(ref sigs) = signals {
-        let sigs = sigs.read().unwrap();
-        let signal = get_signal_by_name_pointer(&sigs, name);
-        emit_signal(signal, data);
+    let signal = get_interaction_signals(target)
+        .map(|signals| get_signal_by_name_pointer(&signals.read().unwrap(), name).clone());
+    if let Some(signal) = signal {
+        emit_signal(&signal, data);
     }
 }
 
@@ -854,11 +809,10 @@ fn emit_keyboard_signal(
 ) {
     let mut current: Option<NodeRef> = Some(target.clone());
     while let Some(ref node) = current {
-        let signals = get_interaction_signals(node);
-        if let Some(ref sigs) = signals {
-            let sigs = sigs.read().unwrap();
-            let signal = get_signal_by_name_keyboard(&sigs, name);
-            emit_signal(signal, data);
+        let signal = get_interaction_signals(node)
+            .map(|signals| get_signal_by_name_keyboard(&signals.read().unwrap(), name).clone());
+        if let Some(signal) = signal {
+            emit_signal(&signal, data);
         }
         if Arc::ptr_eq(node, root) {
             break;
@@ -885,24 +839,18 @@ pub fn enable_interaction_signals(source: &NodeRef) -> Ref<InteractionSignals> {
     return signals;
 }
 
-fn find_interaction_target(
-    manager: &InteractionManager,
-    x: f32,
-    y: f32,
-    pointer_id: i32,
-) -> Option<NodeRef> {
-    if !manager.enabled {
+// Runs the hit tests with no manager lock held: registered hit-test functions are caller code.
+fn find_interaction_target(targeting: &InteractionTargeting, x: f32, y: f32) -> Option<NodeRef> {
+    if !targeting.enabled {
         return None;
     }
-    let captured = manager.pointer_captures.get(&pointer_id);
-    if let Some(cap) = captured {
-        return Some(cap.clone());
+    if let Some(captured) = &targeting.captured {
+        return Some(captured.clone());
     }
-    let root = &manager.root;
-    return if manager.precise {
-        find_graph_hit_target_precise(&manager.hit_test_ctx, root, x, y)
+    return if targeting.precise {
+        find_graph_hit_target_precise(&targeting.hit_test_ctx, &targeting.root, x, y)
     } else {
-        find_graph_hit_target(&manager.hit_test_ctx, root, x, y)
+        find_graph_hit_target(&targeting.hit_test_ctx, &targeting.root, x, y)
     };
 }
 
@@ -987,9 +935,14 @@ fn input_pointer_to_options(data: &flight_input::InputPointerData) -> Interactio
     };
 }
 
-pub fn invalidate_interaction_cursor(manager: &mut InteractionManager) {
-    let target = manager.cursor_target.clone();
-    apply_interaction_cursor(manager, target.as_ref());
+pub fn invalidate_interaction_cursor(manager: &Ref<InteractionManager>) {
+    let delivery = {
+        let manager = manager.read().unwrap();
+        capture_interaction_cursor(&manager, manager.cursor_target.as_ref())
+    };
+    if let Some(InteractionDelivery::Cursor { backend, cursor }) = delivery {
+        backend.set_cursor(cursor.as_deref());
+    }
 }
 
 fn is_pointer_signal_needed(manager: &InteractionManager, names: &[InteractionSignalName]) -> bool {
@@ -1058,6 +1011,61 @@ fn node_ref_eq(a: &Option<NodeRef>, b: &Option<NodeRef>) -> bool {
     };
 }
 
+// Records the out/roll-out/roll-over/over deliveries for a hover change and updates the cursor
+// target, as one step of a dispatch plan.
+fn plan_pointer_rollover_change(
+    manager: &mut InteractionManager,
+    old_target: Option<&NodeRef>,
+    target: Option<&NodeRef>,
+    plan: &mut InteractionDispatchPlan,
+) {
+    if let Some(old) = old_target {
+        plan.deliveries.push(InteractionDelivery::Pointer {
+            target: old.clone(),
+            name: InteractionSignalName::OnPointerOut,
+            data: make_pointer_data(old, 0.0, 0.0, 0, 0.0, 0.0, None),
+            bubble: true,
+        });
+    }
+    let old_chain = old_target
+        .map(|t| get_interaction_chain(t, &manager.root))
+        .unwrap_or(Vec::new());
+    let new_chain = target
+        .map(|t| get_interaction_chain(t, &manager.root))
+        .unwrap_or(Vec::new());
+    for node in &old_chain {
+        if !chain_contains(&new_chain, node) {
+            plan.deliveries.push(InteractionDelivery::Pointer {
+                target: node.clone(),
+                name: InteractionSignalName::OnPointerRollOut,
+                data: make_pointer_data(node, 0.0, 0.0, 0, 0.0, 0.0, None),
+                bubble: false,
+            });
+        }
+    }
+    for node in new_chain.iter().rev() {
+        if !chain_contains(&old_chain, node) {
+            plan.deliveries.push(InteractionDelivery::Pointer {
+                target: node.clone(),
+                name: InteractionSignalName::OnPointerRollOver,
+                data: make_pointer_data(node, 0.0, 0.0, 0, 0.0, 0.0, None),
+                bubble: false,
+            });
+        }
+    }
+    if let Some(t) = target {
+        plan.deliveries.push(InteractionDelivery::Pointer {
+            target: t.clone(),
+            name: InteractionSignalName::OnPointerOver,
+            data: make_pointer_data(t, 0.0, 0.0, 0, 0.0, 0.0, None),
+            bubble: true,
+        });
+    }
+    manager.cursor_target = target.cloned();
+    plan.deliveries
+        .extend(capture_interaction_cursor(manager, target));
+}
+
 pub fn release_interaction_pointer(manager: &mut InteractionManager, pointer_id: i32) {
     manager.pointer_captures.remove(&pointer_id);
     if let Some(state) = manager.pointer_states.get_mut(&pointer_id) {
@@ -1090,4 +1098,17 @@ fn resolve_interaction_cursor(target: Option<&NodeRef>, root: &NodeRef) -> Optio
         current = get_node_parent(node);
     }
     return None;
+}
+
+// The targeting snapshot for one pointer dispatch, or `None` when no listener needs it.
+fn snapshot_interaction_targeting(
+    manager: &Ref<InteractionManager>,
+    pointer_id: i32,
+    names: &[InteractionSignalName],
+) -> Option<InteractionTargeting> {
+    let manager = manager.read().unwrap();
+    if !is_pointer_signal_needed(&manager, names) {
+        return None;
+    }
+    return Some(capture_interaction_targeting(&manager, pointer_id));
 }

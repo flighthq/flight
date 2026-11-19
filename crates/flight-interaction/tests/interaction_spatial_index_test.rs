@@ -9,7 +9,9 @@ mod find_spatial_interaction_target {
     #[test]
     fn returns_none_for_empty_tree() {
         let root = interaction_fixture::node();
-        let mgr = interaction_fixture::manager_for(&root);
+        let mgr = std::sync::Arc::new(std::sync::RwLock::new(interaction_fixture::manager_for(
+            &root,
+        )));
         let ctx = flight_interaction::contract::create_hit_test_context();
         let candidates: Vec<flight_node::NodeRef> = Vec::new();
         let result = find_spatial_interaction_target(&mgr, &ctx, 0.0, 0.0, false, &candidates);

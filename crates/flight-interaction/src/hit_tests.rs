@@ -18,6 +18,7 @@ use crate::node_interaction_state::get_node_interaction_state;
 use crate::types::{HitArea, HitTestFunction, HitTestPreciseFunction, HitTestResult};
 
 // flight-lint: allow(conform-extra) D5: caller-owned hit test context replaces TS module-level registries
+#[derive(Clone)]
 pub struct HitTestContext {
     registry: HashMap<Kind, HitTestFunction>,
     exact_registry: HashMap<Kind, HitTestPreciseFunction>,

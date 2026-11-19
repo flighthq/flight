@@ -1,5 +1,6 @@
 //! flight-compiler: target-native
 
+use flight_entity::Ref;
 use flight_node::{NodeRef, get_node_world_bounds_rectangle};
 use flight_spatial::{
     SpatialAabb2D, clear_spatial_index_2d, insert_spatial_object_2d, query_spatial_point_2d,
@@ -42,15 +43,18 @@ fn collect_spatial_candidates(node: &NodeRef, out: &mut Vec<NodeRef>) {
 }
 
 // flight-lint: allow(conform-params) D5: caller-owned hit test context and per-manager candidates
+// The manager is read-locked only to take its spatial index handle; the hit tests (caller code)
+// run with no manager lock held.
 pub fn find_spatial_interaction_target(
-    manager: &InteractionManager,
+    manager: &Ref<InteractionManager>,
     ctx: &HitTestContext,
     x: f32,
     y: f32,
     precise: bool,
     candidates: &[NodeRef],
 ) -> Option<NodeRef> {
-    let index_ref = manager.spatial_index.as_ref()?;
+    let index = manager.read().unwrap().spatial_index.clone()?;
+    let index_ref = &index;
     if candidates.is_empty() {
         return None;
     }

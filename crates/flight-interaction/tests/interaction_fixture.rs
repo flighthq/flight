@@ -60,6 +60,11 @@ pub fn manager_for(root: &NodeRef) -> InteractionManager {
         .unwrap();
 }
 
+// The shared handle the factory returns, for tests that dispatch through it.
+pub fn shared_manager_for(root: &NodeRef) -> flight_entity::Ref<InteractionManager> {
+    return create_interaction_manager(root.clone(), Some(&create_interaction_manager_options()));
+}
+
 pub fn manager_with_hit_tests(root: &NodeRef) -> InteractionManager {
     let mut mgr = manager_for(root);
     register_default_hit_tests(&mut mgr.hit_test_ctx);
