@@ -61,6 +61,16 @@ mod clip_region_contains_point {
     use super::*;
 
     #[test]
+    fn keeps_a_half_unit_boundary_at_one_billion() {
+        // f32 spacing at 1e9 is 64: a point 1.5 past a 1-wide scissor region would round onto it.
+        let origin = 1e9;
+        let region = create_clip_region_from_rectangle(&create_rectangle(origin, 0.0, 1.0, 1.0));
+        assert!(clip_region_contains_point(&region, origin + 0.5, 0.5));
+        assert!(!clip_region_contains_point(&region, origin + 1.5, 0.5));
+        assert!(!clip_region_contains_point(&region, origin - 0.5, 0.5));
+    }
+
+    #[test]
     fn tests_rectangles_and_contours_with_the_declared_winding() {
         let rectangle = create_clip_region_from_rectangle(&create_rectangle(0.0, 0.0, 10.0, 10.0));
         assert!(clip_region_contains_point(&rectangle, 5.0, 5.0));
@@ -166,6 +176,26 @@ mod create_clip_region_from_circle {
 
 mod create_clip_region_from_contours {
     use super::*;
+
+    #[test]
+    fn writes_exact_contour_bounds_at_one_billion() {
+        let origin = 1e9 + 0.25;
+        let region = create_clip_region_from_contours(
+            &[vec![
+                origin,
+                0.0,
+                origin + 1.0,
+                0.0,
+                origin + 1.0,
+                1.0,
+                origin,
+                1.0,
+            ]],
+            PathWinding::NonZero,
+        );
+        let rect = region.read().unwrap().rect.clone();
+        assert_eq!((rect.x, rect.width), (origin, 1.0));
+    }
 
     #[test]
     fn deep_copies_valid_input_and_skips_malformed_contours_for_bounds() {

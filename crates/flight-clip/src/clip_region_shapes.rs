@@ -161,7 +161,7 @@ fn append_rounded_rect_to_path(
     append_path_cubic_curve_to(path, x, y1 - k, x1 - k, y, x1, y);
 }
 
-// flight-lint: allow(f64) contour bounds retain f64 comparison before writing the f32 Rectangle contract
+// flight-lint: allow(f64) contour bounds are written exactly into the f64 Rectangle contract
 fn set_rectangle_to_contours_bounds(out: &mut Rectangle, contours: &[Vec<f64>]) {
     let mut min_x = f64::INFINITY;
     let mut min_y = f64::INFINITY;
@@ -187,8 +187,8 @@ fn set_rectangle_to_contours_bounds(out: &mut Rectangle, contours: &[Vec<f64>]) 
         out.height = 0.0;
         return;
     }
-    out.x = min_x as f32;
-    out.y = min_y as f32;
-    out.width = (max_x - min_x) as f32;
-    out.height = (max_y - min_y) as f32;
+    out.x = min_x;
+    out.y = min_y;
+    out.width = max_x - min_x;
+    out.height = max_y - min_y;
 }

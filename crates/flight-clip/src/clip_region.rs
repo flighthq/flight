@@ -102,7 +102,7 @@ pub fn clip_region_contains_clip_region(a: &Ref<ClipRegion>, b: &Ref<ClipRegion>
 pub fn clip_region_contains_point(clip: &Ref<ClipRegion>, x: f64, y: f64) -> bool {
     guard_clip_region_use(clip);
     let clip = clip.read().unwrap();
-    if !contains_rectangle_point_xy(&clip.rect, x as f32, y as f32) {
+    if !contains_rectangle_point_xy(&clip.rect, x, y) {
         return false;
     }
     if let Some(contours) = clip.contours.as_ref() {
@@ -334,10 +334,10 @@ pub fn normalize_clip_region(out: &Ref<ClipRegion>, clip: &Ref<ClipRegion>) {
     let mut out = out.write().unwrap();
     let mutable_out: &mut EntityConstruction<ClipRegion> = &mut out;
     if let Some(bounds) = normalized {
-        mutable_out.rect.x = bounds[0] as f32;
-        mutable_out.rect.y = bounds[1] as f32;
-        mutable_out.rect.width = (bounds[2] - bounds[0]) as f32;
-        mutable_out.rect.height = (bounds[3] - bounds[1]) as f32;
+        mutable_out.rect.x = bounds[0];
+        mutable_out.rect.y = bounds[1];
+        mutable_out.rect.width = bounds[2] - bounds[0];
+        mutable_out.rect.height = bounds[3] - bounds[1];
         mutable_out.contours = None;
         mutable_out.winding = PathWinding::NonZero;
     } else {
@@ -503,7 +503,7 @@ pub fn set_clip_region_use_guard(guard: Option<ClipRegionUseGuard>) {
     set_clip_region_use_guard_slot(guard);
 }
 
-// flight-lint: allow(f64) contour bounds retain f64 comparison before writing the f32 Rectangle contract
+// flight-lint: allow(f64) contour bounds are written exactly into the f64 Rectangle contract
 fn set_rectangle_to_contours_bounds(out: &mut Rectangle, contours: &[Vec<f64>]) {
     let mut min_x = f64::INFINITY;
     let mut min_y = f64::INFINITY;
@@ -529,10 +529,10 @@ fn set_rectangle_to_contours_bounds(out: &mut Rectangle, contours: &[Vec<f64>]) 
         out.height = 0.0;
         return;
     }
-    out.x = min_x as f32;
-    out.y = min_y as f32;
-    out.width = (max_x - min_x) as f32;
-    out.height = (max_y - min_y) as f32;
+    out.x = min_x;
+    out.y = min_y;
+    out.width = max_x - min_x;
+    out.height = max_y - min_y;
 }
 
 // flight-lint: allow(f64) snapshots preserve the exact f64 Path.data contour coordinates
