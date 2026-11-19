@@ -99,16 +99,16 @@ mod three_ds_camera_handler {
         };
         let projection = projection.read().unwrap();
         assert_eq!(projection.aspect, 1.0);
-        close(projection.fov_y, 2.0 * (36.0f32 / 100.0).atan());
+        close(projection.fov_y as f32, 2.0 * (36.0f32 / 100.0).atan());
         let mut aim = create_vector3(0.0, 0.0, 0.0);
         rotate_vector3_by_quaternion(
             &mut aim,
             &create_vector3(0.0, 0.0, -1.0),
             &camera.transform.rotation,
         );
-        close(aim.x, 0.0);
-        close(aim.y, -1.0);
-        close(aim.z, 0.0);
+        close(aim.x as f32, 0.0);
+        close(aim.y as f32, -1.0);
+        close(aim.z as f32, 0.0);
     }
 
     #[test]
@@ -131,7 +131,7 @@ mod three_ds_camera_handler {
                 panic!("perspective");
             };
             close(
-                projection.read().unwrap().fov_y,
+                (projection.read().unwrap().fov_y) as f32,
                 2.0 * (36.0f32 / 100.0).atan(),
             );
             let mut aim = create_vector3(0.0, 0.0, 0.0);
@@ -140,9 +140,9 @@ mod three_ds_camera_handler {
                 &create_vector3(0.0, 0.0, -1.0),
                 &camera.transform.rotation,
             );
-            close(aim.x, 1.0);
-            close(aim.y, 0.0);
-            close(aim.z, 0.0);
+            close(aim.x as f32, 1.0);
+            close(aim.y as f32, 0.0);
+            close(aim.z as f32, 0.0);
             rotations.push(camera.transform.rotation.w);
         }
         assert!((rotations[0] - rotations[1]).abs() > 0.001);

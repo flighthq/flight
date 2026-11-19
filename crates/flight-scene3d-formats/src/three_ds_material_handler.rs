@@ -1,5 +1,7 @@
 //! flight-compiler: target-native
 
+// flight-lint: allow-file(f64) Task Q format numbers: glTF JSON, COLLADA, MD5 and OBJ text numbers are JS Numbers held in f64, and binary AWD2/3DS/MD2/STL/glTF f32 fields widen exactly at decode; vertex, material, color and diagnostic lanes stay f32
+
 use crate::three_ds_parse::{parse_color_chunk, read_chunk_end, read_null_terminated_string};
 use crate::three_ds_read::{read_three_ds_f32, read_three_ds_u16};
 use crate::three_ds_schema::*;
@@ -33,7 +35,7 @@ pub static THREE_DS_MATERIAL_HANDLER: LazyLock<Ref<ThreeDsChunkHandler>> = LazyL
 pub static THREE_DS_MATERIAL_FAMILY: LazyLock<Vec<Ref<ThreeDsChunkHandler>>> =
     LazyLock::new(|| vec![THREE_DS_MATERIAL_HANDLER.clone()]);
 
-fn parse_percentage_chunk(view: &Uint8Array, offset: usize, end: usize) -> Option<f32> {
+fn parse_percentage_chunk(view: &Uint8Array, offset: usize, end: usize) -> Option<f64> {
     let mut cursor = offset;
     while cursor + THREE_DS_CHUNK_HEADER_BYTES <= end {
         let chunk_id = read_three_ds_u16(view, cursor);
@@ -44,10 +46,12 @@ fn parse_percentage_chunk(view: &Uint8Array, offset: usize, end: usize) -> Optio
         let chunk_end = chunk_end as usize;
         let data_start = cursor + THREE_DS_CHUNK_HEADER_BYTES;
         if chunk_id == THREE_DS_PERCENT_INT && data_start + 2 <= chunk_end {
-            return Some((read_three_ds_u16(view, data_start) as f32 / 100.0).clamp(0.0, 1.0));
+            return Some((read_three_ds_u16(view, data_start) as f64 / 100.0).clamp(0.0, 1.0));
         }
         if chunk_id == THREE_DS_PERCENT_FLOAT && data_start + 4 <= chunk_end {
-            return Some(read_three_ds_f32(view, data_start).clamp(0.0, 1.0));
+            return Some(f64::from(
+                read_three_ds_f32(view, data_start).clamp(0.0, 1.0),
+            ));
         }
         cursor = chunk_end;
     }

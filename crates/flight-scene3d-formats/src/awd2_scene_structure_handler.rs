@@ -1,5 +1,7 @@
 //! flight-compiler: target-native
 
+// flight-lint: allow-file(f64) Task Q format numbers: glTF JSON, COLLADA, MD5 and OBJ text numbers are JS Numbers held in f64, and binary AWD2/3DS/MD2/STL/glTF f32 fields widen exactly at decode; vertex, material, color and diagnostic lanes stay f32
+
 use crate::awd2_parse::report_awd_diagnostic;
 use crate::awd2_reader::{
     awd_transform_to_transform3d, read_awd_string, read_awd_transform, skip_awd_attr_list,
@@ -27,7 +29,7 @@ struct AwdSceneHeaderRead {
 pub static AWD2_CONTAINER_HANDLER: LazyLock<Ref<Awd2BlockHandler>> = LazyLock::new(|| {
     Arc::new(RwLock::new(Awd2BlockHandler {
         block_types: vec![AWD2_BLOCK_CONTAINER],
-        build_phase: Some(AWD2_BUILD_PHASE_SCENE_STRUCTURE as f32),
+        build_phase: Some(AWD2_BUILD_PHASE_SCENE_STRUCTURE as f64),
         deferred: None,
         parse: Arc::new(|state, block| {
             if let Some(container) = parse_container_block(block, state.diagnostics.as_ref()) {
@@ -67,7 +69,7 @@ pub static AWD2_CONTAINER_HANDLER: LazyLock<Ref<Awd2BlockHandler>> = LazyLock::n
 pub static AWD2_MESH_INSTANCE_HANDLER: LazyLock<Ref<Awd2BlockHandler>> = LazyLock::new(|| {
     Arc::new(RwLock::new(Awd2BlockHandler {
         block_types: vec![AWD2_BLOCK_MESH_INSTANCE],
-        build_phase: Some(AWD2_BUILD_PHASE_SCENE_STRUCTURE as f32),
+        build_phase: Some(AWD2_BUILD_PHASE_SCENE_STRUCTURE as f64),
         deferred: None,
         parse: Arc::new(|state, block| {
             if let Some(instance) = parse_mesh_instance_block(block, state.diagnostics.as_ref()) {

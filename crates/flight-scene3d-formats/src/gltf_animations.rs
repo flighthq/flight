@@ -1,5 +1,7 @@
 //! flight-compiler: target-native
 
+// flight-lint: allow-file(f64) Task Q format numbers: glTF JSON, COLLADA, MD5 and OBJ text numbers are JS Numbers held in f64, and binary AWD2/3DS/MD2/STL/glTF f32 fields widen exactly at decode; vertex, material, color and diagnostic lanes stay f32
+
 use crate::gltf_core_shared::{gltf_component_values, gltf_core_index, report_gltf_core_values};
 use crate::gltf_types::{GltfCoreFeatureContext, GltfCoreFeatureHandler};
 use flight_animation::{AnimationInterpolation, create_animation_track};
@@ -22,8 +24,8 @@ fn append_gltf_weight_channels(
     context: &Ref<GltfCoreFeatureContext>,
     channels: &mut Vec<Scene3DDocumentAnimationChannel>,
     mesh_nodes: &[i32],
-    times: &[f32],
-    values: &[f32],
+    times: &[f64],
+    values: &[f64],
     interpolation: Option<&str>,
 ) {
     let document = context.read().unwrap().document.clone();
@@ -130,7 +132,7 @@ fn apply_gltf_animations(context: &Ref<GltfCoreFeatureContext>) {
             )
         };
         let mut channels = Vec::new();
-        let mut duration = 0.0_f32;
+        let mut duration = 0.0_f64;
         for channel in source_channels {
             let (sampler_index, target) = {
                 let channel = channel.read().unwrap();
@@ -150,7 +152,7 @@ fn apply_gltf_animations(context: &Ref<GltfCoreFeatureContext>) {
                     "gltf.animation-target-unresolved",
                     &[(
                         "firstTarget",
-                        ImportDiagnosticDetailValue::Number(node.unwrap_or(-1.0)),
+                        ImportDiagnosticDetailValue::Number((node.unwrap_or(-1.0)) as f32),
                     )],
                 );
                 continue;
@@ -163,7 +165,7 @@ fn apply_gltf_animations(context: &Ref<GltfCoreFeatureContext>) {
                     "gltf.animation-missing-sampler",
                     &[(
                         "firstSampler",
-                        ImportDiagnosticDetailValue::Number(sampler_index),
+                        ImportDiagnosticDetailValue::Number(sampler_index as f32),
                     )],
                 );
                 continue;
@@ -191,7 +193,7 @@ fn apply_gltf_animations(context: &Ref<GltfCoreFeatureContext>) {
                     "gltf.animation-sampler-empty",
                     &[(
                         "firstSampler",
-                        ImportDiagnosticDetailValue::Number(sampler_index),
+                        ImportDiagnosticDetailValue::Number(sampler_index as f32),
                     )],
                 );
                 continue;
@@ -204,7 +206,7 @@ fn apply_gltf_animations(context: &Ref<GltfCoreFeatureContext>) {
                     "gltf.animation-sampler-cardinality",
                     &[(
                         "firstSampler",
-                        ImportDiagnosticDetailValue::Number(sampler_index),
+                        ImportDiagnosticDetailValue::Number(sampler_index as f32),
                     )],
                 );
                 continue;
@@ -215,7 +217,7 @@ fn apply_gltf_animations(context: &Ref<GltfCoreFeatureContext>) {
             gltf_component_values(&mut values, &output.data);
             let last = times.last().copied().unwrap_or(0.0);
             duration = if duration.is_nan() || last.is_nan() {
-                f32::NAN
+                f64::NAN
             } else {
                 duration.max(last)
             };

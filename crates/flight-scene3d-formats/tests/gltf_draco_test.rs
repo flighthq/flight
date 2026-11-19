@@ -16,7 +16,7 @@ use flight_scene3d_formats::contract::*;
 use std::sync::{Arc, RwLock};
 
 struct SeenDraco {
-    attribute_ids: Option<Record<f32>>,
+    attribute_ids: Option<Record<f64>>,
     bytes: Vec<u8>,
 }
 
@@ -157,7 +157,7 @@ mod get_gltf_draco_decoder {
         let original_ids = attributes.clone();
         let original_mesh = mesh.clone();
         let decoder: GltfDracoDecoder =
-            Arc::new(move |bytes: &ArrayBufferView, ids: &Ref<Record<f32>>| {
+            Arc::new(move |bytes: &ArrayBufferView, ids: &Ref<Record<f64>>| {
                 assert_eq!(
                     &get_array_buffer_storage(&bytes.buffer).read().unwrap()
                         [bytes.byte_offset..bytes.byte_offset + bytes.byte_length],
@@ -313,12 +313,12 @@ fn draco_gltf(payload: &[u8]) -> Ref<GltfDocument> {
         ]);
         source.buffer_views = Some(vec![Arc::new(RwLock::new(GltfBufferView {
             buffer: 0.0,
-            byte_length: payload.len() as f32,
+            byte_length: f64::from(payload.len() as f32),
             byte_offset: Some(0.0),
             byte_stride: None,
         }))]);
         source.buffers = Some(vec![Arc::new(RwLock::new(GltfBuffer {
-            byte_length: payload.len() as f32,
+            byte_length: f64::from(payload.len() as f32),
             uri: Some(gltf_data_uri(payload)),
         }))]);
         source.extensions_used = Some(vec!["KHR_draco_mesh_compression".to_string()]);

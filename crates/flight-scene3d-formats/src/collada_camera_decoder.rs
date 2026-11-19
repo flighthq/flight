@@ -33,20 +33,20 @@ pub static COLLADA_CAMERA_DECODER: LazyLock<Ref<ColladaElementDecoder>> = LazyLo
     }))
 });
 
-// flight-lint: allow(f64) strict Number parsing before the canonical f32 scalar write; no double arithmetic
+// flight-lint: allow(f64) strict Number parsing into the f64 camera fields (Task Q); no arithmetic beyond the source value
 fn camera_number(
     descriptor: &Ref<XmlElement>,
     field: &str,
-    fallback: f32,
+    fallback: f64,
     missing: Option<&mut Vec<String>>,
-) -> f32 {
+) -> f64 {
     let Some(source) = collada_text(Some(descriptor), field) else {
         if let Some(missing) = missing {
             missing.push(field.to_string());
         }
         return fallback;
     };
-    return parse_stl_number(&source) as f32;
+    return parse_stl_number(&source);
 }
 
 fn decode_cameras(context: &Ref<ColladaParseContext>) {

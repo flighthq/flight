@@ -124,7 +124,7 @@ fn apply_gltf_specular_glossiness(context: &Ref<GltfExtensionContext>) {
         replacement.emissive = emissive;
         replacement.emissive_map = emissive_map;
         replacement.emissive_strength = emissive_strength;
-        replacement.glossiness = glossiness;
+        replacement.glossiness = glossiness as f32;
         replacement.normal_map = normal_map;
         replacement.normal_scale = normal_scale;
         replacement.occlusion_map = occlusion_map;

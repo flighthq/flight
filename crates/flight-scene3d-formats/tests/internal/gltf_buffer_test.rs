@@ -44,8 +44,8 @@ fn external_buffer_numeric_values_are_copied_and_use_uint8_truncation_and_modulo
         -1.9,
         256.9,
         511.0,
-        f32::NAN,
-        f32::INFINITY,
+        f64::NAN,
+        f64::INFINITY,
         -0.0,
     ]));
     let mut options = external_options();

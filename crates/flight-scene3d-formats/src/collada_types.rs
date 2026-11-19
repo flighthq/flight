@@ -1,5 +1,7 @@
 //! flight-compiler: rust-only
 
+// flight-lint: allow-file(f64) Task Q format numbers: glTF JSON, COLLADA, MD5 and OBJ text numbers are JS Numbers held in f64, and binary AWD2/3DS/MD2/STL/glTF f32 fields widen exactly at decode; vertex, material, color and diagnostic lanes stay f32
+
 use crate::collada_scene_shared::ColladaIndexEntry;
 use flight_entity::Ref;
 use flight_importdiagnostics::ImportDiagnostic;
@@ -28,11 +30,11 @@ pub struct ColladaCameraEntry {
 
 pub struct ColladaDecodedAnimationChannel {
     pub target: String,
-    pub times: Vec<f32>,
-    pub values: Vec<f32>,
+    pub times: Vec<f64>,
+    pub values: Vec<f64>,
     pub interpolation: Vec<String>,
-    pub in_tangents: Vec<f32>,
-    pub out_tangents: Vec<f32>,
+    pub in_tangents: Vec<f64>,
+    pub out_tangents: Vec<f64>,
 }
 
 pub struct ColladaDecodedMorph {
@@ -40,15 +42,15 @@ pub struct ColladaDecodedMorph {
     pub base_geometry: String,
     pub method: ColladaMorphMethod,
     pub targets: Vec<String>,
-    pub weights: Vec<f32>,
+    pub weights: Vec<f64>,
 }
 
 pub struct ColladaDecodedSkin {
-    pub bind_shape_matrix: Vec<f32>,
+    pub bind_shape_matrix: Vec<f64>,
     pub controller_id: String,
     pub geometry_ref: String,
     pub influences: Vec<Vec<ColladaSkinInfluence>>,
-    pub inverse_bind_matrices: Vec<Vec<f32>>,
+    pub inverse_bind_matrices: Vec<Vec<f64>>,
     pub joint_names: Vec<String>,
     pub joint_sids: Vec<String>,
 }
@@ -72,7 +74,7 @@ pub struct ColladaDeferredLightBinding {
 
 pub struct ColladaElementDecoder {
     pub build: Option<Arc<dyn Fn(&Ref<ColladaBuildContext>) + Send + Sync>>,
-    pub build_phase: Option<f32>,
+    pub build_phase: Option<f64>,
     pub elements: Vec<String>,
     pub features: Vec<String>,
     pub decode: Arc<dyn Fn(&Ref<ColladaParseContext>) + Send + Sync>,
@@ -80,7 +82,7 @@ pub struct ColladaElementDecoder {
 
 pub struct ColladaFloatArrayEntry {
     pub key: String,
-    pub value: Ref<Vec<f32>>,
+    pub value: Ref<Vec<f64>>,
 }
 
 pub struct ColladaImportOptions {
@@ -90,13 +92,13 @@ pub struct ColladaImportOptions {
 
 pub struct ColladaLightDefinition {
     pub color: u32,
-    pub decay: f32,
-    pub inner_cone_degrees: f32,
-    pub intensity: f32,
+    pub decay: f64,
+    pub inner_cone_degrees: f64,
+    pub intensity: f64,
     pub kind: ColladaLightKind,
     pub name: Option<String>,
-    pub outer_cone_degrees: f32,
-    pub spot_blend: f32,
+    pub outer_cone_degrees: f64,
+    pub spot_blend: f64,
 }
 
 pub struct ColladaLightEntry {
@@ -126,11 +128,11 @@ pub enum ColladaMorphMethod {
 }
 
 pub struct ColladaOrthographicCameraDefinition {
-    pub far: f32,
-    pub half_height: f32,
-    pub half_width: f32,
+    pub far: f64,
+    pub half_height: f64,
+    pub half_width: f64,
     pub name: Option<String>,
-    pub near: f32,
+    pub near: f64,
 }
 
 pub struct ColladaParseContext {
@@ -153,15 +155,15 @@ pub struct ColladaParseResult {
     pub document: Ref<Scene3DDocument>,
     pub diagnostics: Ref<Vec<ImportDiagnostic>>,
     pub up_axis: ColladaUpAxis,
-    pub root_transform: Arc<Vec<f32>>,
+    pub root_transform: Arc<Vec<f64>>,
 }
 
 pub struct ColladaPerspectiveCameraDefinition {
-    pub aspect: f32,
-    pub far: f32,
-    pub fov_y: f32,
+    pub aspect: f64,
+    pub far: f64,
+    pub fov_y: f64,
     pub name: Option<String>,
-    pub near: f32,
+    pub near: f64,
 }
 
 pub struct ColladaSkinEntry {
@@ -171,7 +173,7 @@ pub struct ColladaSkinEntry {
 
 pub struct ColladaSkinInfluence {
     pub joint: String,
-    pub weight: f32,
+    pub weight: f64,
 }
 
 pub struct ColladaStringArrayEntry {

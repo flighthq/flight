@@ -49,7 +49,7 @@ pub fn authored_translation_gltf() -> Ref<GltfDocument> {
             }))],
         }))]);
         source.buffers = Some(vec![Arc::new(RwLock::new(GltfBuffer {
-            byte_length: bytes.len() as f32,
+            byte_length: f64::from(bytes.len() as f32),
             uri: Some(gltf_data_uri(&bytes)),
         }))]);
         source.buffer_views = Some(vec![
@@ -216,7 +216,7 @@ pub fn optional_gltf_features() -> Ref<GltfDocument> {
             })),
         ]);
         source.buffers = Some(vec![Arc::new(RwLock::new(GltfBuffer {
-            byte_length: bytes.len() as f32,
+            byte_length: f64::from(bytes.len() as f32),
             uri: Some(gltf_data_uri(&bytes)),
         }))]);
         source.cameras = Some(vec![Arc::new(RwLock::new(GltfCamera {

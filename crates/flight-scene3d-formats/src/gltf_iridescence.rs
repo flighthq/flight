@@ -55,12 +55,12 @@ fn apply_gltf_iridescence(context: &Ref<GltfExtensionContext>) {
             .iridescence_thickness_minimum
             .unwrap_or(100.0);
         let mut extension = create_iridescence_pbr_extension();
-        extension.iridescence = iridescence;
-        extension.iridescence_ior = iridescence_ior;
+        extension.iridescence = iridescence as f32;
+        extension.iridescence_ior = iridescence_ior as f32;
         extension.iridescence_map = iridescence_map;
         extension.iridescence_thickness_map = iridescence_thickness_map;
-        extension.iridescence_thickness_max = iridescence_thickness_max;
-        extension.iridescence_thickness_min = iridescence_thickness_min;
+        extension.iridescence_thickness_max = iridescence_thickness_max as f32;
+        extension.iridescence_thickness_min = iridescence_thickness_min as f32;
         let document = context.read().unwrap().document.clone();
         attach_gltf_pbr_extension(
             &mut document.write().unwrap(),

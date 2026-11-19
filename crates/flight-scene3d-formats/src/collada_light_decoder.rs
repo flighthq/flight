@@ -1,5 +1,7 @@
 //! flight-compiler: target-native
 
+// flight-lint: allow-file(f64) Task Q format numbers: glTF JSON, COLLADA, MD5 and OBJ text numbers are JS Numbers held in f64, and binary AWD2/3DS/MD2/STL/glTF f32 fields widen exactly at decode; vertex, material, color and diagnostic lanes stay f32
+
 use crate::collada_parse::report_collada_diagnostic;
 use crate::collada_scene_shared::build_collada_node_world_matrices;
 use crate::collada_types::*;
@@ -115,8 +117,8 @@ fn decode_lights(context: &Ref<ColladaParseContext>) {
     }
 }
 
-// flight-lint: allow(f64) existing strict Number finite classifier before canonical f32 writes; unlike permissive XML float lists, one invalid token rejects the whole light field
-fn finite_light_numbers(element: Option<&Ref<XmlElement>>) -> Option<Vec<f32>> {
+// flight-lint: allow(f64) strict Number finite classifier for the f64 light fields (Task Q); unlike permissive XML float lists, one invalid token rejects the whole light field
+fn finite_light_numbers(element: Option<&Ref<XmlElement>>) -> Option<Vec<f64>> {
     let element = element?.read().unwrap();
     let tokens = element
         .text
@@ -129,7 +131,7 @@ fn finite_light_numbers(element: Option<&Ref<XmlElement>>) -> Option<Vec<f32>> {
         if !value.is_finite() {
             return None;
         }
-        values.push(value as f32);
+        values.push(value);
     }
     return (!values.is_empty()).then_some(values);
 }
@@ -137,10 +139,10 @@ fn finite_light_numbers(element: Option<&Ref<XmlElement>>) -> Option<Vec<f32>> {
 fn light_scalar(
     parent: &Ref<XmlElement>,
     name: &str,
-    fallback: f32,
+    fallback: f64,
     id: &str,
     diagnostics: &Ref<Vec<ImportDiagnostic>>,
-) -> Option<f32> {
+) -> Option<f64> {
     let Some(element) = collada_child(Some(parent), name) else {
         return Some(fallback);
     };
@@ -230,11 +232,11 @@ fn parse_light(
         malformed_light(diagnostics, id, "color");
         return None;
     };
-    let intensity = 1.0f32.max(values[0]).max(values[1]).max(values[2]);
+    let intensity = 1.0f64.max(values[0]).max(values[1]).max(values[2]);
     let mut color = allocate_linear_color();
-    color.r = values[0] / intensity;
-    color.g = values[1] / intensity;
-    color.b = values[2] / intensity;
+    color.r = (values[0] / intensity) as f32;
+    color.g = (values[1] / intensity) as f32;
+    color.b = (values[2] / intensity) as f32;
     color.a = 1.0;
     let mut definition = ColladaLightDefinition {
         color: pack_linear_to_color(&color),
@@ -275,7 +277,7 @@ fn parse_light(
                 Some(HashMap::from([
                     (
                         "constant".to_string(),
-                        ImportDiagnosticDetailValue::Number(constant),
+                        ImportDiagnosticDetailValue::Number(constant as f32),
                     ),
                     (
                         "light".to_string(),
@@ -283,11 +285,11 @@ fn parse_light(
                     ),
                     (
                         "linear".to_string(),
-                        ImportDiagnosticDetailValue::Number(linear),
+                        ImportDiagnosticDetailValue::Number(linear as f32),
                     ),
                     (
                         "quadratic".to_string(),
-                        ImportDiagnosticDetailValue::Number(quadratic),
+                        ImportDiagnosticDetailValue::Number(quadratic as f32),
                     ),
                 ])),
             );

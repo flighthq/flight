@@ -1,5 +1,7 @@
 //! flight-compiler: rust-only
 
+// flight-lint: allow-file(f64) Task Q format numbers: glTF JSON, COLLADA, MD5 and OBJ text numbers are JS Numbers held in f64, and binary AWD2/3DS/MD2/STL/glTF f32 fields widen exactly at decode; vertex, material, color and diagnostic lanes stay f32
+
 use crate::gltf_container::decode_gltf_base64;
 use crate::gltf_diagnostics::{
     GltfDiagnosticDetail, GltfDiagnosticValues, GltfDropTally, gltf_diagnostic_values,
@@ -101,7 +103,9 @@ fn gltf_external_bytes(source: &GltfExternalBuffer) -> Box<[u8]> {
                     .collect(),
                 ArrayBufferViewKind::Float32Array => bytes
                     .chunks_exact(4)
-                    .map(|chunk| gltf_uint8(f32::from_le_bytes(chunk.try_into().unwrap())))
+                    .map(|chunk| {
+                        gltf_uint8(f64::from(f32::from_le_bytes(chunk.try_into().unwrap())))
+                    })
                     .collect(),
                 ArrayBufferViewKind::Float64Array => {
                     bytes.chunks_exact(8).map(gltf_uint8_from_float64).collect()
@@ -122,7 +126,7 @@ pub(crate) fn gltf_owned_byte_view(bytes: Box<[u8]>) -> ArrayBufferView {
     };
 }
 
-fn gltf_uint8(value: f32) -> u8 {
+fn gltf_uint8(value: f64) -> u8 {
     if !value.is_finite() || value == 0.0 {
         return 0;
     }

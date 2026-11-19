@@ -1,5 +1,7 @@
 //! flight-compiler: target-native
 
+// flight-lint: allow-file(f64) Task Q format numbers: glTF JSON, COLLADA, MD5 and OBJ text numbers are JS Numbers held in f64, and binary AWD2/3DS/MD2/STL/glTF f32 fields widen exactly at decode; vertex, material, color and diagnostic lanes stay f32
+
 use crate::gltf_core_shared::gltf_core_index;
 use crate::gltf_material::pack_gltf_linear_color;
 use crate::gltf_schema::GltfPunctualLight;
@@ -63,7 +65,7 @@ fn apply_gltf_punctual_lights(context: &Ref<GltfExtensionContext>) {
                 &[
                     (
                         "firstLight",
-                        ImportDiagnosticDetailValue::Number(light_index),
+                        ImportDiagnosticDetailValue::Number(light_index as f32),
                     ),
                     (
                         "firstNode",
@@ -81,7 +83,7 @@ fn apply_gltf_punctual_lights(context: &Ref<GltfExtensionContext>) {
         let indices = context.read().unwrap().node_indices.clone();
         let mapped_node = indices.read().unwrap().get(node).copied();
         let build = context.read().unwrap().build_node_transform.clone();
-        let transform = build(node as f32);
+        let transform = build(node as f64);
         let document = context.read().unwrap().document.clone();
         document.write().unwrap().lights.push(Scene3DDocumentLight {
             descriptor,
@@ -113,7 +115,7 @@ fn apply_gltf_punctual_lights(context: &Ref<GltfExtensionContext>) {
 
 fn build_gltf_punctual_light(
     source: &Ref<GltfPunctualLight>,
-    index: f32,
+    index: f64,
     light_drops: &mut Option<Vec<LightDropTally>>,
 ) -> Option<LightRef> {
     let color = source
@@ -134,7 +136,10 @@ fn build_gltf_punctual_light(
             light_drops,
             ImportDiagnosticSeverity::Drop,
             "gltf.light-negative-intensity",
-            &[("firstLight", ImportDiagnosticDetailValue::Number(index))],
+            &[(
+                "firstLight",
+                ImportDiagnosticDetailValue::Number(index as f32),
+            )],
         );
         return None;
     }
@@ -154,7 +159,10 @@ fn build_gltf_punctual_light(
             light_drops,
             ImportDiagnosticSeverity::Drop,
             "gltf.light-non-positive-range",
-            &[("firstLight", ImportDiagnosticDetailValue::Number(index))],
+            &[(
+                "firstLight",
+                ImportDiagnosticDetailValue::Number(index as f32),
+            )],
         );
         return None;
     }
@@ -174,13 +182,16 @@ fn build_gltf_punctual_light(
         let outer = spot
             .as_ref()
             .and_then(|spot| spot.read().unwrap().outer_cone_angle)
-            .unwrap_or(std::f32::consts::PI / 4.0);
-        if !(inner >= 0.0) || !(outer > inner) || outer > std::f32::consts::PI / 2.0 {
+            .unwrap_or(std::f64::consts::PI / 4.0);
+        if !(inner >= 0.0) || !(outer > inner) || outer > std::f64::consts::PI / 2.0 {
             tally_light_drop(
                 light_drops,
                 ImportDiagnosticSeverity::Drop,
                 "gltf.light-invalid-spot-cone",
-                &[("firstLight", ImportDiagnosticDetailValue::Number(index))],
+                &[(
+                    "firstLight",
+                    ImportDiagnosticDetailValue::Number(index as f32),
+                )],
             );
             return None;
         }
@@ -188,9 +199,9 @@ fn build_gltf_punctual_light(
             &SpotLightOptions {
                 color: Some(color),
                 direction: Some(create_vector3(0.0, 0.0, -1.0)),
-                inner_cone_degrees: Some(inner * 180.0 / std::f32::consts::PI),
+                inner_cone_degrees: Some(inner * 180.0 / std::f64::consts::PI),
                 intensity: Some(intensity),
-                outer_cone_degrees: Some(outer * 180.0 / std::f32::consts::PI),
+                outer_cone_degrees: Some(outer * 180.0 / std::f64::consts::PI),
                 range: Some(range),
                 ..Default::default()
             },
@@ -201,7 +212,10 @@ fn build_gltf_punctual_light(
         ImportDiagnosticSeverity::Skip,
         "gltf.light-unsupported-type",
         &[
-            ("firstLight", ImportDiagnosticDetailValue::Number(index)),
+            (
+                "firstLight",
+                ImportDiagnosticDetailValue::Number(index as f32),
+            ),
             (
                 "firstType",
                 ImportDiagnosticDetailValue::String(source.read().unwrap().r#type.clone()),

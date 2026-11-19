@@ -72,7 +72,7 @@ mod collada_animation_decoder {
         ];
         for (index, expected) in expected.into_iter().enumerate() {
             // D1 f32 bound (TS: 0.000005)
-            assert!((f64::from(track.values[index]) - expected).abs() < 0.000005);
+            assert!((track.values[index] - expected).abs() < 0.000005);
         }
     }
 

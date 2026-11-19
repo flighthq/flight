@@ -1,5 +1,7 @@
 //! flight-compiler: rust-only
 
+// flight-lint: allow-file(f64) Task Q format numbers: glTF JSON, COLLADA, MD5 and OBJ text numbers are JS Numbers held in f64, and binary AWD2/3DS/MD2/STL/glTF f32 fields widen exactly at decode; vertex, material, color and diagnostic lanes stay f32
+
 use flight_compression::{HostDecompressDeflateCapability, HostDecompressLzmaCapability};
 use flight_entity::{EntityRuntimeSlot, Float64Array, Ref, Uint8Array};
 use flight_importdiagnostics::ImportDiagnostic;
@@ -42,7 +44,7 @@ pub struct Awd2BlockDispatchEntry {
 
 pub struct Awd2BlockHandler {
     pub block_types: Vec<u8>,
-    pub build_phase: Option<f32>,
+    pub build_phase: Option<f64>,
     pub deferred: Option<bool>,
     pub parse: Arc<dyn Fn(&mut Awd2ParseState, &Awd2Block) + Send + Sync>,
     pub build: Option<Arc<dyn Fn(&mut Awd2ParseState) + Send + Sync>>,
@@ -86,14 +88,14 @@ pub struct Awd2ParseState {
 
 // flight-lint: allow(f64) Source AWD2 parsed transform fields explicitly use Float64Array, including nullable pose transforms
 pub struct Awd2ParsedCamera {
-    pub bottom: f32,
-    pub fov: f32,
-    pub left: f32,
+    pub bottom: f64,
+    pub fov: f64,
+    pub left: f64,
     pub name: String,
     pub parent_id: u32,
     pub projection_type: i16,
-    pub right: f32,
-    pub top: f32,
+    pub right: f64,
+    pub top: f64,
     pub transform: Box<Float64Array>,
 }
 
@@ -118,21 +120,21 @@ pub struct Awd2ParsedJoint {
 
 // flight-lint: allow(f64) Source AWD2 parsed transform fields explicitly use Float64Array, including nullable pose transforms
 pub struct Awd2ParsedLight {
-    pub ambient: f32,
+    pub ambient: f64,
     pub ambient_rgb: u32,
     pub casts_shadow: bool,
-    pub diffuse: f32,
-    pub direction_x: f32,
-    pub direction_y: f32,
-    pub direction_z: f32,
-    pub fall_off: f32,
+    pub diffuse: f64,
+    pub direction_x: f64,
+    pub direction_y: f64,
+    pub direction_z: f64,
+    pub fall_off: f64,
     pub has_radius: bool,
     pub light_type: u8,
     pub name: String,
     pub parent_id: u32,
-    pub radius: f32,
+    pub radius: f64,
     pub rgb: u32,
-    pub specular: f32,
+    pub specular: f64,
     pub transform: Box<Float64Array>,
 }
 
@@ -142,15 +144,15 @@ pub struct Awd2ParsedLightPicker {
 }
 
 pub struct Awd2ParsedMaterial {
-    pub alpha: Option<f32>,
+    pub alpha: Option<f64>,
     pub color: Option<u32>,
     pub diffuse_texture_id: u32,
-    pub gloss: Option<f32>,
+    pub gloss: Option<f64>,
     pub name: String,
     pub normal_texture_id: u32,
     pub num_methods: u8,
     pub specular_color: Option<u32>,
-    pub specular_strength: Option<f32>,
+    pub specular_strength: Option<f64>,
     pub specular_texture_id: u32,
 }
 
@@ -174,7 +176,7 @@ pub struct Awd2ParsedSkeletonAnimation {
 }
 
 pub struct Awd2SkeletonAnimationPose {
-    pub duration: f32,
+    pub duration: f64,
     pub pose_block_id: u32,
 }
 

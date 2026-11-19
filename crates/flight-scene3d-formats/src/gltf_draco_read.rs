@@ -102,7 +102,7 @@ pub(crate) fn resolve_gltf_draco_mesh(
             reader.drops.as_ref(),
             ImportDiagnosticSeverity::Drop,
             "gltf.draco-payload-missing",
-            &[("firstBufferView", view_number)],
+            &[("firstBufferView", view_number as f32)],
         );
         return None;
     };
@@ -116,7 +116,7 @@ pub(crate) fn resolve_gltf_draco_mesh(
             reader.drops.as_ref(),
             ImportDiagnosticSeverity::Drop,
             "gltf.draco-decode-failed",
-            &[("firstBufferView", view_number)],
+            &[("firstBufferView", view_number as f32)],
         );
     }
     return decoded;

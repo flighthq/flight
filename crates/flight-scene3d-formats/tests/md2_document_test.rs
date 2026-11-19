@@ -16,7 +16,7 @@ fn animated_skinned_md2() -> Box<[u8]> {
     return build_md2(&f);
 }
 
-fn animation_values(document: &Scene3DDocument) -> Vec<(Option<String>, f32, Vec<f32>, Vec<f32>)> {
+fn animation_values(document: &Scene3DDocument) -> Vec<(Option<String>, f64, Vec<f64>, Vec<f64>)> {
     return document
         .animations
         .iter()

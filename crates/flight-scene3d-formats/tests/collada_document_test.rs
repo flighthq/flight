@@ -277,7 +277,7 @@ mod parse_collada {
             (transform.scale.y, 1.0),
             (transform.scale.z, 1.0),
         ] {
-            near(actual, expected);
+            near(actual as f32, expected);
         }
     }
 
@@ -286,9 +286,9 @@ mod parse_collada {
         let result = parse_collada(SOURCE_XML_348_0, None);
         let document = result.document.read().unwrap();
         let position = &document.nodes[0].transform.position;
-        near(position.x, 7.0);
-        near(position.y, -2.0);
-        near(position.z, 5.0);
+        near(position.x as f32, 7.0);
+        near(position.y as f32, -2.0);
+        near(position.z as f32, 5.0);
     }
 
     #[test]
@@ -296,10 +296,13 @@ mod parse_collada {
         let result = parse_collada(SOURCE_XML_364_0, None);
         let document = result.document.read().unwrap();
         let rotation = &document.nodes[0].transform.rotation;
-        near(rotation.x, 0.0);
-        near(rotation.y.abs(), (std::f64::consts::PI / 4.0).sin());
-        near(rotation.z, 0.0);
-        near(rotation.w, (std::f64::consts::PI / 4.0).cos());
+        near(rotation.x as f32, 0.0);
+        near(
+            (rotation.y.abs()) as f32,
+            (std::f64::consts::PI / 4.0).sin(),
+        );
+        near(rotation.z as f32, 0.0);
+        near(rotation.w as f32, (std::f64::consts::PI / 4.0).cos());
     }
 
     #[test]
@@ -307,9 +310,9 @@ mod parse_collada {
         let result = parse_collada(SOURCE_XML_381_0, None);
         let document = result.document.read().unwrap();
         let scale = &document.nodes[0].transform.scale;
-        near(scale.x, 2.0);
-        near(scale.y, 3.0);
-        near(scale.z, 4.0);
+        near(scale.x as f32, 2.0);
+        near(scale.y as f32, 3.0);
+        near(scale.z as f32, 4.0);
     }
 
     #[test]
@@ -317,12 +320,12 @@ mod parse_collada {
         let result = parse_collada(SOURCE_XML_397_0, None);
         let document = result.document.read().unwrap();
         let transform = &document.nodes[0].transform;
-        near(transform.position.x, 1.0);
-        near(transform.position.y, 2.0);
-        near(transform.position.z, 3.0);
-        near(transform.scale.x, 2.0);
-        near(transform.scale.y, 2.0);
-        near(transform.scale.z, 2.0);
+        near(transform.position.x as f32, 1.0);
+        near(transform.position.y as f32, 2.0);
+        near(transform.position.z as f32, 3.0);
+        near(transform.scale.x as f32, 2.0);
+        near(transform.scale.y as f32, 2.0);
+        near(transform.scale.z as f32, 2.0);
     }
 
     #[test]
@@ -330,9 +333,9 @@ mod parse_collada {
         let result = parse_collada(SOURCE_XML_416_0, None);
         let document = result.document.read().unwrap();
         let position = &document.nodes[0].transform.position;
-        near(position.x, 0.0);
-        near(position.y, 0.0);
-        near(position.z, 10.0);
+        near(position.x as f32, 0.0);
+        near(position.y as f32, 0.0);
+        near(position.z as f32, 10.0);
     }
 
     #[test]
@@ -343,7 +346,7 @@ mod parse_collada {
         assert_eq!(document.nodes[0].name.as_deref(), Some("Host"));
         assert_eq!(document.nodes[0].children, [1]);
         assert_eq!(document.nodes[1].name.as_deref(), Some("Shared"));
-        near(document.nodes[1].transform.position.x, 1.0);
+        near((document.nodes[1].transform.position.x) as f32, 1.0);
     }
 
     #[test]
@@ -365,9 +368,9 @@ mod parse_collada {
         let result = parse_collada(SOURCE_XML_466_0, None);
         let document = result.document.read().unwrap();
         let position = &document.nodes[0].transform.position;
-        near(position.x, 0.0);
-        near(position.y, 5.0);
-        near(position.z, 0.0);
+        near(position.x as f32, 0.0);
+        near(position.y as f32, 5.0);
+        near(position.z as f32, 0.0);
     }
 
     #[test]
@@ -461,7 +464,7 @@ mod parse_collada {
         assert_eq!(morph.targets.len(), 1);
         assert_eq!(&*morph.weights, &[0.75]);
         for index in [2, 5, 8] {
-            near(morph.targets[0].position_deltas[index], 1.0);
+            near((morph.targets[0].position_deltas[index]) as f32, 1.0);
         }
         assert_eq!(document.skins[0].inverse_bind[1].m[12], 3.0);
         assert_eq!(document.cameras.len(), 1);
@@ -473,8 +476,8 @@ mod parse_collada {
             .position(|node| node.name.as_deref() == Some("CamNode"))
             .unwrap();
         assert_eq!(camera.node, Some(camera_node as i32));
-        near(camera.transform.position.y, 5.0);
-        near(camera.transform.position.z, 10.0);
+        near(camera.transform.position.y as f32, 5.0);
+        near(camera.transform.position.z as f32, 10.0);
         assert_eq!(document.lights.len(), 1);
         let light = &document.lights[0];
         assert_eq!(light.name.as_deref(), Some("Sun"));
@@ -488,7 +491,7 @@ mod parse_collada {
             light.descriptor.read().unwrap().kind(),
             flight_lighting::DIRECTIONAL_LIGHT_KIND
         );
-        near(light.transform.position.y, 10.0);
+        near(light.transform.position.y as f32, 10.0);
         let host_index = document
             .nodes
             .iter()
@@ -500,7 +503,10 @@ mod parse_collada {
             document.nodes[shared_index].name.as_deref(),
             Some("SharedProp")
         );
-        near(document.nodes[shared_index].transform.position.x, 10.0);
+        near(
+            (document.nodes[shared_index].transform.position.x) as f32,
+            10.0,
+        );
         assert_eq!(document.animations.len(), 1);
         let animation = &document.animations[0];
         assert_eq!(animation.channels.len(), 1);

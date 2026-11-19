@@ -181,7 +181,7 @@ mod decode_collada_morphs {
         for (index, expected) in [0.2_f64, 0.8].into_iter().enumerate() {
             // D1 f32 bound (TS: 0)
             assert!(
-                (f64::from(morph.weights[index]) - expected).abs()
+                (morph.weights[index] - expected).abs()
                     <= 4.0 * f64::from(f32::EPSILON) * expected.abs().max(1.0)
             );
         }

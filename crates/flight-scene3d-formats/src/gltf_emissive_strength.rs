@@ -55,11 +55,11 @@ fn apply_gltf_emissive_strength(context: &Ref<GltfExtensionContext>) {
         let mut material = material.write().unwrap();
         if material.material_fields().kind == STANDARD_PBR_MATERIAL_KIND {
             if let Some(standard) = material.as_any_mut().downcast_mut::<StandardPbrMaterial>() {
-                standard.emissive_strength = strength;
+                standard.emissive_strength = strength as f32;
             }
         } else if material.material_fields().kind == EXTENDED_PBR_MATERIAL_KIND {
             if let Some(extended) = material.as_any_mut().downcast_mut::<ExtendedPbrMaterial>() {
-                extended.standard.emissive_strength = strength;
+                extended.standard.emissive_strength = strength as f32;
             }
         }
     }

@@ -19,12 +19,12 @@ mod convert_positions_z_up_to_y_up {
                 1.0, 3.0, -2.0, 10.0, 20.0, 30.0, 4.0, 6.0, -5.0, 40.0, 50.0, 60.0
             ]
         );
-        let mut values = [1.0, 0.0, 3.0];
+        let mut values = [1.0_f64, 0.0, 3.0];
         convert_positions_z_up_to_y_up(&mut values, None, None);
-        assert_eq!(values[2].to_bits(), 0.0_f32.to_bits());
-        let mut empty: [f32; 0] = [];
+        assert_eq!(values[2].to_bits(), 0.0_f64.to_bits());
+        let mut empty: [f64; 0] = [];
         convert_positions_z_up_to_y_up(&mut empty, None, None);
-        assert_eq!(empty, [0.0_f32; 0]);
+        assert_eq!(empty, [0.0_f64; 0]);
         let mut values = vec![1.0, 2.0, 3.0].into_boxed_slice();
         convert_positions_z_up_to_y_up(&mut values, None, None);
         assert_eq!(&*values, &[1.0, 3.0, -2.0]);
@@ -42,7 +42,7 @@ mod convert_quaternions_z_up_to_y_up {
         assert_eq!(values, [1.0, 3.0, -2.0, 4.0, 5.0, 7.0, -6.0, 8.0]);
         let mut values = [0.0, 0.0, 1.0, 1.0];
         convert_quaternions_z_up_to_y_up(&mut values, None, None);
-        assert_eq!(values[2].to_bits(), 0.0_f32.to_bits());
+        assert_eq!(values[2].to_bits(), 0.0_f64.to_bits());
     }
 }
 mod convert_transform_lh_to_rh {
@@ -198,7 +198,7 @@ mod negate_vec3_z {
         assert_eq!(values, [1.0, 2.0, -3.0, 4.0, 5.0, -6.0]);
         let mut values = vec![1.0, 2.0, 0.0];
         negate_vec3_z(&mut values);
-        assert_eq!(values[2].to_bits(), 0.0_f32.to_bits());
+        assert_eq!(values[2].to_bits(), 0.0_f64.to_bits());
     }
 }
 mod pack_skin_influences {
@@ -231,10 +231,13 @@ mod pack_skin_influences {
         let mut weights = vec![99.0; 5];
         pack_skin_influences(&mut joints, &mut weights, &mut influences);
         assert_eq!(joints, vec![2.0, 1.0, 7.0, 5.0, 99.0]);
-        let actual = weights[..4].iter().sum::<f32>();
-        assert!((actual - 1.0).abs() <= 4.0 * f32::EPSILON * 1.0_f32.max(actual.abs()));
+        let actual = weights[..4].iter().sum::<f64>();
+        assert!((actual - 1.0).abs() <= 4.0 * f64::from(f32::EPSILON) * actual.abs().max(1.0));
         let expected = 0.4 / 0.95;
-        assert!((weights[0] - expected).abs() <= 4.0 * f32::EPSILON * 1.0_f32.max(expected.abs()));
+        assert!(
+            (weights[0] - expected).abs()
+                <= 4.0 * f64::from(f32::EPSILON) * expected.abs().max(1.0)
+        );
         assert_eq!(weights[4], 99.0);
         assert_eq!(influences[4].joint_index, 9.0);
         let mut influences = [
@@ -263,9 +266,12 @@ mod pack_skin_influences {
         let mut weights = Vec::new();
         pack_skin_influences(&mut joints, &mut weights, &mut influences);
         assert_eq!(joints, [2.0, 1.0, 7.0, 5.0]);
-        let actual = weights.iter().sum::<f32>();
-        assert!((actual - 1.0).abs() <= 4.0 * f32::EPSILON * 1.0_f32.max(actual.abs()));
-        assert!((weights[0] - expected).abs() <= 4.0 * f32::EPSILON * 1.0_f32.max(expected.abs()));
+        let actual = weights.iter().sum::<f64>();
+        assert!((actual - 1.0).abs() <= 4.0 * f64::from(f32::EPSILON) * actual.abs().max(1.0));
+        assert!(
+            (weights[0] - expected).abs()
+                <= 4.0 * f64::from(f32::EPSILON) * expected.abs().max(1.0)
+        );
     }
     #[test]
     fn zero_fills_unused_influences_and_leaves_empty_bind_weights_zero() {
@@ -302,7 +308,7 @@ mod reverse_triangle_winding {
         reverse_triangle_winding(&mut indices);
         assert_eq!(indices, [0.0, 2.0, 1.0, 3.0, 5.0, 4.0, 6.0, 7.0]);
         reverse_triangle_winding(&mut Vec::new());
-        let mut numbers = vec![0.5, -1.25, f32::NAN];
+        let mut numbers = vec![0.5, -1.25, f64::NAN];
         reverse_triangle_winding(&mut numbers);
         assert_eq!(numbers[0], 0.5);
         assert!(numbers[1].is_nan());

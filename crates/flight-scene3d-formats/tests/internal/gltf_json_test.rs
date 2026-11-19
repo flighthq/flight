@@ -23,15 +23,16 @@ fn preserves_original_number_validation_before_canonical_wire_scalar_narrowing()
         .as_ref()
         .unwrap()
         .clone();
-    assert_eq!(accessors[0].read().unwrap().count, 1.0);
-    let original = gltf_original_number(&decoded.metadata, &accessors[0], "count", 1.0);
+    // JSON numbers decode as exact doubles; f32 would round these to 1.0 and 16777216.0.
+    assert_eq!(accessors[0].read().unwrap().count, 0.9999999999);
+    let original = gltf_original_number(&decoded.metadata, &accessors[0], "count", 0.9999999999);
     assert_eq!(original, 0.9999999999);
     assert_ne!(original.fract(), 0.0);
-    assert_eq!(accessors[1].read().unwrap().count, 16777216.0);
-    let original = gltf_original_number(&decoded.metadata, &accessors[1], "count", 16777216.0);
+    assert_eq!(accessors[1].read().unwrap().count, 16777217.0);
+    let original = gltf_original_number(&decoded.metadata, &accessors[1], "count", 16777217.0);
     assert_eq!(original as usize, 16777217);
     let current = accessors[2].read().unwrap().count;
-    assert_eq!(current, f32::INFINITY);
+    assert_eq!(current, f64::INFINITY);
     assert!(!gltf_original_number(&decoded.metadata, &accessors[2], "count", current).is_finite());
     accessors[0].write().unwrap().count = 2.5;
     assert_eq!(
@@ -71,7 +72,7 @@ fn retains_named_wire_objects_and_original_normal_texture_info_allocation_throug
     let retained: GltfTextureInfoRef = normal.clone();
     assert!(Arc::ptr_eq(&view, &retained));
     let index = view.read().unwrap().gltf_texture_info().index;
-    assert_eq!(index, 16777216.0);
+    assert_eq!(index, 16777217.0);
     assert_eq!(
         gltf_original_number(&decoded.metadata, &view, "index", index) as usize,
         16777217
@@ -219,11 +220,11 @@ fn preserves_declared_vendor_objects_null_slots_and_javascript_record_key_order(
     let samples = samples.read().unwrap();
     assert_eq!(samples.len(), 2);
     assert_eq!(
-        samples[0].as_ref().unwrap().downcast_ref::<f32>(),
+        samples[0].as_ref().unwrap().downcast_ref::<f64>(),
         Some(&1.0)
     );
     assert_eq!(
-        samples[1].as_ref().unwrap().downcast_ref::<f32>(),
+        samples[1].as_ref().unwrap().downcast_ref::<f64>(),
         Some(&2.0)
     );
     assert!(get_record_value(&fields, "empty").unwrap().is_none());

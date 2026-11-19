@@ -1,5 +1,7 @@
 //! flight-compiler: target-native
 
+// flight-lint: allow-file(f64) Task Q format numbers: glTF JSON, COLLADA, MD5 and OBJ text numbers are JS Numbers held in f64, and binary AWD2/3DS/MD2/STL/glTF f32 fields widen exactly at decode; vertex, material, color and diagnostic lanes stay f32
+
 use crate::obj_features::is_obj_whitespace;
 use crate::stl_features::parse_stl_number;
 use flight_entity::Ref;
@@ -68,7 +70,7 @@ pub fn collada_local_name(element: &Ref<XmlElement>) -> String {
         .map_or_else(|| element.name.clone(), |(_, local)| local.to_string());
 }
 
-pub fn collada_numbers(element: Option<&Ref<XmlElement>>) -> Vec<f32> {
+pub fn collada_numbers(element: Option<&Ref<XmlElement>>) -> Vec<f64> {
     let Some(element) = element else {
         return Vec::new();
     };
@@ -89,7 +91,7 @@ pub fn collada_text(element: Option<&Ref<XmlElement>>, name: &str) -> Option<Str
     return (!text.is_empty()).then(|| text.to_string());
 }
 
-pub fn parse_collada_floats(text: &str) -> Vec<f32> {
+pub fn parse_collada_floats(text: &str) -> Vec<f64> {
     let text = text.trim_matches(is_obj_whitespace);
     if text.is_empty() {
         return vec![0.0];
@@ -101,10 +103,10 @@ pub fn parse_collada_floats(text: &str) -> Vec<f32> {
         .collect();
 }
 
-// flight-lint: allow(f64) reuse the existing strict Number finite classifier before the canonical f32 write; no new double arithmetic or public widening
-fn parse_collada_number(text: &str) -> Option<f32> {
+// flight-lint: allow(f64) strict Number finite classifier for COLLADA float lists, held as f64 document numbers (Task Q); vertex lanes narrow at their own f32 writes
+fn parse_collada_number(text: &str) -> Option<f64> {
     let number = parse_stl_number(text);
-    return number.is_finite().then_some(number as f32);
+    return number.is_finite().then_some(number);
 }
 
 pub fn walk_collada_element(element: &Ref<XmlElement>, visit: &mut dyn FnMut(&Ref<XmlElement>)) {

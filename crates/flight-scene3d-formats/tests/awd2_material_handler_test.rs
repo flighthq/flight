@@ -81,7 +81,7 @@ mod awd2_material_handler {
      {
         let handler = AWD2_MATERIAL_HANDLER.read().unwrap();
         assert_eq!(handler.block_types, [AWD2_BLOCK_MATERIAL]);
-        assert_eq!(handler.build_phase, Some(AWD2_BUILD_PHASE_MATERIALS as f32));
+        assert_eq!(handler.build_phase, Some(AWD2_BUILD_PHASE_MATERIALS as f64));
         assert!(handler.build.is_some());
         drop(handler);
         let mut state = create_state();

@@ -1,17 +1,19 @@
 //! flight-compiler: rust-only
 
+// flight-lint: allow-file(f64) Task Q format numbers: glTF JSON, COLLADA, MD5 and OBJ text numbers are JS Numbers held in f64, and binary AWD2/3DS/MD2/STL/glTF f32 fields widen exactly at decode; vertex, material, color and diagnostic lanes stay f32
+
 use flight_entity::{Float32Array, Uint16Array, Uint32Array};
 use flight_importdiagnostics::{ImportDiagnosticDetailValue, ImportDiagnosticSeverity};
 use std::collections::HashMap;
 
 pub struct ThreeDsCamera {
-    pub far: Option<f32>,
-    pub focal_length: f32,
+    pub far: Option<f64>,
+    pub focal_length: f64,
     pub name: String,
-    pub near: Option<f32>,
-    pub position: [f32; 3],
-    pub roll: f32,
-    pub target: [f32; 3],
+    pub near: Option<f64>,
+    pub position: [f64; 3],
+    pub roll: f64,
+    pub target: [f64; 3],
 }
 
 pub struct ThreeDsDropTally {
@@ -22,27 +24,27 @@ pub struct ThreeDsDropTally {
 }
 
 pub struct ThreeDsLight {
-    pub color: [f32; 3],
+    pub color: [f64; 3],
     pub enabled: bool,
-    pub falloff: f32,
-    pub hotspot: f32,
-    pub inner_range: Option<f32>,
-    pub multiplier: f32,
+    pub falloff: f64,
+    pub hotspot: f64,
+    pub inner_range: Option<f64>,
+    pub multiplier: f64,
     pub name: String,
-    pub outer_range: Option<f32>,
-    pub position: [f32; 3],
-    pub target: Option<[f32; 3]>,
+    pub outer_range: Option<f64>,
+    pub position: [f64; 3],
+    pub target: Option<[f64; 3]>,
 }
 
 pub struct ThreeDsMaterial {
-    pub ambient: [f32; 3],
+    pub ambient: [f64; 3],
     pub bump_filename: Option<String>,
-    pub diffuse: [f32; 3],
+    pub diffuse: [f64; 3],
     pub name: String,
-    pub opacity: f32,
+    pub opacity: f64,
     pub opacity_filename: Option<String>,
-    pub shininess: Option<f32>,
-    pub specular: [f32; 3],
+    pub shininess: Option<f64>,
+    pub specular: [f64; 3],
     pub texture_filename: Option<String>,
 }
 
@@ -83,7 +85,7 @@ pub const THREE_DS_LIGHT_OUTER_RANGE: u16 = 0x465a;
 pub const THREE_DS_LIGHT_MULTIPLIER: u16 = 0x465b;
 pub const THREE_DS_CAMERA: u16 = 0x4700;
 pub const THREE_DS_CAMERA_RANGES: u16 = 0x4720;
-pub const THREE_DS_CAMERA_APERTURE_MM: f32 = 36.0;
+pub const THREE_DS_CAMERA_APERTURE_MM: f64 = 36.0;
 pub const THREE_DS_MATERIAL: u16 = 0xafff;
 pub const THREE_DS_MATERIAL_NAME: u16 = 0xa000;
 pub const THREE_DS_MATERIAL_AMBIENT: u16 = 0xa010;

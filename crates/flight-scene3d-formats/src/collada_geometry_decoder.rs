@@ -321,7 +321,7 @@ fn decode_collada_geometry(context: &Ref<ColladaParseContext>) {
                         }
                     }
                     vertex_map.insert(key, index);
-                    vertices.push(vertex);
+                    vertices.push(vertex.map(|value| value as f32));
                     index
                 };
                 indices.push(index as u32);

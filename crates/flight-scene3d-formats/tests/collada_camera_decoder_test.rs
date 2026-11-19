@@ -47,7 +47,7 @@ mod collada_camera_decoder {
         let projection = projection.read().unwrap();
         assert_eq!(projection.aspect, 1.5);
         // D1 f32 bound (TS: 0.000005)
-        assert!(((projection.fov_y as f64) - std::f64::consts::PI / 4.0).abs() < 0.000005);
+        assert!((projection.fov_y - std::f64::consts::PI / 4.0).abs() < 0.000005);
         assert_eq!(
             (
                 camera.transform.position.x,
@@ -129,7 +129,7 @@ mod collada_camera_decoder {
         let projection = projection.read().unwrap();
         assert_eq!(projection.aspect, 1.0);
         // D1 f32 bound (TS: 0.000005)
-        assert!(((projection.fov_y as f64) - std::f64::consts::PI / 3.0).abs() < 0.000005);
+        assert!((projection.fov_y - std::f64::consts::PI / 3.0).abs() < 0.000005);
         let diagnostics = result.diagnostics.read().unwrap();
         let diagnostic = diagnostics
             .iter()

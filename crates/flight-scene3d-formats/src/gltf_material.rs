@@ -1,5 +1,7 @@
 //! flight-compiler: rust-only
 
+// flight-lint: allow-file(f64) Task Q format numbers: glTF JSON, COLLADA, MD5 and OBJ text numbers are JS Numbers held in f64, and binary AWD2/3DS/MD2/STL/glTF f32 fields widen exactly at decode; vertex, material, color and diagnostic lanes stay f32
+
 use crate::gltf_accessor::{GltfAccessorReader, gltf_integer_field};
 use crate::gltf_container::decode_gltf_base64;
 use crate::gltf_diagnostics::tally_gltf_numbers;
@@ -152,7 +154,7 @@ pub(crate) fn build_gltf_image_reference(
                 ImportDiagnosticSeverity::Drop,
                 "gltf.image-bufferview-out-of-range",
                 &[
-                    ("firstBufferView", view_number),
+                    ("firstBufferView", view_number as f32),
                     ("firstImage", image_index as f32),
                 ],
             );
@@ -181,7 +183,7 @@ pub(crate) fn build_gltf_image_reference(
                 ImportDiagnosticSeverity::Drop,
                 "gltf.image-bufferview-out-of-range",
                 &[
-                    ("firstBufferView", view_number),
+                    ("firstBufferView", view_number as f32),
                     ("firstImage", image_index as f32),
                 ],
             );
@@ -291,25 +293,25 @@ pub(crate) fn gltf_material_to_pbr(
     out.base_color_map = base_color_map;
     out.emissive = emissive;
     out.emissive_map = emissive_map;
-    out.metallic = metallic;
+    out.metallic = metallic as f32;
     out.metallic_roughness_map = metallic_roughness_map;
     out.normal_map = normal_map;
-    out.normal_scale = normal_scale;
+    out.normal_scale = normal_scale as f32;
     out.occlusion_map = occlusion_map;
-    out.occlusion_strength = occlusion_strength;
-    out.roughness = roughness;
+    out.occlusion_strength = occlusion_strength as f32;
+    out.roughness = roughness as f32;
     out.alpha_mode = match alpha_mode.as_deref() {
         Some("MASK") => MaterialAlphaMode::Mask,
         Some("BLEND") => MaterialAlphaMode::Blend,
         _ => MaterialAlphaMode::Opaque,
     };
-    out.alpha_cutoff = alpha_cutoff.unwrap_or(0.5);
+    out.alpha_cutoff = (alpha_cutoff.unwrap_or(0.5)) as f32;
     out.double_sided = double_sided.unwrap_or(false);
     out.name = name;
     return Arc::new(RwLock::new(out));
 }
 
-fn gltf_texture_filter(value: f32) -> Option<TextureFilter> {
+fn gltf_texture_filter(value: f64) -> Option<TextureFilter> {
     return match value {
         9728.0 => Some(TextureFilter::Nearest),
         9729.0 => Some(TextureFilter::Linear),
@@ -321,7 +323,7 @@ fn gltf_texture_filter(value: f32) -> Option<TextureFilter> {
     };
 }
 
-fn gltf_texture_wrap(value: f32) -> Option<TextureWrap> {
+fn gltf_texture_wrap(value: f64) -> Option<TextureWrap> {
     return match value {
         10497.0 => Some(TextureWrap::Repeat),
         33071.0 => Some(TextureWrap::ClampToEdge),
@@ -330,13 +332,13 @@ fn gltf_texture_wrap(value: f32) -> Option<TextureWrap> {
     };
 }
 
-pub(crate) fn pack_gltf_linear_color(factor: &[f32], channels: usize) -> u32 {
+pub(crate) fn pack_gltf_linear_color(factor: &[f64], channels: usize) -> u32 {
     let mut color = allocate_linear_color();
-    color.r = factor.first().copied().unwrap_or(0.0);
-    color.g = factor.get(1).copied().unwrap_or(0.0);
-    color.b = factor.get(2).copied().unwrap_or(0.0);
+    color.r = (factor.first().copied().unwrap_or(0.0)) as f32;
+    color.g = (factor.get(1).copied().unwrap_or(0.0)) as f32;
+    color.b = (factor.get(2).copied().unwrap_or(0.0)) as f32;
     color.a = if channels == 4 {
-        factor.get(3).copied().unwrap_or(0.0)
+        (factor.get(3).copied().unwrap_or(0.0)) as f32
     } else {
         1.0
     };
@@ -408,7 +410,7 @@ pub(crate) fn resolve_gltf_texture(
             resolver.reader.drops.as_ref(),
             ImportDiagnosticSeverity::Recover,
             "gltf.texture-source-missing",
-            &[("firstTexture", index_number)],
+            &[("firstTexture", index_number as f32)],
         );
         return None;
     };
@@ -420,7 +422,7 @@ pub(crate) fn resolve_gltf_texture(
             resolver.reader.drops.as_ref(),
             ImportDiagnosticSeverity::Recover,
             "gltf.texture-image-unresolved",
-            &[("firstImage", source_number)],
+            &[("firstImage", source_number as f32)],
         );
         return None;
     };
@@ -438,8 +440,8 @@ pub(crate) fn resolve_gltf_texture(
             ImportDiagnosticSeverity::Recover,
             "gltf.texcoord-set-unsupported",
             &[
-                ("firstTexture", index_number),
-                ("firstUvSet", requested_uv_set),
+                ("firstTexture", index_number as f32),
+                ("firstUvSet", requested_uv_set as f32),
             ],
         );
     }

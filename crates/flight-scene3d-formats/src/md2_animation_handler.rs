@@ -1,5 +1,7 @@
 //! flight-compiler: target-native
 
+// flight-lint: allow-file(f64) Task Q format numbers: glTF JSON, COLLADA, MD5 and OBJ text numbers are JS Numbers held in f64, and binary AWD2/3DS/MD2/STL/glTF f32 fields widen exactly at decode; vertex, material, color and diagnostic lanes stay f32
+
 use crate::md2_schema::MD2_FRAME_FPS;
 use crate::md2_types::{Md2Frame, Md2SectionHandler};
 use crate::stl_features::is_stl_whitespace;
@@ -40,7 +42,7 @@ fn build_md2_action_clip(
     let mut values = vec![0.0; count * target_count];
     for i in 0..count {
         let frame = start_frame + i;
-        times[i] = i as f32 / MD2_FRAME_FPS;
+        times[i] = i as f64 / MD2_FRAME_FPS;
         if frame >= 1 {
             values[i * target_count + frame - 1] = 1.0;
         }

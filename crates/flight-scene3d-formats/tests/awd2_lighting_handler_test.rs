@@ -18,7 +18,7 @@ fn aim_of(light: &Scene3DDocumentLight) -> [f64; 3] {
     let source = create_vector3(0.0, 0.0, -1.0);
     let mut aim = create_vector3(0.0, 0.0, 0.0);
     rotate_vector3_by_quaternion(&mut aim, &source, &light.transform.rotation);
-    return [aim.x, aim.y, aim.z].map(|value| (f64::from(value) * 1e6 + 0.5).floor() / 1e6 + 0.0);
+    return [aim.x, aim.y, aim.z].map(|value| (value * 1e6 + 0.5).floor() / 1e6 + 0.0);
 }
 
 fn light_body(
@@ -73,7 +73,7 @@ mod awd2_light_handler {
     fn claims_lights_with_real_parse_and_lighting_build_callbacks() {
         let handler = AWD2_LIGHT_HANDLER.read().unwrap();
         assert_eq!(handler.block_types, [AWD2_BLOCK_LIGHT]);
-        assert_eq!(handler.build_phase, Some(AWD2_BUILD_PHASE_LIGHTING as f32));
+        assert_eq!(handler.build_phase, Some(AWD2_BUILD_PHASE_LIGHTING as f64));
         assert!(handler.build.is_some());
         assert_ne!(handler.deferred, Some(true));
     }
@@ -442,7 +442,7 @@ mod awd2_light_picker_handler {
     fn claims_pickers_with_real_parse_and_lighting_build_callbacks() {
         let handler = AWD2_LIGHT_PICKER_HANDLER.read().unwrap();
         assert_eq!(handler.block_types, [AWD2_BLOCK_LIGHT_PICKER]);
-        assert_eq!(handler.build_phase, Some(AWD2_BUILD_PHASE_LIGHTING as f32));
+        assert_eq!(handler.build_phase, Some(AWD2_BUILD_PHASE_LIGHTING as f64));
         assert!(handler.build.is_some());
         assert_ne!(handler.deferred, Some(true));
     }

@@ -50,7 +50,7 @@ struct ObjMaterialBucket {
     name: String,
     dedup: HashMap<String, u32>,
     indices: Vec<u32>,
-    vertices: Vec<f64>,
+    vertices: Vec<f32>,
 }
 
 struct ObjMaterialIndex {
@@ -111,7 +111,7 @@ fn append_obj_topology_mesh(
     if elements.is_empty() {
         return;
     }
-    let mut vertices = Vec::new();
+    let mut vertices = Vec::<f32>::new();
     let mut indices = Vec::new();
     let mut dedup = HashMap::new();
     for source in elements {
@@ -159,7 +159,7 @@ fn flush_obj_group(
     cache: &mut Vec<ObjMaterialIndex>,
     mut diagnostics: Option<&mut Vec<ImportDiagnostic>>,
 ) {
-    let mut vertices = Vec::new();
+    let mut vertices = Vec::<f32>::new();
     let mut indices = Vec::new();
     let mut subsets = Vec::new();
     let mut materials = Vec::new();
@@ -170,7 +170,7 @@ fn flush_obj_group(
         let vertex_base = (vertices.len() / CANONICAL_FLOATS_PER_VERTEX) as u32;
         let index_offset = indices.len() as u32;
         indices.extend(bucket.indices.iter().map(|index| *index + vertex_base));
-        vertices.extend(bucket.vertices.iter().map(|value| *value as f32));
+        vertices.extend(bucket.vertices.iter().map(|value| *value));
         subsets.push(MeshSubset {
             index_count: bucket.indices.len() as u32,
             index_offset,
@@ -362,21 +362,27 @@ fn parse_obj_face_vertex(
         return Some(*index);
     }
     let index = (bucket.vertices.len() / CANONICAL_FLOATS_PER_VERTEX) as u32;
-    bucket
-        .vertices
-        .extend_from_slice(&attributes.positions[position * 3..position * 3 + 3]);
+    bucket.vertices.extend(
+        attributes.positions[position * 3..position * 3 + 3]
+            .iter()
+            .map(|value| *value as f32),
+    );
     if let Some(normal) = normal {
-        bucket
-            .vertices
-            .extend_from_slice(&attributes.normals[normal * 3..normal * 3 + 3]);
+        bucket.vertices.extend(
+            attributes.normals[normal * 3..normal * 3 + 3]
+                .iter()
+                .map(|value| *value as f32),
+        );
     } else {
         bucket.vertices.extend_from_slice(&[0.0; 3]);
     }
     bucket.vertices.extend_from_slice(&[0.0; 4]);
     if let Some(uv) = uv {
-        bucket
-            .vertices
-            .extend_from_slice(&attributes.uvs[uv * 2..uv * 2 + 2]);
+        bucket.vertices.extend(
+            attributes.uvs[uv * 2..uv * 2 + 2]
+                .iter()
+                .map(|value| *value as f32),
+        );
     } else {
         bucket.vertices.extend_from_slice(&[0.0; 2]);
     }

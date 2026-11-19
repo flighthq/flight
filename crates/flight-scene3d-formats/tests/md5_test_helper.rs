@@ -28,7 +28,7 @@ pub fn joint(name: &str, parent_index: i32, position_y: f32) -> Md5Joint {
         orientation_z: 0.0,
         parent_index,
         position_x: 0.0,
-        position_y,
+        position_y: f64::from(position_y),
         position_z: 0.0,
     };
 }

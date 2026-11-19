@@ -1,32 +1,34 @@
 //! flight-compiler: rust-only
 
+// flight-lint: allow-file(f64) Task Q format numbers: glTF JSON, COLLADA, MD5 and OBJ text numbers are JS Numbers held in f64, and binary AWD2/3DS/MD2/STL/glTF f32 fields widen exactly at decode; vertex, material, color and diagnostic lanes stay f32
+
 use flight_entity::{Record, Ref, Unknown};
 
 pub struct GltfAccessor {
-    pub buffer_view: Option<f32>,
-    pub byte_offset: Option<f32>,
+    pub buffer_view: Option<f64>,
+    pub byte_offset: Option<f64>,
     pub component_type: GltfComponentType,
-    pub count: f32,
+    pub count: f64,
     pub normalized: Option<bool>,
     pub r#type: String,
     pub sparse: Option<Ref<GltfAccessorSparse>>,
 }
 
 pub struct GltfAccessorSparse {
-    pub count: f32,
+    pub count: f64,
     pub indices: Ref<GltfAccessorSparseIndices>,
     pub values: Ref<GltfAccessorSparseValues>,
 }
 
 pub struct GltfAccessorSparseIndices {
-    pub buffer_view: f32,
-    pub byte_offset: Option<f32>,
+    pub buffer_view: f64,
+    pub byte_offset: Option<f64>,
     pub component_type: GltfComponentType,
 }
 
 pub struct GltfAccessorSparseValues {
-    pub buffer_view: f32,
-    pub byte_offset: Option<f32>,
+    pub buffer_view: f64,
+    pub byte_offset: Option<f64>,
 }
 
 pub struct GltfAnimation {
@@ -36,18 +38,18 @@ pub struct GltfAnimation {
 }
 
 pub struct GltfAnimationChannel {
-    pub sampler: f32,
+    pub sampler: f64,
     pub target: Ref<GltfAnimationTarget>,
 }
 
 pub struct GltfAnimationSampler {
-    pub input: f32,
-    pub output: f32,
+    pub input: f64,
+    pub output: f64,
     pub interpolation: Option<String>,
 }
 
 pub struct GltfAnimationTarget {
-    pub node: Option<f32>,
+    pub node: Option<f64>,
     pub path: String,
 }
 
@@ -56,15 +58,15 @@ pub struct GltfAsset {
 }
 
 pub struct GltfBuffer {
-    pub byte_length: f32,
+    pub byte_length: f64,
     pub uri: Option<String>,
 }
 
 pub struct GltfBufferView {
-    pub buffer: f32,
-    pub byte_length: f32,
-    pub byte_offset: Option<f32>,
-    pub byte_stride: Option<f32>,
+    pub buffer: f64,
+    pub byte_length: f64,
+    pub byte_offset: Option<f64>,
+    pub byte_stride: Option<f64>,
 }
 
 pub struct GltfCamera {
@@ -77,7 +79,7 @@ pub struct GltfCamera {
 pub struct GltfDocument {
     pub asset: Option<Ref<GltfAsset>>,
     pub cameras: Option<Vec<Ref<GltfCamera>>>,
-    pub scene: Option<f32>,
+    pub scene: Option<f64>,
     pub scenes: Option<Vec<Ref<GltfScene3D>>>,
     pub nodes: Option<Vec<Ref<GltfNode>>>,
     pub meshes: Option<Vec<Ref<GltfMesh>>>,
@@ -101,14 +103,14 @@ pub struct GltfDocumentExtensions {
 }
 
 pub struct GltfDracoMeshCompression {
-    pub attributes: Ref<Record<f32>>,
-    pub buffer_view: f32,
+    pub attributes: Ref<Record<f64>>,
+    pub buffer_view: f64,
 }
 
 pub struct GltfImage {
     pub uri: Option<String>,
     pub mime_type: Option<String>,
-    pub buffer_view: Option<f32>,
+    pub buffer_view: Option<f64>,
 }
 
 pub struct GltfMaterial {
@@ -117,9 +119,9 @@ pub struct GltfMaterial {
     pub normal_texture: Option<Ref<GltfNormalTextureInfo>>,
     pub occlusion_texture: Option<Ref<GltfOcclusionTextureInfo>>,
     pub emissive_texture: Option<Ref<GltfTextureInfo>>,
-    pub emissive_factor: Option<Vec<f32>>,
+    pub emissive_factor: Option<Vec<f64>>,
     pub alpha_mode: Option<String>,
-    pub alpha_cutoff: Option<f32>,
+    pub alpha_cutoff: Option<f64>,
     pub double_sided: Option<bool>,
     pub extensions: Option<Ref<GltfMaterialExtensions>>,
 }
@@ -140,67 +142,67 @@ pub struct GltfMaterialExtensions {
 }
 
 pub struct GltfMaterialsAnisotropy {
-    pub anisotropy_rotation: Option<f32>,
-    pub anisotropy_strength: Option<f32>,
+    pub anisotropy_rotation: Option<f64>,
+    pub anisotropy_strength: Option<f64>,
     pub anisotropy_texture: Option<Ref<GltfTextureInfo>>,
 }
 
 pub struct GltfMaterialsClearcoat {
-    pub clearcoat_factor: Option<f32>,
+    pub clearcoat_factor: Option<f64>,
     pub clearcoat_normal_texture: Option<Ref<GltfNormalTextureInfo>>,
-    pub clearcoat_roughness_factor: Option<f32>,
+    pub clearcoat_roughness_factor: Option<f64>,
     pub clearcoat_roughness_texture: Option<Ref<GltfTextureInfo>>,
     pub clearcoat_texture: Option<Ref<GltfTextureInfo>>,
 }
 
 pub struct GltfMaterialsEmissiveStrength {
-    pub emissive_strength: Option<f32>,
+    pub emissive_strength: Option<f64>,
 }
 
 pub struct GltfMaterialsIor {
-    pub ior: Option<f32>,
+    pub ior: Option<f64>,
 }
 
 pub struct GltfMaterialsIridescence {
-    pub iridescence_factor: Option<f32>,
-    pub iridescence_ior: Option<f32>,
+    pub iridescence_factor: Option<f64>,
+    pub iridescence_ior: Option<f64>,
     pub iridescence_texture: Option<Ref<GltfTextureInfo>>,
-    pub iridescence_thickness_maximum: Option<f32>,
-    pub iridescence_thickness_minimum: Option<f32>,
+    pub iridescence_thickness_maximum: Option<f64>,
+    pub iridescence_thickness_minimum: Option<f64>,
     pub iridescence_thickness_texture: Option<Ref<GltfTextureInfo>>,
 }
 
 pub struct GltfMaterialsPbrSpecularGlossiness {
-    pub diffuse_factor: Option<Vec<f32>>,
+    pub diffuse_factor: Option<Vec<f64>>,
     pub diffuse_texture: Option<Ref<GltfTextureInfo>>,
-    pub glossiness_factor: Option<f32>,
-    pub specular_factor: Option<Vec<f32>>,
+    pub glossiness_factor: Option<f64>,
+    pub specular_factor: Option<Vec<f64>>,
     pub specular_glossiness_texture: Option<Ref<GltfTextureInfo>>,
 }
 
 pub struct GltfMaterialsSheen {
-    pub sheen_color_factor: Option<Vec<f32>>,
+    pub sheen_color_factor: Option<Vec<f64>>,
     pub sheen_color_texture: Option<Ref<GltfTextureInfo>>,
-    pub sheen_roughness_factor: Option<f32>,
+    pub sheen_roughness_factor: Option<f64>,
     pub sheen_roughness_texture: Option<Ref<GltfTextureInfo>>,
 }
 
 pub struct GltfMaterialsSpecular {
-    pub specular_color_factor: Option<Vec<f32>>,
+    pub specular_color_factor: Option<Vec<f64>>,
     pub specular_color_texture: Option<Ref<GltfTextureInfo>>,
-    pub specular_factor: Option<f32>,
+    pub specular_factor: Option<f64>,
     pub specular_texture: Option<Ref<GltfTextureInfo>>,
 }
 
 pub struct GltfMaterialsTransmission {
-    pub transmission_factor: Option<f32>,
+    pub transmission_factor: Option<f64>,
     pub transmission_texture: Option<Ref<GltfTextureInfo>>,
 }
 
 pub struct GltfMaterialsVolume {
-    pub attenuation_color: Option<Vec<f32>>,
-    pub attenuation_distance: Option<f32>,
-    pub thickness_factor: Option<f32>,
+    pub attenuation_color: Option<Vec<f64>>,
+    pub attenuation_distance: Option<f64>,
+    pub thickness_factor: Option<f64>,
     pub thickness_texture: Option<Ref<GltfTextureInfo>>,
 }
 
@@ -209,25 +211,25 @@ pub struct GltfMaterialsUnlit {}
 pub struct GltfMesh {
     pub name: Option<String>,
     pub primitives: Vec<Ref<GltfPrimitive>>,
-    pub weights: Option<Vec<f32>>,
+    pub weights: Option<Vec<f64>>,
 }
 
 pub struct GltfMorphTarget {
-    pub normal: Option<f32>,
-    pub position: Option<f32>,
-    pub tangent: Option<f32>,
+    pub normal: Option<f64>,
+    pub position: Option<f64>,
+    pub tangent: Option<f64>,
 }
 
 pub struct GltfNode {
-    pub camera: Option<f32>,
+    pub camera: Option<f64>,
     pub name: Option<String>,
-    pub children: Option<Vec<f32>>,
-    pub mesh: Option<f32>,
-    pub skin: Option<f32>,
-    pub matrix: Option<Vec<f32>>,
-    pub translation: Option<Vec<f32>>,
-    pub rotation: Option<Vec<f32>>,
-    pub scale: Option<Vec<f32>>,
+    pub children: Option<Vec<f64>>,
+    pub mesh: Option<f64>,
+    pub skin: Option<f64>,
+    pub matrix: Option<Vec<f64>>,
+    pub translation: Option<Vec<f64>>,
+    pub rotation: Option<Vec<f64>>,
+    pub scale: Option<Vec<f64>>,
     pub extensions: Option<Ref<GltfNodeExtensions>>,
 }
 
@@ -237,57 +239,57 @@ pub struct GltfNodeExtensions {
 }
 
 pub struct GltfNodePunctualLight {
-    pub light: f32,
+    pub light: f64,
 }
 
 pub struct GltfNormalTextureInfo {
     pub fields: GltfTextureInfo,
-    pub scale: Option<f32>,
+    pub scale: Option<f64>,
 }
 
 pub struct GltfOcclusionTextureInfo {
     pub fields: GltfTextureInfo,
-    pub strength: Option<f32>,
+    pub strength: Option<f64>,
 }
 
 pub struct GltfOrthographicCamera {
-    pub xmag: f32,
-    pub ymag: f32,
-    pub zfar: f32,
-    pub znear: f32,
+    pub xmag: f64,
+    pub ymag: f64,
+    pub zfar: f64,
+    pub znear: f64,
 }
 
 pub struct GltfPbrMetallicRoughness {
-    pub base_color_factor: Option<Vec<f32>>,
+    pub base_color_factor: Option<Vec<f64>>,
     pub base_color_texture: Option<Ref<GltfTextureInfo>>,
-    pub metallic_factor: Option<f32>,
-    pub roughness_factor: Option<f32>,
+    pub metallic_factor: Option<f64>,
+    pub roughness_factor: Option<f64>,
     pub metallic_roughness_texture: Option<Ref<GltfTextureInfo>>,
 }
 
 pub struct GltfPerspectiveCamera {
-    pub aspect_ratio: Option<f32>,
-    pub yfov: f32,
-    pub zfar: Option<f32>,
-    pub znear: f32,
+    pub aspect_ratio: Option<f64>,
+    pub yfov: f64,
+    pub zfar: Option<f64>,
+    pub znear: f64,
 }
 
 pub struct GltfPrimitive {
     pub attributes: Ref<GltfPrimitiveAttributes>,
-    pub indices: Option<f32>,
-    pub material: Option<f32>,
-    pub mode: Option<f32>,
+    pub indices: Option<f64>,
+    pub material: Option<f64>,
+    pub mode: Option<f64>,
     pub extensions: Option<Ref<GltfPrimitiveExtensions>>,
     pub targets: Option<Vec<Ref<GltfMorphTarget>>>,
 }
 
 pub struct GltfPrimitiveAttributes {
-    pub joints_0: Option<f32>,
-    pub normal: Option<f32>,
-    pub position: Option<f32>,
-    pub tangent: Option<f32>,
-    pub texcoord_0: Option<f32>,
-    pub weights_0: Option<f32>,
+    pub joints_0: Option<f64>,
+    pub normal: Option<f64>,
+    pub position: Option<f64>,
+    pub tangent: Option<f64>,
+    pub texcoord_0: Option<f64>,
+    pub weights_0: Option<f64>,
 }
 
 pub struct GltfPrimitiveExtensions {
@@ -296,10 +298,10 @@ pub struct GltfPrimitiveExtensions {
 }
 
 pub struct GltfPunctualLight {
-    pub color: Option<Vec<f32>>,
-    pub intensity: Option<f32>,
+    pub color: Option<Vec<f64>>,
+    pub intensity: Option<f64>,
     pub name: Option<String>,
-    pub range: Option<f32>,
+    pub range: Option<f64>,
     pub spot: Option<Ref<GltfPunctualLightSpot>>,
     pub r#type: String,
 }
@@ -309,37 +311,37 @@ pub struct GltfPunctualLights {
 }
 
 pub struct GltfPunctualLightSpot {
-    pub inner_cone_angle: Option<f32>,
-    pub outer_cone_angle: Option<f32>,
+    pub inner_cone_angle: Option<f64>,
+    pub outer_cone_angle: Option<f64>,
 }
 
 pub struct GltfSampler {
-    pub mag_filter: Option<f32>,
-    pub min_filter: Option<f32>,
-    pub wrap_s: Option<f32>,
-    pub wrap_t: Option<f32>,
+    pub mag_filter: Option<f64>,
+    pub min_filter: Option<f64>,
+    pub wrap_s: Option<f64>,
+    pub wrap_t: Option<f64>,
 }
 
 pub struct GltfScene3D {
     pub name: Option<String>,
-    pub nodes: Option<Vec<f32>>,
+    pub nodes: Option<Vec<f64>>,
 }
 
 pub struct GltfSkin {
     pub name: Option<String>,
-    pub inverse_bind_matrices: Option<f32>,
-    pub joints: Vec<f32>,
-    pub skeleton: Option<f32>,
+    pub inverse_bind_matrices: Option<f64>,
+    pub joints: Vec<f64>,
+    pub skeleton: Option<f64>,
 }
 
 pub struct GltfTexture {
     pub extensions: Option<Ref<GltfTextureExtensions>>,
-    pub sampler: Option<f32>,
-    pub source: Option<f32>,
+    pub sampler: Option<f64>,
+    pub source: Option<f64>,
 }
 
 pub struct GltfTextureBasisu {
-    pub source: f32,
+    pub source: f64,
 }
 
 pub struct GltfTextureExtensions {
@@ -348,8 +350,8 @@ pub struct GltfTextureExtensions {
 }
 
 pub struct GltfTextureInfo {
-    pub index: f32,
-    pub tex_coord: Option<f32>,
+    pub index: f64,
+    pub tex_coord: Option<f64>,
     pub extensions: Option<Ref<GltfTextureInfoExtensions>>,
 }
 
@@ -358,13 +360,13 @@ pub struct GltfTextureInfoExtensions {
 }
 
 pub struct GltfTextureTransform {
-    pub offset: Option<Vec<f32>>,
-    pub rotation: Option<f32>,
-    pub scale: Option<Vec<f32>>,
-    pub tex_coord: Option<f32>,
+    pub offset: Option<Vec<f64>>,
+    pub rotation: Option<f64>,
+    pub scale: Option<Vec<f64>>,
+    pub tex_coord: Option<f64>,
 }
 
-pub type GltfComponentType = f32;
+pub type GltfComponentType = f64;
 
 pub trait GltfTextureInfoAccess: Send + Sync {
     fn gltf_texture_info(&self) -> &GltfTextureInfo;

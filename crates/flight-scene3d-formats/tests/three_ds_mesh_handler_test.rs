@@ -397,9 +397,9 @@ mod three_ds_mesh_handler {
         transpose_matrix4(&mut inverse, &source);
         let base = indices[0] as usize * 12;
         let normal = create_vector4(
-            geometry.vertices[base + 3],
-            geometry.vertices[base + 4],
-            geometry.vertices[base + 5],
+            f64::from(geometry.vertices[base + 3]),
+            f64::from(geometry.vertices[base + 4]),
+            f64::from(geometry.vertices[base + 5]),
             0.0,
         );
         let mut transformed = create_vector4(0.0, 0.0, 0.0, 0.0);
@@ -677,15 +677,19 @@ mod three_ds_mesh_handler {
             for vertex in 0..geometry.vertices.len() / 12 {
                 let base = vertex * 12;
                 let point = create_vector3(
-                    geometry.vertices[base],
-                    geometry.vertices[base + 1],
-                    geometry.vertices[base + 2],
+                    f64::from(geometry.vertices[base]),
+                    f64::from(geometry.vertices[base + 1]),
+                    f64::from(geometry.vertices[base + 2]),
                 );
                 let mut world = create_vector3(0.0, 0.0, 0.0);
                 matrix4_transform_point(&mut world, &placement, &point);
-                assert!(expected.iter().any(|p| (world.x - p[0]).abs() < 0.0001
-                    && (world.y - p[1]).abs() < 0.0001
-                    && (world.z - p[2]).abs() < 0.0001));
+                assert!(
+                    expected
+                        .iter()
+                        .any(|p| (world.x - f64::from(p[0])).abs() < 0.0001
+                            && (world.y - f64::from(p[1])).abs() < 0.0001
+                            && (world.z - f64::from(p[2])).abs() < 0.0001)
+                );
             }
         }
     }
@@ -719,15 +723,15 @@ mod three_ds_mesh_handler {
             for vertex in 0..3 {
                 let base = vertex * 12;
                 let point = create_vector3(
-                    geometry.vertices[base],
-                    geometry.vertices[base + 1],
-                    geometry.vertices[base + 2],
+                    f64::from(geometry.vertices[base]),
+                    f64::from(geometry.vertices[base + 1]),
+                    f64::from(geometry.vertices[base + 2]),
                 );
                 let mut placed = create_vector3(0.0, 0.0, 0.0);
                 matrix4_transform_point(&mut placed, &placement, &point);
-                close(placed.x, world[vertex * 3]);
-                close(placed.y, world[vertex * 3 + 2]);
-                close(placed.z, -world[vertex * 3 + 1]);
+                close(placed.x as f32, world[vertex * 3]);
+                close(placed.y as f32, world[vertex * 3 + 2]);
+                close(placed.z as f32, -world[vertex * 3 + 1]);
             }
         }
         for pivot in [

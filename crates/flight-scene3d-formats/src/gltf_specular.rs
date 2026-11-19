@@ -57,7 +57,7 @@ fn apply_gltf_specular(context: &Ref<GltfExtensionContext>) {
         let specular_map =
             resolve_gltf_extension_texture(context, info.as_ref(), TextureColorSpace::Linear);
         let mut extension = create_specular_pbr_extension();
-        extension.specular = specular;
+        extension.specular = specular as f32;
         extension.specular_color = specular_color;
         extension.specular_color_map = specular_color_map;
         extension.specular_map = specular_map;

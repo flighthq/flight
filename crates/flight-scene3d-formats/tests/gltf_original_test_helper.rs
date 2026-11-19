@@ -169,11 +169,12 @@ pub fn original_geometry_gltf(
     return json!({"accessors":accessors,"asset":{"version":"2.0"},"bufferViews":views,"buffers":[{"byteLength":bytes.len(),"uri":gltf_data_uri(bytes)}],"meshes":[{"primitives":primitives}],"nodes":[{"mesh":0}],"scene":0,"scenes":[{"nodes":[0]}]});
 }
 
-pub fn assert_original_close5(actual: f32, expected: f64) {
+pub fn assert_original_close5(actual: impl Into<f64>, expected: f64) {
+    let actual: f64 = actual.into();
     // D1 f32 bound (TS: 0.000005)
     let bound = 0.000005_f64.max(4.0 * f32::EPSILON as f64 * expected.abs().max(1.0));
     assert!(
-        (actual as f64 - expected).abs() <= bound,
+        (actual - expected).abs() <= bound,
         "{actual} != {expected}, bound {bound}"
     );
 }
@@ -198,11 +199,12 @@ pub fn with_original_mesh(scene: &Scene3D, check: impl FnOnce(&Mesh)) {
     check(mesh.as_any().downcast_ref::<Mesh>().unwrap());
 }
 
-pub fn assert_original_close2(actual: f32, expected: f64) {
+pub fn assert_original_close2(actual: impl Into<f64>, expected: f64) {
+    let actual: f64 = actual.into();
     // D1 f32 bound (TS: 0.005)
     let bound = 0.005_f64.max(4.0 * f32::EPSILON as f64 * expected.abs().max(1.0));
     assert!(
-        (actual as f64 - expected).abs() <= bound,
+        (actual - expected).abs() <= bound,
         "{actual} != {expected}, bound {bound}"
     );
 }

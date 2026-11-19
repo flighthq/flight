@@ -248,11 +248,11 @@ mod parse_md5_mesh_with_section_handlers {
             "\"root\" -1 ( 10 0 0 ) ( 0 0 0 )\n\"child\" 0 ( 10 5 0 ) ( 0 0 0 )",
         );
         let document = parse_source(&source, None);
-        close(document.nodes[1].transform.position.x, 10.0);
-        close(document.nodes[2].transform.position.x, 0.0);
-        close(document.nodes[2].transform.position.z, -5.0);
-        close(document.skins[0].inverse_bind[1].m[12], -10.0);
-        close(document.skins[0].inverse_bind[1].m[14], 5.0);
+        close((document.nodes[1].transform.position.x) as f32, 10.0);
+        close((document.nodes[2].transform.position.x) as f32, 0.0);
+        close((document.nodes[2].transform.position.z) as f32, -5.0);
+        close((document.skins[0].inverse_bind[1].m[12]) as f32, -10.0);
+        close((document.skins[0].inverse_bind[1].m[14]) as f32, 5.0);
     }
 
     #[test]
@@ -669,7 +669,7 @@ mod parse_md5_mesh_with_section_handlers {
         );
         let captured = captured.lock().unwrap();
         assert_eq!(captured.len(), 2);
-        assert_eq!(captured[0], [f32::INFINITY, 1.25, 0.0, 1.0, 0.0, 0.0, 0.0]);
+        assert_eq!(captured[0], [1e300, 1.25, 0.0, 1.0, 0.0, 0.0, 0.0]);
         assert_eq!(captured[1], [1.0, 0.25, 0.5, 0.0, 0.0, 0.0, -1.0]);
         assert_eq!(diagnostics.len(), 1);
         assert_eq!(diagnostics[0].kind, "md5mesh.joint-orientation-not-unit");

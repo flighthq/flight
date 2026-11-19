@@ -58,9 +58,9 @@ fn indices(rows: &[(&str, i32)]) -> Vec<ColladaIndexEntry> {
 
 fn node(position: [f32; 3], children: Vec<i32>) -> Scene3DDocumentNode {
     let mut transform = create_transform3d();
-    transform.position.x = position[0];
-    transform.position.y = position[1];
-    transform.position.z = position[2];
+    transform.position.x = f64::from(position[0]);
+    transform.position.y = f64::from(position[1]);
+    transform.position.z = f64::from(position[2]);
     return Scene3DDocumentNode {
         children,
         kind: NODE3D_KIND.to_string(),

@@ -1,5 +1,7 @@
 //! flight-compiler: rust-only
 
+// flight-lint: allow-file(f64) Task Q format numbers: glTF JSON, COLLADA, MD5 and OBJ text numbers are JS Numbers held in f64, and binary AWD2/3DS/MD2/STL/glTF f32 fields widen exactly at decode; vertex, material, color and diagnostic lanes stay f32
+
 use crate::gltf_accessor::{
     GltfAccessorReader, gltf_accessor_fault, gltf_integer_field, read_gltf_accessor,
 };
@@ -31,7 +33,7 @@ struct GltfPrimitiveElements {
 pub(crate) fn build_gltf_morph(
     reader: &GltfAccessorReader,
     primitive: &Ref<GltfPrimitive>,
-    mesh_weights: Option<&[f32]>,
+    mesh_weights: Option<&[f64]>,
     base_vertex_count: usize,
 ) -> Option<Ref<MeshMorph>> {
     let source_targets = primitive.read().unwrap().targets.clone()?;
@@ -144,7 +146,10 @@ fn build_gltf_primitive_elements(
                 reader.drops.as_ref(),
                 ImportDiagnosticSeverity::Drop,
                 "gltf.primitive-unsupported-mode",
-                &[("firstMode", primitive.read().unwrap().mode.unwrap_or(4.0))],
+                &[(
+                    "firstMode",
+                    (primitive.read().unwrap().mode.unwrap_or(4.0)) as f32,
+                )],
             );
             return None;
         }
@@ -223,7 +228,7 @@ fn gltf_component_indices(out: &mut Vec<u32>, data: &GltfComponentArray) {
                 .read()
                 .unwrap()
                 .iter()
-                .map(|value| gltf_float_uint32(*value)),
+                .map(|value| gltf_float_uint32(f64::from(*value))),
         ),
         GltfComponentArray::Int8(values) => out.extend(
             values
@@ -263,7 +268,7 @@ fn gltf_component_indices(out: &mut Vec<u32>, data: &GltfComponentArray) {
     }
 }
 
-fn gltf_float_uint32(value: f32) -> u32 {
+fn gltf_float_uint32(value: f64) -> u32 {
     if !value.is_finite() || value == 0.0 {
         return 0;
     }
@@ -319,7 +324,7 @@ pub(crate) fn primitive_gltf_to_geometry(
             reader.drops.as_ref(),
             ImportDiagnosticSeverity::Drop,
             "gltf.primitive-no-position",
-            &[("firstAccessor", position_number)],
+            &[("firstAccessor", position_number as f32)],
         );
         return None;
     }
@@ -364,17 +369,17 @@ pub(crate) fn primitive_gltf_to_geometry(
     } else {
         CANONICAL_FLOATS_PER_VERTEX
     };
-    let mut vertices = vec![0.0; vertex_count * stride];
-    let component = |values: &[f32], index: usize| values.get(index).copied().unwrap_or(f32::NAN);
+    let mut vertices = vec![0.0_f32; vertex_count * stride];
+    let component = |values: &[f64], index: usize| values.get(index).copied().unwrap_or(f64::NAN);
     for vertex in 0..vertex_count {
         let offset = vertex * stride;
         for c in 0..3 {
-            vertices[offset + c] = component(&positions, vertex * 3 + c);
+            vertices[offset + c] = (component(&positions, vertex * 3 + c)) as f32;
         }
         for (channel, width, slot) in [(0, 3, 3), (1, 4, 6), (2, 2, 10)] {
             if let Some(values) = &channels[channel] {
                 for c in 0..width {
-                    vertices[offset + slot + c] = component(values, vertex * width + c);
+                    vertices[offset + slot + c] = (component(values, vertex * width + c)) as f32;
                 }
             }
         }
@@ -382,7 +387,7 @@ pub(crate) fn primitive_gltf_to_geometry(
             let joints = channels[3].as_ref().unwrap();
             let weights = channels[4].as_ref().unwrap();
             for c in 0..4 {
-                vertices[offset + 12 + c] = component(joints, vertex * 4 + c);
+                vertices[offset + 12 + c] = (component(joints, vertex * 4 + c)) as f32;
             }
             let w0 = component(weights, vertex * 4);
             let w1 = component(weights, vertex * 4 + 1);
@@ -391,7 +396,7 @@ pub(crate) fn primitive_gltf_to_geometry(
             let sum = w0 + w1 + w2 + w3;
             let inverse = if sum > 0.0 { 1.0 / sum } else { 0.0 };
             for (c, weight) in [w0, w1, w2, w3].into_iter().enumerate() {
-                vertices[offset + 16 + c] = weight * inverse;
+                vertices[offset + 16 + c] = (weight * inverse) as f32;
             }
         }
     }
@@ -418,7 +423,7 @@ pub(crate) fn primitive_gltf_to_geometry(
                     reader.drops.as_ref(),
                     ImportDiagnosticSeverity::Drop,
                     "gltf.primitive-empty-indices",
-                    &[("firstAccessor", number)],
+                    &[("firstAccessor", number as f32)],
                 );
                 return None;
             }
@@ -460,7 +465,7 @@ fn read_gltf_attribute(
     draco: Option<&Ref<GltfDracoMesh>>,
     semantic: &str,
     index: Option<usize>,
-    number: f32,
+    number: f64,
     expected_type: &str,
 ) -> GltfAccessorData {
     if let Some(draco) = draco {
@@ -479,7 +484,10 @@ fn read_gltf_attribute(
     return if let Some(index) = index {
         read_gltf_accessor(reader, index, Some(expected_type))
     } else {
-        gltf_accessor_fault("gltf.accessor-not-found", &[("firstAccessor", number)])
+        gltf_accessor_fault(
+            "gltf.accessor-not-found",
+            &[("firstAccessor", number as f32)],
+        )
     };
 }
 
@@ -488,10 +496,10 @@ fn read_optional_gltf_attribute(
     draco: Option<&Ref<GltfDracoMesh>>,
     semantic: &str,
     index: Option<usize>,
-    number: f32,
+    number: f64,
     count: usize,
     expected_type: &str,
-) -> Option<Vec<f32>> {
+) -> Option<Vec<f64>> {
     let result = read_gltf_attribute(reader, draco, semantic, index, number, expected_type);
     if let Some(fault) = result.fault {
         report_gltf_accessor_fault(
@@ -507,7 +515,7 @@ fn read_optional_gltf_attribute(
             ImportDiagnosticSeverity::Recover,
             "gltf.accessor-count-mismatch",
             &[
-                ("firstAccessor", number),
+                ("firstAccessor", number as f32),
                 ("firstActual", result.count as f32),
                 ("firstExpected", count as f32),
             ],

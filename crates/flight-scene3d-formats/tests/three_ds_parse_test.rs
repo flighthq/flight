@@ -15,7 +15,7 @@ mod pack_three_ds_color {
         assert_eq!(pack_three_ds_color(&[0.0, 0.0, 1.0], None), 0x0000ffff);
         assert_eq!(pack_three_ds_color(&[1.0; 3], Some(0.5)), 0xffffff80);
         assert_eq!(
-            pack_three_ds_color(&[2.0, -1.0, f32::NAN], Some(0.0)),
+            pack_three_ds_color(&[2.0, -1.0, f64::from(f32::NAN)], Some(0.0)),
             0xff000000
         );
     }
@@ -190,7 +190,7 @@ mod read_chunk_end {
                 header[cursor + 2..cursor + 6].copy_from_slice(&length.to_le_bytes());
                 let end = cursor + length as usize;
                 assert_eq!(
-                    i64::from(read_chunk_end(&header, cursor, end)),
+                    read_chunk_end(&header, cursor, end),
                     cursor as i64 + i64::from(length)
                 );
                 assert_eq!(read_chunk_end(&header, cursor, end - 1), -1);

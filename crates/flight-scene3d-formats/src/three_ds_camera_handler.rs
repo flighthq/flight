@@ -1,5 +1,7 @@
 //! flight-compiler: target-native
 
+// flight-lint: allow-file(f64) Task Q format numbers: glTF JSON, COLLADA, MD5 and OBJ text numbers are JS Numbers held in f64, and binary AWD2/3DS/MD2/STL/glTF f32 fields widen exactly at decode; vertex, material, color and diagnostic lanes stay f32
+
 use crate::shared::convert_positions_z_up_to_y_up;
 use crate::three_ds_parse::{read_chunk_end, tally_three_ds_drop};
 use crate::three_ds_read::{read_three_ds_f32, read_three_ds_u16};
@@ -85,7 +87,7 @@ fn append_three_ds_camera_document(document: &mut Scene3DDocument, camera: &Thre
     });
 }
 
-fn convert_three_ds_point_z_up_to_y_up(point: &[f32; 3]) -> Vector3 {
+fn convert_three_ds_point_z_up_to_y_up(point: &[f64; 3]) -> Vector3 {
     let mut values = *point;
     convert_positions_z_up_to_y_up(&mut values, None, None);
     return create_vector3(values[0], values[1], values[2]);
@@ -151,12 +153,12 @@ pub fn parse_three_ds_camera(
         cursor = chunk_end;
     }
     return Some(ThreeDsCamera {
-        far,
-        focal_length,
+        far: far.map(f64::from),
+        focal_length: f64::from(focal_length),
         name: name.to_string(),
-        near,
-        position,
-        roll,
-        target,
+        near: near.map(f64::from),
+        position: position.map(f64::from),
+        roll: f64::from(roll),
+        target: target.map(f64::from),
     });
 }

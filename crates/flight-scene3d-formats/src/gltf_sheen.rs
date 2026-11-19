@@ -54,7 +54,7 @@ fn apply_gltf_sheen(context: &Ref<GltfExtensionContext>) {
         let mut extension = create_sheen_pbr_extension();
         extension.sheen_color = sheen_color;
         extension.sheen_color_map = sheen_color_map;
-        extension.sheen_roughness = sheen_roughness;
+        extension.sheen_roughness = sheen_roughness as f32;
         extension.sheen_roughness_map = sheen_roughness_map;
         let document = context.read().unwrap().document.clone();
         attach_gltf_pbr_extension(

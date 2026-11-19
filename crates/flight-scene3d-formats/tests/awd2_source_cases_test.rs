@@ -532,8 +532,8 @@ mod create_scene3d_from_awd2 {
         ] {
             // D1 f32 bound (TS: 0.5e-2)
             assert!(
-                (matrix.m[index] - expected).abs()
-                    <= 0.5e-2f32.max(4.0 * f32::EPSILON * expected.abs().max(1.0))
+                (matrix.m[index] - f64::from(expected)).abs()
+                    <= f64::from(0.5e-2f32.max(4.0 * f32::EPSILON * expected.abs().max(1.0)))
             );
         }
     }

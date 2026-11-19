@@ -69,7 +69,8 @@ fn build_stl_geometry(facets: &[StlFacet], policy: StlNormalPolicy) -> Option<Me
     if facets.is_empty() {
         return None;
     }
-    let mut vertices = vec![0.0; facets.len() * 3 * CANONICAL_FLOATS_PER_VERTEX].into_boxed_slice();
+    let mut vertices =
+        vec![0.0_f32; facets.len() * 3 * CANONICAL_FLOATS_PER_VERTEX].into_boxed_slice();
     let mut offset = 0;
     for facet in facets {
         let normal = resolve_facet_normal(facet, policy);

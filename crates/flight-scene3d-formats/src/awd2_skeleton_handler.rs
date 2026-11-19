@@ -1,5 +1,7 @@
 //! flight-compiler: target-native
 
+// flight-lint: allow-file(f64) Task Q format numbers: glTF JSON, COLLADA, MD5 and OBJ text numbers are JS Numbers held in f64, and binary AWD2/3DS/MD2/STL/glTF f32 fields widen exactly at decode; vertex, material, color and diagnostic lanes stay f32
+
 use crate::awd2_parse::report_awd_diagnostic;
 use crate::awd2_reader::{
     Awd2StringRead, awd_transform_to_matrix4, has_non_unit_scale, read_awd_data_value,
@@ -33,7 +35,7 @@ struct AwdSkeletonDocumentBuild {
 pub static AWD2_SKELETON_ANIMATION_HANDLER: LazyLock<Ref<Awd2BlockHandler>> = LazyLock::new(|| {
     Arc::new(RwLock::new(Awd2BlockHandler {
         block_types: vec![AWD2_BLOCK_SKELETON_ANIMATION],
-        build_phase: Some(AWD2_BUILD_PHASE_SKELETON_ANIMATION as f32),
+        build_phase: Some(AWD2_BUILD_PHASE_SKELETON_ANIMATION as f64),
         deferred: Some(true),
         parse: Arc::new(|state, block| {
             if let Some(animation) =
@@ -71,7 +73,7 @@ pub static AWD2_SKELETON_ANIMATION_HANDLER: LazyLock<Ref<Awd2BlockHandler>> = La
 pub static AWD2_SKELETON_BLOCK_HANDLER: LazyLock<Ref<Awd2BlockHandler>> = LazyLock::new(|| {
     Arc::new(RwLock::new(Awd2BlockHandler {
         block_types: vec![AWD2_BLOCK_SKELETON],
-        build_phase: Some(AWD2_BUILD_PHASE_SKELETON as f32),
+        build_phase: Some(AWD2_BUILD_PHASE_SKELETON as f64),
         deferred: None,
         parse: Arc::new(|state, block| {
             if let Some(skeleton) = parse_skeleton_block(block, state.diagnostics.as_ref()) {
@@ -210,11 +212,7 @@ fn build_awd_document_animation(
                 .map(|entry| &entry.value);
             if let Some(pose) = pose {
                 if let Some(Some(transform)) = pose.joint_transforms.get(joint) {
-                    translations.extend([
-                        transform[9] as f32,
-                        transform[10] as f32,
-                        transform[11] as f32,
-                    ]);
+                    translations.extend([transform[9], transform[10], transform[11]]);
                     awd_transform_to_matrix4(&mut pose_matrix, transform);
                     decompose_matrix4_to_transform3d(&mut pose_transform, &pose_matrix);
                     rotations.extend([
@@ -424,7 +422,7 @@ fn parse_skeleton_animation_block(
             skeleton_truncated(diagnostics, "animation", "poseDuration");
             return None;
         }
-        let duration = read_three_ds_u16(&view, offset) as f32;
+        let duration = read_three_ds_u16(&view, offset) as f64;
         offset += 2;
         poses.push(Awd2SkeletonAnimationPose {
             duration,

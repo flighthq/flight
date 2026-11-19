@@ -1,5 +1,7 @@
 //! flight-compiler: target-native
 
+// flight-lint: allow-file(f64) Task Q format numbers: glTF JSON, COLLADA, MD5 and OBJ text numbers are JS Numbers held in f64, and binary AWD2/3DS/MD2/STL/glTF f32 fields widen exactly at decode; vertex, material, color and diagnostic lanes stay f32
+
 use crate::awd2_parse::report_awd_diagnostic;
 use crate::awd2_reader::{
     awd_transform_to_transform3d, read_awd_properties, read_awd_property_number,
@@ -37,7 +39,7 @@ struct AwdLightDropTally {
 pub static AWD2_LIGHT_HANDLER: LazyLock<Ref<Awd2BlockHandler>> = LazyLock::new(|| {
     Arc::new(RwLock::new(Awd2BlockHandler {
         block_types: vec![AWD2_BLOCK_LIGHT],
-        build_phase: Some(AWD2_BUILD_PHASE_LIGHTING as f32),
+        build_phase: Some(AWD2_BUILD_PHASE_LIGHTING as f64),
         deferred: None,
         parse: Arc::new(|state, block| {
             if let Some(light) = parse_light_block(block, state.diagnostics.as_ref()) {
@@ -76,7 +78,7 @@ pub static AWD2_LIGHT_HANDLER: LazyLock<Ref<Awd2BlockHandler>> = LazyLock::new(|
 pub static AWD2_LIGHT_PICKER_HANDLER: LazyLock<Ref<Awd2BlockHandler>> = LazyLock::new(|| {
     Arc::new(RwLock::new(Awd2BlockHandler {
         block_types: vec![AWD2_BLOCK_LIGHT_PICKER],
-        build_phase: Some(AWD2_BUILD_PHASE_LIGHTING as f32),
+        build_phase: Some(AWD2_BUILD_PHASE_LIGHTING as f64),
         deferred: None,
         parse: Arc::new(|state, block| {
             if let Some(picker) = parse_light_picker_block(block, state.diagnostics.as_ref()) {
@@ -173,7 +175,7 @@ fn build_awd_document_lights(
                 ),
                 (
                     "firstSpecular".to_string(),
-                    ImportDiagnosticDetailValue::Number(light.specular),
+                    ImportDiagnosticDetailValue::Number(light.specular as f32),
                 ),
             ]),
         );

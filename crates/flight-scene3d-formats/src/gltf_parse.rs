@@ -1,5 +1,7 @@
 //! flight-compiler: target-native
 
+// flight-lint: allow-file(f64) Task Q format numbers: glTF JSON, COLLADA, MD5 and OBJ text numbers are JS Numbers held in f64, and binary AWD2/3DS/MD2/STL/glTF f32 fields widen exactly at decode; vertex, material, color and diagnostic lanes stay f32
+
 use crate::gltf_accessor::{
     GltfAccessorReader, gltf_accessor_fault, gltf_integer_field, read_gltf_accessor,
 };
@@ -151,7 +153,10 @@ fn apply_gltf_core_handlers(
                 .unwrap_or(0);
             if !index.is_finite() || index < 0.0 || index.fract() != 0.0 || index as usize >= length
             {
-                return gltf_accessor_fault("gltf.accessor-not-found", &[("firstAccessor", index)]);
+                return gltf_accessor_fault(
+                    "gltf.accessor-not-found",
+                    &[("firstAccessor", index as f32)],
+                );
             }
             return read_gltf_accessor(&accessor_reader, index as usize, expected_type);
         }),
@@ -529,7 +534,7 @@ fn gltf_array_index<T: ?Sized>(
     record: &Ref<T>,
     field: &str,
     index: usize,
-    current: f32,
+    current: f64,
 ) -> Option<usize> {
     let value = gltf_original_array_number(metadata, record, field, index, current);
     if !value.is_finite() || value < 0.0 || value.fract() != 0.0 || value >= usize::MAX as f64 {
@@ -538,7 +543,7 @@ fn gltf_array_index<T: ?Sized>(
     return Some(value as usize);
 }
 
-fn gltf_context_transform(transforms: &[Transform3D], node: f32) -> Transform3D {
+fn gltf_context_transform(transforms: &[Transform3D], node: f64) -> Transform3D {
     if node.is_finite() && node >= 0.0 && node.fract() == 0.0 {
         if let Some(transform) = transforms.get(node as usize) {
             return clone_gltf_transform(transform);

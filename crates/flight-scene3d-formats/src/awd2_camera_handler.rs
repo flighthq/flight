@@ -1,5 +1,7 @@
 //! flight-compiler: target-native
 
+// flight-lint: allow-file(f64) Task Q format numbers: glTF JSON, COLLADA, MD5 and OBJ text numbers are JS Numbers held in f64, and binary AWD2/3DS/MD2/STL/glTF f32 fields widen exactly at decode; vertex, material, color and diagnostic lanes stay f32
+
 use crate::awd2_parse::report_awd_diagnostic;
 use crate::awd2_reader::{
     awd_transform_to_transform3d, read_awd_properties, read_awd_property_float32, read_awd_string,
@@ -21,7 +23,7 @@ use std::sync::{Arc, LazyLock, RwLock};
 pub static AWD2_CAMERA_HANDLER: LazyLock<Ref<Awd2BlockHandler>> = LazyLock::new(|| {
     Arc::new(RwLock::new(Awd2BlockHandler {
         block_types: vec![AWD2_BLOCK_CAMERA],
-        build_phase: Some(AWD2_BUILD_PHASE_CAMERA as f32),
+        build_phase: Some(AWD2_BUILD_PHASE_CAMERA as f64),
         deferred: None,
         parse: Arc::new(|state, block| {
             let camera = if Arc::ptr_eq(&block.source, &block.view) {

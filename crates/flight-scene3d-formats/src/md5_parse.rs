@@ -1,13 +1,14 @@
 //! flight-compiler: target-native
 
+// flight-lint: allow-file(f64) Task Q format numbers: glTF JSON, COLLADA, MD5 and OBJ text numbers are JS Numbers held in f64, and binary AWD2/3DS/MD2/STL/glTF f32 fields widen exactly at decode; vertex, material, color and diagnostic lanes stay f32
+
 use crate::md5_number::{is_md5_whitespace, parse_md5_float, parse_md5_integer};
 use crate::md5_types::{
     MD5_MATERIAL_FEATURE, MD5_SKELETON_FEATURE, Md5DropTally, Md5DropTallyEntry, Md5Joint, Md5Mesh,
     Md5MeshSection, Md5ParseContext, Md5SectionHandler, Md5Vertex, Md5Weight,
 };
 use crate::shared::{
-    MAX_SKIN_INFLUENCES, SKINNED_FLOATS_PER_VERTEX, SkinInfluence, convert_positions_z_up_to_y_up,
-    pack_skin_influences, reverse_triangle_winding,
+    MAX_SKIN_INFLUENCES, SkinInfluence, pack_skin_influences, reverse_triangle_winding,
 };
 use flight_entity::Ref;
 use flight_geometry::contract::create_transform3d;
@@ -29,11 +30,11 @@ use std::collections::HashMap;
 use std::sync::{Arc, RwLock};
 
 struct Md5WeightInfluence {
-    joint_index: f32,
-    mx: f32,
-    my: f32,
-    mz: f32,
-    weight: f32,
+    joint_index: f64,
+    mx: f64,
+    my: f64,
+    mz: f64,
+    weight: f64,
 }
 
 fn align_md5_records<T>(
@@ -57,8 +58,8 @@ fn align_md5_records<T>(
         &format!("md5mesh.{record}-index-{kind}"),
         record,
         md5_number_detail(&[
-            ("firstExpected", records.len() as f32),
-            ("firstIndex", index as f32),
+            ("firstExpected", records.len() as f64),
+            ("firstIndex", f64::from(index as f32)),
         ]),
     );
     while records.len() < index {
@@ -94,7 +95,7 @@ pub fn canonicalize_md5_tangent_handedness(
         let u1 = corner.i1 as usize * floats_per_vertex + uv_offset as usize;
         let u2 = corner.i2 as usize * floats_per_vertex + uv_offset as usize;
         let vertices = &geometry.vertices;
-        let read = |index: usize| vertices.get(index).copied().unwrap_or(f32::NAN);
+        let read = |index: usize| vertices.get(index).copied().unwrap_or((f64::NAN) as f32);
         let determinant = (read(u1) - read(u0)) * (read(u2 + 1) - read(u0 + 1))
             - (read(u2) - read(u0)) * (read(u1 + 1) - read(u0 + 1));
         if determinant == 0.0 {
@@ -117,7 +118,7 @@ pub fn canonicalize_md5_tangent_handedness(
             ImportDiagnosticSeverity::Recover,
             "md5mesh.tangent-handedness-contradiction",
             "",
-            md5_number_detail(&[("firstVertices", contradictions as f32)]),
+            md5_number_detail(&[("firstVertices", f64::from(contradictions as f32))]),
         );
     }
     for (vertex, sign) in resolved.iter().enumerate() {
@@ -126,7 +127,7 @@ pub fn canonicalize_md5_tangent_handedness(
                 .vertices
                 .get_mut(vertex * floats_per_vertex + tangent_offset as usize + 3)
             {
-                *value = *sign as f32;
+                *value = (*sign as f64) as f32;
             }
         }
     }
@@ -156,7 +157,7 @@ fn md5_malformed(
     reason: &str,
     line_index: usize,
 ) {
-    let mut detail = md5_number_detail(&[("firstLine", (line_index + 1) as f32)]);
+    let mut detail = md5_number_detail(&[("firstLine", (line_index + 1) as f64)]);
     detail.insert(
         "reason".to_string(),
         ImportDiagnosticDetailValue::String(reason.to_string()),
@@ -170,14 +171,19 @@ fn md5_malformed(
     );
 }
 
-fn md5_number_detail(values: &[(&str, f32)]) -> HashMap<String, ImportDiagnosticDetailValue> {
+fn md5_number_detail(values: &[(&str, f64)]) -> HashMap<String, ImportDiagnosticDetailValue> {
     return values
         .iter()
-        .map(|(key, value)| (key.to_string(), ImportDiagnosticDetailValue::Number(*value)))
+        .map(|(key, value)| {
+            (
+                key.to_string(),
+                ImportDiagnosticDetailValue::Number((*value) as f32),
+            )
+        })
         .collect();
 }
 
-// flight-lint: allow(f64) Principal7f1f0994 private mesh joint token-finite, sumSq normalization and W adapter preserves JS Number branch before canonical f32 record write; animation uses a separate rule
+// flight-lint: allow(f64) Principal7f1f0994 private mesh joint token-finite, sumSq normalization and W adapter preserves the JS Number branch into the f64 joint record (Task Q); animation uses a separate rule
 fn parse_joint_line(
     line: &str,
     mut drops: Option<&mut Vec<Md5DropTallyEntry>>,
@@ -214,7 +220,7 @@ fn parse_joint_line(
             ImportDiagnosticSeverity::Recover,
             "md5mesh.joint-orientation-not-unit",
             "",
-            md5_number_detail(&[("firstLine", (line_index + 1) as f32)]),
+            md5_number_detail(&[("firstLine", (line_index + 1) as f64)]),
         );
         let scale = 1.0 / sum_sq.sqrt();
         x *= scale;
@@ -230,13 +236,13 @@ fn parse_joint_line(
     return Some(Md5Joint {
         name: name.to_string(),
         parent_index: values[0] as i32,
-        position_x: values[1] as f32,
-        position_y: values[2] as f32,
-        position_z: values[3] as f32,
-        orientation_x: x as f32,
-        orientation_y: y as f32,
-        orientation_z: z as f32,
-        orientation_w: w as f32,
+        position_x: values[1],
+        position_y: values[2],
+        position_z: values[3],
+        orientation_x: x,
+        orientation_y: y,
+        orientation_z: z,
+        orientation_w: w,
     });
 }
 
@@ -309,7 +315,7 @@ pub fn parse_md5_mesh_with_section_handlers(
                         ImportDiagnosticSeverity::Recover,
                         "md5mesh.unsupported-version",
                         "",
-                        md5_number_detail(&[("version", version as f32)]),
+                        md5_number_detail(&[("version", version)]),
                     );
                 }
             }
@@ -361,7 +367,7 @@ pub fn parse_md5_mesh_with_section_handlers(
     let mut truncated_vertex_count = 0;
     let mut max_observed_influences = 0;
     for mesh in meshes {
-        let mut vertices = Vec::new();
+        let mut vertices = Vec::<f32>::new();
         let mut indices = Vec::new();
         let mut joint_scratch = vec![0.0; 4];
         let mut weight_scratch = vec![0.0; 4];
@@ -376,8 +382,8 @@ pub fn parse_md5_mesh_with_section_handlers(
                         "md5mesh.vertex-weight-out-of-range",
                         "",
                         md5_number_detail(&[
-                            ("firstIndex", weight_index as f32),
-                            ("firstVertex", vertex_index as f32),
+                            ("firstIndex", f64::from(weight_index as f32)),
+                            ("firstVertex", f64::from(vertex_index as f32)),
                         ]),
                     );
                     break;
@@ -390,8 +396,8 @@ pub fn parse_md5_mesh_with_section_handlers(
                         "md5mesh.weight-joint-out-of-range",
                         "",
                         md5_number_detail(&[
-                            ("firstIndex", weight.joint_index as f32),
-                            ("firstWeight", weight_index as f32),
+                            ("firstIndex", f64::from(weight.joint_index as f32)),
+                            ("firstWeight", f64::from(weight_index as f32)),
                         ]),
                     );
                     continue;
@@ -401,7 +407,7 @@ pub fn parse_md5_mesh_with_section_handlers(
                 let y = quat_rotate_vec3_y(joint, weight);
                 let z = quat_rotate_vec3_z(joint, weight);
                 influences.push(Md5WeightInfluence {
-                    joint_index: weight.joint_index as f32,
+                    joint_index: weight.joint_index as f64,
                     mx: joint.position_x + x,
                     my: joint.position_y + y,
                     mz: joint.position_z + z,
@@ -441,17 +447,28 @@ pub fn parse_md5_mesh_with_section_handlers(
                 })
                 .collect();
             pack_skin_influences(&mut joint_scratch, &mut weight_scratch, &mut packed);
+            // Z-up to Y-up in f64 before the f32 vertex write: (x, y, z) becomes (x, z, -y).
             vertices.extend_from_slice(&[
-                px, py, pz, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, vertex.u, vertex.v,
+                px as f32,
+                pz as f32,
+                (-py + 0.0) as f32,
+                0.0,
+                0.0,
+                0.0,
+                0.0,
+                0.0,
+                0.0,
+                0.0,
+                vertex.u as f32,
+                vertex.v as f32,
             ]);
-            vertices.extend_from_slice(&joint_scratch[..4]);
-            vertices.extend_from_slice(&weight_scratch[..4]);
+            vertices.extend(joint_scratch[..4].iter().map(|value| *value as f32));
+            vertices.extend(weight_scratch[..4].iter().map(|value| *value as f32));
         }
-        convert_positions_z_up_to_y_up(&mut vertices, Some(SKINNED_FLOATS_PER_VERTEX), Some(0));
         for (triangle, corners) in mesh.indices.chunks_exact(3).enumerate() {
             if let Some(invalid) = corners
                 .iter()
-                .find(|value| **value < 0.0 || **value >= mesh.vertices.len() as f32)
+                .find(|value| **value < 0.0 || **value >= mesh.vertices.len() as f64)
             {
                 tally_md5_drop(
                     drops.as_mut(),
@@ -459,9 +476,9 @@ pub fn parse_md5_mesh_with_section_handlers(
                     "md5mesh.triangle-vertex-out-of-range",
                     "",
                     md5_number_detail(&[
-                        ("firstCount", mesh.vertices.len() as f32),
+                        ("firstCount", mesh.vertices.len() as f64),
                         ("firstIndex", *invalid),
-                        ("firstTriangle", triangle as f32),
+                        ("firstTriangle", f64::from(triangle as f32)),
                     ]),
                 );
                 continue;
@@ -547,8 +564,8 @@ pub fn parse_md5_mesh_with_section_handlers(
             "md5mesh.vertex-over-influenced",
             "parseMd5Mesh",
             Some(md5_number_detail(&[
-                ("count", truncated_vertex_count as f32),
-                ("maxInfluences", max_observed_influences as f32),
+                ("count", truncated_vertex_count as f64),
+                ("maxInfluences", max_observed_influences as f64),
             ])),
         );
     }
@@ -613,7 +630,7 @@ fn parse_mesh_block(
                     ImportDiagnosticSeverity::Recover,
                     "md5mesh.shader-unquoted",
                     "",
-                    md5_number_detail(&[("firstLine", index as f32)]),
+                    md5_number_detail(&[("firstLine", f64::from(index as f32))]),
                 );
             }
         } else if line.starts_with("numverts") {
@@ -700,7 +717,7 @@ fn parse_tri_line(
     line: &str,
     drops: Option<&mut Vec<Md5DropTallyEntry>>,
     line_index: usize,
-) -> Option<(usize, [f32; 3])> {
+) -> Option<(usize, [f64; 3])> {
     let tokens: Vec<_> = line
         .split(is_md5_whitespace)
         .filter(|value| !value.is_empty())
@@ -722,7 +739,7 @@ fn parse_tri_line(
         md5_malformed(drops, "tri", "bad-index", line_index);
         return None;
     };
-    return Some((index, values.map(|value| value.unwrap() as f32)));
+    return Some((index, values.map(|value| value.unwrap())));
 }
 
 fn parse_vert_line(
@@ -757,8 +774,8 @@ fn parse_vert_line(
     return Some((
         index,
         Md5Vertex {
-            u: values[0] as f32,
-            v: values[1] as f32,
+            u: values[0],
+            v: values[1],
             start_weight: values[2] as i32,
             count_weights: values[3] as i32,
         },
@@ -795,15 +812,15 @@ fn parse_weight_line(
         index,
         Md5Weight {
             joint_index: values[0] as i32,
-            bias: values[1] as f32,
-            position_x: values[2] as f32,
-            position_y: values[3] as f32,
-            position_z: values[4] as f32,
+            bias: values[1],
+            position_x: values[2],
+            position_y: values[3],
+            position_z: values[4],
         },
     ));
 }
 
-fn quat_rotate_vec3_x(joint: &Md5Joint, weight: &Md5Weight) -> f32 {
+fn quat_rotate_vec3_x(joint: &Md5Joint, weight: &Md5Weight) -> f64 {
     let tx =
         2.0 * (joint.orientation_y * weight.position_z - joint.orientation_z * weight.position_y);
     let ty =
@@ -814,7 +831,7 @@ fn quat_rotate_vec3_x(joint: &Md5Joint, weight: &Md5Weight) -> f32 {
         + joint.orientation_w * tx
         + (joint.orientation_y * tz - joint.orientation_z * ty);
 }
-fn quat_rotate_vec3_y(joint: &Md5Joint, weight: &Md5Weight) -> f32 {
+fn quat_rotate_vec3_y(joint: &Md5Joint, weight: &Md5Weight) -> f64 {
     let tx =
         2.0 * (joint.orientation_y * weight.position_z - joint.orientation_z * weight.position_y);
     let ty =
@@ -825,7 +842,7 @@ fn quat_rotate_vec3_y(joint: &Md5Joint, weight: &Md5Weight) -> f32 {
         + joint.orientation_w * ty
         + (joint.orientation_z * tx - joint.orientation_x * tz);
 }
-fn quat_rotate_vec3_z(joint: &Md5Joint, weight: &Md5Weight) -> f32 {
+fn quat_rotate_vec3_z(joint: &Md5Joint, weight: &Md5Weight) -> f64 {
     let tx =
         2.0 * (joint.orientation_y * weight.position_z - joint.orientation_z * weight.position_y);
     let ty =
@@ -857,8 +874,8 @@ fn report_md5_count_disagreement(
                 &format!("md5mesh.{record}-count-mismatch"),
                 record,
                 md5_number_detail(&[
-                    ("firstActual", actual as f32),
-                    ("firstExpected", declared as f32),
+                    ("firstActual", f64::from(actual as f32)),
+                    ("firstExpected", f64::from(declared as f32)),
                 ]),
             );
         }

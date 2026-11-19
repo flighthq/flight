@@ -1,5 +1,7 @@
 //! flight-compiler: rust-only
 
+// flight-lint: allow-file(f64) Task Q format numbers: glTF JSON, COLLADA, MD5 and OBJ text numbers are JS Numbers held in f64, and binary AWD2/3DS/MD2/STL/glTF f32 fields widen exactly at decode; vertex, material, color and diagnostic lanes stay f32
+
 use crate::gltf_draco::GltfDracoRegistry;
 use crate::gltf_schema::{GltfDocument, GltfTextureInfoRef};
 use flight_buffer::ArrayBufferView;
@@ -35,12 +37,12 @@ pub enum GltfComponentArray {
 }
 
 pub struct GltfCoreFeatureContext {
-    pub build_node_transform: Arc<dyn Fn(f32) -> Transform3D + Send + Sync>,
+    pub build_node_transform: Arc<dyn Fn(f64) -> Transform3D + Send + Sync>,
     pub document: Ref<Scene3DDocument>,
     pub mesh_indices: Ref<Vec<Ref<Vec<i32>>>>,
     pub node_indices: Ref<Vec<i32>>,
     pub primitive_node_indices: Ref<Vec<Ref<Vec<i32>>>>,
-    pub read_accessor: Arc<dyn Fn(f32, Option<&str>) -> GltfAccessorData + Send + Sync>,
+    pub read_accessor: Arc<dyn Fn(f64, Option<&str>) -> GltfAccessorData + Send + Sync>,
     pub report_accessor_fault:
         Arc<dyn Fn(ImportDiagnosticSeverity, &Ref<GltfAccessorFault>) + Send + Sync>,
     pub report_diagnostic: Arc<
@@ -61,7 +63,7 @@ pub struct GltfCoreFeatureHandler {
 }
 
 pub type GltfDracoDecoder =
-    Arc<dyn Fn(&ArrayBufferView, &Ref<Record<f32>>) -> Option<Ref<GltfDracoMesh>> + Send + Sync>;
+    Arc<dyn Fn(&ArrayBufferView, &Ref<Record<f64>>) -> Option<Ref<GltfDracoMesh>> + Send + Sync>;
 
 pub struct GltfDracoMesh {
     pub attributes: Ref<Record<Ref<Box<Float32Array>>>>,
@@ -70,7 +72,7 @@ pub struct GltfDracoMesh {
 }
 
 pub struct GltfExtensionContext {
-    pub build_node_transform: Arc<dyn Fn(f32) -> Transform3D + Send + Sync>,
+    pub build_node_transform: Arc<dyn Fn(f64) -> Transform3D + Send + Sync>,
     pub diagnostics: Option<Ref<Vec<ImportDiagnostic>>>,
     pub document: Ref<Scene3DDocument>,
     pub node_indices: Ref<Vec<i32>>,
@@ -93,7 +95,7 @@ pub enum GltfExternalBuffer {
 }
 
 pub struct GltfExternalBufferValues {
-    pub values: Ref<Vec<f32>>,
+    pub values: Ref<Vec<f64>>,
 }
 
 pub struct GltfExternalBufferView {

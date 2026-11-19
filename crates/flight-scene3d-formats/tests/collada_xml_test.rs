@@ -182,6 +182,15 @@ mod parse_collada_floats {
     use super::*;
 
     #[test]
+    fn decodes_list_numbers_as_exact_doubles() {
+        // Neither 0.1 nor 1e9 + 0.5 is an f32 value; the parsed list keeps the text's doubles.
+        assert_eq!(
+            parse_collada_floats("0.1 1000000000.5"),
+            vec![0.1, 1_000_000_000.5]
+        );
+    }
+
+    #[test]
     fn decodes_signs_fractions_exponents_and_ecmascript_whitespace() {
         assert_eq!(parse_collada_floats(" 1  -2.5\t3e2\n"), [1.0, -2.5, 300.0]);
         assert_eq!(

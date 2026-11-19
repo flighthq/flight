@@ -1,5 +1,7 @@
 //! flight-compiler: target-native
 
+// flight-lint: allow-file(f64) Task Q format numbers: glTF JSON, COLLADA, MD5 and OBJ text numbers are JS Numbers held in f64, and binary AWD2/3DS/MD2/STL/glTF f32 fields widen exactly at decode; vertex, material, color and diagnostic lanes stay f32
+
 use crate::gltf_extension_shared::{gltf_extension_materials, resolve_gltf_extension_texture};
 use crate::gltf_material::pack_gltf_linear_color;
 use crate::gltf_material_extension::{attach_gltf_pbr_extension, find_gltf_pbr_extension};
@@ -46,7 +48,7 @@ fn apply_gltf_ior(context: &Ref<GltfExtensionContext>) {
         let ior = block.read().unwrap().ior.unwrap_or(1.5);
         let mut target = target.write().unwrap();
         if let PbrExtension::TransmissionVolume(target) = &mut *target {
-            target.ior = ior;
+            target.ior = ior as f32;
         }
     }
 }
@@ -71,7 +73,7 @@ fn apply_gltf_transmission(context: &Ref<GltfExtensionContext>) {
             let transmission = block.read().unwrap().transmission_factor.unwrap_or(0.0);
             let mut target = target.write().unwrap();
             if let PbrExtension::TransmissionVolume(target) = &mut *target {
-                target.transmission = transmission;
+                target.transmission = transmission as f32;
             }
         }
         let info = block
@@ -116,13 +118,13 @@ fn apply_gltf_volume(context: &Ref<GltfExtensionContext>) {
                 .read()
                 .unwrap()
                 .attenuation_distance
-                .unwrap_or(f32::INFINITY);
+                .unwrap_or(f64::INFINITY);
             let thickness = block.read().unwrap().thickness_factor.unwrap_or(0.0);
             let mut target = target.write().unwrap();
             if let PbrExtension::TransmissionVolume(target) = &mut *target {
                 target.attenuation_color = color;
-                target.attenuation_distance = distance;
-                target.thickness = thickness;
+                target.attenuation_distance = distance as f32;
+                target.thickness = thickness as f32;
             }
         }
         let info = block

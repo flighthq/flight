@@ -1,5 +1,7 @@
 //! flight-compiler: target-native
 
+// flight-lint: allow-file(f64) Task Q format numbers: glTF JSON, COLLADA, MD5 and OBJ text numbers are JS Numbers held in f64, and binary AWD2/3DS/MD2/STL/glTF f32 fields widen exactly at decode; vertex, material, color and diagnostic lanes stay f32
+
 use flight_entity::{Float32Array, Float64Array, Ref, Uint8Array};
 use flight_image::{
     EmbeddedImageResourceReferenceValue, ExternalImageResourceReferenceValue,
@@ -12,8 +14,8 @@ use std::sync::{Arc, LazyLock, RwLock};
 
 #[derive(Clone, Copy, Debug, PartialEq)]
 pub struct SkinInfluence {
-    pub joint_index: f32,
-    pub weight: f32,
+    pub joint_index: f64,
+    pub weight: f64,
 }
 
 pub const CANONICAL_FLOATS_PER_VERTEX: usize = 12;
@@ -116,7 +118,7 @@ pub fn create_external_texture_ref(
 }
 
 pub fn convert_positions_z_up_to_y_up(
-    values: &mut [f32],
+    values: &mut [f64],
     stride: Option<usize>,
     offset: Option<usize>,
 ) {
@@ -131,7 +133,7 @@ pub fn convert_positions_z_up_to_y_up(
 }
 
 pub fn convert_quaternions_z_up_to_y_up(
-    values: &mut [f32],
+    values: &mut [f64],
     stride: Option<usize>,
     offset: Option<usize>,
 ) {
@@ -154,7 +156,7 @@ pub fn convert_transform_lh_to_rh(transform: &mut Float64Array) {
     }
 }
 
-pub fn negate_vec3_z(values: &mut Vec<f32>) {
+pub fn negate_vec3_z(values: &mut Vec<f64>) {
     for index in (2..values.len()).step_by(3) {
         values[index] = -values[index] + 0.0;
     }
@@ -162,8 +164,8 @@ pub fn negate_vec3_z(values: &mut Vec<f32>) {
 
 // flight-lint: allow(conform-params) D9 required out-first writers precede the mutable influence input; source has influences,outJoints,outWeights
 pub fn pack_skin_influences(
-    out_joints: &mut Vec<f32>,
-    out_weights: &mut Vec<f32>,
+    out_joints: &mut Vec<f64>,
+    out_weights: &mut Vec<f64>,
     influences: &mut [SkinInfluence],
 ) {
     if out_joints.len() < MAX_SKIN_INFLUENCES {
@@ -196,7 +198,7 @@ pub fn pack_skin_influences(
     }
 }
 
-pub fn reverse_triangle_winding(indices: &mut Vec<f32>) {
+pub fn reverse_triangle_winding(indices: &mut Vec<f64>) {
     for triangle in indices.chunks_exact_mut(3) {
         triangle.swap(1, 2);
     }

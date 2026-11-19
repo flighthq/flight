@@ -1,5 +1,7 @@
 //! flight-compiler: target-native
 
+// flight-lint: allow-file(f64) Task Q format numbers: glTF JSON, COLLADA, MD5 and OBJ text numbers are JS Numbers held in f64, and binary AWD2/3DS/MD2/STL/glTF f32 fields widen exactly at decode; vertex, material, color and diagnostic lanes stay f32
+
 use crate::collada_parse::report_collada_diagnostic;
 use crate::collada_scene_shared::apply_collada_material_overrides;
 use crate::collada_types::*;
@@ -21,7 +23,7 @@ use std::sync::{Arc, LazyLock, RwLock};
 struct ControllerSource {
     key: String,
     names: Vec<String>,
-    numbers: Vec<f32>,
+    numbers: Vec<f64>,
 }
 
 pub static COLLADA_CONTROLLER_DECODER: LazyLock<Ref<ColladaElementDecoder>> = LazyLock::new(|| {
@@ -178,9 +180,9 @@ fn controller_offset(value: Option<&str>, fallback: &str) -> f64 {
 }
 
 // flight-lint: allow(f64) existing strict Number finite classification before canonical f32 weight write; no double arithmetic
-fn controller_weight(token: &str) -> Option<f32> {
+fn controller_weight(token: &str) -> Option<f64> {
     let value = parse_stl_number(token);
-    return value.is_finite().then_some(value as f32);
+    return value.is_finite().then_some(value);
 }
 
 pub fn decode_collada_controllers(

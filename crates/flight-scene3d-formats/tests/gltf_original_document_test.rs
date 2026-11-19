@@ -284,7 +284,7 @@ mod original_container_and_document {
         let document = document.read().unwrap();
         assert_eq!(document.cameras.len(), 2);
         let perspective = &document.cameras[0];
-        assert_eq!(perspective.far, f32::INFINITY);
+        assert_eq!(perspective.far, f64::INFINITY);
         assert_eq!(perspective.name.as_deref(), Some("view"));
         assert_eq!(perspective.node, Some(0));
         // D1 f32 bound (TS: 0)
@@ -329,7 +329,7 @@ mod original_container_and_document {
         let document = original_document(&source, None);
         assert_eq!(
             document.read().unwrap().cameras[0].transform.position.x,
-            depth as f32
+            depth as f64
         );
     }
 

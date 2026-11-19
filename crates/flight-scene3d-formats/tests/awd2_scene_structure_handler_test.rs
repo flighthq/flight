@@ -105,7 +105,7 @@ mod awd2_container_handler {
         assert_eq!(handler.block_types, [AWD2_BLOCK_CONTAINER]);
         assert_eq!(
             handler.build_phase,
-            Some(AWD2_BUILD_PHASE_SCENE_STRUCTURE as f32)
+            Some(AWD2_BUILD_PHASE_SCENE_STRUCTURE as f64)
         );
         assert!(handler.build.is_some());
         assert_ne!(handler.deferred, Some(true));
@@ -202,7 +202,7 @@ mod awd2_mesh_instance_handler {
         assert_eq!(handler.block_types, [AWD2_BLOCK_MESH_INSTANCE]);
         assert_eq!(
             handler.build_phase,
-            Some(AWD2_BUILD_PHASE_SCENE_STRUCTURE as f32)
+            Some(AWD2_BUILD_PHASE_SCENE_STRUCTURE as f64)
         );
         assert!(handler.build.is_some());
         assert_ne!(handler.deferred, Some(true));

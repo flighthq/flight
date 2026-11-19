@@ -1,5 +1,7 @@
 //! flight-compiler: rust-only
 
+// flight-lint: allow-file(f64) Task Q format numbers: glTF JSON, COLLADA, MD5 and OBJ text numbers are JS Numbers held in f64, and binary AWD2/3DS/MD2/STL/glTF f32 fields widen exactly at decode; vertex, material, color and diagnostic lanes stay f32
+
 use crate::gltf_schema::*;
 use flight_entity::{Record, Ref, Unknown, set_record_value};
 use serde_json::Value;
@@ -822,7 +824,7 @@ fn decode_gltf_normal_texture_info(
     return record;
 }
 
-fn decode_gltf_number_record(source: &Value, metadata: &mut GltfJsonMetadata) -> Ref<Record<f32>> {
+fn decode_gltf_number_record(source: &Value, metadata: &mut GltfJsonMetadata) -> Ref<Record<f64>> {
     let mut record = Record::default();
     if let Some(object_members) = source.as_object() {
         for (key, value) in object_members {
@@ -1183,7 +1185,7 @@ pub(crate) fn gltf_original_array_number<T: ?Sized>(
     record: &Ref<T>,
     field: &str,
     index: usize,
-    current: f32,
+    current: f64,
 ) -> f64 {
     if let Some(Value::Number(value)) =
         gltf_json_field(metadata, record, field).and_then(|value| value.get(index))
@@ -1191,11 +1193,11 @@ pub(crate) fn gltf_original_array_number<T: ?Sized>(
         let original = value
             .as_f64()
             .unwrap_or_else(|| value.to_string().parse::<f64>().unwrap_or(f64::NAN));
-        if (original as f32).to_bits() == current.to_bits() {
+        if original.to_bits() == current.to_bits() {
             return original;
         }
     }
-    return current as f64;
+    return current;
 }
 
 // flight-lint: allow(f64) private JSON Number validation retains original count/index precision until exact integer decisions, without widening public wire fields
@@ -1203,27 +1205,27 @@ pub(crate) fn gltf_original_number<T: ?Sized>(
     metadata: &GltfJsonMetadata,
     record: &Ref<T>,
     field: &str,
-    current: f32,
+    current: f64,
 ) -> f64 {
     if let Some(Value::Number(value)) = gltf_json_field(metadata, record, field) {
         let original = value
             .as_f64()
             .unwrap_or_else(|| value.to_string().parse::<f64>().unwrap_or(f64::NAN));
-        if (original as f32).to_bits() == current.to_bits() {
+        if original.to_bits() == current.to_bits() {
             return original;
         }
     }
-    return current as f64;
+    return current;
 }
 
-// flight-lint: allow(f64) private JSON boundary reads the source Number before one final canonical f32 scalar write; original index/count tokens are retained separately
-fn json_number(value: &Value) -> f32 {
+// flight-lint: allow(f64) private JSON boundary returns the source Number as the f64 document value (Task Q); original index/count tokens are retained separately
+fn json_number(value: &Value) -> f64 {
     let Value::Number(value) = value else {
-        return f32::NAN;
+        return f64::NAN;
     };
     return value
         .as_f64()
-        .unwrap_or_else(|| value.to_string().parse::<f64>().unwrap_or(f64::NAN)) as f32;
+        .unwrap_or_else(|| value.to_string().parse::<f64>().unwrap_or(f64::NAN));
 }
 
 fn json_unknown(value: &Value) -> Unknown {

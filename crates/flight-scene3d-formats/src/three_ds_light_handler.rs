@@ -1,5 +1,7 @@
 //! flight-compiler: target-native
 
+// flight-lint: allow-file(f64) Task Q format numbers: glTF JSON, COLLADA, MD5 and OBJ text numbers are JS Numbers held in f64, and binary AWD2/3DS/MD2/STL/glTF f32 fields widen exactly at decode; vertex, material, color and diagnostic lanes stay f32
+
 use crate::shared::convert_positions_z_up_to_y_up;
 use crate::three_ds_parse::{
     pack_three_ds_color, parse_color_chunk, read_chunk_end, tally_three_ds_drop,
@@ -114,7 +116,7 @@ fn append_three_ds_light_document(
     });
 }
 
-fn convert_three_ds_point_z_up_to_y_up(point: &[f32; 3]) -> Vector3 {
+fn convert_three_ds_point_z_up_to_y_up(point: &[f64; 3]) -> Vector3 {
     let mut values = *point;
     convert_positions_z_up_to_y_up(&mut values, None, None);
     return create_vector3(values[0], values[1], values[2]);
@@ -151,9 +153,9 @@ pub fn parse_three_ds_light(
         name: name.to_string(),
         outer_range: None,
         position: [
-            read_three_ds_f32(view, cursor),
-            read_three_ds_f32(view, cursor + 4),
-            read_three_ds_f32(view, cursor + 8),
+            f64::from(read_three_ds_f32(view, cursor)),
+            f64::from(read_three_ds_f32(view, cursor + 4)),
+            f64::from(read_three_ds_f32(view, cursor + 8)),
         ],
         target: None,
     };
@@ -185,28 +187,28 @@ pub fn parse_three_ds_light(
             THREE_DS_LIGHT_OFF => light.enabled = false,
             THREE_DS_LIGHT_MULTIPLIER => {
                 if data_start + 4 <= chunk_end {
-                    light.multiplier = read_three_ds_f32(view, data_start);
+                    light.multiplier = f64::from(read_three_ds_f32(view, data_start));
                 }
             }
             THREE_DS_LIGHT_INNER_RANGE => {
                 if data_start + 4 <= chunk_end {
-                    light.inner_range = Some(read_three_ds_f32(view, data_start));
+                    light.inner_range = Some(f64::from(read_three_ds_f32(view, data_start)));
                 }
             }
             THREE_DS_LIGHT_OUTER_RANGE => {
                 if data_start + 4 <= chunk_end {
-                    light.outer_range = Some(read_three_ds_f32(view, data_start));
+                    light.outer_range = Some(f64::from(read_three_ds_f32(view, data_start)));
                 }
             }
             THREE_DS_LIGHT_SPOT => {
                 if data_start + 20 <= chunk_end {
                     light.target = Some([
-                        read_three_ds_f32(view, data_start),
-                        read_three_ds_f32(view, data_start + 4),
-                        read_three_ds_f32(view, data_start + 8),
+                        f64::from(read_three_ds_f32(view, data_start)),
+                        f64::from(read_three_ds_f32(view, data_start + 4)),
+                        f64::from(read_three_ds_f32(view, data_start + 8)),
                     ]);
-                    light.hotspot = read_three_ds_f32(view, data_start + 12);
-                    light.falloff = read_three_ds_f32(view, data_start + 16);
+                    light.hotspot = f64::from(read_three_ds_f32(view, data_start + 12));
+                    light.falloff = f64::from(read_three_ds_f32(view, data_start + 16));
                 } else {
                     tally_three_ds_drop(
                         three_ds_drops.as_deref_mut(),

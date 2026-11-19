@@ -130,7 +130,7 @@ fn parse(bytes: &[u8]) -> (Ref<Scene3DDocument>, Vec<ImportDiagnostic>) {
     return (document, diagnostics);
 }
 
-fn sample(channel: &flight_scene3d::Scene3DDocumentAnimationChannel, time: f32) -> Vec<f32> {
+fn sample(channel: &flight_scene3d::Scene3DDocumentAnimationChannel, time: f64) -> Vec<f64> {
     let track = channel.track.read().unwrap();
     let mut out = vec![0.0; track.components];
     sample_animation_track(&mut out, &track, time);
@@ -155,7 +155,7 @@ mod awd2_skeleton_animation_handler {
         assert_eq!(handler.deferred, Some(true));
         assert_eq!(
             handler.build_phase,
-            Some(AWD2_BUILD_PHASE_SKELETON_ANIMATION as f32)
+            Some(AWD2_BUILD_PHASE_SKELETON_ANIMATION as f64)
         );
         assert!(handler.build.is_some());
     }
@@ -175,16 +175,13 @@ mod awd2_skeleton_animation_handler {
         assert_eq!(animation.duration, 2.0);
         let channel = &animation.channels[0];
         for (time, expected) in [
-            (0.0, [0.0f32, 0.0, 0.0]),
+            (0.0, [0.0, 0.0, 0.0]),
             (1.0, [10.0, 20.0, -30.0]),
             (0.5, [5.0, 10.0, -15.0]),
         ] {
             for (actual, expected) in sample(channel, time).iter().zip(expected) {
-                // D1 f32 bound (TS: 0.5e-2)
-                assert!(
-                    (*actual - expected).abs()
-                        <= 0.5e-2f32.max(4.0 * f32::EPSILON * expected.abs().max(1.0))
-                );
+                // TS: 0.5e-2
+                assert!((*actual - expected).abs() <= 0.5e-2);
             }
         }
         assert_eq!(animation.channels[1].path, Scene3DAnimationPath::Rotation);
@@ -299,7 +296,7 @@ mod awd2_skeleton_animation_handler {
         let document = document.read().unwrap();
         let animation = &document.animations[0];
         // D1 f32 bound (TS: 0.5e-2)
-        assert!((animation.duration - 1.0).abs() <= 0.5e-2f32.max(2.0 * f32::EPSILON));
+        assert!((animation.duration - 1.0).abs() <= f64::from(0.5e-2f32.max(2.0 * f32::EPSILON)));
         for (actual, expected) in animation.channels[0]
             .track
             .read()
@@ -309,7 +306,7 @@ mod awd2_skeleton_animation_handler {
             .zip([0.0, 0.25])
         {
             // D1 f32 bound (TS: 0.5e-2)
-            assert!((*actual - expected).abs() <= 0.5e-2f32.max(2.0 * f32::EPSILON));
+            assert!((*actual - expected).abs() <= f64::from(0.5e-2f32.max(2.0 * f32::EPSILON)));
         }
     }
 
@@ -371,11 +368,8 @@ mod awd2_skeleton_animation_handler {
         names.sort();
         assert_eq!(names, ["attack", "idle"]);
         for (animation, expected) in document.animations.iter().zip([3.0, 9.0]) {
-            // D1 f32 bound (TS: 0.5e-2)
-            assert!(
-                (sample(&animation.channels[0], 0.0)[0] - expected).abs()
-                    <= 0.5e-2f32.max(4.0 * f32::EPSILON * expected)
-            );
+            // TS: 0.5e-2
+            assert!((sample(&animation.channels[0], 0.0)[0] - expected).abs() <= 0.5e-2);
         }
         let mut state = create_state();
         invoke_parse(
@@ -550,7 +544,7 @@ mod awd2_skeleton_block_handler {
         let handler = AWD2_SKELETON_BLOCK_HANDLER.read().unwrap();
         assert_eq!(handler.block_types, [AWD2_BLOCK_SKELETON]);
         assert_ne!(handler.deferred, Some(true));
-        assert_eq!(handler.build_phase, Some(AWD2_BUILD_PHASE_SKELETON as f32));
+        assert_eq!(handler.build_phase, Some(AWD2_BUILD_PHASE_SKELETON as f64));
         assert!(handler.build.is_some());
     }
 

@@ -1,5 +1,7 @@
 //! flight-compiler: target-native
 
+// flight-lint: allow-file(f64) Task Q format numbers: glTF JSON, COLLADA, MD5 and OBJ text numbers are JS Numbers held in f64, and binary AWD2/3DS/MD2/STL/glTF f32 fields widen exactly at decode; vertex, material, color and diagnostic lanes stay f32
+
 use crate::collada_parse::set_collada_index;
 use crate::collada_scene_shared::ColladaIndexEntry;
 use crate::collada_xml::parse_collada_floats;
@@ -292,7 +294,7 @@ fn convert_effect(
     material.roughness = if local_name(&shading) == "lambert" {
         1.0
     } else {
-        get_pbr_roughness_from_phong_shininess(shininess)
+        get_pbr_roughness_from_phong_shininess(shininess as f32)
     };
     material.material3d_fields_mut().alpha_mode =
         if transparent.is_some() || child(Some(&shading), "transparency").is_some() {
@@ -386,12 +388,12 @@ fn missing_reference(
     );
 }
 
-fn pack_color(values: [f32; 4]) -> u32 {
+fn pack_color(values: [f64; 4]) -> u32 {
     let mut color = allocate_linear_color();
-    color.r = values[0];
-    color.g = values[1];
-    color.b = values[2];
-    color.a = values[3];
+    color.r = (values[0]) as f32;
+    color.g = (values[1]) as f32;
+    color.b = (values[2]) as f32;
+    color.a = (values[3]) as f32;
     return pack_linear_to_color(&color);
 }
 
@@ -411,8 +413,8 @@ fn reference_id(value: Option<&str>) -> Option<String> {
 fn resolve_color(
     property: Option<&Ref<XmlElement>>,
     parameters: &[(String, Ref<XmlElement>)],
-    fallback: [f32; 4],
-) -> [f32; 4] {
+    fallback: [f64; 4],
+) -> [f64; 4] {
     let Some(value) = resolve_property(property, parameters, &["color", "float3", "float4"]) else {
         return fallback;
     };
@@ -433,17 +435,13 @@ fn resolve_color(
 fn resolve_float(
     property: Option<&Ref<XmlElement>>,
     parameters: &[(String, Ref<XmlElement>)],
-    fallback: f32,
-) -> f32 {
+    fallback: f64,
+) -> f64 {
     let Some(value) = resolve_property(property, parameters, &["float"]) else {
         return fallback;
     };
     let value = parse_stl_number(value.read().unwrap().text.trim_matches(is_obj_whitespace));
-    return if value.is_finite() {
-        value as f32
-    } else {
-        fallback
-    };
+    return if value.is_finite() { value } else { fallback };
 }
 
 fn resolve_property(

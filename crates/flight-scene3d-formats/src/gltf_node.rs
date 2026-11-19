@@ -1,5 +1,7 @@
 //! flight-compiler: rust-only
 
+// flight-lint: allow-file(f64) Task Q format numbers: glTF JSON, COLLADA, MD5 and OBJ text numbers are JS Numbers held in f64, and binary AWD2/3DS/MD2/STL/glTF f32 fields widen exactly at decode; vertex, material, color and diagnostic lanes stay f32
+
 use crate::gltf_diagnostics::{GltfDropTally, tally_gltf_numbers};
 use crate::gltf_json::{GltfJsonMetadata, gltf_original_array_number};
 use crate::gltf_schema::GltfNode;
@@ -14,7 +16,7 @@ use flight_importdiagnostics::ImportDiagnosticSeverity;
 #[path = "../tests/internal/gltf_node_test.rs"]
 mod tests;
 
-// flight-lint: allow(f64) private exact-integer limb keeps JSON child indices precise for bounds/parent-table lookups; local/world coordinate math remains canonical f32
+// flight-lint: allow(f64) private exact-integer limb keeps JSON child indices precise for bounds/parent-table lookups; local/world coordinate math is f64 (Task Q)
 pub(crate) fn build_gltf_node_world_transforms(
     out: &mut Vec<Transform3D>,
     nodes: &[Ref<GltfNode>],
@@ -32,7 +34,7 @@ pub(crate) fn build_gltf_node_world_transforms(
                     drops,
                     ImportDiagnosticSeverity::Recover,
                     "gltf.node-child-out-of-range",
-                    &[("firstChild", current)],
+                    &[("firstChild", current as f32)],
                 );
                 continue;
             }
@@ -42,7 +44,7 @@ pub(crate) fn build_gltf_node_world_transforms(
                     drops,
                     ImportDiagnosticSeverity::Recover,
                     "gltf.node-multiple-parents",
-                    &[("firstChild", current)],
+                    &[("firstChild", current as f32)],
                 );
                 continue;
             }
@@ -53,7 +55,7 @@ pub(crate) fn build_gltf_node_world_transforms(
                     ImportDiagnosticSeverity::Recover,
                     "gltf.node-multiple-parents",
                     &[
-                        ("firstChild", current),
+                        ("firstChild", current as f32),
                         ("firstParent", parents[child] as f32),
                     ],
                 );
@@ -146,7 +148,7 @@ pub(crate) fn gltf_node_transform(node: &Ref<GltfNode>) -> Transform3D {
     let mut out = create_transform3d();
     if let Some(values) = &node.matrix {
         let mut matrix = create_matrix4();
-        matrix.m.fill(f32::NAN);
+        matrix.m.fill(f64::NAN);
         for (target, value) in matrix.m.iter_mut().zip(values) {
             *target = *value;
         }

@@ -1,5 +1,7 @@
 //! flight-compiler: target-native
 
+// flight-lint: allow-file(f64) Task Q format numbers: glTF JSON, COLLADA, MD5 and OBJ text numbers are JS Numbers held in f64, and binary AWD2/3DS/MD2/STL/glTF f32 fields widen exactly at decode; vertex, material, color and diagnostic lanes stay f32
+
 pub const MD2_MAGIC: i32 = 0x32504449;
 
 pub const MD2_VERSION: i32 = 8;
@@ -18,9 +20,9 @@ pub const MD2_FRAME_HEADER_SIZE: usize = 40;
 
 pub const MD2_FRAME_NAME_SIZE: usize = 16;
 
-pub const MD2_FRAME_FPS: f32 = 10.0;
+pub const MD2_FRAME_FPS: f64 = 10.0;
 
-pub const MD2_ANORMS: [[f32; 3]; 162] = [
+pub const MD2_ANORMS: [[f64; 3]; 162] = [
     [-0.525731, 0.0, 0.850651],
     [-0.442863, 0.238856, 0.864188],
     [-0.295242, 0.0, 0.955423],

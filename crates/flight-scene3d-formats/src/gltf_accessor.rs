@@ -1,5 +1,7 @@
 //! flight-compiler: rust-only
 
+// flight-lint: allow-file(f64) Task Q format numbers: glTF JSON, COLLADA, MD5 and OBJ text numbers are JS Numbers held in f64, and binary AWD2/3DS/MD2/STL/glTF f32 fields widen exactly at decode; vertex, material, color and diagnostic lanes stay f32
+
 use crate::gltf_diagnostics::{GltfDropTally, gltf_diagnostic_numbers, tally_gltf_numbers};
 use crate::gltf_json::{GltfJsonMetadata, gltf_original_number};
 use crate::gltf_schema::*;
@@ -27,7 +29,7 @@ enum GltfComponentValue {
 }
 
 struct GltfFloatValue {
-    value: f32,
+    value: f64,
 }
 
 struct GltfSignedValue {
@@ -172,7 +174,7 @@ fn apply_gltf_accessor_sparse(
             reader.drops.as_ref(),
             ImportDiagnosticSeverity::Recover,
             "gltf.sparse-invalid-read",
-            &[("firstCount", count)],
+            &[("firstCount", count as f32)],
         );
         return;
     };
@@ -193,7 +195,7 @@ fn apply_gltf_accessor_sparse(
                 "gltf.sparse-index-out-of-range",
                 &[
                     ("firstCount", accessor_count as f32),
-                    ("firstIndex", gltf_component_float(&target)),
+                    ("firstIndex", (gltf_component_float(&target)) as f32),
                 ],
             );
             return;
@@ -280,11 +282,11 @@ fn gltf_component_count(kind: &str) -> Option<usize> {
     };
 }
 
-fn gltf_component_float(value: &GltfComponentValue) -> f32 {
+fn gltf_component_float(value: &GltfComponentValue) -> f64 {
     return match value {
         GltfComponentValue::Float(value) => value.value,
-        GltfComponentValue::Signed(value) => value.value as f32,
-        GltfComponentValue::Unsigned(value) => value.value as f32,
+        GltfComponentValue::Signed(value) => value.value as f64,
+        GltfComponentValue::Unsigned(value) => value.value as f64,
     };
 }
 
@@ -306,7 +308,7 @@ pub(crate) fn gltf_integer_field<T: ?Sized>(
     metadata: &GltfJsonMetadata,
     record: &Ref<T>,
     field: &str,
-    current: f32,
+    current: f64,
 ) -> Option<usize> {
     let value = gltf_original_number(metadata, record, field, current);
     if !value.is_finite() || value < 0.0 || value.fract() != 0.0 || value >= usize::MAX as f64 {
@@ -327,7 +329,7 @@ fn gltf_sparse_index_out_of_range(value: &GltfComponentValue, count: usize) -> b
     };
 }
 
-fn normalize_gltf_component(component_type: u32, value: &GltfComponentValue) -> f32 {
+fn normalize_gltf_component(component_type: u32, value: &GltfComponentValue) -> f64 {
     let value = gltf_component_float(value);
     return match component_type {
         5120 => (value / 127.0).max(-1.0),
@@ -404,7 +406,7 @@ pub(crate) fn read_gltf_accessor(
                 "gltf.accessor-buffer-not-found",
                 &[
                     ("firstAccessor", accessor_index as f32),
-                    ("firstBuffer", view.read().unwrap().buffer),
+                    ("firstBuffer", (view.read().unwrap().buffer) as f32),
                 ],
             );
         };
@@ -465,7 +467,7 @@ pub(crate) fn read_gltf_accessor(
                 ("firstAccessor", accessor_index as f32),
                 (
                     "firstBufferView",
-                    accessor.read().unwrap().buffer_view.unwrap_or(-1.0),
+                    (accessor.read().unwrap().buffer_view.unwrap_or(-1.0)) as f32,
                 ),
             ],
         );
@@ -506,7 +508,9 @@ fn read_gltf_component(bytes: &[u8], component_type: u32, offset: usize) -> Gltf
             value: u32::from_le_bytes(bytes[offset..offset + 4].try_into().unwrap()),
         }),
         _ => GltfComponentValue::Float(GltfFloatValue {
-            value: f32::from_le_bytes(bytes[offset..offset + 4].try_into().unwrap()),
+            value: f64::from(f32::from_le_bytes(
+                bytes[offset..offset + 4].try_into().unwrap(),
+            )),
         }),
     };
 }
@@ -570,12 +574,13 @@ fn write_gltf_component(
         let GltfComponentArray::Float32(out) = out else {
             unreachable!()
         };
-        out.values.write().unwrap()[index] = normalize_gltf_component(component_type, &value);
+        out.values.write().unwrap()[index] =
+            (normalize_gltf_component(component_type, &value)) as f32;
         return;
     }
     match (out, value) {
         (GltfComponentArray::Float32(out), GltfComponentValue::Float(value)) => {
-            out.values.write().unwrap()[index] = value.value
+            out.values.write().unwrap()[index] = value.value as f32
         }
         (GltfComponentArray::Int8(out), GltfComponentValue::Signed(value)) => {
             out.values.write().unwrap()[index] = value.value as i8

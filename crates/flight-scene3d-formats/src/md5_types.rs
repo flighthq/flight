@@ -1,5 +1,7 @@
 //! flight-compiler: rust-only
 
+// flight-lint: allow-file(f64) Task Q format numbers: glTF JSON, COLLADA, MD5 and OBJ text numbers are JS Numbers held in f64, and binary AWD2/3DS/MD2/STL/glTF f32 fields widen exactly at decode; vertex, material, color and diagnostic lanes stay f32
+
 use flight_entity::Ref;
 use flight_importdiagnostics::{
     ImportDiagnostic, ImportDiagnosticDetailValue, ImportDiagnosticSeverity,
@@ -27,18 +29,18 @@ pub struct Md5ImportOptions {
 
 pub struct Md5Joint {
     pub name: String,
-    pub orientation_w: f32,
-    pub orientation_x: f32,
-    pub orientation_y: f32,
-    pub orientation_z: f32,
+    pub orientation_w: f64,
+    pub orientation_x: f64,
+    pub orientation_y: f64,
+    pub orientation_z: f64,
     pub parent_index: i32,
-    pub position_x: f32,
-    pub position_y: f32,
-    pub position_z: f32,
+    pub position_x: f64,
+    pub position_y: f64,
+    pub position_z: f64,
 }
 
 pub struct Md5Mesh {
-    pub indices: Vec<f32>,
+    pub indices: Vec<f64>,
     pub shader: String,
     pub vertices: Vec<Md5Vertex>,
     pub weights: Vec<Md5Weight>,
@@ -66,16 +68,16 @@ pub struct Md5SectionHandler {
 pub struct Md5Vertex {
     pub count_weights: i32,
     pub start_weight: i32,
-    pub u: f32,
-    pub v: f32,
+    pub u: f64,
+    pub v: f64,
 }
 
 pub struct Md5Weight {
-    pub bias: f32,
+    pub bias: f64,
     pub joint_index: i32,
-    pub position_x: f32,
-    pub position_y: f32,
-    pub position_z: f32,
+    pub position_x: f64,
+    pub position_y: f64,
+    pub position_z: f64,
 }
 
 pub const MD5_MATERIAL_FEATURE: &str = "Material";

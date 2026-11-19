@@ -1,5 +1,7 @@
 //! flight-compiler: target-native
 
+// flight-lint: allow-file(f64) Task Q format numbers: glTF JSON, COLLADA, MD5 and OBJ text numbers are JS Numbers held in f64, and binary AWD2/3DS/MD2/STL/glTF f32 fields widen exactly at decode; vertex, material, color and diagnostic lanes stay f32
+
 use crate::md2_schema::{
     MD2_ANORMS, MD2_COMPRESSED_VERTEX_SIZE, MD2_FRAME_HEADER_SIZE, MD2_FRAME_NAME_SIZE,
     MD2_HEADER_SIZE, MD2_MAGIC, MD2_SKIN_SIZE, MD2_TEXCOORD_SIZE, MD2_TRIANGLE_SIZE, MD2_VERSION,
@@ -29,13 +31,13 @@ fn build_md2_morph(frames: &[Md2Frame], source_vertex_indices: &[usize]) -> Opti
     let base = &frames[0];
     let mut targets = Vec::new();
     for frame in &frames[1..] {
-        let mut position_deltas = vec![0.0; source_vertex_indices.len() * 3].into_boxed_slice();
-        let mut normal_deltas = vec![0.0; source_vertex_indices.len() * 3].into_boxed_slice();
+        let mut position_deltas = vec![0.0_f64; source_vertex_indices.len() * 3].into_boxed_slice();
+        let mut normal_deltas = vec![0.0_f64; source_vertex_indices.len() * 3].into_boxed_slice();
         for (v, source_vertex) in source_vertex_indices.iter().enumerate() {
             for c in 0..3 {
                 let src = source_vertex * 3 + c;
-                position_deltas[v * 3 + c] = frame.positions[src] - base.positions[src];
-                normal_deltas[v * 3 + c] = frame.normals[src] - base.normals[src];
+                position_deltas[v * 3 + c] = f64::from(frame.positions[src] - base.positions[src]);
+                normal_deltas[v * 3 + c] = f64::from(frame.normals[src] - base.normals[src]);
             }
         }
         targets.push(MeshMorphTarget {
@@ -69,7 +71,7 @@ fn empty_md2_document() -> Scene3DDocument {
 }
 
 pub(crate) fn md2_numeric_detail(
-    fields: &[(&str, f32)],
+    fields: &[(&str, f64)],
 ) -> Option<HashMap<String, ImportDiagnosticDetailValue>> {
     return Some(
         fields
@@ -77,7 +79,7 @@ pub(crate) fn md2_numeric_detail(
             .map(|(key, value)| {
                 (
                     (*key).to_string(),
-                    ImportDiagnosticDetailValue::Number(*value),
+                    ImportDiagnosticDetailValue::Number((*value) as f32),
                 )
             })
             .collect(),
@@ -96,7 +98,7 @@ pub fn parse_md2_with_section_handlers(
             Reject,
             "md2.header-too-short",
             "parseMd2",
-            md2_numeric_detail(&[("byteLength", bytes.len() as f32)]),
+            md2_numeric_detail(&[("byteLength", bytes.len() as f64)]),
         );
         return empty_md2_document();
     }
@@ -121,7 +123,7 @@ pub fn parse_md2_with_section_handlers(
             Reject,
             "md2.unsupported-version",
             "parseMd2",
-            md2_numeric_detail(&[("version", version as f32)]),
+            md2_numeric_detail(&[("version", version as f64)]),
         );
         return empty_md2_document();
     }
@@ -163,7 +165,7 @@ pub fn parse_md2_with_section_handlers(
             Reject,
             "md2.negative-header-field",
             "parseMd2",
-            md2_numeric_detail(&[("byteLength", bytes.len() as f32)]),
+            md2_numeric_detail(&[("byteLength", bytes.len() as f64)]),
         );
         return empty_md2_document();
     }
@@ -184,8 +186,8 @@ pub fn parse_md2_with_section_handlers(
             "md2.frame-size-mismatch",
             "parseMd2",
             md2_numeric_detail(&[
-                ("actual", frame_stride as f32),
-                ("expected", declared_frame_size as f32),
+                ("actual", frame_stride as f64),
+                ("expected", declared_frame_size as f64),
             ]),
         );
         return empty_md2_document();
@@ -205,7 +207,7 @@ pub fn parse_md2_with_section_handlers(
             Reject,
             "md2.truncated-data-region",
             "parseMd2",
-            md2_numeric_detail(&[("byteLength", bytes.len() as f32)]),
+            md2_numeric_detail(&[("byteLength", bytes.len() as f64)]),
         );
         return empty_md2_document();
     }
@@ -216,8 +218,8 @@ pub fn parse_md2_with_section_handlers(
             "md2.file-size-mismatch",
             "parseMd2",
             md2_numeric_detail(&[
-                ("actual", bytes.len() as f32),
-                ("expected", declared_end as f32),
+                ("actual", bytes.len() as f64),
+                ("expected", declared_end as f64),
             ]),
         );
     }
@@ -267,7 +269,7 @@ pub fn parse_md2_with_section_handlers(
                 continue;
             }
             let index = *dedup.entry((vert_idx, tex_idx)).or_insert_with(|| {
-                let index = source_vertex_indices.len() as f32;
+                let index = source_vertex_indices.len() as f64;
                 let p = vert_idx * 3;
                 vertices.extend_from_slice(&base.positions[p..p + 3]);
                 vertices.extend_from_slice(&base.normals[p..p + 3]);
@@ -285,7 +287,7 @@ pub fn parse_md2_with_section_handlers(
             Drop,
             "md2.triangle-vertex-index-out-of-range",
             "parseMd2",
-            md2_numeric_detail(&[("corners", out_of_range_vertex_corners as f32)]),
+            md2_numeric_detail(&[("corners", out_of_range_vertex_corners as f64)]),
         );
     }
     if out_of_range_tex_coord_corners > 0 {
@@ -294,7 +296,7 @@ pub fn parse_md2_with_section_handlers(
             Drop,
             "md2.triangle-texcoord-index-out-of-range",
             "parseMd2",
-            md2_numeric_detail(&[("corners", out_of_range_tex_coord_corners as f32)]),
+            md2_numeric_detail(&[("corners", out_of_range_tex_coord_corners as f64)]),
         );
     }
     if indices.is_empty() {
@@ -360,8 +362,10 @@ pub fn parse_md2_with_section_handlers(
     return document;
 }
 
-fn read_md2_f32(bytes: &Uint8Array, offset: usize) -> f32 {
-    return f32::from_le_bytes(bytes[offset..offset + 4].try_into().unwrap());
+fn read_md2_f64(bytes: &Uint8Array, offset: usize) -> f64 {
+    return f64::from(f32::from_le_bytes(
+        bytes[offset..offset + 4].try_into().unwrap(),
+    ));
 }
 
 // flight-lint: allow(f64) MD2 decoded binary32 scale/translate must widen losslessly before byte*scale+translate, with only final Float32Array rounding (Foreman47334f95)
@@ -377,28 +381,27 @@ fn read_md2_frames(
     let mut out_of_range_normals = diagnostics.as_ref().map(|_| Vec::new());
     for f in 0..num_frames {
         let frame_base = off_frames + f * frame_stride;
-        let scale =
-            std::array::from_fn::<_, 3, _>(|c| read_md2_f32(bytes, frame_base + c * 4) as f64);
+        let scale = std::array::from_fn::<_, 3, _>(|c| read_md2_f64(bytes, frame_base + c * 4));
         let translate =
-            std::array::from_fn::<_, 3, _>(|c| read_md2_f32(bytes, frame_base + 12 + c * 4) as f64);
+            std::array::from_fn::<_, 3, _>(|c| read_md2_f64(bytes, frame_base + 12 + c * 4));
         let name = read_md2_name(bytes, frame_base + 24, MD2_FRAME_NAME_SIZE);
-        let mut positions = vec![0.0; num_vertices * 3].into_boxed_slice();
-        let mut normals = vec![0.0; num_vertices * 3].into_boxed_slice();
+        let mut positions = vec![0.0_f32; num_vertices * 3].into_boxed_slice();
+        let mut normals = vec![0.0_f32; num_vertices * 3].into_boxed_slice();
         for i in 0..num_vertices {
             let b = frame_base + MD2_FRAME_HEADER_SIZE + i * MD2_COMPRESSED_VERTEX_SIZE;
             let px = bytes[b] as f64 * scale[0] + translate[0];
             let py = bytes[b + 1] as f64 * scale[1] + translate[1];
             let pz = bytes[b + 2] as f64 * scale[2] + translate[2];
             let p = i * 3;
-            positions[p] = px as f32;
-            positions[p + 1] = pz as f32;
-            positions[p + 2] = -py as f32;
+            positions[p] = (px as f64) as f32;
+            positions[p + 1] = (pz as f64) as f32;
+            positions[p + 2] = (-py as f64) as f32;
             let ni = bytes[b + 3] as usize;
             if ni < MD2_ANORMS.len() {
                 let n = MD2_ANORMS[ni];
-                normals[p] = n[0];
-                normals[p + 1] = n[2];
-                normals[p + 2] = -n[1];
+                normals[p] = (n[0]) as f32;
+                normals[p + 1] = (n[2]) as f32;
+                normals[p + 2] = (-n[1]) as f32;
             } else if let Some(indices) = &mut out_of_range_normals {
                 if !indices.contains(&ni) {
                     indices.push(ni);
@@ -419,8 +422,8 @@ fn read_md2_frames(
                 "md2.normal-index-out-of-range",
                 "readMd2Frames",
                 md2_numeric_detail(&[
-                    ("distinctIndices", indices.len() as f32),
-                    ("firstIndex", *first_index as f32),
+                    ("distinctIndices", indices.len() as f64),
+                    ("firstIndex", f64::from(*first_index as f32)),
                 ]),
             );
         }
@@ -450,8 +453,8 @@ fn read_md2_tex_coords(
 ) -> (Box<Float32Array>, Box<Float32Array>) {
     let scale_s = if width > 0 { 1.0 / width as f64 } else { 0.0 };
     let scale_t = if height > 0 { 1.0 / height as f64 } else { 0.0 };
-    let mut tex_s = vec![0.0; count].into_boxed_slice();
-    let mut tex_t = vec![0.0; count].into_boxed_slice();
+    let mut tex_s = vec![0.0_f32; count].into_boxed_slice();
+    let mut tex_t = vec![0.0_f32; count].into_boxed_slice();
     for i in 0..count {
         let base = offset + i * MD2_TEXCOORD_SIZE;
         tex_s[i] =
@@ -484,7 +487,7 @@ fn report_md2_section_overlap(
                     ImportDiagnosticSeverity::Recover,
                     "md2.section-overlap",
                     "parseMd2",
-                    md2_numeric_detail(&[("first", i as f32), ("second", j as f32)]),
+                    md2_numeric_detail(&[("first", f64::from(i as f32)), ("second", j as f64)]),
                 );
                 return;
             }

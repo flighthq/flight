@@ -34,11 +34,11 @@ src/awd2_reader.rs: #[derive(Debug, PartialEq, Eq)] pub struct Awd2StringRead { 
 src/awd2_reader.rs: pub fn awd_data_type_byte_size(data_type: u8) -> usize
 src/awd2_reader.rs: pub fn awd_transform_to_matrix4(out: &mut Matrix4, transform: &Float64Array)
 src/awd2_reader.rs: pub fn awd_transform_to_transform3d(out: &mut Transform3D, transform: &Float64Array)
-src/awd2_reader.rs: pub fn has_non_unit_scale(sx: f32, sy: f32, sz: f32) -> bool
-src/awd2_reader.rs: pub fn read_awd_data_value(view: &Uint8Array, offset: usize, data_type: u8) -> f32
+src/awd2_reader.rs: pub fn has_non_unit_scale(sx: f64, sy: f64, sz: f64) -> bool
+src/awd2_reader.rs: pub fn read_awd_data_value(view: &Uint8Array, offset: usize, data_type: u8) -> f64
 src/awd2_reader.rs: pub fn read_awd_properties(view: &Uint8Array, mut offset: usize, end: usize) -> Awd2PropertiesRead
-src/awd2_reader.rs: pub fn read_awd_property_float32(view: &Uint8Array, values: &[Awd2PropertyEntry], key: u16,) -> Option<f32>
-src/awd2_reader.rs: pub fn read_awd_property_number(view: &Uint8Array, values: &[Awd2PropertyEntry], key: u16,) -> Option<f32>
+src/awd2_reader.rs: pub fn read_awd_property_float32(view: &Uint8Array, values: &[Awd2PropertyEntry], key: u16,) -> Option<f64>
+src/awd2_reader.rs: pub fn read_awd_property_number(view: &Uint8Array, values: &[Awd2PropertyEntry], key: u16,) -> Option<f64>
 src/awd2_reader.rs: pub fn read_awd_property_uint32(view: &Uint8Array, values: &[Awd2PropertyEntry], key: u16,) -> Option<u32>
 src/awd2_reader.rs: pub fn read_awd_property_uint8(view: &Uint8Array, values: &[Awd2PropertyEntry], key: u16,) -> Option<u8>
 src/awd2_reader.rs: pub fn read_awd_string(view: &Uint8Array, source: &Uint8Array, offset: usize) -> Awd2StringRead
@@ -90,12 +90,12 @@ src/awd2_schema.rs: pub const AWD2_DATA_UINT32: u8
 src/awd2_schema.rs: pub const AWD2_DATA_UINT8: u8
 src/awd2_schema.rs: pub const AWD2_FORMAT_VERSION: u8
 src/awd2_schema.rs: pub const AWD2_HEADER_BYTES: usize
-src/awd2_schema.rs: pub const AWD2_LIGHT_DEFAULT_AMBIENT: f32
-src/awd2_schema.rs: pub const AWD2_LIGHT_DEFAULT_DIFFUSE: f32
-src/awd2_schema.rs: pub const AWD2_LIGHT_DEFAULT_FALLOFF: f32
-src/awd2_schema.rs: pub const AWD2_LIGHT_DEFAULT_RADIUS: f32
+src/awd2_schema.rs: pub const AWD2_LIGHT_DEFAULT_AMBIENT: f64
+src/awd2_schema.rs: pub const AWD2_LIGHT_DEFAULT_DIFFUSE: f64
+src/awd2_schema.rs: pub const AWD2_LIGHT_DEFAULT_FALLOFF: f64
+src/awd2_schema.rs: pub const AWD2_LIGHT_DEFAULT_RADIUS: f64
 src/awd2_schema.rs: pub const AWD2_LIGHT_DEFAULT_RGB: u32
-src/awd2_schema.rs: pub const AWD2_LIGHT_DEFAULT_SPECULAR: f32
+src/awd2_schema.rs: pub const AWD2_LIGHT_DEFAULT_SPECULAR: f64
 src/awd2_schema.rs: pub const AWD2_LIGHT_PROP_AMBIENT: u16
 src/awd2_schema.rs: pub const AWD2_LIGHT_PROP_AMBIENT_COLOR: u16
 src/awd2_schema.rs: pub const AWD2_LIGHT_PROP_COLOR: u16
@@ -112,9 +112,9 @@ src/awd2_schema.rs: pub const AWD2_LIGHT_TYPE_POINT: u8
 src/awd2_schema.rs: pub const AWD2_MAGIC_0: u8
 src/awd2_schema.rs: pub const AWD2_MAGIC_1: u8
 src/awd2_schema.rs: pub const AWD2_MAGIC_2: u8
-src/awd2_schema.rs: pub const AWD2_MATERIAL_DEFAULT_GLOSS: f32
+src/awd2_schema.rs: pub const AWD2_MATERIAL_DEFAULT_GLOSS: f64
 src/awd2_schema.rs: pub const AWD2_MATERIAL_DEFAULT_SPECULAR_RGB: u32
-src/awd2_schema.rs: pub const AWD2_MATERIAL_DEFAULT_SPECULAR_STRENGTH: f32
+src/awd2_schema.rs: pub const AWD2_MATERIAL_DEFAULT_SPECULAR_STRENGTH: f64
 src/awd2_schema.rs: pub const AWD2_MATERIAL_PROP_ALPHA: u16
 src/awd2_schema.rs: pub const AWD2_MATERIAL_PROP_COLOR: u16
 src/awd2_schema.rs: pub const AWD2_MATERIAL_PROP_DIFFUSE_TEXTURE: u16
@@ -148,7 +148,7 @@ src/awd2_types.rs: impl Entity for Awd2ParseState :: fn entity_runtime(&self) ->
 src/awd2_types.rs: impl Entity for Awd2ParseState :: fn entity_runtime_mut(&mut self) -> &mut EntityRuntimeSlot
 src/awd2_types.rs: pub struct Awd2Block { pub block_id: u32, pub block_type: u8, pub data_end: usize, pub data_start: usize, pub geometry_wide: bool, pub matrix_wide: bool, pub source: Ref<Box<Uint8Array>>, pub view: Ref<Box<Uint8Array>>, }
 src/awd2_types.rs: pub struct Awd2BlockDispatchEntry { pub block_type: u8, pub handler: Ref<Awd2BlockHandler>, }
-src/awd2_types.rs: pub struct Awd2BlockHandler { pub block_types: Vec<u8>, pub build_phase: Option<f32>, pub deferred: Option<bool>, pub parse: Arc<dyn Fn(&mut Awd2ParseState, &Awd2Block) + Send + Sync>, pub build: Option<Arc<dyn Fn(&mut Awd2ParseState) + Send + Sync>>, }
+src/awd2_types.rs: pub struct Awd2BlockHandler { pub block_types: Vec<u8>, pub build_phase: Option<f64>, pub deferred: Option<bool>, pub parse: Arc<dyn Fn(&mut Awd2ParseState, &Awd2Block) + Send + Sync>, pub build: Option<Arc<dyn Fn(&mut Awd2ParseState) + Send + Sync>>, }
 src/awd2_types.rs: pub struct Awd2CameraEntry { pub key: u32, pub value: Awd2ParsedCamera, }
 src/awd2_types.rs: pub struct Awd2ContainerEntry { pub key: u32, pub value: Awd2ParsedContainer, }
 src/awd2_types.rs: pub struct Awd2GeometryEntry { pub key: u32, pub value: Vec<Awd2ParsedGeometry>, }
@@ -160,13 +160,13 @@ src/awd2_types.rs: pub struct Awd2NodeIndexEntry { pub key: u32, pub value: i32,
 src/awd2_types.rs: pub struct Awd2ParseOptions { pub blocks: Vec<Ref<Awd2BlockHandler>>, pub deflate: Option<Option<Arc<HostDecompressDeflateCapability>>>, pub lzma: Option<Option<Arc<HostDecompressLzmaCapability>>>, }
 src/awd2_types.rs: pub struct Awd2ParseOptionsFragment { pub blocks: Option<Vec<Ref<Awd2BlockHandler>>>, pub deflate: Option<Option<Arc<HostDecompressDeflateCapability>>>, pub lzma: Option<Option<Arc<HostDecompressLzmaCapability>>>, }
 src/awd2_types.rs: pub struct Awd2ParseState { pub cameras: Vec<Awd2CameraEntry>, pub containers: Vec<Awd2ContainerEntry>, pub diagnostics: Option<Ref<Vec<ImportDiagnostic>>>, pub document: Ref<Scene3DDocument>, pub geometries: Vec<Awd2GeometryEntry>, pub light_pickers: Vec<Awd2LightPickerEntry>, pub lights: Vec<Awd2LightEntry>, pub materials: Ref<Vec<Awd2MaterialEntry>>, pub mesh_instances: Vec<Awd2MeshInstanceEntry>, pub node_index_for_block: Vec<Awd2NodeIndexEntry>, pub resolve_material: Option<Arc<dyn Fn(u32) -> i32 + Send + Sync>>, pub skeleton_animations: Vec<Awd2SkeletonAnimationEntry>, pub skeleton_joint_node_indices: Vec<i32>, pub skeleton_poses: Vec<Awd2SkeletonPoseEntry>, pub skeletons: Vec<Awd2SkeletonEntry>, pub skin_index: Option<i32>, pub source: Ref<Box<Uint8Array>>, pub textures: Ref<Vec<Awd2TextureEntry>>, pub view: Ref<Box<Uint8Array>>, runtime: EntityRuntimeSlot, }
-src/awd2_types.rs: pub struct Awd2ParsedCamera { pub bottom: f32, pub fov: f32, pub left: f32, pub name: String, pub parent_id: u32, pub projection_type: i16, pub right: f32, pub top: f32, pub transform: Box<Float64Array>, }
+src/awd2_types.rs: pub struct Awd2ParsedCamera { pub bottom: f64, pub fov: f64, pub left: f64, pub name: String, pub parent_id: u32, pub projection_type: i16, pub right: f64, pub top: f64, pub transform: Box<Float64Array>, }
 src/awd2_types.rs: pub struct Awd2ParsedContainer { pub name: String, pub parent_id: u32, pub transform: Box<Float64Array>, }
 src/awd2_types.rs: pub struct Awd2ParsedGeometry { pub geometry: Ref<MeshGeometry>, pub skinned: bool, }
 src/awd2_types.rs: pub struct Awd2ParsedJoint { pub name: String, pub parent_index: u16, pub transform: Box<Float64Array>, }
-src/awd2_types.rs: pub struct Awd2ParsedLight { pub ambient: f32, pub ambient_rgb: u32, pub casts_shadow: bool, pub diffuse: f32, pub direction_x: f32, pub direction_y: f32, pub direction_z: f32, pub fall_off: f32, pub has_radius: bool, pub light_type: u8, pub name: String, pub parent_id: u32, pub radius: f32, pub rgb: u32, pub specular: f32, pub transform: Box<Float64Array>, }
+src/awd2_types.rs: pub struct Awd2ParsedLight { pub ambient: f64, pub ambient_rgb: u32, pub casts_shadow: bool, pub diffuse: f64, pub direction_x: f64, pub direction_y: f64, pub direction_z: f64, pub fall_off: f64, pub has_radius: bool, pub light_type: u8, pub name: String, pub parent_id: u32, pub radius: f64, pub rgb: u32, pub specular: f64, pub transform: Box<Float64Array>, }
 src/awd2_types.rs: pub struct Awd2ParsedLightPicker { pub light_ids: Vec<u32>, pub name: String, }
-src/awd2_types.rs: pub struct Awd2ParsedMaterial { pub alpha: Option<f32>, pub color: Option<u32>, pub diffuse_texture_id: u32, pub gloss: Option<f32>, pub name: String, pub normal_texture_id: u32, pub num_methods: u8, pub specular_color: Option<u32>, pub specular_strength: Option<f32>, pub specular_texture_id: u32, }
+src/awd2_types.rs: pub struct Awd2ParsedMaterial { pub alpha: Option<f64>, pub color: Option<u32>, pub diffuse_texture_id: u32, pub gloss: Option<f64>, pub name: String, pub normal_texture_id: u32, pub num_methods: u8, pub specular_color: Option<u32>, pub specular_strength: Option<f64>, pub specular_texture_id: u32, }
 src/awd2_types.rs: pub struct Awd2ParsedMeshInstance { pub geometry_id: u32, pub material_ids: Vec<u32>, pub name: String, pub parent_id: u32, pub transform: Box<Float64Array>, }
 src/awd2_types.rs: pub struct Awd2ParsedSkeleton { pub joints: Vec<Awd2ParsedJoint>, pub name: String, }
 src/awd2_types.rs: pub struct Awd2ParsedSkeletonAnimation { pub name: String, pub poses: Vec<Awd2SkeletonAnimationPose>, }
@@ -174,7 +174,7 @@ src/awd2_types.rs: pub struct Awd2ParsedSkeletonPose { pub joint_transforms: Vec
 src/awd2_types.rs: pub struct Awd2ParsedTexture { pub bytes: Option<Ref<Box<Uint8Array>>>, pub mime_type: Option<String>, pub name: String, pub url: Option<String>, }
 src/awd2_types.rs: pub struct Awd2RehydratedBody { pub source: Ref<Box<Uint8Array>>, pub view: Ref<Box<Uint8Array>>, }
 src/awd2_types.rs: pub struct Awd2SkeletonAnimationEntry { pub key: u32, pub value: Awd2ParsedSkeletonAnimation, }
-src/awd2_types.rs: pub struct Awd2SkeletonAnimationPose { pub duration: f32, pub pose_block_id: u32, }
+src/awd2_types.rs: pub struct Awd2SkeletonAnimationPose { pub duration: f64, pub pose_block_id: u32, }
 src/awd2_types.rs: pub struct Awd2SkeletonEntry { pub key: u32, pub value: Awd2ParsedSkeleton, }
 src/awd2_types.rs: pub struct Awd2SkeletonPoseEntry { pub key: u32, pub value: Awd2ParsedSkeletonPose, }
 src/awd2_types.rs: pub struct Awd2TextureEntry { pub key: u32, pub value: Awd2ParsedTexture, }
@@ -214,33 +214,33 @@ src/collada_types.rs: impl ColladaImportOptions :: fn parse_with_decoders(&self,
 src/collada_types.rs: pub enum ColladaCameraDefinition { Orthographic(ColladaOrthographicCameraDefinition), Perspective(ColladaPerspectiveCameraDefinition), }
 src/collada_types.rs: pub struct ColladaBuildContext { pub deferred_cameras: Vec<ColladaDeferredCameraBinding>, pub deferred_controllers: Vec<ColladaDeferredControllerBinding>, pub deferred_lights: Vec<ColladaDeferredLightBinding>, pub node_id_map: Vec<ColladaIndexEntry>, pub parse: Ref<ColladaParseContext>, pub root_node_indices: Vec<i32>, }
 src/collada_types.rs: pub struct ColladaCameraEntry { pub key: String, pub value: Option<Ref<ColladaCameraDefinition>>, }
-src/collada_types.rs: pub struct ColladaDecodedAnimationChannel { pub target: String, pub times: Vec<f32>, pub values: Vec<f32>, pub interpolation: Vec<String>, pub in_tangents: Vec<f32>, pub out_tangents: Vec<f32>, }
-src/collada_types.rs: pub struct ColladaDecodedMorph { pub controller_id: String, pub base_geometry: String, pub method: ColladaMorphMethod, pub targets: Vec<String>, pub weights: Vec<f32>, }
-src/collada_types.rs: pub struct ColladaDecodedSkin { pub bind_shape_matrix: Vec<f32>, pub controller_id: String, pub geometry_ref: String, pub influences: Vec<Vec<ColladaSkinInfluence>>, pub inverse_bind_matrices: Vec<Vec<f32>>, pub joint_names: Vec<String>, pub joint_sids: Vec<String>, }
+src/collada_types.rs: pub struct ColladaDecodedAnimationChannel { pub target: String, pub times: Vec<f64>, pub values: Vec<f64>, pub interpolation: Vec<String>, pub in_tangents: Vec<f64>, pub out_tangents: Vec<f64>, }
+src/collada_types.rs: pub struct ColladaDecodedMorph { pub controller_id: String, pub base_geometry: String, pub method: ColladaMorphMethod, pub targets: Vec<String>, pub weights: Vec<f64>, }
+src/collada_types.rs: pub struct ColladaDecodedSkin { pub bind_shape_matrix: Vec<f64>, pub controller_id: String, pub geometry_ref: String, pub influences: Vec<Vec<ColladaSkinInfluence>>, pub inverse_bind_matrices: Vec<Vec<f64>>, pub joint_names: Vec<String>, pub joint_sids: Vec<String>, }
 src/collada_types.rs: pub struct ColladaDeferredCameraBinding { pub camera_id: String, pub node_index: i32, }
 src/collada_types.rs: pub struct ColladaDeferredControllerBinding { pub controller_id: String, pub material_overrides: Vec<ColladaIndexEntry>, pub node_index: i32, pub skeleton_root: Option<String>, }
 src/collada_types.rs: pub struct ColladaDeferredLightBinding { pub node_index: i32, pub url: String, }
-src/collada_types.rs: pub struct ColladaElementDecoder { pub build: Option<Arc<dyn Fn(&Ref<ColladaBuildContext>) + Send + Sync>>, pub build_phase: Option<f32>, pub elements: Vec<String>, pub features: Vec<String>, pub decode: Arc<dyn Fn(&Ref<ColladaParseContext>) + Send + Sync>, }
-src/collada_types.rs: pub struct ColladaFloatArrayEntry { pub key: String, pub value: Ref<Vec<f32>>, }
+src/collada_types.rs: pub struct ColladaElementDecoder { pub build: Option<Arc<dyn Fn(&Ref<ColladaBuildContext>) + Send + Sync>>, pub build_phase: Option<f64>, pub elements: Vec<String>, pub features: Vec<String>, pub decode: Arc<dyn Fn(&Ref<ColladaParseContext>) + Send + Sync>, }
+src/collada_types.rs: pub struct ColladaFloatArrayEntry { pub key: String, pub value: Ref<Vec<f64>>, }
 src/collada_types.rs: pub struct ColladaImportOptions { pub base_url: Option<String>, pub decoders: Option<Vec<Ref<ColladaElementDecoder>>>, }
-src/collada_types.rs: pub struct ColladaLightDefinition { pub color: u32, pub decay: f32, pub inner_cone_degrees: f32, pub intensity: f32, pub kind: ColladaLightKind, pub name: Option<String>, pub outer_cone_degrees: f32, pub spot_blend: f32, }
+src/collada_types.rs: pub struct ColladaLightDefinition { pub color: u32, pub decay: f64, pub inner_cone_degrees: f64, pub intensity: f64, pub kind: ColladaLightKind, pub name: Option<String>, pub outer_cone_degrees: f64, pub spot_blend: f64, }
 src/collada_types.rs: pub struct ColladaLightEntry { pub key: String, pub value: Option<Ref<ColladaLightDefinition>>, }
 src/collada_types.rs: pub struct ColladaMorphEntry { pub key: String, pub value: Ref<ColladaDecodedMorph>, }
-src/collada_types.rs: pub struct ColladaOrthographicCameraDefinition { pub far: f32, pub half_height: f32, pub half_width: f32, pub name: Option<String>, pub near: f32, }
+src/collada_types.rs: pub struct ColladaOrthographicCameraDefinition { pub far: f64, pub half_height: f64, pub half_width: f64, pub name: Option<String>, pub near: f64, }
 src/collada_types.rs: pub struct ColladaParseContext { pub animation_channels: Ref<Vec<Ref<ColladaDecodedAnimationChannel>>>, pub base_url: Option<String>, pub camera_definitions: Ref<Vec<ColladaCameraEntry>>, pub diagnostics: Ref<Vec<ImportDiagnostic>>, pub document: Ref<Scene3DDocument>, pub geometry_id_to_mesh_index: Ref<Vec<ColladaIndexEntry>>, pub geometry_positions: Ref<Vec<ColladaFloatArrayEntry>>, pub geometry_primitive_symbols: Ref<Vec<ColladaStringArrayEntry>>, pub light_definitions: Ref<Vec<ColladaLightEntry>>, pub material_indices: Ref<Vec<ColladaIndexEntry>>, pub morphs: Ref<Vec<ColladaMorphEntry>>, pub root: Ref<XmlElement>, pub skins: Ref<Vec<ColladaSkinEntry>>, }
-src/collada_types.rs: pub struct ColladaParseResult { pub document: Ref<Scene3DDocument>, pub diagnostics: Ref<Vec<ImportDiagnostic>>, pub up_axis: ColladaUpAxis, pub root_transform: Arc<Vec<f32>>, }
-src/collada_types.rs: pub struct ColladaPerspectiveCameraDefinition { pub aspect: f32, pub far: f32, pub fov_y: f32, pub name: Option<String>, pub near: f32, }
+src/collada_types.rs: pub struct ColladaParseResult { pub document: Ref<Scene3DDocument>, pub diagnostics: Ref<Vec<ImportDiagnostic>>, pub up_axis: ColladaUpAxis, pub root_transform: Arc<Vec<f64>>, }
+src/collada_types.rs: pub struct ColladaPerspectiveCameraDefinition { pub aspect: f64, pub far: f64, pub fov_y: f64, pub name: Option<String>, pub near: f64, }
 src/collada_types.rs: pub struct ColladaSkinEntry { pub key: String, pub value: Ref<ColladaDecodedSkin>, }
-src/collada_types.rs: pub struct ColladaSkinInfluence { pub joint: String, pub weight: f32, }
+src/collada_types.rs: pub struct ColladaSkinInfluence { pub joint: String, pub weight: f64, }
 src/collada_types.rs: pub struct ColladaStringArrayEntry { pub key: String, pub value: Ref<Vec<String>>, }
 src/collada_xml.rs: pub fn collada_child(element: Option<&Ref<XmlElement>>, name: &str) -> Option<Ref<XmlElement>>
 src/collada_xml.rs: pub fn collada_children(out: &mut Vec<Ref<XmlElement>>, element: Option<&Ref<XmlElement>>, name: &str,)
 src/collada_xml.rs: pub fn collada_descendants(out: &mut Vec<Ref<XmlElement>>, element: &Ref<XmlElement>, name: &str)
 src/collada_xml.rs: pub fn collada_id_of(element: &Ref<XmlElement>) -> Option<String>
 src/collada_xml.rs: pub fn collada_local_name(element: &Ref<XmlElement>) -> String
-src/collada_xml.rs: pub fn collada_numbers(element: Option<&Ref<XmlElement>>) -> Vec<f32>
+src/collada_xml.rs: pub fn collada_numbers(element: Option<&Ref<XmlElement>>) -> Vec<f64>
 src/collada_xml.rs: pub fn collada_text(element: Option<&Ref<XmlElement>>, name: &str) -> Option<String>
-src/collada_xml.rs: pub fn parse_collada_floats(text: &str) -> Vec<f32>
+src/collada_xml.rs: pub fn parse_collada_floats(text: &str) -> Vec<f64>
 src/collada_xml.rs: pub fn walk_collada_element(element: &Ref<XmlElement>, visit: &mut dyn FnMut(&Ref<XmlElement>))
 src/contract.rs: pub use crate::awd2_block_census::*;
 src/contract.rs: pub use crate::awd2_block_dispatch::*;
@@ -403,62 +403,62 @@ src/gltf_schema.rs: impl GltfTextureInfoAccess for GltfOcclusionTextureInfo
 src/gltf_schema.rs: impl GltfTextureInfoAccess for GltfOcclusionTextureInfo :: fn gltf_texture_info(&self) -> &GltfTextureInfo
 src/gltf_schema.rs: impl GltfTextureInfoAccess for GltfTextureInfo
 src/gltf_schema.rs: impl GltfTextureInfoAccess for GltfTextureInfo :: fn gltf_texture_info(&self) -> &GltfTextureInfo
-src/gltf_schema.rs: pub struct GltfAccessor { pub buffer_view: Option<f32>, pub byte_offset: Option<f32>, pub component_type: GltfComponentType, pub count: f32, pub normalized: Option<bool>, pub r#type: String, pub sparse: Option<Ref<GltfAccessorSparse>>, }
-src/gltf_schema.rs: pub struct GltfAccessorSparse { pub count: f32, pub indices: Ref<GltfAccessorSparseIndices>, pub values: Ref<GltfAccessorSparseValues>, }
-src/gltf_schema.rs: pub struct GltfAccessorSparseIndices { pub buffer_view: f32, pub byte_offset: Option<f32>, pub component_type: GltfComponentType, }
-src/gltf_schema.rs: pub struct GltfAccessorSparseValues { pub buffer_view: f32, pub byte_offset: Option<f32>, }
+src/gltf_schema.rs: pub struct GltfAccessor { pub buffer_view: Option<f64>, pub byte_offset: Option<f64>, pub component_type: GltfComponentType, pub count: f64, pub normalized: Option<bool>, pub r#type: String, pub sparse: Option<Ref<GltfAccessorSparse>>, }
+src/gltf_schema.rs: pub struct GltfAccessorSparse { pub count: f64, pub indices: Ref<GltfAccessorSparseIndices>, pub values: Ref<GltfAccessorSparseValues>, }
+src/gltf_schema.rs: pub struct GltfAccessorSparseIndices { pub buffer_view: f64, pub byte_offset: Option<f64>, pub component_type: GltfComponentType, }
+src/gltf_schema.rs: pub struct GltfAccessorSparseValues { pub buffer_view: f64, pub byte_offset: Option<f64>, }
 src/gltf_schema.rs: pub struct GltfAnimation { pub name: Option<String>, pub channels: Vec<Ref<GltfAnimationChannel>>, pub samplers: Vec<Ref<GltfAnimationSampler>>, }
-src/gltf_schema.rs: pub struct GltfAnimationChannel { pub sampler: f32, pub target: Ref<GltfAnimationTarget>, }
-src/gltf_schema.rs: pub struct GltfAnimationSampler { pub input: f32, pub output: f32, pub interpolation: Option<String>, }
-src/gltf_schema.rs: pub struct GltfAnimationTarget { pub node: Option<f32>, pub path: String, }
+src/gltf_schema.rs: pub struct GltfAnimationChannel { pub sampler: f64, pub target: Ref<GltfAnimationTarget>, }
+src/gltf_schema.rs: pub struct GltfAnimationSampler { pub input: f64, pub output: f64, pub interpolation: Option<String>, }
+src/gltf_schema.rs: pub struct GltfAnimationTarget { pub node: Option<f64>, pub path: String, }
 src/gltf_schema.rs: pub struct GltfAsset { pub version: String, }
-src/gltf_schema.rs: pub struct GltfBuffer { pub byte_length: f32, pub uri: Option<String>, }
-src/gltf_schema.rs: pub struct GltfBufferView { pub buffer: f32, pub byte_length: f32, pub byte_offset: Option<f32>, pub byte_stride: Option<f32>, }
+src/gltf_schema.rs: pub struct GltfBuffer { pub byte_length: f64, pub uri: Option<String>, }
+src/gltf_schema.rs: pub struct GltfBufferView { pub buffer: f64, pub byte_length: f64, pub byte_offset: Option<f64>, pub byte_stride: Option<f64>, }
 src/gltf_schema.rs: pub struct GltfCamera { pub name: Option<String>, pub orthographic: Option<Ref<GltfOrthographicCamera>>, pub perspective: Option<Ref<GltfPerspectiveCamera>>, pub r#type: String, }
-src/gltf_schema.rs: pub struct GltfDocument { pub asset: Option<Ref<GltfAsset>>, pub cameras: Option<Vec<Ref<GltfCamera>>>, pub scene: Option<f32>, pub scenes: Option<Vec<Ref<GltfScene3D>>>, pub nodes: Option<Vec<Ref<GltfNode>>>, pub meshes: Option<Vec<Ref<GltfMesh>>>, pub materials: Option<Vec<Ref<GltfMaterial>>>, pub textures: Option<Vec<Ref<GltfTexture>>>, pub samplers: Option<Vec<Ref<GltfSampler>>>, pub images: Option<Vec<Ref<GltfImage>>>, pub animations: Option<Vec<Ref<GltfAnimation>>>, pub accessors: Option<Vec<Ref<GltfAccessor>>>, pub buffer_views: Option<Vec<Ref<GltfBufferView>>>, pub buffers: Option<Vec<Ref<GltfBuffer>>>, pub skins: Option<Vec<Ref<GltfSkin>>>, pub extensions_used: Option<Vec<String>>, pub extensions_required: Option<Vec<String>>, pub extensions: Option<Ref<GltfDocumentExtensions>>, }
+src/gltf_schema.rs: pub struct GltfDocument { pub asset: Option<Ref<GltfAsset>>, pub cameras: Option<Vec<Ref<GltfCamera>>>, pub scene: Option<f64>, pub scenes: Option<Vec<Ref<GltfScene3D>>>, pub nodes: Option<Vec<Ref<GltfNode>>>, pub meshes: Option<Vec<Ref<GltfMesh>>>, pub materials: Option<Vec<Ref<GltfMaterial>>>, pub textures: Option<Vec<Ref<GltfTexture>>>, pub samplers: Option<Vec<Ref<GltfSampler>>>, pub images: Option<Vec<Ref<GltfImage>>>, pub animations: Option<Vec<Ref<GltfAnimation>>>, pub accessors: Option<Vec<Ref<GltfAccessor>>>, pub buffer_views: Option<Vec<Ref<GltfBufferView>>>, pub buffers: Option<Vec<Ref<GltfBuffer>>>, pub skins: Option<Vec<Ref<GltfSkin>>>, pub extensions_used: Option<Vec<String>>, pub extensions_required: Option<Vec<String>>, pub extensions: Option<Ref<GltfDocumentExtensions>>, }
 src/gltf_schema.rs: pub struct GltfDocumentExtensions { pub khr_lights_punctual: Option<Ref<GltfPunctualLights>>, pub vendor: Record<Unknown>, }
-src/gltf_schema.rs: pub struct GltfDracoMeshCompression { pub attributes: Ref<Record<f32>>, pub buffer_view: f32, }
-src/gltf_schema.rs: pub struct GltfImage { pub uri: Option<String>, pub mime_type: Option<String>, pub buffer_view: Option<f32>, }
-src/gltf_schema.rs: pub struct GltfMaterial { pub name: Option<String>, pub pbr_metallic_roughness: Option<Ref<GltfPbrMetallicRoughness>>, pub normal_texture: Option<Ref<GltfNormalTextureInfo>>, pub occlusion_texture: Option<Ref<GltfOcclusionTextureInfo>>, pub emissive_texture: Option<Ref<GltfTextureInfo>>, pub emissive_factor: Option<Vec<f32>>, pub alpha_mode: Option<String>, pub alpha_cutoff: Option<f32>, pub double_sided: Option<bool>, pub extensions: Option<Ref<GltfMaterialExtensions>>, }
+src/gltf_schema.rs: pub struct GltfDracoMeshCompression { pub attributes: Ref<Record<f64>>, pub buffer_view: f64, }
+src/gltf_schema.rs: pub struct GltfImage { pub uri: Option<String>, pub mime_type: Option<String>, pub buffer_view: Option<f64>, }
+src/gltf_schema.rs: pub struct GltfMaterial { pub name: Option<String>, pub pbr_metallic_roughness: Option<Ref<GltfPbrMetallicRoughness>>, pub normal_texture: Option<Ref<GltfNormalTextureInfo>>, pub occlusion_texture: Option<Ref<GltfOcclusionTextureInfo>>, pub emissive_texture: Option<Ref<GltfTextureInfo>>, pub emissive_factor: Option<Vec<f64>>, pub alpha_mode: Option<String>, pub alpha_cutoff: Option<f64>, pub double_sided: Option<bool>, pub extensions: Option<Ref<GltfMaterialExtensions>>, }
 src/gltf_schema.rs: pub struct GltfMaterialExtensions { pub khr_materials_anisotropy: Option<Ref<GltfMaterialsAnisotropy>>, pub khr_materials_clearcoat: Option<Ref<GltfMaterialsClearcoat>>, pub khr_materials_emissive_strength: Option<Ref<GltfMaterialsEmissiveStrength>>, pub khr_materials_ior: Option<Ref<GltfMaterialsIor>>, pub khr_materials_iridescence: Option<Ref<GltfMaterialsIridescence>>, pub khr_materials_pbr_specular_glossiness: Option<Ref<GltfMaterialsPbrSpecularGlossiness>>, pub khr_materials_sheen: Option<Ref<GltfMaterialsSheen>>, pub khr_materials_unlit: Option<Ref<GltfMaterialsUnlit>>, pub khr_materials_specular: Option<Ref<GltfMaterialsSpecular>>, pub khr_materials_transmission: Option<Ref<GltfMaterialsTransmission>>, pub khr_materials_volume: Option<Ref<GltfMaterialsVolume>>, pub vendor: Record<Unknown>, }
-src/gltf_schema.rs: pub struct GltfMaterialsAnisotropy { pub anisotropy_rotation: Option<f32>, pub anisotropy_strength: Option<f32>, pub anisotropy_texture: Option<Ref<GltfTextureInfo>>, }
-src/gltf_schema.rs: pub struct GltfMaterialsClearcoat { pub clearcoat_factor: Option<f32>, pub clearcoat_normal_texture: Option<Ref<GltfNormalTextureInfo>>, pub clearcoat_roughness_factor: Option<f32>, pub clearcoat_roughness_texture: Option<Ref<GltfTextureInfo>>, pub clearcoat_texture: Option<Ref<GltfTextureInfo>>, }
-src/gltf_schema.rs: pub struct GltfMaterialsEmissiveStrength { pub emissive_strength: Option<f32>, }
-src/gltf_schema.rs: pub struct GltfMaterialsIor { pub ior: Option<f32>, }
-src/gltf_schema.rs: pub struct GltfMaterialsIridescence { pub iridescence_factor: Option<f32>, pub iridescence_ior: Option<f32>, pub iridescence_texture: Option<Ref<GltfTextureInfo>>, pub iridescence_thickness_maximum: Option<f32>, pub iridescence_thickness_minimum: Option<f32>, pub iridescence_thickness_texture: Option<Ref<GltfTextureInfo>>, }
-src/gltf_schema.rs: pub struct GltfMaterialsPbrSpecularGlossiness { pub diffuse_factor: Option<Vec<f32>>, pub diffuse_texture: Option<Ref<GltfTextureInfo>>, pub glossiness_factor: Option<f32>, pub specular_factor: Option<Vec<f32>>, pub specular_glossiness_texture: Option<Ref<GltfTextureInfo>>, }
-src/gltf_schema.rs: pub struct GltfMaterialsSheen { pub sheen_color_factor: Option<Vec<f32>>, pub sheen_color_texture: Option<Ref<GltfTextureInfo>>, pub sheen_roughness_factor: Option<f32>, pub sheen_roughness_texture: Option<Ref<GltfTextureInfo>>, }
-src/gltf_schema.rs: pub struct GltfMaterialsSpecular { pub specular_color_factor: Option<Vec<f32>>, pub specular_color_texture: Option<Ref<GltfTextureInfo>>, pub specular_factor: Option<f32>, pub specular_texture: Option<Ref<GltfTextureInfo>>, }
-src/gltf_schema.rs: pub struct GltfMaterialsTransmission { pub transmission_factor: Option<f32>, pub transmission_texture: Option<Ref<GltfTextureInfo>>, }
+src/gltf_schema.rs: pub struct GltfMaterialsAnisotropy { pub anisotropy_rotation: Option<f64>, pub anisotropy_strength: Option<f64>, pub anisotropy_texture: Option<Ref<GltfTextureInfo>>, }
+src/gltf_schema.rs: pub struct GltfMaterialsClearcoat { pub clearcoat_factor: Option<f64>, pub clearcoat_normal_texture: Option<Ref<GltfNormalTextureInfo>>, pub clearcoat_roughness_factor: Option<f64>, pub clearcoat_roughness_texture: Option<Ref<GltfTextureInfo>>, pub clearcoat_texture: Option<Ref<GltfTextureInfo>>, }
+src/gltf_schema.rs: pub struct GltfMaterialsEmissiveStrength { pub emissive_strength: Option<f64>, }
+src/gltf_schema.rs: pub struct GltfMaterialsIor { pub ior: Option<f64>, }
+src/gltf_schema.rs: pub struct GltfMaterialsIridescence { pub iridescence_factor: Option<f64>, pub iridescence_ior: Option<f64>, pub iridescence_texture: Option<Ref<GltfTextureInfo>>, pub iridescence_thickness_maximum: Option<f64>, pub iridescence_thickness_minimum: Option<f64>, pub iridescence_thickness_texture: Option<Ref<GltfTextureInfo>>, }
+src/gltf_schema.rs: pub struct GltfMaterialsPbrSpecularGlossiness { pub diffuse_factor: Option<Vec<f64>>, pub diffuse_texture: Option<Ref<GltfTextureInfo>>, pub glossiness_factor: Option<f64>, pub specular_factor: Option<Vec<f64>>, pub specular_glossiness_texture: Option<Ref<GltfTextureInfo>>, }
+src/gltf_schema.rs: pub struct GltfMaterialsSheen { pub sheen_color_factor: Option<Vec<f64>>, pub sheen_color_texture: Option<Ref<GltfTextureInfo>>, pub sheen_roughness_factor: Option<f64>, pub sheen_roughness_texture: Option<Ref<GltfTextureInfo>>, }
+src/gltf_schema.rs: pub struct GltfMaterialsSpecular { pub specular_color_factor: Option<Vec<f64>>, pub specular_color_texture: Option<Ref<GltfTextureInfo>>, pub specular_factor: Option<f64>, pub specular_texture: Option<Ref<GltfTextureInfo>>, }
+src/gltf_schema.rs: pub struct GltfMaterialsTransmission { pub transmission_factor: Option<f64>, pub transmission_texture: Option<Ref<GltfTextureInfo>>, }
 src/gltf_schema.rs: pub struct GltfMaterialsUnlit { }
-src/gltf_schema.rs: pub struct GltfMaterialsVolume { pub attenuation_color: Option<Vec<f32>>, pub attenuation_distance: Option<f32>, pub thickness_factor: Option<f32>, pub thickness_texture: Option<Ref<GltfTextureInfo>>, }
-src/gltf_schema.rs: pub struct GltfMesh { pub name: Option<String>, pub primitives: Vec<Ref<GltfPrimitive>>, pub weights: Option<Vec<f32>>, }
-src/gltf_schema.rs: pub struct GltfMorphTarget { pub normal: Option<f32>, pub position: Option<f32>, pub tangent: Option<f32>, }
-src/gltf_schema.rs: pub struct GltfNode { pub camera: Option<f32>, pub name: Option<String>, pub children: Option<Vec<f32>>, pub mesh: Option<f32>, pub skin: Option<f32>, pub matrix: Option<Vec<f32>>, pub translation: Option<Vec<f32>>, pub rotation: Option<Vec<f32>>, pub scale: Option<Vec<f32>>, pub extensions: Option<Ref<GltfNodeExtensions>>, }
+src/gltf_schema.rs: pub struct GltfMaterialsVolume { pub attenuation_color: Option<Vec<f64>>, pub attenuation_distance: Option<f64>, pub thickness_factor: Option<f64>, pub thickness_texture: Option<Ref<GltfTextureInfo>>, }
+src/gltf_schema.rs: pub struct GltfMesh { pub name: Option<String>, pub primitives: Vec<Ref<GltfPrimitive>>, pub weights: Option<Vec<f64>>, }
+src/gltf_schema.rs: pub struct GltfMorphTarget { pub normal: Option<f64>, pub position: Option<f64>, pub tangent: Option<f64>, }
+src/gltf_schema.rs: pub struct GltfNode { pub camera: Option<f64>, pub name: Option<String>, pub children: Option<Vec<f64>>, pub mesh: Option<f64>, pub skin: Option<f64>, pub matrix: Option<Vec<f64>>, pub translation: Option<Vec<f64>>, pub rotation: Option<Vec<f64>>, pub scale: Option<Vec<f64>>, pub extensions: Option<Ref<GltfNodeExtensions>>, }
 src/gltf_schema.rs: pub struct GltfNodeExtensions { pub khr_lights_punctual: Option<Ref<GltfNodePunctualLight>>, pub vendor: Record<Unknown>, }
-src/gltf_schema.rs: pub struct GltfNodePunctualLight { pub light: f32, }
-src/gltf_schema.rs: pub struct GltfNormalTextureInfo { pub fields: GltfTextureInfo, pub scale: Option<f32>, }
-src/gltf_schema.rs: pub struct GltfOcclusionTextureInfo { pub fields: GltfTextureInfo, pub strength: Option<f32>, }
-src/gltf_schema.rs: pub struct GltfOrthographicCamera { pub xmag: f32, pub ymag: f32, pub zfar: f32, pub znear: f32, }
-src/gltf_schema.rs: pub struct GltfPbrMetallicRoughness { pub base_color_factor: Option<Vec<f32>>, pub base_color_texture: Option<Ref<GltfTextureInfo>>, pub metallic_factor: Option<f32>, pub roughness_factor: Option<f32>, pub metallic_roughness_texture: Option<Ref<GltfTextureInfo>>, }
-src/gltf_schema.rs: pub struct GltfPerspectiveCamera { pub aspect_ratio: Option<f32>, pub yfov: f32, pub zfar: Option<f32>, pub znear: f32, }
-src/gltf_schema.rs: pub struct GltfPrimitive { pub attributes: Ref<GltfPrimitiveAttributes>, pub indices: Option<f32>, pub material: Option<f32>, pub mode: Option<f32>, pub extensions: Option<Ref<GltfPrimitiveExtensions>>, pub targets: Option<Vec<Ref<GltfMorphTarget>>>, }
-src/gltf_schema.rs: pub struct GltfPrimitiveAttributes { pub joints_0: Option<f32>, pub normal: Option<f32>, pub position: Option<f32>, pub tangent: Option<f32>, pub texcoord_0: Option<f32>, pub weights_0: Option<f32>, }
+src/gltf_schema.rs: pub struct GltfNodePunctualLight { pub light: f64, }
+src/gltf_schema.rs: pub struct GltfNormalTextureInfo { pub fields: GltfTextureInfo, pub scale: Option<f64>, }
+src/gltf_schema.rs: pub struct GltfOcclusionTextureInfo { pub fields: GltfTextureInfo, pub strength: Option<f64>, }
+src/gltf_schema.rs: pub struct GltfOrthographicCamera { pub xmag: f64, pub ymag: f64, pub zfar: f64, pub znear: f64, }
+src/gltf_schema.rs: pub struct GltfPbrMetallicRoughness { pub base_color_factor: Option<Vec<f64>>, pub base_color_texture: Option<Ref<GltfTextureInfo>>, pub metallic_factor: Option<f64>, pub roughness_factor: Option<f64>, pub metallic_roughness_texture: Option<Ref<GltfTextureInfo>>, }
+src/gltf_schema.rs: pub struct GltfPerspectiveCamera { pub aspect_ratio: Option<f64>, pub yfov: f64, pub zfar: Option<f64>, pub znear: f64, }
+src/gltf_schema.rs: pub struct GltfPrimitive { pub attributes: Ref<GltfPrimitiveAttributes>, pub indices: Option<f64>, pub material: Option<f64>, pub mode: Option<f64>, pub extensions: Option<Ref<GltfPrimitiveExtensions>>, pub targets: Option<Vec<Ref<GltfMorphTarget>>>, }
+src/gltf_schema.rs: pub struct GltfPrimitiveAttributes { pub joints_0: Option<f64>, pub normal: Option<f64>, pub position: Option<f64>, pub tangent: Option<f64>, pub texcoord_0: Option<f64>, pub weights_0: Option<f64>, }
 src/gltf_schema.rs: pub struct GltfPrimitiveExtensions { pub khr_draco_mesh_compression: Option<Ref<GltfDracoMeshCompression>>, pub vendor: Record<Unknown>, }
-src/gltf_schema.rs: pub struct GltfPunctualLight { pub color: Option<Vec<f32>>, pub intensity: Option<f32>, pub name: Option<String>, pub range: Option<f32>, pub spot: Option<Ref<GltfPunctualLightSpot>>, pub r#type: String, }
-src/gltf_schema.rs: pub struct GltfPunctualLightSpot { pub inner_cone_angle: Option<f32>, pub outer_cone_angle: Option<f32>, }
+src/gltf_schema.rs: pub struct GltfPunctualLight { pub color: Option<Vec<f64>>, pub intensity: Option<f64>, pub name: Option<String>, pub range: Option<f64>, pub spot: Option<Ref<GltfPunctualLightSpot>>, pub r#type: String, }
+src/gltf_schema.rs: pub struct GltfPunctualLightSpot { pub inner_cone_angle: Option<f64>, pub outer_cone_angle: Option<f64>, }
 src/gltf_schema.rs: pub struct GltfPunctualLights { pub lights: Vec<Ref<GltfPunctualLight>>, }
-src/gltf_schema.rs: pub struct GltfSampler { pub mag_filter: Option<f32>, pub min_filter: Option<f32>, pub wrap_s: Option<f32>, pub wrap_t: Option<f32>, }
-src/gltf_schema.rs: pub struct GltfScene3D { pub name: Option<String>, pub nodes: Option<Vec<f32>>, }
-src/gltf_schema.rs: pub struct GltfSkin { pub name: Option<String>, pub inverse_bind_matrices: Option<f32>, pub joints: Vec<f32>, pub skeleton: Option<f32>, }
-src/gltf_schema.rs: pub struct GltfTexture { pub extensions: Option<Ref<GltfTextureExtensions>>, pub sampler: Option<f32>, pub source: Option<f32>, }
-src/gltf_schema.rs: pub struct GltfTextureBasisu { pub source: f32, }
+src/gltf_schema.rs: pub struct GltfSampler { pub mag_filter: Option<f64>, pub min_filter: Option<f64>, pub wrap_s: Option<f64>, pub wrap_t: Option<f64>, }
+src/gltf_schema.rs: pub struct GltfScene3D { pub name: Option<String>, pub nodes: Option<Vec<f64>>, }
+src/gltf_schema.rs: pub struct GltfSkin { pub name: Option<String>, pub inverse_bind_matrices: Option<f64>, pub joints: Vec<f64>, pub skeleton: Option<f64>, }
+src/gltf_schema.rs: pub struct GltfTexture { pub extensions: Option<Ref<GltfTextureExtensions>>, pub sampler: Option<f64>, pub source: Option<f64>, }
+src/gltf_schema.rs: pub struct GltfTextureBasisu { pub source: f64, }
 src/gltf_schema.rs: pub struct GltfTextureExtensions { pub khr_texture_basisu: Option<Ref<GltfTextureBasisu>>, pub vendor: Record<Unknown>, }
-src/gltf_schema.rs: pub struct GltfTextureInfo { pub index: f32, pub tex_coord: Option<f32>, pub extensions: Option<Ref<GltfTextureInfoExtensions>>, }
+src/gltf_schema.rs: pub struct GltfTextureInfo { pub index: f64, pub tex_coord: Option<f64>, pub extensions: Option<Ref<GltfTextureInfoExtensions>>, }
 src/gltf_schema.rs: pub struct GltfTextureInfoExtensions { pub khr_texture_transform: Option<Ref<GltfTextureTransform>>, }
-src/gltf_schema.rs: pub struct GltfTextureTransform { pub offset: Option<Vec<f32>>, pub rotation: Option<f32>, pub scale: Option<Vec<f32>>, pub tex_coord: Option<f32>, }
+src/gltf_schema.rs: pub struct GltfTextureTransform { pub offset: Option<Vec<f64>>, pub rotation: Option<f64>, pub scale: Option<Vec<f64>>, pub tex_coord: Option<f64>, }
 src/gltf_schema.rs: pub trait GltfTextureInfoAccess: Send + Sync { fn gltf_texture_info(&self) -> &GltfTextureInfo; }
-src/gltf_schema.rs: pub type GltfComponentType = f32;
+src/gltf_schema.rs: pub type GltfComponentType = f64;
 src/gltf_schema.rs: pub type GltfTextureInfoRef = Ref<dyn GltfTextureInfoAccess>;
 src/gltf_sheen.rs: pub static GLTF_SHEEN_EXTENSION_HANDLER: LazyLock<Ref<GltfExtensionHandler>>
 src/gltf_skins.rs: pub static GLTF_SKINS_CORE_FEATURE_HANDLER: LazyLock<Ref<GltfCoreFeatureHandler>>
@@ -474,12 +474,12 @@ src/gltf_types.rs: pub enum GltfComponentArray { Float32(GltfFloat32Array), Int8
 src/gltf_types.rs: pub enum GltfExternalBuffer { Values(GltfExternalBufferValues), View(GltfExternalBufferView), }
 src/gltf_types.rs: pub struct GltfAccessorData { pub count: usize, pub data: GltfComponentArray, pub fault: Option<Ref<GltfAccessorFault>>, }
 src/gltf_types.rs: pub struct GltfAccessorFault { pub detail: Ref<Record<f32>>, pub kind: String, }
-src/gltf_types.rs: pub struct GltfCoreFeatureContext { pub build_node_transform: Arc<dyn Fn(f32) -> Transform3D + Send + Sync>, pub document: Ref<Scene3DDocument>, pub mesh_indices: Ref<Vec<Ref<Vec<i32>>>>, pub node_indices: Ref<Vec<i32>>, pub primitive_node_indices: Ref<Vec<Ref<Vec<i32>>>>, pub read_accessor: Arc<dyn Fn(f32, Option<&str>) -> GltfAccessorData + Send + Sync>, pub report_accessor_fault: Arc<dyn Fn(ImportDiagnosticSeverity, &Ref<GltfAccessorFault>) + Send + Sync>, pub report_diagnostic: Arc<dyn Fn(ImportDiagnosticSeverity, &str, Option<&Ref<Record<ImportDiagnosticDetailValue>>>, Option<&str>,) + Send + Sync,>, pub source: Ref<GltfDocument>, }
+src/gltf_types.rs: pub struct GltfCoreFeatureContext { pub build_node_transform: Arc<dyn Fn(f64) -> Transform3D + Send + Sync>, pub document: Ref<Scene3DDocument>, pub mesh_indices: Ref<Vec<Ref<Vec<i32>>>>, pub node_indices: Ref<Vec<i32>>, pub primitive_node_indices: Ref<Vec<Ref<Vec<i32>>>>, pub read_accessor: Arc<dyn Fn(f64, Option<&str>) -> GltfAccessorData + Send + Sync>, pub report_accessor_fault: Arc<dyn Fn(ImportDiagnosticSeverity, &Ref<GltfAccessorFault>) + Send + Sync>, pub report_diagnostic: Arc<dyn Fn(ImportDiagnosticSeverity, &str, Option<&Ref<Record<ImportDiagnosticDetailValue>>>, Option<&str>,) + Send + Sync,>, pub source: Ref<GltfDocument>, }
 src/gltf_types.rs: pub struct GltfCoreFeatureHandler { pub apply: Arc<dyn Fn(&Ref<GltfCoreFeatureContext>) + Send + Sync>, pub kind: String, }
 src/gltf_types.rs: pub struct GltfDracoMesh { pub attributes: Ref<Record<Ref<Box<Float32Array>>>>, pub indices: Option<Ref<Box<Uint32Array>>>, pub vertex_count: usize, }
-src/gltf_types.rs: pub struct GltfExtensionContext { pub build_node_transform: Arc<dyn Fn(f32) -> Transform3D + Send + Sync>, pub diagnostics: Option<Ref<Vec<ImportDiagnostic>>>, pub document: Ref<Scene3DDocument>, pub node_indices: Ref<Vec<i32>>, pub resolve_texture: Arc<dyn Fn(Option<&GltfTextureInfoRef>, TextureColorSpace) -> Option<Ref<Texture>> + Send + Sync,>, pub source: Ref<GltfDocument>, }
+src/gltf_types.rs: pub struct GltfExtensionContext { pub build_node_transform: Arc<dyn Fn(f64) -> Transform3D + Send + Sync>, pub diagnostics: Option<Ref<Vec<ImportDiagnostic>>>, pub document: Ref<Scene3DDocument>, pub node_indices: Ref<Vec<i32>>, pub resolve_texture: Arc<dyn Fn(Option<&GltfTextureInfoRef>, TextureColorSpace) -> Option<Ref<Texture>> + Send + Sync,>, pub source: Ref<GltfDocument>, }
 src/gltf_types.rs: pub struct GltfExtensionHandler { pub apply: Arc<dyn Fn(&Ref<GltfExtensionContext>) + Send + Sync>, pub kind: String, }
-src/gltf_types.rs: pub struct GltfExternalBufferValues { pub values: Ref<Vec<f32>>, }
+src/gltf_types.rs: pub struct GltfExternalBufferValues { pub values: Ref<Vec<f64>>, }
 src/gltf_types.rs: pub struct GltfExternalBufferView { pub view: ArrayBufferView, }
 src/gltf_types.rs: pub struct GltfFloat32Array { pub values: Ref<Box<Float32Array>>, }
 src/gltf_types.rs: pub struct GltfImportOptions { pub base_path: Option<String>, pub extension_handlers: Option<Vec<Ref<GltfExtensionHandler>>>, pub external_buffers: Option<Ref<Record<GltfExternalBuffer>>>, pub draco_registry: Option<Ref<GltfDracoRegistry>>, }
@@ -488,7 +488,7 @@ src/gltf_types.rs: pub struct GltfInt8Array { pub values: Ref<Box<Int8Array>>, }
 src/gltf_types.rs: pub struct GltfUint16Array { pub values: Ref<Box<Uint16Array>>, }
 src/gltf_types.rs: pub struct GltfUint32Array { pub values: Ref<Box<Uint32Array>>, }
 src/gltf_types.rs: pub struct GltfUint8Array { pub values: Ref<Box<Uint8Array>>, }
-src/gltf_types.rs: pub type GltfDracoDecoder = Arc<dyn Fn(&ArrayBufferView, &Ref<Record<f32>>) -> Option<Ref<GltfDracoMesh>> + Send + Sync>;
+src/gltf_types.rs: pub type GltfDracoDecoder = Arc<dyn Fn(&ArrayBufferView, &Ref<Record<f64>>) -> Option<Ref<GltfDracoMesh>> + Send + Sync>;
 src/gltf_unlit.rs: pub static GLTF_UNLIT_EXTENSION_HANDLER: LazyLock<Ref<GltfExtensionHandler>>
 src/lib.rs: pub mod contract
 src/lib.rs: pub use awd2_block_dispatch::create_awd2_parse_state;
@@ -604,9 +604,9 @@ src/md2_features.rs: pub const MD2_FEATURE_NAMES: [&str; 3]
 src/md2_features.rs: pub fn collect_md2_features(out: &mut Vec<String>, source: &Uint8Array) -> bool
 src/md2_parse.rs: pub fn parse_md2_with_section_handlers(bytes: &Uint8Array, mut diagnostics: Option<&mut Vec<ImportDiagnostic>>, section_handlers: &[Ref<Md2SectionHandler>],) -> Scene3DDocument
 src/md2_requirements.rs: pub fn parse_md2_requirements(source: &Uint8Array) -> RequirementSet
-src/md2_schema.rs: pub const MD2_ANORMS: [[f32; 3]; 162]
+src/md2_schema.rs: pub const MD2_ANORMS: [[f64; 3]; 162]
 src/md2_schema.rs: pub const MD2_COMPRESSED_VERTEX_SIZE: usize
-src/md2_schema.rs: pub const MD2_FRAME_FPS: f32
+src/md2_schema.rs: pub const MD2_FRAME_FPS: f64
 src/md2_schema.rs: pub const MD2_FRAME_HEADER_SIZE: usize
 src/md2_schema.rs: pub const MD2_FRAME_NAME_SIZE: usize
 src/md2_schema.rs: pub const MD2_HEADER_SIZE: usize
@@ -648,13 +648,13 @@ src/md5_types.rs: pub const MD5_SKELETON_FEATURE: &str
 src/md5_types.rs: pub struct Md5DropTally { pub count: usize, pub detail: HashMap<String, ImportDiagnosticDetailValue>, pub kind: String, pub severity: ImportDiagnosticSeverity, }
 src/md5_types.rs: pub struct Md5DropTallyEntry { pub key: String, pub value: Md5DropTally, }
 src/md5_types.rs: pub struct Md5ImportOptions { pub section_handlers: Option<Vec<Ref<Md5SectionHandler>>>, }
-src/md5_types.rs: pub struct Md5Joint { pub name: String, pub orientation_w: f32, pub orientation_x: f32, pub orientation_y: f32, pub orientation_z: f32, pub parent_index: i32, pub position_x: f32, pub position_y: f32, pub position_z: f32, }
-src/md5_types.rs: pub struct Md5Mesh { pub indices: Vec<f32>, pub shader: String, pub vertices: Vec<Md5Vertex>, pub weights: Vec<Md5Weight>, }
+src/md5_types.rs: pub struct Md5Joint { pub name: String, pub orientation_w: f64, pub orientation_x: f64, pub orientation_y: f64, pub orientation_z: f64, pub parent_index: i32, pub position_x: f64, pub position_y: f64, pub position_z: f64, }
+src/md5_types.rs: pub struct Md5Mesh { pub indices: Vec<f64>, pub shader: String, pub vertices: Vec<Md5Vertex>, pub weights: Vec<Md5Weight>, }
 src/md5_types.rs: pub struct Md5MeshSection<'a> { pub materials: &'a mut Vec<i32>, pub shader: &'a str, }
 src/md5_types.rs: pub struct Md5ParseContext<'a> { pub diagnostics: Option<&'a mut Vec<ImportDiagnostic>>, pub document: &'a mut Scene3DDocument, pub drops: Option<&'a mut Vec<Md5DropTallyEntry>>, pub joints: &'a [Md5Joint], pub mesh: Option<Md5MeshSection<'a>>, pub skin: Option<i32>, }
 src/md5_types.rs: pub struct Md5SectionHandler { pub collect: Arc<dyn for<'a> Fn(&mut Md5ParseContext<'a>) + Send + Sync>, pub feature: String, }
-src/md5_types.rs: pub struct Md5Vertex { pub count_weights: i32, pub start_weight: i32, pub u: f32, pub v: f32, }
-src/md5_types.rs: pub struct Md5Weight { pub bias: f32, pub joint_index: i32, pub position_x: f32, pub position_y: f32, pub position_z: f32, }
+src/md5_types.rs: pub struct Md5Vertex { pub count_weights: i32, pub start_weight: i32, pub u: f64, pub v: f64, }
+src/md5_types.rs: pub struct Md5Weight { pub bias: f64, pub joint_index: i32, pub position_x: f64, pub position_y: f64, pub position_z: f64, }
 src/merge_awd2_parse_options.rs: pub fn merge_awd2_parse_options(out: &mut Awd2ParseOptions, options: &[Awd2ParseOptionsFragment])
 src/mtl_parse.rs: pub fn parse_obj_material_library(source: &str, mut diagnostics: Option<&mut Vec<ImportDiagnostic>>,) -> ObjMaterialLibrary
 src/obj_blinn_phong_material_handler.rs: pub fn obj_material_to_blinn_phong(out: &mut Scene3DDocument, material: &ObjMaterial, mut diagnostics: Option<&mut Vec<ImportDiagnostic>>,) -> BlinnPhongMaterial
@@ -702,18 +702,18 @@ src/scene3d_format_requirements.rs: pub const STL_REQUIREMENT_KEY_NAMESPACE: &st
 src/scene3d_format_requirements.rs: pub const THREE_DS_REQUIREMENT_KEY_NAMESPACE: &str
 src/scene3d_formats_test_helper.rs: pub fn get_test_texture_resource(resources: &[ImageResourceReference], texture: &Ref<Texture>,) -> ImageResourceReference
 src/scene_skeleton.rs: pub fn find_scene3d_skeleton_joints(root: &Node3DRef) -> Option<Ref<Vec<Node3DRef>>>
-src/shared.rs: #[derive(Clone, Copy, Debug, PartialEq)] pub struct SkinInfluence { pub joint_index: f32, pub weight: f32, }
+src/shared.rs: #[derive(Clone, Copy, Debug, PartialEq)] pub struct SkinInfluence { pub joint_index: f64, pub weight: f64, }
 src/shared.rs: pub const CANONICAL_FLOATS_PER_VERTEX: usize
 src/shared.rs: pub const MAX_SKIN_INFLUENCES: usize
 src/shared.rs: pub const SKINNED_FLOATS_PER_VERTEX: usize
-src/shared.rs: pub fn convert_positions_z_up_to_y_up(values: &mut [f32], stride: Option<usize>, offset: Option<usize>,)
-src/shared.rs: pub fn convert_quaternions_z_up_to_y_up(values: &mut [f32], stride: Option<usize>, offset: Option<usize>,)
+src/shared.rs: pub fn convert_positions_z_up_to_y_up(values: &mut [f64], stride: Option<usize>, offset: Option<usize>,)
+src/shared.rs: pub fn convert_quaternions_z_up_to_y_up(values: &mut [f64], stride: Option<usize>, offset: Option<usize>,)
 src/shared.rs: pub fn convert_transform_lh_to_rh(transform: &mut Float64Array)
 src/shared.rs: pub fn create_embedded_texture_ref(bytes: Ref<Box<Uint8Array>>, mime_type: Option<&str>, resources: Option<&mut Vec<ImageResourceReference>>,) -> Ref<Texture>
 src/shared.rs: pub fn create_external_texture_ref(uri: &str, base_path: Option<&str>, resources: Option<&mut Vec<ImageResourceReference>>,) -> Ref<Texture>
-src/shared.rs: pub fn negate_vec3_z(values: &mut Vec<f32>)
-src/shared.rs: pub fn pack_skin_influences(out_joints: &mut Vec<f32>, out_weights: &mut Vec<f32>, influences: &mut [SkinInfluence],)
-src/shared.rs: pub fn reverse_triangle_winding(indices: &mut Vec<f32>)
+src/shared.rs: pub fn negate_vec3_z(values: &mut Vec<f64>)
+src/shared.rs: pub fn pack_skin_influences(out_joints: &mut Vec<f64>, out_weights: &mut Vec<f64>, influences: &mut [SkinInfluence],)
+src/shared.rs: pub fn reverse_triangle_winding(indices: &mut Vec<f64>)
 src/shared.rs: pub fn reverse_vertex_triangle_winding(vertices: &mut Float32Array, floats_per_vertex: i32)
 src/shared.rs: pub static CANONICAL_LAYOUT: LazyLock<Ref<VertexAttributeLayout>>
 src/stl_features.rs: #[derive(Clone, Copy, Debug, PartialEq, Eq)] pub enum StlVariant { Ascii, Binary, }
@@ -764,8 +764,8 @@ src/three_ds_material_handler.rs: pub static THREE_DS_MATERIAL_HANDLER: LazyLock
 src/three_ds_mesh_handler.rs: pub fn parse_three_ds_trimesh(view: &Uint8Array, offset: usize, end: usize, name: &str, mut three_ds_drops: Option<&mut Vec<ThreeDsDropTallyEntry>>,) -> Option<ThreeDsMesh>
 src/three_ds_mesh_handler.rs: pub static THREE_DS_MESH_FAMILY: LazyLock<Vec<Ref<ThreeDsChunkHandler>>>
 src/three_ds_mesh_handler.rs: pub static THREE_DS_MESH_HANDLER: LazyLock<Ref<ThreeDsChunkHandler>>
-src/three_ds_parse.rs: pub fn pack_three_ds_color(rgb: &[f32; 3], alpha: Option<f32>) -> u32
-src/three_ds_parse.rs: pub fn parse_color_chunk(view: &Uint8Array, offset: usize, end: usize) -> Option<[f32; 3]>
+src/three_ds_parse.rs: pub fn pack_three_ds_color(rgb: &[f64; 3], alpha: Option<f64>) -> u32
+src/three_ds_parse.rs: pub fn parse_color_chunk(view: &Uint8Array, offset: usize, end: usize) -> Option<[f64; 3]>
 src/three_ds_parse.rs: pub fn parse_three_ds_document_with_dispatch(bytes: &Uint8Array, mut diagnostics: Option<&mut Vec<ImportDiagnostic>>, dispatch: &ThreeDsChunkDispatch,) -> Scene3DDocument
 src/three_ds_parse.rs: pub fn read_chunk_end(view: &Uint8Array, cursor: usize, end: usize) -> i64
 src/three_ds_parse.rs: pub fn read_chunk_length(view: &Uint8Array, offset: usize) -> u32
@@ -773,7 +773,7 @@ src/three_ds_parse.rs: pub fn read_null_terminated_string(view: &Uint8Array, off
 src/three_ds_parse.rs: pub fn tally_three_ds_drop(tallies: Option<&mut Vec<ThreeDsDropTallyEntry>>, severity: ImportDiagnosticSeverity, kind: &str, discriminator: &str, first_detail: HashMap<String, ImportDiagnosticDetailValue>,)
 src/three_ds_requirements.rs: pub fn parse_three_ds_requirements(source: &Uint8Array) -> RequirementSet
 src/three_ds_schema.rs: pub const THREE_DS_CAMERA: u16
-src/three_ds_schema.rs: pub const THREE_DS_CAMERA_APERTURE_MM: f32
+src/three_ds_schema.rs: pub const THREE_DS_CAMERA_APERTURE_MM: f64
 src/three_ds_schema.rs: pub const THREE_DS_CAMERA_RANGES: u16
 src/three_ds_schema.rs: pub const THREE_DS_CHUNK_HEADER_BYTES: usize
 src/three_ds_schema.rs: pub const THREE_DS_COLOR_BYTE: u16
@@ -811,10 +811,10 @@ src/three_ds_schema.rs: pub const THREE_DS_TRANSFORM_MATRIX: u16
 src/three_ds_schema.rs: pub const THREE_DS_TRIMESH: u16
 src/three_ds_schema.rs: pub const THREE_DS_UV_COORDS: u16
 src/three_ds_schema.rs: pub const THREE_DS_VERTICES: u16
-src/three_ds_schema.rs: pub struct ThreeDsCamera { pub far: Option<f32>, pub focal_length: f32, pub name: String, pub near: Option<f32>, pub position: [f32; 3], pub roll: f32, pub target: [f32; 3], }
+src/three_ds_schema.rs: pub struct ThreeDsCamera { pub far: Option<f64>, pub focal_length: f64, pub name: String, pub near: Option<f64>, pub position: [f64; 3], pub roll: f64, pub target: [f64; 3], }
 src/three_ds_schema.rs: pub struct ThreeDsDropTally { pub count: usize, pub detail: HashMap<String, ImportDiagnosticDetailValue>, pub kind: String, pub severity: ImportDiagnosticSeverity, }
-src/three_ds_schema.rs: pub struct ThreeDsLight { pub color: [f32; 3], pub enabled: bool, pub falloff: f32, pub hotspot: f32, pub inner_range: Option<f32>, pub multiplier: f32, pub name: String, pub outer_range: Option<f32>, pub position: [f32; 3], pub target: Option<[f32; 3]>, }
-src/three_ds_schema.rs: pub struct ThreeDsMaterial { pub ambient: [f32; 3], pub bump_filename: Option<String>, pub diffuse: [f32; 3], pub name: String, pub opacity: f32, pub opacity_filename: Option<String>, pub shininess: Option<f32>, pub specular: [f32; 3], pub texture_filename: Option<String>, }
+src/three_ds_schema.rs: pub struct ThreeDsLight { pub color: [f64; 3], pub enabled: bool, pub falloff: f64, pub hotspot: f64, pub inner_range: Option<f64>, pub multiplier: f64, pub name: String, pub outer_range: Option<f64>, pub position: [f64; 3], pub target: Option<[f64; 3]>, }
+src/three_ds_schema.rs: pub struct ThreeDsMaterial { pub ambient: [f64; 3], pub bump_filename: Option<String>, pub diffuse: [f64; 3], pub name: String, pub opacity: f64, pub opacity_filename: Option<String>, pub shininess: Option<f64>, pub specular: [f64; 3], pub texture_filename: Option<String>, }
 src/three_ds_schema.rs: pub struct ThreeDsMaterialGroup { pub faces: Box<Uint16Array>, pub name: String, }
 src/three_ds_schema.rs: pub struct ThreeDsMesh { pub faces: Box<Uint16Array>, pub local_matrix: Option<Box<Float32Array>>, pub material_groups: Vec<ThreeDsMaterialGroup>, pub name: String, pub smoothing_groups: Option<Box<Uint32Array>>, pub uvs: Option<Box<Float32Array>>, pub vertices: Box<Float32Array>, }
 src/three_ds_types.rs: pub struct ThreeDsChunkDispatchEntry { pub chunk_id: u16, pub handler: Ref<ThreeDsChunkHandler>, }
@@ -823,5 +823,5 @@ src/three_ds_types.rs: pub struct ThreeDsDropTallyEntry { pub key: String, pub v
 src/three_ds_types.rs: pub struct ThreeDsImportOptions { pub handlers: Option<Vec<Ref<ThreeDsChunkHandler>>>, }
 src/three_ds_types.rs: pub struct ThreeDsMaterialEntry { pub key: String, pub value: ThreeDsMaterial, }
 src/three_ds_types.rs: pub struct ThreeDsParseState<'a> { pub cameras: Vec<ThreeDsCamera>, pub diagnostics: Option<&'a mut Vec<ImportDiagnostic>>, pub drops: Option<Vec<ThreeDsDropTallyEntry>>, pub document: &'a mut Scene3DDocument, pub lights: Vec<ThreeDsLight>, pub materials: Vec<ThreeDsMaterialEntry>, pub meshes: Vec<ThreeDsMesh>, pub pivots: Vec<ThreeDsPivotEntry>, }
-src/three_ds_types.rs: pub struct ThreeDsPivotEntry { pub key: String, pub value: [f32; 3], }
+src/three_ds_types.rs: pub struct ThreeDsPivotEntry { pub key: String, pub value: [f64; 3], }
 src/three_ds_types.rs: pub type ThreeDsChunkDispatch = Vec<ThreeDsChunkDispatchEntry>;

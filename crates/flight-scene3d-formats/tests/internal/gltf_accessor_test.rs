@@ -117,7 +117,7 @@ fn de_strides_interleaved_attributes_and_accepts_zero_only_as_tight_stride() {
         [1.0, 2.0, 3.0, 0.0, 0.0, 1.0]
     );
     for stride in [4.0, -1.0, 12.5, f32::NAN, f32::INFINITY] {
-        view.write().unwrap().byte_stride = Some(stride);
+        view.write().unwrap().byte_stride = Some(f64::from(stride));
         assert_eq!(
             read_gltf_accessor(&reader, 0, None)
                 .fault

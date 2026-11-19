@@ -1,5 +1,7 @@
 //! flight-compiler: rust-only
 
+// flight-lint: allow-file(f64) Task Q format numbers: glTF JSON, COLLADA, MD5 and OBJ text numbers are JS Numbers held in f64, and binary AWD2/3DS/MD2/STL/glTF f32 fields widen exactly at decode; vertex, material, color and diagnostic lanes stay f32
+
 use crate::three_ds_schema::{
     ThreeDsCamera, ThreeDsDropTally, ThreeDsLight, ThreeDsMaterial, ThreeDsMesh,
 };
@@ -50,5 +52,5 @@ pub struct ThreeDsParseState<'a> {
 
 pub struct ThreeDsPivotEntry {
     pub key: String,
-    pub value: [f32; 3],
+    pub value: [f64; 3],
 }

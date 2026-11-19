@@ -79,7 +79,11 @@ mod create_scene3d_from_md2 {
         assert_eq!(&g.vertices[..3], &[6.0, 18.0, -12.0]);
         assert_eq!(
             &g.vertices[3..6],
-            &[MD2_ANORMS[5][0], MD2_ANORMS[5][2], -MD2_ANORMS[5][1]]
+            &[
+                MD2_ANORMS[5][0] as f32,
+                MD2_ANORMS[5][2] as f32,
+                -MD2_ANORMS[5][1] as f32
+            ]
         );
         assert!(g.vertices[6..10].iter().all(|v| *v == 0.0));
     }

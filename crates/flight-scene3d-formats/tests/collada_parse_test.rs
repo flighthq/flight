@@ -9,7 +9,7 @@ const MINIMAL: &str = "<COLLADA><asset><up_axis>Y_UP</up_axis></asset><scene/></
 const WITH_SCENE: &str = "<COLLADA><asset><up_axis>Y_UP</up_axis></asset><library_visual_scenes><visual_scene id=\"s\"><node id=\"n\"/></visual_scene></library_visual_scenes><scene><instance_visual_scene url=\"#s\"/></scene></COLLADA>";
 const Z_UP: &str = "<COLLADA><asset><up_axis>Z_UP</up_axis></asset><scene/></COLLADA>";
 
-fn probe(name: &str, order: &Ref<Vec<String>>, phase: Option<f32>) -> Ref<ColladaElementDecoder> {
+fn probe(name: &str, order: &Ref<Vec<String>>, phase: Option<f64>) -> Ref<ColladaElementDecoder> {
     let decode_name = name.to_string();
     let build_name = name.to_string();
     let decode_order = order.clone();
@@ -106,6 +106,8 @@ mod parse_collada_with_decoders {
             probe("huge", &order, Some(1e20)),
             probe("rounds_up", &order, Some(9007199254740992.0)),
             probe("unphased", &order, None),
+            // Exactly the missing-phase default: ties with "unphased" and keeps input order.
+            probe("max_safe", &order, Some(9007199254740991.0)),
             probe("first", &order, Some(10.0)),
             probe("second", &order, Some(10.0)),
         ];
@@ -123,6 +125,7 @@ mod parse_collada_with_decoders {
                 "first:build",
                 "second:build",
                 "unphased:build",
+                "max_safe:build",
                 "rounds_up:build",
                 "huge:build"
             ]

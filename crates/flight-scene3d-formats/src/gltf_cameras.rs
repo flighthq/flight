@@ -1,5 +1,7 @@
 //! flight-compiler: target-native
 
+// flight-lint: allow-file(f64) Task Q format numbers: glTF JSON, COLLADA, MD5 and OBJ text numbers are JS Numbers held in f64, and binary AWD2/3DS/MD2/STL/glTF f32 fields widen exactly at decode; vertex, material, color and diagnostic lanes stay f32
+
 use crate::gltf_core_shared::{gltf_core_index, report_gltf_core_values};
 use crate::gltf_types::{GltfCoreFeatureContext, GltfCoreFeatureHandler};
 use flight_camera::{Projection, create_orthographic_projection, create_perspective_projection};
@@ -47,7 +49,7 @@ fn apply_gltf_cameras(context: &Ref<GltfCoreFeatureContext>) {
                 &[
                     (
                         "firstCamera",
-                        ImportDiagnosticDetailValue::Number(camera_index),
+                        ImportDiagnosticDetailValue::Number(camera_index as f32),
                     ),
                     (
                         "firstNode",
@@ -78,7 +80,7 @@ fn apply_gltf_cameras(context: &Ref<GltfCoreFeatureContext>) {
                     )
                 };
                 if !(fov > 0.0)
-                    || fov >= std::f32::consts::PI
+                    || fov >= std::f64::consts::PI
                     || !(near > 0.0)
                     || far.is_some_and(|far| !(far > near))
                     || aspect.is_some_and(|aspect| !(aspect > 0.0))
@@ -89,7 +91,7 @@ fn apply_gltf_cameras(context: &Ref<GltfCoreFeatureContext>) {
                         "gltf.camera-invalid-perspective",
                         &[(
                             "firstCamera",
-                            ImportDiagnosticDetailValue::Number(camera_index),
+                            ImportDiagnosticDetailValue::Number(camera_index as f32),
                         )],
                     );
                     continue;
@@ -102,12 +104,12 @@ fn apply_gltf_cameras(context: &Ref<GltfCoreFeatureContext>) {
                 }
                 let mapped = node_indices.read().unwrap().get(node).copied();
                 cameras.push(Scene3DDocumentCamera {
-                    far: far.unwrap_or(f32::INFINITY),
+                    far: far.unwrap_or(f64::INFINITY),
                     name,
                     near,
                     node: mapped,
                     projection: Projection::Perspective(projection),
-                    transform: build_node_transform(node as f32),
+                    transform: build_node_transform(node as f64),
                 });
                 continue;
             }
@@ -130,7 +132,7 @@ fn apply_gltf_cameras(context: &Ref<GltfCoreFeatureContext>) {
                         "gltf.camera-invalid-orthographic",
                         &[(
                             "firstCamera",
-                            ImportDiagnosticDetailValue::Number(camera_index),
+                            ImportDiagnosticDetailValue::Number(camera_index as f32),
                         )],
                     );
                     continue;
@@ -148,7 +150,7 @@ fn apply_gltf_cameras(context: &Ref<GltfCoreFeatureContext>) {
                     near,
                     node: mapped,
                     projection: Projection::Orthographic(projection),
-                    transform: build_node_transform(node as f32),
+                    transform: build_node_transform(node as f64),
                 });
                 continue;
             }
@@ -160,7 +162,7 @@ fn apply_gltf_cameras(context: &Ref<GltfCoreFeatureContext>) {
             &[
                 (
                     "firstCamera",
-                    ImportDiagnosticDetailValue::Number(camera_index),
+                    ImportDiagnosticDetailValue::Number(camera_index as f32),
                 ),
                 ("firstType", ImportDiagnosticDetailValue::String(kind)),
             ],

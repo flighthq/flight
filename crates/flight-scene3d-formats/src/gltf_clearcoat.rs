@@ -64,11 +64,11 @@ fn apply_gltf_clearcoat(context: &Ref<GltfExtensionContext>) {
         let clearcoat_roughness_map =
             resolve_gltf_extension_texture(context, info.as_ref(), TextureColorSpace::Linear);
         let mut extension = create_clearcoat_pbr_extension();
-        extension.clearcoat = clearcoat;
+        extension.clearcoat = clearcoat as f32;
         extension.clearcoat_map = clearcoat_map;
         extension.clearcoat_normal_map = clearcoat_normal_map;
-        extension.clearcoat_normal_scale = clearcoat_normal_scale;
-        extension.clearcoat_roughness = clearcoat_roughness;
+        extension.clearcoat_normal_scale = clearcoat_normal_scale as f32;
+        extension.clearcoat_roughness = clearcoat_roughness as f32;
         extension.clearcoat_roughness_map = clearcoat_roughness_map;
         let document = context.read().unwrap().document.clone();
         attach_gltf_pbr_extension(

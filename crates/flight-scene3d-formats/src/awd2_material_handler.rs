@@ -1,5 +1,7 @@
 //! flight-compiler: target-native
 
+// flight-lint: allow-file(f64) Task Q format numbers: glTF JSON, COLLADA, MD5 and OBJ text numbers are JS Numbers held in f64, and binary AWD2/3DS/MD2/STL/glTF f32 fields widen exactly at decode; vertex, material, color and diagnostic lanes stay f32
+
 use crate::awd2_parse::report_awd_diagnostic;
 use crate::awd2_reader::{
     read_awd_properties, read_awd_property_float32, read_awd_property_number,
@@ -32,7 +34,7 @@ struct AwdResolvedMaterial {
 pub static AWD2_MATERIAL_HANDLER: LazyLock<Ref<Awd2BlockHandler>> = LazyLock::new(|| {
     Arc::new(RwLock::new(Awd2BlockHandler {
         block_types: vec![AWD2_BLOCK_MATERIAL],
-        build_phase: Some(AWD2_BUILD_PHASE_MATERIALS as f32),
+        build_phase: Some(AWD2_BUILD_PHASE_MATERIALS as f64),
         deferred: None,
         parse: Arc::new(|state, block| {
             if let Some(material) = parse_material_block(block, state.diagnostics.as_ref()) {
@@ -96,18 +98,18 @@ pub static AWD2_TEXTURE_HANDLER: LazyLock<Ref<Awd2BlockHandler>> = LazyLock::new
 });
 
 // flight-lint: allow(f64) Principal192423ac: preserve Number multiplication and rounding before exact packed alpha byte
-fn get_awd_diffuse_rgba(color: Option<u32>, alpha: Option<f32>) -> u32 {
+fn get_awd_diffuse_rgba(color: Option<u32>, alpha: Option<f64>) -> u32 {
     let rgb = color.unwrap_or(0xffffff);
     let alpha = alpha
-        .map(|value| (f64::from(value) * 255.0).round().clamp(0.0, 255.0) as u32)
+        .map(|value| (value * 255.0).round().clamp(0.0, 255.0) as u32)
         .unwrap_or(255);
     return (rgb << 8) | alpha;
 }
 
 // flight-lint: allow(f64) Principal192423ac: preserve Number channel products and rounding before exact packed specular bytes
-fn get_awd_specular_rgba(color: Option<u32>, strength: f32) -> u32 {
+fn get_awd_specular_rgba(color: Option<u32>, strength: f64) -> u32 {
     let rgb = color.unwrap_or(AWD2_MATERIAL_DEFAULT_SPECULAR_RGB);
-    let scale = f64::from(strength).clamp(0.0, 1.0);
+    let scale = strength.clamp(0.0, 1.0);
     let red = (f64::from((rgb >> 16) & 255) * scale).round() as u32;
     let green = (f64::from((rgb >> 8) & 255) * scale).round() as u32;
     let blue = (f64::from(rgb & 255) * scale).round() as u32;
@@ -377,7 +379,7 @@ fn resolve_awd_material(
             "resolveAwdMaterial",
             Some(HashMap::from([(
                 "strength".to_string(),
-                ImportDiagnosticDetailValue::Number(strength),
+                ImportDiagnosticDetailValue::Number(strength as f32),
             )])),
         );
     }
@@ -385,7 +387,7 @@ fn resolve_awd_material(
     material.diffuse = diffuse;
     material.diffuse_map = diffuse_texture;
     material.normal_map = normal_texture;
-    material.shininess = parsed.gloss.unwrap_or(AWD2_MATERIAL_DEFAULT_GLOSS);
+    material.shininess = (parsed.gloss.unwrap_or(AWD2_MATERIAL_DEFAULT_GLOSS)) as f32;
     material.specular = get_awd_specular_rgba(parsed.specular_color, strength);
     material.specular_map = specular_texture;
     if parsed.alpha.is_some_and(|alpha| alpha < 1.0) {

@@ -142,12 +142,12 @@ mod three_ds_light_handler {
             (0.0, 0.0, -1.0)
         );
         close(
-            spot.inner_cone_cos,
-            (15.0f32 * flight_math::DEG_TO_RAD).cos(),
+            spot.inner_cone_cos as f32,
+            (15.0f32 * (flight_math::DEG_TO_RAD) as f32).cos(),
         );
         close(
-            spot.outer_cone_cos,
-            (30.0f32 * flight_math::DEG_TO_RAD).cos(),
+            spot.outer_cone_cos as f32,
+            (30.0f32 * (flight_math::DEG_TO_RAD) as f32).cos(),
         );
         assert!(spot.inner_cone_cos > spot.outer_cone_cos);
         let mut aim = create_vector3(0.0, 0.0, 0.0);
@@ -156,9 +156,9 @@ mod three_ds_light_handler {
             &create_vector3(0.0, 0.0, -1.0),
             &light.transform.rotation,
         );
-        close(aim.x, 0.0);
-        close(aim.y, -1.0);
-        close(aim.z, 0.0);
+        close(aim.x as f32, 0.0);
+        close(aim.y as f32, -1.0);
+        close(aim.z as f32, 0.0);
     }
 
     #[test]

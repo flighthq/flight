@@ -1,5 +1,7 @@
 //! flight-compiler: target-native
 
+// flight-lint: allow-file(f64) Task Q format numbers: glTF JSON, COLLADA, MD5 and OBJ text numbers are JS Numbers held in f64, and binary AWD2/3DS/MD2/STL/glTF f32 fields widen exactly at decode; vertex, material, color and diagnostic lanes stay f32
+
 use crate::shared::{CANONICAL_FLOATS_PER_VERTEX, CANONICAL_LAYOUT, create_external_texture_ref};
 use crate::three_ds_parse::{
     pack_three_ds_color, read_chunk_end, read_chunk_length, read_null_terminated_string,
@@ -342,8 +344,10 @@ fn emit_three_ds_corner(out: &mut ThreeDsMeshEmitter, face: usize, vertex: usize
         .extend_from_slice(&[nx as f32, ny as f32, nz as f32, 0.0, 0.0, 0.0, 0.0]);
     if let Some(uvs) = &out.mesh.uvs {
         if vertex < uvs.len() / 2 {
-            out.out_vertices
-                .extend_from_slice(&[uvs[vertex * 2], 1.0 - uvs[vertex * 2 + 1]]);
+            out.out_vertices.extend_from_slice(&[
+                (f64::from(uvs[vertex * 2])) as f32,
+                (f64::from(1.0 - uvs[vertex * 2 + 1])) as f32,
+            ]);
         } else {
             out.out_vertices.extend_from_slice(&[0.0; 2]);
         }
@@ -385,28 +389,28 @@ fn localize_three_ds_positions(
     out: &mut Transform3D,
     positions: &mut [f64],
     local_matrix: &[f32],
-    pivot: Option<&[f32; 3]>,
+    pivot: Option<&[f64; 3]>,
     name: &str,
     drops: Option<&mut Vec<ThreeDsDropTallyEntry>>,
 ) -> bool {
     let mut placement = create_matrix4();
     set_matrix4(
         &mut placement,
-        local_matrix[0],
-        local_matrix[1],
-        local_matrix[2],
+        f64::from(local_matrix[0]),
+        f64::from(local_matrix[1]),
+        f64::from(local_matrix[2]),
         0.0,
-        local_matrix[3],
-        local_matrix[4],
-        local_matrix[5],
+        f64::from(local_matrix[3]),
+        f64::from(local_matrix[4]),
+        f64::from(local_matrix[5]),
         0.0,
-        local_matrix[6],
-        local_matrix[7],
-        local_matrix[8],
+        f64::from(local_matrix[6]),
+        f64::from(local_matrix[7]),
+        f64::from(local_matrix[8]),
         0.0,
-        local_matrix[9],
-        local_matrix[10],
-        local_matrix[11],
+        f64::from(local_matrix[9]),
+        f64::from(local_matrix[10]),
+        f64::from(local_matrix[11]),
         1.0,
     );
     let mut inverse = create_matrix4();
@@ -422,18 +426,18 @@ fn localize_three_ds_positions(
     }
     let mut point = create_vector3(0.0, 0.0, 0.0);
     for position in positions.chunks_exact_mut(3) {
-        point.x = position[0] as f32;
-        point.y = position[1] as f32;
-        point.z = position[2] as f32;
+        point.x = position[0];
+        point.y = position[1];
+        point.z = position[2];
         let source = clone_vector3(&point);
         matrix4_transform_point(&mut point, &inverse, &source);
         position.copy_from_slice(&[point.x as f64, point.y as f64, point.z as f64]);
     }
     if let Some(pivot) = pivot {
         for position in positions.chunks_exact_mut(3) {
-            position[0] -= pivot[0] as f64;
-            position[1] -= pivot[1] as f64;
-            position[2] -= pivot[2] as f64;
+            position[0] -= pivot[0];
+            position[1] -= pivot[1];
+            position[2] -= pivot[2];
         }
         let mut pivot_translation = create_matrix4();
         set_matrix4(
@@ -865,13 +869,16 @@ fn reverse_three_ds_face_winding(faces: &[u16]) -> Box<[u16]> {
     return reversed.into_boxed_slice();
 }
 
-fn three_ds_local_matrix_determinant(local_matrix: &[f32]) -> f32 {
-    return local_matrix[0]
-        * (local_matrix[4] * local_matrix[8] - local_matrix[5] * local_matrix[7])
-        - local_matrix[3]
-            * (local_matrix[1] * local_matrix[8] - local_matrix[2] * local_matrix[7])
-        + local_matrix[6]
-            * (local_matrix[1] * local_matrix[5] - local_matrix[2] * local_matrix[4]);
+fn three_ds_local_matrix_determinant(local_matrix: &[f32]) -> f64 {
+    return f64::from(local_matrix[0])
+        * (f64::from(local_matrix[4]) * f64::from(local_matrix[8])
+            - f64::from(local_matrix[5]) * f64::from(local_matrix[7]))
+        - f64::from(local_matrix[3])
+            * (f64::from(local_matrix[1]) * f64::from(local_matrix[8])
+                - f64::from(local_matrix[2]) * f64::from(local_matrix[7]))
+        + f64::from(local_matrix[6])
+            * (f64::from(local_matrix[1]) * f64::from(local_matrix[5])
+                - f64::from(local_matrix[2]) * f64::from(local_matrix[4]));
 }
 
 fn three_ds_material_to_blinn_phong(
@@ -891,7 +898,7 @@ fn three_ds_material_to_blinn_phong(
     result.diffuse = pack_three_ds_color(&material.diffuse, Some(material.opacity));
     result.diffuse_map = diffuse_map;
     result.specular = pack_three_ds_color(&material.specular, None);
-    result.shininess = material.shininess.unwrap_or(32.0);
+    result.shininess = (material.shininess.unwrap_or(32.0)) as f32;
     result.material_fields_mut().name = if material.name.is_empty() {
         None
     } else {

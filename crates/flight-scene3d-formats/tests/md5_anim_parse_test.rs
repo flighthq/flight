@@ -33,7 +33,7 @@ fn target(channel: &AnimationChannel) -> &Scene3DAnimationTarget {
         .unwrap();
 }
 
-fn sample(channel: &AnimationChannel, time: f32) -> Vec<f32> {
+fn sample(channel: &AnimationChannel, time: f64) -> Vec<f64> {
     let track = channel.track.read().unwrap();
     let mut out = vec![0.0; track.components];
     sample_animation_track(&mut out, &track, time);
@@ -373,9 +373,9 @@ mod parse_md5_anim {
         let mut diagnostics = Vec::new();
         let clip = parse_md5_anim(source, &joints, Some(&mut diagnostics)).unwrap();
         let clip = clip.read().unwrap();
-        assert_eq!(sample(&clip.channels[0], 0.0), [f32::INFINITY, 0.0, -1.25]);
+        assert_eq!(sample(&clip.channels[0], 0.0), [1e300, 0.0, -1.25]);
         let rotation = sample(&clip.channels[1], 0.0);
-        assert_eq!(rotation[0], 1.0);
+        assert_eq!(rotation[0], 0.999999999);
         assert!(rotation[3] < -0.00004 && rotation[3] > -0.00005);
         assert!(diagnostics.is_empty());
         drop(clip);

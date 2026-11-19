@@ -38,8 +38,8 @@ fn apply_gltf_anisotropy(context: &Ref<GltfExtensionContext>) {
         let anisotropy_strength = block.read().unwrap().anisotropy_strength.unwrap_or(0.0);
         let mut extension = create_anisotropy_pbr_extension();
         extension.anisotropy_map = anisotropy_map;
-        extension.anisotropy_rotation = anisotropy_rotation;
-        extension.anisotropy_strength = anisotropy_strength;
+        extension.anisotropy_rotation = anisotropy_rotation as f32;
+        extension.anisotropy_strength = anisotropy_strength as f32;
         let document = context.read().unwrap().document.clone();
         attach_gltf_pbr_extension(
             &mut document.write().unwrap(),

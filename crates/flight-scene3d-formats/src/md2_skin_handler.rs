@@ -1,5 +1,7 @@
 //! flight-compiler: target-native
 
+// flight-lint: allow-file(f64) Task Q format numbers: glTF JSON, COLLADA, MD5 and OBJ text numbers are JS Numbers held in f64, and binary AWD2/3DS/MD2/STL/glTF f32 fields widen exactly at decode; vertex, material, color and diagnostic lanes stay f32
+
 use crate::md2_parse::{md2_numeric_detail, read_md2_name};
 use crate::md2_schema::MD2_SKIN_SIZE;
 use crate::md2_types::{Md2ParseContext, Md2SectionHandler};
@@ -30,7 +32,7 @@ fn collect_md2_skin(context: &mut Md2ParseContext<'_>) {
                 ImportDiagnosticSeverity::Drop,
                 "md2.skin-record-truncated",
                 "parseMd2",
-                md2_numeric_detail(&[("skin", s as f32)]),
+                md2_numeric_detail(&[("skin", s as f64)]),
             );
             break;
         }
@@ -66,8 +68,8 @@ fn collect_md2_skin(context: &mut Md2ParseContext<'_>) {
             "md2.skin-empty-path",
             "parseMd2",
             md2_numeric_detail(&[
-                ("count", empty_skin_count as f32),
-                ("firstSkin", first_empty_skin as f32),
+                ("count", empty_skin_count as f64),
+                ("firstSkin", f64::from(first_empty_skin as f32)),
             ]),
         );
     }

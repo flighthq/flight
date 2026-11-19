@@ -1,5 +1,7 @@
 //! flight-compiler: target-native
 
+// flight-lint: allow-file(f64) Task Q format numbers: glTF JSON, COLLADA, MD5 and OBJ text numbers are JS Numbers held in f64, and binary AWD2/3DS/MD2/STL/glTF f32 fields widen exactly at decode; vertex, material, color and diagnostic lanes stay f32
+
 pub const AWD2_MAGIC_0: u8 = 0x41;
 pub const AWD2_MAGIC_1: u8 = 0x57;
 pub const AWD2_MAGIC_2: u8 = 0x44;
@@ -33,8 +35,8 @@ pub const AWD2_MATERIAL_PROP_SPECULAR_STRENGTH: u16 = 18;
 pub const AWD2_MATERIAL_PROP_GLOSS: u16 = 19;
 pub const AWD2_MATERIAL_PROP_SPECULAR_COLOR: u16 = 20;
 pub const AWD2_MATERIAL_PROP_SPECULAR_TEXTURE: u16 = 21;
-pub const AWD2_MATERIAL_DEFAULT_SPECULAR_STRENGTH: f32 = 1.0;
-pub const AWD2_MATERIAL_DEFAULT_GLOSS: f32 = 50.0;
+pub const AWD2_MATERIAL_DEFAULT_SPECULAR_STRENGTH: f64 = 1.0;
+pub const AWD2_MATERIAL_DEFAULT_GLOSS: f64 = 50.0;
 pub const AWD2_MATERIAL_DEFAULT_SPECULAR_RGB: u32 = 0xffffff;
 pub const AWD2_CAMERA_PROJECTION_PERSPECTIVE: i16 = 5001;
 pub const AWD2_CAMERA_PROJECTION_ORTHOGRAPHIC: i16 = 5002;
@@ -57,12 +59,12 @@ pub const AWD2_LIGHT_PROP_SHADOW_MAPPER: u16 = 9;
 pub const AWD2_LIGHT_PROP_DIRECTION_X: u16 = 21;
 pub const AWD2_LIGHT_PROP_DIRECTION_Y: u16 = 22;
 pub const AWD2_LIGHT_PROP_DIRECTION_Z: u16 = 23;
-pub const AWD2_LIGHT_DEFAULT_RADIUS: f32 = 90000.0;
-pub const AWD2_LIGHT_DEFAULT_FALLOFF: f32 = 100000.0;
+pub const AWD2_LIGHT_DEFAULT_RADIUS: f64 = 90000.0;
+pub const AWD2_LIGHT_DEFAULT_FALLOFF: f64 = 100000.0;
 pub const AWD2_LIGHT_DEFAULT_RGB: u32 = 0xffffff;
-pub const AWD2_LIGHT_DEFAULT_SPECULAR: f32 = 1.0;
-pub const AWD2_LIGHT_DEFAULT_DIFFUSE: f32 = 1.0;
-pub const AWD2_LIGHT_DEFAULT_AMBIENT: f32 = 0.0;
+pub const AWD2_LIGHT_DEFAULT_SPECULAR: f64 = 1.0;
+pub const AWD2_LIGHT_DEFAULT_DIFFUSE: f64 = 1.0;
+pub const AWD2_LIGHT_DEFAULT_AMBIENT: f64 = 0.0;
 pub const AWD2_BUILD_PHASE_MATERIALS: u8 = 0;
 pub const AWD2_BUILD_PHASE_SKELETON: u8 = 1;
 pub const AWD2_BUILD_PHASE_SKELETON_ANIMATION: u8 = 2;

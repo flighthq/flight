@@ -62,7 +62,7 @@ fn imports_placed_cameras_when_explicitly_selected() {
         ),
         (1.0, 2.0, 3.0)
     );
-    assert_eq!(camera.far, f32::INFINITY);
+    assert_eq!(camera.far, f64::INFINITY);
 }
 
 #[test]

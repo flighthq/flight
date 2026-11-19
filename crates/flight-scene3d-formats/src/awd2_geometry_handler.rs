@@ -1,5 +1,7 @@
 //! flight-compiler: target-native
 
+// flight-lint: allow-file(f64) Task Q format numbers: glTF JSON, COLLADA, MD5 and OBJ text numbers are JS Numbers held in f64, and binary AWD2/3DS/MD2/STL/glTF f32 fields widen exactly at decode; vertex, material, color and diagnostic lanes stay f32
+
 use crate::awd2_parse::report_awd_diagnostic;
 use crate::awd2_reader::{
     awd_data_type_byte_size, read_awd_data_value, read_awd_string, skip_awd_attr_list,
@@ -47,7 +49,7 @@ pub static AWD2_TRIANGLE_GEOMETRY_HANDLER: LazyLock<Ref<Awd2BlockHandler>> = Laz
     }))
 });
 
-const AWD2_TANGENT_HANDEDNESS: f32 = -1.0;
+const AWD2_TANGENT_HANDEDNESS: f64 = -1.0;
 
 fn geometry_diagnostic(
     diagnostics: Option<&Ref<Vec<ImportDiagnostic>>>,
@@ -142,7 +144,7 @@ fn parse_triangle_geometry_block(
             if stream_type == AWD2_STREAM_JOINT_INDICES {
                 joint_indices = Some(
                     (0..length / 2)
-                        .map(|i| read_three_ds_u16(&view, offset + i * 2) as f32)
+                        .map(|i| read_three_ds_u16(&view, offset + i * 2) as f64)
                         .collect::<Vec<_>>(),
                 );
             } else {
@@ -210,7 +212,7 @@ fn parse_triangle_geometry_block(
         } else {
             CANONICAL_FLOATS_PER_VERTEX
         };
-        let mut vertices = vec![0.0; positions.len() * stride / 3];
+        let mut vertices = vec![0.0_f32; positions.len() * stride / 3];
         let mut joint_scratch = vec![0.0; 4];
         let mut weight_scratch = vec![0.0; 4];
         for vertex in 0..positions.len().div_ceil(3) {
@@ -219,7 +221,7 @@ fn parse_triangle_geometry_block(
                 record[component] = positions
                     .get(vertex * 3 + component)
                     .copied()
-                    .unwrap_or(f32::NAN);
+                    .unwrap_or(f64::NAN);
             }
             if let Some(normals) = normals
                 .as_ref()
@@ -246,7 +248,7 @@ fn parse_triangle_geometry_block(
                         .unwrap()
                         .get(index)
                         .copied()
-                        .unwrap_or(f32::NAN);
+                        .unwrap_or(f64::NAN);
                     if weight > 0.0 {
                         influences.push(SkinInfluence {
                             joint_index: joint_indices
@@ -254,7 +256,7 @@ fn parse_triangle_geometry_block(
                                 .unwrap()
                                 .get(index)
                                 .copied()
-                                .unwrap_or(f32::NAN),
+                                .unwrap_or(f64::NAN),
                             weight,
                         });
                     }
@@ -265,7 +267,7 @@ fn parse_triangle_geometry_block(
             }
             for (component, value) in record[..stride].iter().enumerate() {
                 if let Some(destination) = vertices.get_mut(vertex * stride + component) {
-                    *destination = *value;
+                    *destination = (*value) as f32;
                 }
             }
         }

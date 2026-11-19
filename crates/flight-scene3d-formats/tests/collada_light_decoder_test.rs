@@ -100,7 +100,7 @@ mod collada_light_decoder {
             (0.0, 0.0, -1.0)
         );
         // D1 f32 bound (TS: 0.005)
-        assert!(((spot.outer_cone_cos as f64) - (std::f64::consts::PI / 6.0).cos()).abs() < 0.005);
+        assert!((spot.outer_cone_cos - (std::f64::consts::PI / 6.0).cos()).abs() < 0.005);
     }
 
     #[test]
@@ -131,7 +131,7 @@ mod collada_light_decoder {
         // D1 f32 bound (TS: 0)
         assert!(
             (lights[1].transform.position.z - -7.0).abs()
-                <= 4.0 * f32::EPSILON * (-7.0_f32).abs().max(1.0)
+                <= f64::from(4.0 * f32::EPSILON * (-7.0_f32).abs().max(1.0))
         );
         assert!(!Arc::ptr_eq(&lights[0].descriptor, &lights[1].descriptor));
         assert!(!std::ptr::eq(

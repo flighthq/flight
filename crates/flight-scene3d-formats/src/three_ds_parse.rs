@@ -1,5 +1,7 @@
 //! flight-compiler: target-native
 
+// flight-lint: allow-file(f64) Task Q format numbers: glTF JSON, COLLADA, MD5 and OBJ text numbers are JS Numbers held in f64, and binary AWD2/3DS/MD2/STL/glTF f32 fields widen exactly at decode; vertex, material, color and diagnostic lanes stay f32
+
 use crate::three_ds_read::{read_three_ds_f32, read_three_ds_u16, read_three_ds_u32};
 use crate::three_ds_schema::*;
 use crate::three_ds_types::{ThreeDsChunkDispatch, ThreeDsDropTallyEntry, ThreeDsParseState};
@@ -12,8 +14,8 @@ use flight_scene3d::{Scene3DDocument, Scene3DDocumentScene};
 use std::collections::HashMap;
 use std::sync::Arc;
 
-pub fn pack_three_ds_color(rgb: &[f32; 3], alpha: Option<f32>) -> u32 {
-    let channel = |value: f32| -> u32 {
+pub fn pack_three_ds_color(rgb: &[f64; 3], alpha: Option<f64>) -> u32 {
+    let channel = |value: f64| -> u32 {
         return (value.clamp(0.0, 1.0) * 255.0).round() as u32;
     };
     return (channel(rgb[0]) << 24)
@@ -22,7 +24,7 @@ pub fn pack_three_ds_color(rgb: &[f32; 3], alpha: Option<f32>) -> u32 {
         | channel(alpha.unwrap_or(1.0));
 }
 
-pub fn parse_color_chunk(view: &Uint8Array, offset: usize, end: usize) -> Option<[f32; 3]> {
+pub fn parse_color_chunk(view: &Uint8Array, offset: usize, end: usize) -> Option<[f64; 3]> {
     let mut cursor = offset;
     while cursor + THREE_DS_CHUNK_HEADER_BYTES <= end {
         let chunk_id = read_three_ds_u16(view, cursor);
@@ -34,16 +36,16 @@ pub fn parse_color_chunk(view: &Uint8Array, offset: usize, end: usize) -> Option
         let data_start = cursor + THREE_DS_CHUNK_HEADER_BYTES;
         if chunk_id == THREE_DS_COLOR_FLOAT && data_start + 12 <= chunk_end {
             return Some([
-                read_three_ds_f32(view, data_start),
-                read_three_ds_f32(view, data_start + 4),
-                read_three_ds_f32(view, data_start + 8),
+                f64::from(read_three_ds_f32(view, data_start)),
+                f64::from(read_three_ds_f32(view, data_start + 4)),
+                f64::from(read_three_ds_f32(view, data_start + 8)),
             ]);
         }
         if chunk_id == THREE_DS_COLOR_BYTE && data_start + 3 <= chunk_end {
             return Some([
-                view[data_start] as f32 / 255.0,
-                view[data_start + 1] as f32 / 255.0,
-                view[data_start + 2] as f32 / 255.0,
+                view[data_start] as f64 / 255.0,
+                view[data_start + 1] as f64 / 255.0,
+                view[data_start + 2] as f64 / 255.0,
             ]);
         }
         cursor = chunk_end;

@@ -56,7 +56,7 @@ mod awd2_camera_handler {
     fn claims_the_original_camera_block_and_declares_its_parse_and_build_phase() {
         let handler = AWD2_CAMERA_HANDLER.read().unwrap();
         assert_eq!(handler.block_types, [AWD2_BLOCK_CAMERA]);
-        assert_eq!(handler.build_phase, Some(AWD2_BUILD_PHASE_CAMERA as f32));
+        assert_eq!(handler.build_phase, Some(AWD2_BUILD_PHASE_CAMERA as f64));
         assert!(handler.build.is_some());
         assert_ne!(handler.deferred, Some(true));
     }
@@ -97,7 +97,10 @@ mod awd2_camera_handler {
                 };
                 let projection = projection.read().unwrap();
                 assert_eq!(projection.aspect, 1.0);
-                assert!((projection.fov_y - authored.unwrap_or(60.0).to_radians()).abs() < 1e-6);
+                assert!(
+                    (projection.fov_y - f64::from(authored.unwrap_or(60.0).to_radians())).abs()
+                        < 1e-6
+                );
                 assert_eq!(
                     [
                         camera.transform.position.x,
@@ -216,7 +219,7 @@ mod awd2_camera_handler {
         let parent =
             Arc::new(RwLock::new(Awd2BlockHandler {
                 block_types: Vec::new(),
-                build_phase: Some(AWD2_BUILD_PHASE_SCENE_STRUCTURE as f32),
+                build_phase: Some(f64::from(AWD2_BUILD_PHASE_SCENE_STRUCTURE as f32)),
                 deferred: None,
                 parse: Arc::new(|_, _| {}),
                 build: Some(Arc::new(|state| {

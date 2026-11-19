@@ -14,7 +14,7 @@ pub(crate) fn is_md5_whitespace(value: char) -> bool {
     );
 }
 
-// flight-lint: allow(f64) Principal7f1f0994 private MD5 parseFloat prefix and Number.isFinite adapter; only final canonical records narrow to f32
+// flight-lint: allow(f64) Principal7f1f0994 private MD5 parseFloat prefix and Number.isFinite adapter; joint, pose and track records stay f64 (Task Q) and only the f32 vertex lane narrows
 pub(crate) fn parse_md5_float(token: &str) -> Option<f64> {
     let token = token.trim_start_matches(is_md5_whitespace);
     let bytes = token.as_bytes();

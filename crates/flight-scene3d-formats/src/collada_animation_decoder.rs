@@ -1,5 +1,7 @@
 //! flight-compiler: target-native
 
+// flight-lint: allow-file(f64) Task Q format numbers: glTF JSON, COLLADA, MD5 and OBJ text numbers are JS Numbers held in f64, and binary AWD2/3DS/MD2/STL/glTF f32 fields widen exactly at decode; vertex, material, color and diagnostic lanes stay f32
+
 use crate::collada_types::*;
 use crate::collada_xml::{collada_child, collada_descendants, collada_id_of, collada_numbers};
 use crate::obj_features::is_obj_whitespace;
@@ -22,7 +24,7 @@ use std::sync::{Arc, LazyLock, RwLock};
 struct AnimationSource {
     key: String,
     names: Vec<String>,
-    numbers: Vec<f32>,
+    numbers: Vec<f64>,
 }
 
 pub static COLLADA_ANIMATION_DECODER: LazyLock<Ref<ColladaElementDecoder>> = LazyLock::new(|| {
@@ -48,8 +50,8 @@ pub static COLLADA_ANIMATION_DECODER: LazyLock<Ref<ColladaElementDecoder>> = Laz
 });
 
 fn create_collada_track(
-    times: &[f32],
-    values: Vec<f32>,
+    times: &[f64],
+    values: Vec<f64>,
     components: usize,
     interpolation: AnimationInterpolation,
     quaternion: bool,
@@ -249,7 +251,7 @@ fn resolve_animations(context: &Ref<ColladaBuildContext>) {
         return;
     }
     let mut resolved = Vec::new();
-    let mut duration = 0.0f32;
+    let mut duration = 0.0f64;
     let mut scratch = create_matrix4();
     for channel in &*channels {
         let channel = channel.read().unwrap();
@@ -388,7 +390,7 @@ fn resolve_animations(context: &Ref<ColladaBuildContext>) {
                     };
                     let mut values = Vec::new();
                     for value in &channel.values {
-                        let half = ((*value * std::f32::consts::PI) / 180.0) * 0.5;
+                        let half = ((*value * std::f64::consts::PI) / 180.0) * 0.5;
                         let sine = half.sin();
                         values.extend([axis[0] * sine, axis[1] * sine, axis[2] * sine, half.cos()]);
                     }
@@ -419,7 +421,7 @@ fn resolve_animations(context: &Ref<ColladaBuildContext>) {
             });
         }
         duration = if duration.is_nan() || max_time.is_nan() {
-            f32::NAN
+            f64::NAN
         } else {
             duration.max(max_time)
         };

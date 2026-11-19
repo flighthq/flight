@@ -1,5 +1,7 @@
 //! flight-compiler: target-native
 
+// flight-lint: allow-file(f64) Task Q format numbers: glTF JSON, COLLADA, MD5 and OBJ text numbers are JS Numbers held in f64, and binary AWD2/3DS/MD2/STL/glTF f32 fields widen exactly at decode; vertex, material, color and diagnostic lanes stay f32
+
 use crate::collada_scene_shared::{
     ColladaIndexEntry, apply_collada_bind_material, parse_collada_bind_material,
 };
@@ -86,17 +88,17 @@ struct ColladaXmlEntry {
     value: Ref<XmlElement>,
 }
 
-static X_UP_ROOT: LazyLock<Arc<Vec<f32>>> = LazyLock::new(|| {
+static X_UP_ROOT: LazyLock<Arc<Vec<f64>>> = LazyLock::new(|| {
     Arc::new(vec![
         0.0, 0.0, 1.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 1.0,
     ])
 });
-static Y_UP_ROOT: LazyLock<Arc<Vec<f32>>> = LazyLock::new(|| {
+static Y_UP_ROOT: LazyLock<Arc<Vec<f64>>> = LazyLock::new(|| {
     Arc::new(vec![
         1.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 1.0,
     ])
 });
-static Z_UP_ROOT: LazyLock<Arc<Vec<f32>>> = LazyLock::new(|| {
+static Z_UP_ROOT: LazyLock<Arc<Vec<f64>>> = LazyLock::new(|| {
     Arc::new(vec![
         1.0, 0.0, 0.0, 0.0, 0.0, 0.0, -1.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 1.0,
     ])
@@ -340,7 +342,7 @@ fn build_collada_node(
 fn build_collada_scene_hierarchy(
     context: &Ref<ColladaParseContext>,
     root: &Ref<XmlElement>,
-    root_transform: &[f32],
+    root_transform: &[f64],
     decoders: &[Ref<ColladaElementDecoder>],
 ) {
     let node_library =
@@ -496,7 +498,7 @@ fn compose_collada_transform_elements(element: &Ref<XmlElement>) -> Transform3D 
             scratch.m[10] = values[2];
         } else if name == "rotate" && values.len() >= 4 {
             let (ax, ay, az) = (values[0], values[1], values[2]);
-            let angle = (values[3] * std::f32::consts::PI) / 180.0;
+            let angle = (values[3] * std::f64::consts::PI) / 180.0;
             let c = angle.cos();
             let s = angle.sin();
             let t = 1.0 - c;
@@ -578,8 +580,8 @@ fn empty_collada_document() -> Ref<Scene3DDocument> {
 fn order_collada_build_phases(
     decoders: &[Ref<ColladaElementDecoder>],
 ) -> Vec<Ref<ColladaElementDecoder>> {
-    // Source MAX_SAFE_INTEGER is one below 2^53; no f32 lies between those values.
-    // Keep that exact ordering boundary without widening the public phase or private arithmetic.
+    // A missing phase sorts as the source's Number.MAX_SAFE_INTEGER, compared by the same
+    // subtraction as two present phases.
     let mut sorted = decoders.to_vec();
     sorted.sort_by(|a, b| {
         let a = a.read().unwrap().build_phase;
@@ -589,24 +591,12 @@ fn order_collada_build_phases(
                 .partial_cmp(&0.0)
                 .unwrap_or(std::cmp::Ordering::Equal),
             (None, None) => std::cmp::Ordering::Equal,
-            (Some(value), None) => {
-                if value.is_nan() {
-                    std::cmp::Ordering::Equal
-                } else if value >= 9007199254740992.0 {
-                    std::cmp::Ordering::Greater
-                } else {
-                    std::cmp::Ordering::Less
-                }
-            }
-            (None, Some(value)) => {
-                if value.is_nan() {
-                    std::cmp::Ordering::Equal
-                } else if value >= 9007199254740992.0 {
-                    std::cmp::Ordering::Less
-                } else {
-                    std::cmp::Ordering::Greater
-                }
-            }
+            (Some(value), None) => (value - MISSING_COLLADA_BUILD_PHASE)
+                .partial_cmp(&0.0)
+                .unwrap_or(std::cmp::Ordering::Equal),
+            (None, Some(value)) => (MISSING_COLLADA_BUILD_PHASE - value)
+                .partial_cmp(&0.0)
+                .unwrap_or(std::cmp::Ordering::Equal),
         };
     });
     return sorted;
@@ -759,3 +749,5 @@ pub(crate) fn set_collada_index(entries: &mut Vec<ColladaIndexEntry>, key: &str,
         });
     }
 }
+
+const MISSING_COLLADA_BUILD_PHASE: f64 = 9007199254740991.0;

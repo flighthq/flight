@@ -1,5 +1,7 @@
 //! flight-compiler: target-native
 
+// flight-lint: allow-file(f64) Task Q format numbers: glTF JSON, COLLADA, MD5 and OBJ text numbers are JS Numbers held in f64, and binary AWD2/3DS/MD2/STL/glTF f32 fields widen exactly at decode; vertex, material, color and diagnostic lanes stay f32
+
 use crate::awd2_schema::*;
 use crate::shared::convert_transform_lh_to_rh;
 use crate::three_ds_read::{read_three_ds_f32, read_three_ds_u16, read_three_ds_u32};
@@ -49,21 +51,21 @@ pub fn awd_data_type_byte_size(data_type: u8) -> usize {
 }
 
 pub fn awd_transform_to_matrix4(out: &mut Matrix4, transform: &Float64Array) {
-    out.m[0] = transform[0] as f32;
-    out.m[1] = transform[1] as f32;
-    out.m[2] = transform[2] as f32;
+    out.m[0] = transform[0];
+    out.m[1] = transform[1];
+    out.m[2] = transform[2];
     out.m[3] = 0.0;
-    out.m[4] = transform[3] as f32;
-    out.m[5] = transform[4] as f32;
-    out.m[6] = transform[5] as f32;
+    out.m[4] = transform[3];
+    out.m[5] = transform[4];
+    out.m[6] = transform[5];
     out.m[7] = 0.0;
-    out.m[8] = transform[6] as f32;
-    out.m[9] = transform[7] as f32;
-    out.m[10] = transform[8] as f32;
+    out.m[8] = transform[6];
+    out.m[9] = transform[7];
+    out.m[10] = transform[8];
     out.m[11] = 0.0;
-    out.m[12] = transform[9] as f32;
-    out.m[13] = transform[10] as f32;
-    out.m[14] = transform[11] as f32;
+    out.m[12] = transform[9];
+    out.m[13] = transform[10];
+    out.m[14] = transform[11];
     out.m[15] = 1.0;
 }
 
@@ -75,24 +77,24 @@ pub fn awd_transform_to_transform3d(out: &mut Transform3D, transform: &Float64Ar
     return;
 }
 
-pub fn has_non_unit_scale(sx: f32, sy: f32, sz: f32) -> bool {
+pub fn has_non_unit_scale(sx: f64, sy: f64, sz: f64) -> bool {
     return (sx - 1.0).abs() > 1e-4 || (sy - 1.0).abs() > 1e-4 || (sz - 1.0).abs() > 1e-4;
 }
 
-pub fn read_awd_data_value(view: &Uint8Array, offset: usize, data_type: u8) -> f32 {
+pub fn read_awd_data_value(view: &Uint8Array, offset: usize, data_type: u8) -> f64 {
     return match data_type {
-        AWD2_DATA_INT8 => read_awd_slice::<1>(view, offset)[0] as i8 as f32,
-        AWD2_DATA_INT16 => read_three_ds_u16(view, offset) as i16 as f32,
-        AWD2_DATA_INT32 => read_three_ds_u32(view, offset) as i32 as f32,
-        AWD2_DATA_UINT8 => read_awd_slice::<1>(view, offset)[0] as f32,
-        AWD2_DATA_UINT16 => read_three_ds_u16(view, offset) as f32,
-        AWD2_DATA_UINT32 => read_three_ds_u32(view, offset) as f32,
-        AWD2_DATA_FLOAT64 => read_awd_f64(view, offset) as f32,
-        _ => read_three_ds_f32(view, offset),
+        AWD2_DATA_INT8 => read_awd_slice::<1>(view, offset)[0] as i8 as f64,
+        AWD2_DATA_INT16 => read_three_ds_u16(view, offset) as i16 as f64,
+        AWD2_DATA_INT32 => read_three_ds_u32(view, offset) as i32 as f64,
+        AWD2_DATA_UINT8 => read_awd_slice::<1>(view, offset)[0] as f64,
+        AWD2_DATA_UINT16 => read_three_ds_u16(view, offset) as f64,
+        AWD2_DATA_UINT32 => read_three_ds_u32(view, offset) as f64,
+        AWD2_DATA_FLOAT64 => read_awd_f64(view, offset),
+        _ => f64::from(read_three_ds_f32(view, offset)),
     };
 }
 
-// flight-lint: allow(f64) DataView.getFloat64 decodes an AWD wire float64; numeric scalar APIs retain canonical f32 and explicit transform arrays retain f64
+// flight-lint: allow(f64) DataView.getFloat64 decodes an AWD wire float64; float32 wire values widen exactly at decode (Task Q) and transform arrays stay f64
 fn read_awd_f64(view: &Uint8Array, offset: usize) -> f64 {
     return f64::from_le_bytes(read_awd_slice::<8>(view, offset));
 }
@@ -134,27 +136,27 @@ pub fn read_awd_property_float32(
     view: &Uint8Array,
     values: &[Awd2PropertyEntry],
     key: u16,
-) -> Option<f32> {
+) -> Option<f64> {
     let entry = values.iter().find(|entry| entry.key == key)?;
     if entry.value.length < 4 {
         return None;
     }
-    return Some(read_three_ds_f32(view, entry.value.offset));
+    return Some(f64::from(read_three_ds_f32(view, entry.value.offset)));
 }
 
 pub fn read_awd_property_number(
     view: &Uint8Array,
     values: &[Awd2PropertyEntry],
     key: u16,
-) -> Option<f32> {
+) -> Option<f64> {
     let entry = values.iter().find(|entry| entry.key == key)?;
     if entry.value.length < 4 {
         return None;
     }
     return Some(if entry.value.length >= 8 {
-        read_awd_f64(view, entry.value.offset) as f32
+        read_awd_f64(view, entry.value.offset)
     } else {
-        read_three_ds_f32(view, entry.value.offset)
+        f64::from(read_three_ds_f32(view, entry.value.offset))
     });
 }
 

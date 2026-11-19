@@ -1,5 +1,7 @@
 //! flight-compiler: target-native
 
+// flight-lint: allow-file(f64) Task Q format numbers: glTF JSON, COLLADA, MD5 and OBJ text numbers are JS Numbers held in f64, and binary AWD2/3DS/MD2/STL/glTF f32 fields widen exactly at decode; vertex, material, color and diagnostic lanes stay f32
+
 use crate::md5_number::{is_md5_whitespace, parse_md5_float, parse_md5_integer};
 use crate::md5_parse::tally_md5_drop;
 use crate::md5_types::Md5DropTallyEntry;
@@ -16,12 +18,12 @@ use flight_scene3d::{Node3DRef, Scene3DAnimationPath, Scene3DAnimationTarget};
 use std::collections::HashMap;
 use std::sync::{Arc, RwLock};
 
-// flight-lint: allow(f64) Principal7f1f0994 bounded private MD5 animation token/W adapter retains parsed baseframe components until its source W calculation and final canonical f32 track writes
+// flight-lint: allow(f64) Principal7f1f0994 bounded private MD5 animation token/W adapter retains parsed baseframe components until its source W calculation and the f64 track writes (Task Q)
 struct Md5AnimBaseframePose {
     components: [f64; 6],
 }
 
-// flight-lint: allow(f64) Principal7f1f0994 bounded private MD5 animation token/W adapter retains frame tokens for flag-selected quaternion W reconstruction before canonical f32 track writes
+// flight-lint: allow(f64) Principal7f1f0994 bounded private MD5 animation token/W adapter retains frame tokens for flag-selected quaternion W reconstruction before the f64 track writes (Task Q)
 struct Md5AnimFrame {
     components: Vec<f64>,
 }
@@ -32,19 +34,19 @@ struct Md5AnimHierarchyEntry {
     start_index: i32,
 }
 
-// flight-lint: allow(f64) Principal7f1f0994 private animation W adapter computes sumSq and sqrt in source Number precision, without the mesh normalization/Recover branch; outputs remain canonical f32 tracks
+// flight-lint: allow(f64) Principal7f1f0994 private animation W adapter computes sumSq and sqrt in source Number precision, without the mesh normalization/Recover branch; outputs are f64 tracks (Task Q)
 fn build_animation_clip(
     joints: &[Node3DRef],
     hierarchy: &[Md5AnimHierarchyEntry],
     baseframe: &[Md5AnimBaseframePose],
     frames: &[Md5AnimFrame],
-    frame_rate: f32,
+    frame_rate: f64,
     declared_components: i32,
     mut drops: Option<&mut Vec<Md5DropTallyEntry>>,
 ) -> Ref<AnimationClip> {
     let mut channels = Vec::new();
     let times: Vec<_> = (0..frames.len())
-        .map(|frame| frame as f32 / frame_rate)
+        .map(|frame| frame as f64 / frame_rate)
         .collect();
     let mut node_by_name = HashMap::new();
     for joint in joints {
@@ -65,8 +67,8 @@ fn build_animation_clip(
             "md5anim.component-count-mismatch",
             "",
             number_detail(&[
-                ("firstActual", component_total as f32),
-                ("firstExpected", declared_components as f32),
+                ("firstActual", f64::from(component_total as f32)),
+                ("firstExpected", f64::from(declared_components as f32)),
             ]),
         );
     }
@@ -77,8 +79,8 @@ fn build_animation_clip(
             "md5anim.baseframe-count-mismatch",
             "",
             number_detail(&[
-                ("firstActual", baseframe.len() as f32),
-                ("firstExpected", hierarchy.len() as f32),
+                ("firstActual", baseframe.len() as f64),
+                ("firstExpected", hierarchy.len() as f64),
             ]),
         );
     }
@@ -90,9 +92,9 @@ fn build_animation_clip(
                 "md5anim.frame-width-mismatch",
                 "",
                 number_detail(&[
-                    ("firstActual", data.components.len() as f32),
-                    ("firstExpected", component_total as f32),
-                    ("firstFrame", frame as f32),
+                    ("firstActual", data.components.len() as f64),
+                    ("firstExpected", f64::from(component_total as f32)),
+                    ("firstFrame", f64::from(frame as f32)),
                 ]),
             );
             break;
@@ -113,9 +115,9 @@ fn build_animation_clip(
                 "md5anim.joint-frame-window-invalid",
                 "",
                 number_detail(&[
-                    ("firstIndex", entry.start_index as f32),
-                    ("firstJoint", joint_index as f32),
-                    ("firstWidth", width as f32),
+                    ("firstIndex", f64::from(entry.start_index as f32)),
+                    ("firstJoint", f64::from(joint_index as f32)),
+                    ("firstWidth", f64::from(width as f32)),
                 ]),
             );
         }
@@ -140,17 +142,8 @@ fn build_animation_clip(
             } else {
                 0.0
             };
-            translation_values.extend_from_slice(&[
-                values[0] as f32,
-                values[1] as f32,
-                values[2] as f32,
-            ]);
-            rotation_values.extend_from_slice(&[
-                values[3] as f32,
-                values[4] as f32,
-                values[5] as f32,
-                w as f32,
-            ]);
+            translation_values.extend_from_slice(&[values[0], values[1], values[2]]);
+            rotation_values.extend_from_slice(&[values[3], values[4], values[5], w]);
         }
         convert_positions_z_up_to_y_up(&mut translation_values, None, None);
         convert_quaternions_z_up_to_y_up(&mut rotation_values, None, None);
@@ -195,7 +188,7 @@ fn malformed(
     reason: &str,
     line_index: usize,
 ) {
-    let mut detail = number_detail(&[("firstLine", (line_index + 1) as f32)]);
+    let mut detail = number_detail(&[("firstLine", (line_index + 1) as f64)]);
     detail.insert(
         "reason".to_string(),
         ImportDiagnosticDetailValue::String(reason.to_string()),
@@ -209,10 +202,15 @@ fn malformed(
     );
 }
 
-fn number_detail(values: &[(&str, f32)]) -> HashMap<String, ImportDiagnosticDetailValue> {
+fn number_detail(values: &[(&str, f64)]) -> HashMap<String, ImportDiagnosticDetailValue> {
     return values
         .iter()
-        .map(|(key, value)| (key.to_string(), ImportDiagnosticDetailValue::Number(*value)))
+        .map(|(key, value)| {
+            (
+                key.to_string(),
+                ImportDiagnosticDetailValue::Number((*value) as f32),
+            )
+        })
         .collect();
 }
 
@@ -300,7 +298,7 @@ fn parse_frame_block(
             if let Some(value) = parse_md5_float(token) {
                 frame.components.push(value);
             } else {
-                let mut detail = number_detail(&[("firstLine", index as f32)]);
+                let mut detail = number_detail(&[("firstLine", f64::from(index as f32))]);
                 detail.insert(
                     "firstToken".to_string(),
                     ImportDiagnosticDetailValue::String(token.to_string()),
@@ -426,7 +424,7 @@ pub fn parse_md5_anim(
                         ImportDiagnosticSeverity::Recover,
                         "md5anim.unsupported-version",
                         "parseMd5Anim",
-                        Some(number_detail(&[("version", version as f32)])),
+                        Some(number_detail(&[("version", version)])),
                     );
                 }
             }
@@ -466,7 +464,7 @@ pub fn parse_md5_anim(
                 );
                 frame_rate = 24.0;
             } else {
-                frame_rate = header.unwrap() as f32;
+                frame_rate = header.unwrap();
             }
         } else if line.starts_with("numAnimatedComponents") {
             if let Some(value) = header {
@@ -516,8 +514,8 @@ pub fn parse_md5_anim(
                     kind,
                     "parseMd5Anim",
                     Some(number_detail(&[
-                        ("declared", declared as f32),
-                        ("found", found as f32),
+                        ("declared", declared as f64),
+                        ("found", found as f64),
                     ])),
                 );
             }
@@ -529,8 +527,8 @@ pub fn parse_md5_anim(
                 "md5anim.joints-too-few",
                 "parseMd5Anim",
                 Some(number_detail(&[
-                    ("animationJoints", hierarchy.len() as f32),
-                    ("suppliedJoints", joints.len() as f32),
+                    ("animationJoints", hierarchy.len() as f64),
+                    ("suppliedJoints", joints.len() as f64),
                 ])),
             );
         } else {

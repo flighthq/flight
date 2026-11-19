@@ -138,7 +138,7 @@ mod has_non_unit_scale {
         ] {
             assert!(has_non_unit_scale(xyz[0], xyz[1], xyz[2]));
         }
-        assert!(!has_non_unit_scale(f32::NAN, 1.0, 1.0));
+        assert!(!has_non_unit_scale(f64::from(f32::NAN), 1.0, 1.0));
     }
 }
 
