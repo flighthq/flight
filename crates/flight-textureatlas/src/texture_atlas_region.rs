@@ -86,6 +86,8 @@ pub fn add_texture_atlas_region_corners(
     add_texture_atlas_region(target, ax, ay, bx - ax, by - ay, pivot_x, pivot_y, name);
 }
 
+// Atlas regions are texel-space storage in f32 (D1 default; whole texels are exact to 2^24): the
+// f64 geometry arguments narrow once here, at the atlas boundary.
 pub fn add_texture_atlas_region_rectangle(
     target: &mut TextureAtlas,
     rect: &Rectangle,
@@ -94,16 +96,18 @@ pub fn add_texture_atlas_region_rectangle(
 ) {
     add_texture_atlas_region(
         target,
-        rect.x,
-        rect.y,
-        rect.width,
-        rect.height,
-        pivot.map(|pivot| pivot.x),
-        pivot.map(|pivot| pivot.y),
+        rect.x as f32,
+        rect.y as f32,
+        rect.width as f32,
+        rect.height as f32,
+        pivot.map(|pivot| pivot.x as f32),
+        pivot.map(|pivot| pivot.y as f32),
         name,
     );
 }
 
+// Atlas regions are texel-space storage in f32 (D1 default; whole texels are exact to 2^24): the
+// f64 geometry arguments narrow once here, at the atlas boundary.
 pub fn add_texture_atlas_region_vector2(
     target: &mut TextureAtlas,
     a: &Vector2,
@@ -113,12 +117,12 @@ pub fn add_texture_atlas_region_vector2(
 ) {
     add_texture_atlas_region(
         target,
-        a.x,
-        a.y,
-        b.x - a.x,
-        b.y - a.y,
-        pivot.map(|pivot| pivot.x),
-        pivot.map(|pivot| pivot.y),
+        a.x as f32,
+        a.y as f32,
+        (b.x - a.x) as f32,
+        (b.y - a.y) as f32,
+        pivot.map(|pivot| pivot.x as f32),
+        pivot.map(|pivot| pivot.y as f32),
         name,
     );
 }
@@ -222,6 +226,7 @@ pub fn get_texture_atlas_region_count(atlas: &TextureAtlas) -> usize {
 /// Writes the region's placement inside its original, untrimmed frame: the trim offset
 /// (`source_x`/`source_y`) and the original extent, falling back to the logical drawn extent (swapped
 /// for a rotated region) when no original size is recorded.
+// flight-lint: allow(f64) f32 texel-space region values widen losslessly into the f64 geometry Rectangle
 // flight-lint: allow(conform-params) D9b: out-first; the source passes (region, out) and returns out
 pub fn get_texture_atlas_region_frame(out: &mut Rectangle, region: &TextureAtlasRegion) {
     let rotated = region.rotation != TextureAtlasRotation::None;
@@ -233,10 +238,10 @@ pub fn get_texture_atlas_region_frame(out: &mut Rectangle, region: &TextureAtlas
         region
             .original_height
             .unwrap_or(if rotated { region.width } else { region.height });
-    out.x = region.source_x;
-    out.y = region.source_y;
-    out.width = original_width;
-    out.height = original_height;
+    out.x = f64::from(region.source_x);
+    out.y = f64::from(region.source_y);
+    out.width = f64::from(original_width);
+    out.height = f64::from(original_height);
 }
 
 /// The trailing decimal ordinal in the region's name (`walk_007` is 7), or -1 when the name is null
@@ -371,6 +376,7 @@ pub fn get_texture_atlas_region_texture_status_string(
 
 /// Writes normalized UVs of the packed rect (`x / image_width`, ...) into `out`; all zeros when either
 /// image dimension is not positive. A rotated region's rect still covers its packed texels.
+// flight-lint: allow(f64) UVs divide the widened f32 texel values in f64, matching the TS number result
 // flight-lint: allow(conform-params) D9b: out-first; the source passes (region, imageWidth, imageHeight, out) and returns out
 pub fn get_texture_atlas_region_uv(
     out: &mut Rectangle,
@@ -385,10 +391,11 @@ pub fn get_texture_atlas_region_uv(
         out.height = 0.0;
         return;
     }
-    out.x = region.x / image_width;
-    out.y = region.y / image_height;
-    out.width = region.width / image_width;
-    out.height = region.height / image_height;
+    let (image_width, image_height) = (f64::from(image_width), f64::from(image_height));
+    out.x = f64::from(region.x) / image_width;
+    out.y = f64::from(region.y) / image_height;
+    out.width = f64::from(region.width) / image_width;
+    out.height = f64::from(region.height) / image_height;
 }
 
 /// Writes the drawn quad's four UV corners into `out` (resized to 8): top-left, top-right,
@@ -497,13 +504,14 @@ pub fn set_texture_atlas_region_texture_guard(
     state.guard = guard;
 }
 
+// flight-lint: allow(f64) the f64 texture UV transform is computed from losslessly widened f32 texels
 fn set_texture_atlas_region_texture_window(
     texture: &mut Texture2D,
     page: &Texture2D,
     region: &TextureAtlasRegion,
 ) {
-    let source_width = get_texture_width(page) as f32;
-    let source_height = get_texture_height(page) as f32;
+    let source_width = get_texture_width(page) as f64;
+    let source_height = get_texture_height(page) as f64;
     let page_fields = page.texture_fields().clone();
     let fields = texture.texture_fields_mut();
     if source_width <= 0.0 || source_height <= 0.0 {
@@ -520,34 +528,37 @@ fn set_texture_atlas_region_texture_window(
     let page_y = page_fields.uv_offset.y * source_height;
     let page_width = page_fields.uv_scale.x * source_width;
     let page_height = page_fields.uv_scale.y * source_height;
+    // The texture's UV transform is f64; region texels widen losslessly so the UV math matches TS.
+    let (region_x, region_y) = (f64::from(region.x), f64::from(region.y));
+    let (region_width, region_height) = (f64::from(region.width), f64::from(region.height));
     let x = if page_fields.flip_x {
-        page_x + page_width - region.x - region.width
+        page_x + page_width - region_x - region_width
     } else {
-        page_x + region.x
+        page_x + region_x
     };
     let y = if page_fields.flip_y {
-        page_y + page_height - region.y - region.height
+        page_y + page_height - region_y - region_height
     } else {
-        page_y + region.y
+        page_y + region_y
     };
     let counterclockwise = region.rotation == TextureAtlasRotation::Counterclockwise90;
     fields.uv_offset.x = x / source_width;
     if region.rotation != TextureAtlasRotation::None {
         fields.flip_x = page_fields.flip_y;
         fields.flip_y = page_fields.flip_x;
-        fields.uv_offset.x = (x + if counterclockwise { 0.0 } else { region.width }) / source_width;
+        fields.uv_offset.x = (x + if counterclockwise { 0.0 } else { region_width }) / source_width;
         fields.uv_offset.y =
-            (y + if counterclockwise { region.height } else { 0.0 }) / source_height;
-        fields.uv_rotation = (region.rotation as i32) as f32 * (std::f32::consts::PI / 2.0);
-        fields.uv_scale.x = region.height / source_height;
-        fields.uv_scale.y = region.width / source_width;
+            (y + if counterclockwise { region_height } else { 0.0 }) / source_height;
+        fields.uv_rotation = f64::from(region.rotation as i32) * (std::f64::consts::PI / 2.0);
+        fields.uv_scale.x = region_height / source_height;
+        fields.uv_scale.y = region_width / source_width;
     } else {
         fields.flip_x = page_fields.flip_x;
         fields.flip_y = page_fields.flip_y;
         fields.uv_offset.y = y / source_height;
         fields.uv_rotation = 0.0;
-        fields.uv_scale.x = region.width / source_width;
-        fields.uv_scale.y = region.height / source_height;
+        fields.uv_scale.x = region_width / source_width;
+        fields.uv_scale.y = region_height / source_height;
     }
 }
 

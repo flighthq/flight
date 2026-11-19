@@ -60,8 +60,8 @@ fn atlas_ref_over(page: Ref<flight_texture::Texture2D>) -> Ref<TextureAtlas> {
     }));
 }
 
-fn close(a: f32, b: f32) -> bool {
-    return (a - b).abs() < 1e-5;
+fn close(a: impl Into<f64>, b: f64) -> bool {
+    return (a.into() - b).abs() < 1e-5;
 }
 
 mod add_texture_atlas_region {
@@ -633,7 +633,7 @@ mod get_texture_atlas_region_count {
 mod get_texture_atlas_region_frame {
     use super::*;
 
-    fn frame(region: &TextureAtlasRegion) -> (f32, f32, f32, f32) {
+    fn frame(region: &TextureAtlasRegion) -> (f64, f64, f64, f64) {
         let mut out = rect();
         get_texture_atlas_region_frame(&mut out, region);
         return (out.x, out.y, out.width, out.height);
@@ -965,7 +965,7 @@ mod get_texture_atlas_region_texture {
         assert!(guard.texture_fields().flip_x && guard.texture_fields().flip_y);
         assert!(close(
             guard.texture_fields().uv_rotation,
-            std::f32::consts::PI / 2.0
+            std::f64::consts::PI / 2.0
         ));
         assert!(close(top_left.x, 0.7) && close(top_left.y, 0.9));
         assert!(close(bottom_right.x, 0.9) && close(bottom_right.y, 0.6));
@@ -992,7 +992,7 @@ mod get_texture_atlas_region_texture {
         let texture = get_texture_atlas_region_texture(&atlas, 0, None).unwrap();
         let fields = texture.read().unwrap().texture_fields().clone();
         assert!(close(fields.uv_offset.x, 0.1) && close(fields.uv_offset.y, 0.4));
-        assert!(close(fields.uv_rotation, -std::f32::consts::PI / 2.0));
+        assert!(close(fields.uv_rotation, -std::f64::consts::PI / 2.0));
         assert!(close(fields.uv_scale.x, 0.3) && close(fields.uv_scale.y, 0.2));
     }
 
@@ -1073,7 +1073,7 @@ mod get_texture_atlas_region_texture_status_string {
 mod get_texture_atlas_region_uv {
     use super::*;
 
-    fn uv(region: &TextureAtlasRegion, width: f32, height: f32) -> (f32, f32, f32, f32) {
+    fn uv(region: &TextureAtlasRegion, width: f32, height: f32) -> (f64, f64, f64, f64) {
         let mut out = create_rectangle(1.0, 1.0, 1.0, 1.0);
         get_texture_atlas_region_uv(&mut out, region, width, height);
         return (out.x, out.y, out.width, out.height);
@@ -1087,6 +1087,16 @@ mod get_texture_atlas_region_uv {
             height: Some(height),
             ..region_options()
         });
+    }
+
+    #[test]
+    fn divides_in_double_precision_like_the_ts_number_result() {
+        // 1 / 3 widened from an f32 quotient would be 0.3333333432674408, not the TS number.
+        let (x, y, width, height) = uv(&sized(1.0, 1.0, 1.0, 1.0), 3.0, 3.0);
+        assert_eq!(
+            (x, y, width, height),
+            (1.0 / 3.0, 1.0 / 3.0, 1.0 / 3.0, 1.0 / 3.0)
+        );
     }
 
     #[test]
