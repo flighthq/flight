@@ -96,27 +96,29 @@ pub fn initialize_gl_bitmap_shader(
 
 // flight-lint: allow(conform-extra) Native CPU helper separates exact matrix calculation from the GL uniform side effect for deterministic testing
 #[allow(clippy::too_many_arguments)]
+// flight-lint: allow(f64) pixel geometry and clip-matrix math are TS Number values computed in f64 and narrowed once into the f32 GPU uniform/target lanes
 pub fn calculate_gl_matrix_from_values(
     matrix: &mut [f32; 9],
-    a: f32,
-    b: f32,
-    c: f32,
-    d: f32,
-    tx: f32,
-    ty: f32,
-    viewport_width: f32,
-    viewport_height: f32,
+    a: f64,
+    b: f64,
+    c: f64,
+    d: f64,
+    tx: f64,
+    ty: f64,
+    viewport_width: f64,
+    viewport_height: f64,
 ) {
+    // TS computes the clip matrix in Number and stores it into the f32 uniform array.
     let iw = 2.0 / viewport_width;
     let ih = 2.0 / viewport_height;
-    matrix[0] = a * iw;
-    matrix[1] = -b * ih;
+    matrix[0] = (a * iw) as f32;
+    matrix[1] = (-b * ih) as f32;
     matrix[2] = 0.0;
-    matrix[3] = c * iw;
-    matrix[4] = -d * ih;
+    matrix[3] = (c * iw) as f32;
+    matrix[4] = (-d * ih) as f32;
     matrix[5] = 0.0;
-    matrix[6] = tx * iw - 1.0;
-    matrix[7] = -ty * ih + 1.0;
+    matrix[6] = (tx * iw - 1.0) as f32;
+    matrix[7] = (-ty * ih + 1.0) as f32;
     matrix[8] = 1.0;
 }
 
@@ -198,6 +200,7 @@ pub fn set_gl_base_uniforms(
 }
 
 // flight-lint: allow(conform-params) Native descriptive names replace source abbreviations without changing order or semantics
+// flight-lint: allow(f64) pixel geometry and clip-matrix math are TS Number values computed in f64 and narrowed once into the f32 GPU uniform/target lanes
 pub fn set_gl_matrix_from_transform(
     gl: &glow::Context,
     locations: &GlShaderLocations,
@@ -216,25 +219,26 @@ pub fn set_gl_matrix_from_transform(
         transform.d,
         transform.tx,
         transform.ty,
-        viewport_width,
-        viewport_height,
+        f64::from(viewport_width),
+        f64::from(viewport_height),
     );
 }
 
 // flight-lint: allow(conform-params) Native descriptive names replace source abbreviations without changing order or semantics
 #[allow(clippy::too_many_arguments)]
+// flight-lint: allow(f64) pixel geometry and clip-matrix math are TS Number values computed in f64 and narrowed once into the f32 GPU uniform/target lanes
 pub fn set_gl_matrix_from_values(
     gl: &glow::Context,
     locations: &GlShaderLocations,
     matrix: &mut [f32; 9],
-    a: f32,
-    b: f32,
-    c: f32,
-    d: f32,
-    tx: f32,
-    ty: f32,
-    viewport_width: f32,
-    viewport_height: f32,
+    a: f64,
+    b: f64,
+    c: f64,
+    d: f64,
+    tx: f64,
+    ty: f64,
+    viewport_width: f64,
+    viewport_height: f64,
 ) {
     calculate_gl_matrix_from_values(matrix, a, b, c, d, tx, ty, viewport_width, viewport_height);
     // SAFETY: the shader program owning this location is current and the slice has nine entries.

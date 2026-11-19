@@ -44,7 +44,7 @@ mod acquire_gl_render_texture {
         slab.texture_fields_mut().flip_y = true;
         slab.texture_fields_mut().uv_offset.x = 140.0 / 720.0;
         slab.texture_fields_mut().uv_offset.y = 160.0 / 480.0;
-        slab.texture_fields_mut().uv_rotation = std::f32::consts::FRAC_PI_2;
+        slab.texture_fields_mut().uv_rotation = std::f64::consts::FRAC_PI_2;
         slab.texture_fields_mut().uv_scale.x = 100.0 / 720.0;
         slab.texture_fields_mut().uv_scale.y = 80.0 / 480.0;
         let source_id = source_id(&slab);

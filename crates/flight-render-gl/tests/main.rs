@@ -60,3 +60,5 @@ mod flight_render_gl_gl_texture_resolver_test;
 mod flight_render_gl_gl_texture_upload_test;
 #[path = "gl_texture_video_upload_test.rs"]
 mod flight_render_gl_gl_texture_video_upload_test;
+#[path = "types_test.rs"]
+mod flight_render_gl_types_test;

@@ -4,6 +4,28 @@ mod create_gl_render_view_resources {
     use crate::gl_test_helper::make_context_state;
     use flight_render_gl::create_gl_render_view_resources;
     #[test]
+    fn keeps_a_non_f32_pixel_ratio_and_logical_size_exact() {
+        // 1.1 and 100.1 have no exact f32 values: an f32 lane would store 1.100000023841858.
+        let resources =
+            create_gl_render_view_resources(make_context_state(), 100.1, 50.0, 1.1, None, None)
+                .unwrap();
+        assert_eq!(resources.render_state.render.pixel_ratio, 1.1);
+        assert_eq!(resources.viewport.device_pixel_ratio, 1.1);
+        assert_eq!(resources.viewport.width, 100.1);
+        assert_eq!(resources.render_target.axes.width, 101);
+        // 16777216.5 ceils to 16777217 texels; an f32 descriptor width would ceil to 16777216.
+        let wide = create_gl_render_view_resources(
+            make_context_state(),
+            16_777_216.5,
+            1.0,
+            1.0,
+            None,
+            None,
+        )
+        .unwrap();
+        assert_eq!(wide.render_target.axes.width, 16_777_217);
+    }
+    #[test]
     fn creates_matching_target_viewport_and_pixel_ratio() {
         let resources =
             create_gl_render_view_resources(make_context_state(), 640.0, 480.0, 2.0, None, None)

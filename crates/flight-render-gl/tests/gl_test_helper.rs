@@ -306,7 +306,7 @@ pub fn make_proxy(state: &mut GlRenderState) -> flight_render::RenderProxy2D<GlR
     return flight_render::create_render_proxy_2d(state, &source);
 }
 
-pub fn make_target_descriptor(width: f32, height: f32) -> flight_render::RenderTargetDescriptor {
+pub fn make_target_descriptor(width: f64, height: f64) -> flight_render::RenderTargetDescriptor {
     return flight_render::RenderTargetDescriptor {
         width,
         height,
@@ -326,7 +326,7 @@ pub fn make_texture_target(
 ) -> flight_render_gl::GlTextureRenderTarget {
     return flight_render_gl::create_gl_texture_render_target(
         state,
-        &make_target_descriptor(width, height),
+        &make_target_descriptor(f64::from(width), f64::from(height)),
         None,
     )
     .expect("mock target allocation")

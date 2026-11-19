@@ -531,11 +531,12 @@ fn map_gl_format(format: RenderTargetFormat) -> GlFormat {
     };
 }
 
+// flight-lint: allow(f64) the requested size is the f64 logical render-target descriptor size (foreman-e0d2390c); only the resolved u32 texel size is GPU storage
 pub fn resize_gl_texture_render_target(
     state: &GlRenderState,
     target: &mut GlTextureRenderTarget,
-    width: f32,
-    height: f32,
+    width: f64,
+    height: f64,
 ) -> Result<(), String> {
     let descriptor = RenderTargetDescriptor {
         width,

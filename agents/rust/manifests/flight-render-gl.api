@@ -64,7 +64,7 @@ src/gl_draw.rs: pub fn enable_gl_blend_mode_support(state: &mut GlRenderState)
 src/gl_draw.rs: pub fn is_blend_mode_supported(state: &GlRenderState, blend_mode: &BlendMode) -> bool
 src/gl_draw.rs: pub fn register_default_gl_blend_modes(state: &mut GlRenderState)
 src/gl_draw.rs: pub fn register_gl_blend_mode(state: &mut GlRenderState, blend_mode: BlendMode, realization: GlBlendRealization,)
-src/gl_draw.rs: pub fn set_gl_quad_matrix_from_offset(state: &GlRenderState, a: f32, b: f32, c: f32, d: f32, tx: f32, ty: f32, dx: f32, dy: f32,) -> Result<(), String>
+src/gl_draw.rs: pub fn set_gl_quad_matrix_from_offset(state: &GlRenderState, a: f64, b: f64, c: f64, d: f64, tx: f64, ty: f64, dx: f64, dy: f64,) -> Result<(), String>
 src/gl_draw.rs: pub fn standard_gl_blend_realizations() -> KindMap<GlBlendRealization>
 src/gl_draw.rs: pub fn update_gl_texture(state: &GlRenderState, texture: glow::NativeTexture, source: &GlImageSourceToken,)
 src/gl_draw.rs: pub fn use_gl_program(state: &GlRenderState, shader: Option<Arc<GlBitmapShader>>,) -> Result<Arc<GlBitmapShader>, String>
@@ -124,7 +124,7 @@ src/gl_render_target.rs: pub fn draw_gl_texture_render_target_result(state: &mut
 src/gl_render_target.rs: pub fn explain_gl_texture_render_target(target: &GlTextureRenderTarget) -> RenderTargetExplanation
 src/gl_render_target.rs: pub fn initialize_gl_texture_render_target(gl: Rc<glow::Context>, requested: RenderTargetAxes, storage: GlTextureRenderTargetStorage, delete_queue: GlDeleteQueue,) -> Result<GlTextureRenderTarget, String>
 src/gl_render_target.rs: pub fn is_gl_render_target_format_supported(state: &GlRenderState, format: RenderTargetFormat,) -> bool
-src/gl_render_target.rs: pub fn resize_gl_texture_render_target(state: &GlRenderState, target: &mut GlTextureRenderTarget, width: f32, height: f32,) -> Result<(), String>
+src/gl_render_target.rs: pub fn resize_gl_texture_render_target(state: &GlRenderState, target: &mut GlTextureRenderTarget, width: f64, height: f64,) -> Result<(), String>
 src/gl_render_target.rs: pub fn resolve_gl_render_target_axes(state: &GlRenderState, descriptor: &RenderTargetDescriptor, format_policy: Option<RenderTargetFormatPolicy>,) -> Option<RenderTargetAxes>
 src/gl_render_target.rs: pub fn resolve_gl_texture_render_target(state: &GlRenderState, target: &GlTextureRenderTarget)
 src/gl_render_target.rs: pub fn resolve_renderable_format(gl: &glow::Context, format: RenderTargetFormat, format_policy: RenderTargetFormatPolicy,) -> Option<RenderTargetFormat>
@@ -150,12 +150,12 @@ src/gl_render_texture_pool.rs: pub fn destroy_gl_render_texture_pool(state: &GlR
 src/gl_render_texture_pool.rs: pub fn initialize_gl_render_texture_pool(out: &mut GlRenderTexturePool)
 src/gl_render_texture_pool.rs: pub fn release_gl_render_texture(state: &GlRenderState, pool: &mut GlRenderTexturePool, render_texture: RenderTexture,) -> Result<(), String>
 src/gl_render_texture_pool.rs: pub fn with_gl_render_textures<T, F>(state: &GlRenderState, pool: &mut GlRenderTexturePool, descriptors: &[RenderTargetDescriptor], callback: F,) -> Result<T, String> where F: FnOnce(&[RenderTexture]) -> T,
-src/gl_render_view.rs: pub fn create_gl_render_view_resources(context_state: Rc<GlContextState>, width: f32, height: f32, device_pixel_ratio: f32, options: Option<GlRenderStateOptions>, target: Option<&RenderTargetDescriptor>,) -> Result<GlRenderViewResources, String>
+src/gl_render_view.rs: pub fn create_gl_render_view_resources(context_state: Rc<GlContextState>, width: f64, height: f64, device_pixel_ratio: f64, options: Option<GlRenderStateOptions>, target: Option<&RenderTargetDescriptor>,) -> Result<GlRenderViewResources, String>
 src/gl_render_view.rs: pub fn destroy_gl_render_view_resources(resources: &mut GlRenderViewResources)
-src/gl_render_view.rs: pub fn resize_gl_render_view_resources(resources: &mut GlRenderViewResources, width: f32, height: f32,) -> Result<(), String>
+src/gl_render_view.rs: pub fn resize_gl_render_view_resources(resources: &mut GlRenderViewResources, width: f64, height: f64,) -> Result<(), String>
 src/gl_shader.rs: pub const DEFAULT_GL_FRAGMENT_SOURCE: &str
 src/gl_shader.rs: pub const DEFAULT_GL_VERTEX_SOURCE: &str
-src/gl_shader.rs: pub fn calculate_gl_matrix_from_values(matrix: &mut [f32; 9], a: f32, b: f32, c: f32, d: f32, tx: f32, ty: f32, viewport_width: f32, viewport_height: f32,)
+src/gl_shader.rs: pub fn calculate_gl_matrix_from_values(matrix: &mut [f32; 9], a: f64, b: f64, c: f64, d: f64, tx: f64, ty: f64, viewport_width: f64, viewport_height: f64,)
 src/gl_shader.rs: pub fn compile_default_gl_program(gl: &glow::Context) -> Result<GlShaderLocations, String>
 src/gl_shader.rs: pub fn compile_gl_bitmap_program(gl: &glow::Context, fragment_source: Option<&str>,) -> Result<GlShaderLocations, String>
 src/gl_shader.rs: pub fn create_default_gl_bitmap_shader(shader_locations: GlShaderLocations) -> Arc<GlBitmapShader>
@@ -167,7 +167,7 @@ src/gl_shader.rs: pub fn native_glsl_source(source: &str) -> String
 src/gl_shader.rs: pub fn set_gl_attributes(gl: &glow::Context, locations: &GlShaderLocations)
 src/gl_shader.rs: pub fn set_gl_base_uniforms(gl: &glow::Context, locations: &GlShaderLocations, render_proxy: &RenderProxy<GlRenderState>,)
 src/gl_shader.rs: pub fn set_gl_matrix_from_transform(gl: &glow::Context, locations: &GlShaderLocations, matrix: &mut [f32; 9], transform: &Matrix, viewport_width: f32, viewport_height: f32,)
-src/gl_shader.rs: pub fn set_gl_matrix_from_values(gl: &glow::Context, locations: &GlShaderLocations, matrix: &mut [f32; 9], a: f32, b: f32, c: f32, d: f32, tx: f32, ty: f32, viewport_width: f32, viewport_height: f32,)
+src/gl_shader.rs: pub fn set_gl_matrix_from_values(gl: &glow::Context, locations: &GlShaderLocations, matrix: &mut [f32; 9], a: f64, b: f64, c: f64, d: f64, tx: f64, ty: f64, viewport_width: f64, viewport_height: f64,)
 src/gl_shader.rs: pub type GlBitmapShaderOnBind = Arc<dyn Fn(&glow::Context, &GlShaderLocations, &RenderProxy2D<GlRenderState>)>;
 src/gl_shader_binding.rs: pub fn get_gl_material_shader(state: &GlRenderState, kind: &Kind) -> Option<Arc<GlBitmapShader>>
 src/gl_shader_binding.rs: pub fn get_gl_shader(state: &GlRenderState, render_proxy: &RenderProxy2D<GlRenderState>,) -> Option<Arc<GlBitmapShader>>
@@ -349,7 +349,7 @@ src/types.rs: pub struct GlScreenRenderTarget { pub(crate) runtime: EntityRuntim
 src/types.rs: pub struct GlSkinPaletteTexture { pub(crate) runtime: EntityRuntimeSlot, pub joint_capacity: usize, pub texture: NativeTexture, pub delete_queue: GlDeleteQueue, pub destroyed: bool, }
 src/types.rs: pub struct GlTextureRenderTarget { pub(crate) runtime: EntityRuntimeSlot, pub gl: Rc<glow::Context>, pub requested_axes: RenderTargetAxes, pub axes: RenderTargetAxes, pub framebuffer: NativeFramebuffer, pub resolve_framebuffer: Option<NativeFramebuffer>, pub textures: Vec<NativeTexture>, pub texture: NativeTexture, pub depth_texture: Option<NativeTexture>, pub color_renderbuffers: Vec<NativeRenderbuffer>, pub depth_stencil_renderbuffer: Option<NativeRenderbuffer>, pub delete_queue: GlDeleteQueue, pub destroyed: bool, }
 src/types.rs: pub struct GlTextureRenderTargetStorage { pub axes: RenderTargetAxes, pub framebuffer: NativeFramebuffer, pub resolve_framebuffer: Option<NativeFramebuffer>, pub textures: Vec<NativeTexture>, pub depth_texture: Option<NativeTexture>, pub color_renderbuffers: Vec<NativeRenderbuffer>, pub depth_stencil_renderbuffer: Option<NativeRenderbuffer>, }
-src/types.rs: pub struct GlVelocityContext<'a> { pub state: &'a mut GlRenderState, pub field: &'a VelocityField, pub width: f32, pub height: f32, pub pixel_ratio: f32, }
+src/types.rs: pub struct GlVelocityContext<'a> { pub state: &'a mut GlRenderState, pub field: &'a VelocityField, pub width: f64, pub height: f64, pub pixel_ratio: f64, }
 src/types.rs: pub trait GlPbrExtensionBindContext { fn bind_transmission_scene_color(&mut self, sampler_uniform: &str, max_lod_uniform: &str) -> bool; fn bind_texture(&mut self, sampler_uniform: &str, uv_set_uniform: &str, uv_transform_uniform: &str, texture: Option<&Ref<Texture>>, uv_set: PbrUvSet,) -> bool; fn set_linear_color(&mut self, uniform: &str, color: u32); fn set_float(&mut self, uniform: &str, value: f32); }
 src/types.rs: pub trait GlPbrExtensionShaderContext { fn has_transmission_scene_color(&self) -> bool; fn is_texture_ready(&self, texture: Option<&Ref<Texture>>) -> bool; }
 src/types.rs: pub trait GlQuadMaterialRenderer { fn instance_float_count(&self) -> usize; fn bind(&self, state: &mut GlRenderState, material: Option<&dyn Material2D>); fn pack_instance(&self, _state: &mut GlRenderState, _material_data: Option<&dyn MaterialData>, _out: &mut [f32], _offset: usize,); }

@@ -178,12 +178,13 @@ pub enum GlColorAdjustmentData {
 
 /// The per-pass context a velocity writer draws through (TS `GlVelocityContext`): the state, the
 /// render-agnostic velocity field, the target size in device pixels and the pixel ratio.
+// flight-lint: allow(f64) width/height and pixel_ratio are CPU spatial values in f64 (foreman-e0d2390c, foreman-2c184842): u32 device sizes widen exactly; only GPU extents stay u32
 pub struct GlVelocityContext<'a> {
     pub state: &'a mut GlRenderState,
     pub field: &'a VelocityField,
-    pub width: f32,
-    pub height: f32,
-    pub pixel_ratio: f32,
+    pub width: f64,
+    pub height: f64,
+    pub pixel_ratio: f64,
 }
 
 /// Draws one renderable kind's velocity into the bound velocity target during the velocity pass (TS

@@ -738,16 +738,17 @@ pub fn register_gl_blend_mode(
 }
 
 #[allow(clippy::too_many_arguments)]
+// flight-lint: allow(f64) pixel geometry and clip-matrix math are TS Number values computed in f64 and narrowed once into the f32 GPU uniform/target lanes
 pub fn set_gl_quad_matrix_from_offset(
     state: &GlRenderState,
-    a: f32,
-    b: f32,
-    c: f32,
-    d: f32,
-    tx: f32,
-    ty: f32,
-    dx: f32,
-    dy: f32,
+    a: f64,
+    b: f64,
+    c: f64,
+    d: f64,
+    tx: f64,
+    ty: f64,
+    dx: f64,
+    dy: f64,
 ) -> Result<(), String> {
     let locations = state
         .context_state
@@ -781,8 +782,8 @@ pub fn set_gl_quad_matrix_from_offset(
         d,
         tx + a * dx + c * dy,
         ty + b * dx + d * dy,
-        width,
-        height,
+        f64::from(width),
+        f64::from(height),
     );
     return Ok(());
 }

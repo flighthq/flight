@@ -15,11 +15,12 @@ use crate::{
 };
 
 // flight-lint: allow(conform-params) D17 the native backend receives an explicit context owner
+// flight-lint: allow(f64) logical size and device pixel ratio are TS Number values carried in f64 through the descriptor and render state; only the resolved u32 texel size is GPU storage
 pub fn create_gl_render_view_resources(
     context_state: Rc<GlContextState>,
-    width: f32,
-    height: f32,
-    device_pixel_ratio: f32,
+    width: f64,
+    height: f64,
+    device_pixel_ratio: f64,
     options: Option<GlRenderStateOptions>,
     target: Option<&RenderTargetDescriptor>,
 ) -> Result<GlRenderViewResources, String> {
@@ -59,10 +60,11 @@ pub fn destroy_gl_render_view_resources(resources: &mut GlRenderViewResources) {
     destroy_gl_render_state(&mut resources.render_state, &mut resources.proxies);
 }
 
+// flight-lint: allow(f64) logical size and device pixel ratio are TS Number values carried in f64 through the descriptor and render state; only the resolved u32 texel size is GPU storage
 pub fn resize_gl_render_view_resources(
     resources: &mut GlRenderViewResources,
-    width: f32,
-    height: f32,
+    width: f64,
+    height: f64,
 ) -> Result<(), String> {
     let storage_width = width.ceil().max(1.0) as u32;
     let storage_height = height.ceil().max(1.0) as u32;

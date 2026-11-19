@@ -4,6 +4,24 @@ mod calculate_gl_matrix_from_values {
     use flight_render_gl::calculate_gl_matrix_from_values;
 
     #[test]
+    fn computes_in_f64_before_the_single_f32_store() {
+        // tx = 16777217 has no f32: f64 gives 16777217 * 1 - 1 = 16777216; f32 math gives 16777215.
+        let mut matrix = [0.0; 9];
+        calculate_gl_matrix_from_values(
+            &mut matrix,
+            1.0,
+            0.0,
+            0.0,
+            1.0,
+            16_777_217.0,
+            0.0,
+            2.0,
+            2.0,
+        );
+        assert_eq!(matrix[6], 16_777_216.0);
+    }
+
+    #[test]
     fn maps_pixel_coordinates_to_clip_space_with_the_source_sign_convention() {
         let mut matrix = [0.0; 9];
         calculate_gl_matrix_from_values(&mut matrix, 2.0, 3.0, 4.0, 5.0, 25.0, 20.0, 100.0, 80.0);

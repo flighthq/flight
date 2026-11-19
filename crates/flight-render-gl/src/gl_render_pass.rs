@@ -184,11 +184,12 @@ fn capture_gl_stencil(gl: &glow::Context) -> SavedGlStencil {
     }
 }
 
-fn clamp_gl_pass_edge(value: f32, extent: i32) -> i32 {
+// flight-lint: allow(f64) pixel geometry and clip-matrix math are TS Number values computed in f64 and narrowed once into the f32 GPU uniform/target lanes
+fn clamp_gl_pass_edge(value: f64, extent: i32) -> i32 {
     if value.is_nan() {
         return 0;
     }
-    return value.max(0.0).min(extent as f32) as i32;
+    return value.max(0.0).min(f64::from(extent)) as i32;
 }
 
 fn clear_gl_render_pass(

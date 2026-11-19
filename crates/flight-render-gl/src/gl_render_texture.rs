@@ -223,6 +223,7 @@ pub fn get_gl_render_texture_target(
     return None;
 }
 
+// flight-lint: allow(f64) widens the u32 texel size of the texture source exactly into the f64 render-target descriptor (foreman-e0d2390c)
 fn get_render_target_source(
     render_texture: &dyn TextureVariant,
 ) -> Option<(u64, RenderTargetDescriptor)> {
@@ -235,8 +236,8 @@ fn get_render_target_source(
     return Some((
         get_entity_id(target),
         RenderTargetDescriptor {
-            width: target.width as f32,
-            height: target.height as f32,
+            width: f64::from(target.width),
+            height: f64::from(target.height),
             format: target.format,
             color_attachments: target.color_attachments,
             color_formats: target.color_formats.clone(),
