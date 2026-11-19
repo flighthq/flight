@@ -9,7 +9,7 @@ fn perspective_camera() -> Camera3D {
     return camera_3d(0.1, 100.0, 1.0);
 }
 
-fn view_from(values: [f32; 16]) -> flight_geometry::Matrix4 {
+fn view_from(values: [f64; 16]) -> flight_geometry::Matrix4 {
     let mut out = create_matrix4();
     set_matrix4(
         &mut out, values[0], values[1], values[2], values[3], values[4], values[5], values[6],

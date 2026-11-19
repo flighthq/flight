@@ -35,7 +35,7 @@ mod sugar_tests {
 
     use super::*;
 
-    const EPSILON: f32 = 1e-5;
+    const EPSILON: f64 = 1e-5;
 
     fn perspective_camera() -> Camera3D {
         let mut camera = create_camera_3d();
@@ -579,7 +579,7 @@ impl Camera3D {
         &mut self,
         light_direction: &Vector3,
         world_bounds: &flight_geometry::Aabb,
-        padding: Option<f32>,
+        padding: Option<f64>,
     ) {
         return configure_directional_shadow_camera_3d_tight_fit(
             self,
@@ -603,41 +603,41 @@ impl Camera3D {
         return out;
     }
 
-    pub fn frustum(&self, aspect: f32) -> Frustum {
+    pub fn frustum(&self, aspect: f64) -> Frustum {
         let mut out = create_frustum();
         get_camera_3d_frustum(&mut out, self, aspect);
         return out;
     }
 
-    pub fn frustum_corners(&self, aspect: f32) -> ([Vector3; 8], bool) {
+    pub fn frustum_corners(&self, aspect: f64) -> ([Vector3; 8], bool) {
         let mut out: [Vector3; 8] = std::array::from_fn(|_| create_vector3(0.0, 0.0, 0.0));
         let ok = get_camera_3d_frustum_corners(&mut out, self, aspect);
         return (out, ok);
     }
 
-    pub fn inverse_view_projection_matrix4(&self, aspect: f32) -> (Matrix4, bool) {
+    pub fn inverse_view_projection_matrix4(&self, aspect: f64) -> (Matrix4, bool) {
         let mut out = create_matrix4();
         let ok = get_camera_3d_inverse_view_projection_matrix4(&mut out, self, aspect);
         return (out, ok);
     }
 
-    pub fn is_box_in_frustum(&self, aabb: &flight_geometry::Aabb, aspect: f32) -> bool {
+    pub fn is_box_in_frustum(&self, aabb: &flight_geometry::Aabb, aspect: f64) -> bool {
         return is_box_in_camera_3d_frustum(self, aabb, aspect);
     }
 
-    pub fn is_point_in_frustum(&self, point: &Vector3, aspect: f32) -> bool {
+    pub fn is_point_in_frustum(&self, point: &Vector3, aspect: f64) -> bool {
         return is_point_in_camera_3d_frustum(self, point, aspect);
     }
 
     pub fn is_sphere_in_frustum(
         &self,
         sphere: &flight_geometry::BoundingSphere,
-        aspect: f32,
+        aspect: f64,
     ) -> bool {
         return is_sphere_in_camera_3d_frustum(self, sphere, aspect);
     }
 
-    pub fn linear_depth(&self, ndc_z: f32) -> f32 {
+    pub fn linear_depth(&self, ndc_z: f64) -> f64 {
         return get_camera_3d_linear_depth(self, ndc_z);
     }
 
@@ -650,7 +650,7 @@ impl Camera3D {
     pub fn ray_through_bounding_sphere(
         &self,
         sphere: &flight_geometry::BoundingSphere,
-        aspect: f32,
+        aspect: f64,
     ) -> (Ray3D, bool) {
         let mut out = create_ray3d(0.0, 0.0, 0.0, 1.0, 0.0, 0.0);
         let ok = get_camera_3d_ray_through_bounding_sphere(&mut out, self, sphere, aspect);
@@ -667,17 +667,17 @@ impl Camera3D {
         return out;
     }
 
-    pub fn screen_to_world_ray(&self, ndc_x: f32, ndc_y: f32, aspect: f32) -> (Ray3D, bool) {
+    pub fn screen_to_world_ray(&self, ndc_x: f64, ndc_y: f64, aspect: f64) -> (Ray3D, bool) {
         let mut out = create_ray3d(0.0, 0.0, 0.0, 1.0, 0.0, 0.0);
         let ok = get_camera_3d_screen_to_world_ray(&mut out, self, ndc_x, ndc_y, aspect);
         return (out, ok);
     }
 
-    pub fn set_aspect(&mut self, aspect: f32) {
+    pub fn set_aspect(&mut self, aspect: f64) {
         return set_camera_3d_aspect(self, aspect);
     }
 
-    pub fn set_jitter(&mut self, x: f32, y: f32) {
+    pub fn set_jitter(&mut self, x: f64, y: f64) {
         return set_camera_3d_jitter(self, x, y);
     }
 
@@ -699,21 +699,21 @@ impl Camera3D {
         return out;
     }
 
-    pub fn update_inverse_view_projection(&self, aspect: f32) -> bool {
+    pub fn update_inverse_view_projection(&self, aspect: f64) -> bool {
         return update_camera_3d_inverse_view_projection(self, aspect);
     }
 
-    pub fn view_projection_matrix4(&self, aspect: f32) -> Matrix4 {
+    pub fn view_projection_matrix4(&self, aspect: f64) -> Matrix4 {
         let mut out = create_matrix4();
         get_camera_3d_view_projection_matrix4(&mut out, self, aspect);
         return out;
     }
 
-    pub fn view_space_z(&self, ndc_z: f32) -> f32 {
+    pub fn view_space_z(&self, ndc_z: f64) -> f64 {
         return get_camera_3d_view_space_z(self, ndc_z);
     }
 
-    pub fn world_to_screen(&self, world_point: &Vector3, aspect: f32) -> (Vector3, bool) {
+    pub fn world_to_screen(&self, world_point: &Vector3, aspect: f64) -> (Vector3, bool) {
         let mut out = create_vector3(0.0, 0.0, 0.0);
         let ok = get_camera_3d_world_to_screen(&mut out, self, world_point, aspect);
         return (out, ok);
@@ -726,15 +726,15 @@ impl Camera2D {
         return create_camera_2d();
     }
 
-    pub fn look_at(&mut self, x: f32, y: f32) {
+    pub fn look_at(&mut self, x: f64, y: f64) {
         return set_camera_2d_look_at(self, x, y);
     }
 
     pub fn parallax_point(
         &self,
-        viewport_width: f32,
-        viewport_height: f32,
-        factor: f32,
+        viewport_width: f64,
+        viewport_height: f64,
+        factor: f64,
     ) -> Vector2 {
         let mut out = create_vector2(0.0, 0.0);
         get_camera_2d_parallax_point(self, viewport_width, viewport_height, factor, &mut out);
@@ -743,10 +743,10 @@ impl Camera2D {
 
     pub fn project_point(
         &self,
-        viewport_width: f32,
-        viewport_height: f32,
-        world_x: f32,
-        world_y: f32,
+        viewport_width: f64,
+        viewport_height: f64,
+        world_x: f64,
+        world_y: f64,
     ) -> Vector2 {
         let mut out = create_vector2(0.0, 0.0);
         project_camera_2d_point(
@@ -762,10 +762,10 @@ impl Camera2D {
 
     pub fn unproject_point(
         &self,
-        viewport_width: f32,
-        viewport_height: f32,
-        screen_x: f32,
-        screen_y: f32,
+        viewport_width: f64,
+        viewport_height: f64,
+        screen_x: f64,
+        screen_y: f64,
     ) -> Vector2 {
         let mut out = create_vector2(0.0, 0.0);
         unproject_camera_2d_point(
@@ -779,7 +779,7 @@ impl Camera2D {
         return out;
     }
 
-    pub fn view_matrix(&self, viewport_width: f32, viewport_height: f32) -> Matrix {
+    pub fn view_matrix(&self, viewport_width: f64, viewport_height: f64) -> Matrix {
         let mut out = create_matrix(1.0, 0.0, 0.0, 1.0, 0.0, 0.0);
         get_camera_2d_view_matrix(self, viewport_width, viewport_height, &mut out);
         return out;
@@ -788,8 +788,8 @@ impl Camera2D {
     pub fn visible_bounds(
         &self,
         guard_state: &CameraGuardStateRef,
-        viewport_width: f32,
-        viewport_height: f32,
+        viewport_width: f64,
+        viewport_height: f64,
     ) -> Rectangle {
         let mut out = create_rectangle(0.0, 0.0, 0.0, 0.0);
         get_camera_2d_visible_bounds(guard_state, self, viewport_width, viewport_height, &mut out);
@@ -798,11 +798,11 @@ impl Camera2D {
 
     pub fn zoom_at_screen_point(
         &mut self,
-        viewport_width: f32,
-        viewport_height: f32,
-        screen_x: f32,
-        screen_y: f32,
-        zoom: f32,
+        viewport_width: f64,
+        viewport_height: f64,
+        screen_x: f64,
+        screen_y: f64,
+        zoom: f64,
     ) {
         return zoom_camera_2d_at_screen_point(
             self,
@@ -829,7 +829,7 @@ impl Projection {
         return is_raw_projection(self);
     }
 
-    pub fn matrix4(&self, aspect: f32, near: f32, far: f32) -> Matrix4 {
+    pub fn matrix4(&self, aspect: f64, near: f64, far: f64) -> Matrix4 {
         let mut out = create_matrix4();
         set_projection_matrix4(&mut out, self, aspect, near, far);
         return out;
@@ -842,7 +842,7 @@ impl OrthographicProjection {
         return create_orthographic_projection();
     }
 
-    pub fn texel_size(&self, pixel_width: f32, pixel_height: f32) -> f32 {
+    pub fn texel_size(&self, pixel_width: f64, pixel_height: f64) -> f64 {
         return get_orthographic_projection_texel_size(self, pixel_width, pixel_height);
     }
 }

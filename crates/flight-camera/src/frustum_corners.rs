@@ -8,7 +8,7 @@ use crate::camera::get_camera_3d_view_projection_matrix4;
 use crate::types::*;
 
 /// NDC cube vertices, near row then far row (TS `getCamera3DFrustumCorners` ordering).
-const NDC_CORNERS: [[f32; 3]; 8] = [
+const NDC_CORNERS: [[f64; 3]; 8] = [
     [-1.0, -1.0, -1.0],
     [1.0, -1.0, -1.0],
     [-1.0, 1.0, -1.0],
@@ -25,7 +25,7 @@ const NDC_CORNERS: [[f32; 3]; 8] = [
 pub fn get_camera_3d_frustum_corners(
     out: &mut [Vector3; 8],
     camera: &Camera3D,
-    aspect: f32,
+    aspect: f64,
 ) -> bool {
     let mut view_projection = create_matrix4();
     get_camera_3d_view_projection_matrix4(&mut view_projection, camera, aspect);
@@ -34,7 +34,7 @@ pub fn get_camera_3d_frustum_corners(
         return false;
     }
     let m = inverse.m;
-    let mut results = [[0.0_f32; 3]; 8];
+    let mut results = [[0.0_f64; 3]; 8];
     let mut index = 0;
     while index < 8 {
         let corner = NDC_CORNERS[index];

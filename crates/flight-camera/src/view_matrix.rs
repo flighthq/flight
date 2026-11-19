@@ -13,8 +13,8 @@ use crate::types::*;
 /// Alias-safe: `out` may be any matrix, including one used as scratch elsewhere.
 pub fn get_camera_2d_view_matrix(
     camera: &Camera2D,
-    viewport_width: f32,
-    viewport_height: f32,
+    viewport_width: f64,
+    viewport_height: f64,
     out: &mut Matrix,
 ) {
     set_transform_matrix(

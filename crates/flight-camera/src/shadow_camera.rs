@@ -62,7 +62,7 @@ pub fn configure_directional_shadow_camera_3d_tight_fit(
     camera: &mut Camera3D,
     light_direction: &Vector3,
     world_bounds: &Aabb,
-    padding: Option<f32>,
+    padding: Option<f64>,
 ) {
     let padding = padding.unwrap_or(1.0);
     let min = &world_bounds.min;
@@ -133,10 +133,10 @@ pub fn configure_directional_shadow_camera_3d_tight_fit(
         let current = camera.view.read().unwrap();
         current.m
     };
-    let mut half_width = 0.0_f32;
-    let mut half_height = 0.0_f32;
-    let mut min_view_z = f32::INFINITY;
-    let mut max_view_z = f32::NEG_INFINITY;
+    let mut half_width = 0.0_f64;
+    let mut half_height = 0.0_f64;
+    let mut min_view_z = f64::INFINITY;
+    let mut max_view_z = f64::NEG_INFINITY;
     let mut corner = 0;
     while corner < 8 {
         let x = if (corner & 1) == 0 { cx - ex } else { cx + ex };

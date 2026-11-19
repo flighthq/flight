@@ -8,7 +8,7 @@ use crate::projection::create_perspective_projection;
 use crate::types::*;
 
 /// [dirX, dirY, dirZ, upX, upY, upZ] per face index — GL cube-map convention.
-const CUBE_FACE_DIRECTIONS: [[f32; 6]; 6] = [
+const CUBE_FACE_DIRECTIONS: [[f64; 6]; 6] = [
     [1.0, 0.0, 0.0, 0.0, -1.0, 0.0],
     [-1.0, 0.0, 0.0, 0.0, -1.0, 0.0],
     [0.0, 1.0, 0.0, 0.0, 0.0, 1.0],
@@ -36,7 +36,7 @@ pub fn get_cube_capture_face_camera_3d(out: &mut Camera3D, position: &Vector3, f
     {
         let mut projection_fields = projection.write().unwrap();
         projection_fields.aspect = 1.0;
-        projection_fields.fov_y = std::f32::consts::PI / 2.0;
+        projection_fields.fov_y = std::f64::consts::PI / 2.0;
     }
     out.projection = Projection::Perspective(projection);
 }

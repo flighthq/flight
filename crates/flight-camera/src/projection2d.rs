@@ -13,10 +13,10 @@ use crate::view_matrix::get_camera_2d_view_matrix;
 /// result to `out` (TS `projectCamera2DPoint`). The inverse is `unproject_camera_2d_point`.
 pub fn project_camera_2d_point(
     camera: &Camera2D,
-    viewport_width: f32,
-    viewport_height: f32,
-    world_x: f32,
-    world_y: f32,
+    viewport_width: f64,
+    viewport_height: f64,
+    world_x: f64,
+    world_y: f64,
     out: &mut Vector2,
 ) {
     let mut matrix = create_matrix(1.0, 0.0, 0.0, 1.0, 0.0, 0.0);
@@ -28,10 +28,10 @@ pub fn project_camera_2d_point(
 /// (TS `unprojectCamera2DPoint`). Uses the exact inverse of `project_camera_2d_point`.
 pub fn unproject_camera_2d_point(
     camera: &Camera2D,
-    viewport_width: f32,
-    viewport_height: f32,
-    screen_x: f32,
-    screen_y: f32,
+    viewport_width: f64,
+    viewport_height: f64,
+    screen_x: f64,
+    screen_y: f64,
     out: &mut Vector2,
 ) {
     let mut matrix = create_matrix(1.0, 0.0, 0.0, 1.0, 0.0, 0.0);

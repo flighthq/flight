@@ -7,7 +7,7 @@ use flight_geometry::{create_rectangle, intersects_rectangle};
 
 use crate::common::*;
 
-fn options(zoom: Option<f32>, rotation: Option<f32>) -> Camera2DOptions {
+fn options(zoom: Option<f64>, rotation: Option<f64>) -> Camera2DOptions {
     return Camera2DOptions {
         rotation,
         x: None,
@@ -50,7 +50,7 @@ mod get_camera_2d_visible_bounds {
     #[test]
     fn returns_the_enclosing_aabb_of_a_rotated_view_larger_than_the_viewport() {
         let guard = guard_state();
-        let camera = camera_2d(Some(&options(None, Some(std::f32::consts::FRAC_PI_4))));
+        let camera = camera_2d(Some(&options(None, Some(std::f64::consts::FRAC_PI_4))));
         let mut out = create_rectangle(0.0, 0.0, 0.0, 0.0);
         get_camera_2d_visible_bounds(&guard, &camera, 800.0, 600.0, &mut out);
         assert_close_within(out.width, 989.9495, 1e-2);

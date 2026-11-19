@@ -23,7 +23,7 @@ mod zoom_camera_2d_at_screen_point {
     #[test]
     fn keeps_an_arbitrary_screen_point_fixed_under_a_rotated_camera() {
         let options = Camera2DOptions {
-            rotation: Some(std::f32::consts::PI / 5.0),
+            rotation: Some(std::f64::consts::PI / 5.0),
             x: Some(30.0),
             y: Some(-20.0),
             zoom: Some(1.5),

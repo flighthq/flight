@@ -31,7 +31,6 @@ pub fn disable_camera_guards(guard_state: &CameraGuardStateRef) {
 /// Installs opt-in diagnostics for camera inputs that leave a computation with no answer (TS
 /// `enableCameraGuards`). The adapters capture the caller's log state and live clock at enable time
 /// and sample the clock at each warning, so timestamps are operation time.
-// flight-lint: allow(f64) D1: the injected clock returns millisecond operation timestamps
 // flight-lint: allow(conform-params) D5: caller-owned CameraGuardState, log state and clock replace the source module glue
 pub fn enable_camera_guards(
     guard_state: &CameraGuardStateRef,
@@ -52,7 +51,6 @@ pub fn enable_camera_guards(
     guard_state.write().unwrap().enabled = true;
 }
 
-// flight-lint: allow(f64) D1: operation time is a millisecond timestamp
 fn warn_on_degenerate_camera_2d_visible_bounds(
     log_state: &LogStateRef,
     now_ms: f64,
@@ -66,7 +64,7 @@ fn warn_on_degenerate_camera_2d_visible_bounds(
                 .to_string(),
         ),
     );
-    data.insert("zoom".to_string(), LogValue::Number(camera.zoom as f64));
+    data.insert("zoom".to_string(), LogValue::Number(camera.zoom));
     let key = format!("camera:degenerate-visible-bounds:{}", camera.zoom);
     let _ = log_once(
         log_state,
@@ -78,7 +76,6 @@ fn warn_on_degenerate_camera_2d_visible_bounds(
     );
 }
 
-// flight-lint: allow(f64) D1: operation time is a millisecond timestamp
 fn warn_on_non_orthonormal_camera_3d_view(log_state: &LogStateRef, now_ms: f64, camera: &Camera3D) {
     let explanation = explain_camera_3d_view(camera);
     if explanation.is_orthonormal {
@@ -94,11 +91,11 @@ fn warn_on_non_orthonormal_camera_3d_view(log_state: &LogStateRef, now_ms: f64, 
     );
     data.insert(
         "scaleDeviation".to_string(),
-        LogValue::Number(explanation.scale_deviation as f64),
+        LogValue::Number(explanation.scale_deviation),
     );
     data.insert(
         "shearDeviation".to_string(),
-        LogValue::Number(explanation.shear_deviation as f64),
+        LogValue::Number(explanation.shear_deviation),
     );
     let _ = log_once(
         log_state,

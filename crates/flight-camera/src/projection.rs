@@ -64,9 +64,9 @@ pub fn initialize_raw_projection(out: &mut RawProjection) {
 /// `getOrthographicProjectionTexelSize`). `pixel_width`/`pixel_height` must be positive.
 pub fn get_orthographic_projection_texel_size(
     projection: &OrthographicProjection,
-    pixel_width: f32,
-    pixel_height: f32,
-) -> f32 {
+    pixel_width: f64,
+    pixel_height: f64,
+) -> f64 {
     let width = (projection.half_width * 2.0) / pixel_width;
     let height = (projection.half_height * 2.0) / pixel_height;
     return if width > height { width } else { height };
@@ -93,9 +93,9 @@ pub fn is_raw_projection(projection: &Projection) -> bool {
 pub fn set_projection_matrix4(
     out: &mut Matrix4,
     projection: &Projection,
-    aspect: f32,
-    near: f32,
-    far: f32,
+    aspect: f64,
+    near: f64,
+    far: f64,
 ) {
     match projection {
         Projection::Perspective(perspective) => {

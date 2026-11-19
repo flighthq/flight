@@ -25,7 +25,7 @@ pub fn apply_oblique_near_clip_plane(projection: &mut Matrix4, view_space_plane:
     m[14] = k * cw - m[15];
 }
 
-fn camera_sign(x: f32) -> f32 {
+fn camera_sign(x: f64) -> f64 {
     return if x < 0.0 { -1.0 } else { 1.0 };
 }
 

@@ -5,10 +5,10 @@ use flight_camera::contract::*;
 use crate::common::*;
 
 fn options(
-    x: Option<f32>,
-    y: Option<f32>,
-    zoom: Option<f32>,
-    rotation: Option<f32>,
+    x: Option<f64>,
+    y: Option<f64>,
+    zoom: Option<f64>,
+    rotation: Option<f64>,
 ) -> Camera2DOptions {
     return Camera2DOptions {
         rotation,
@@ -58,13 +58,13 @@ mod unproject_camera_2d_point {
                 Some(-50.0),
                 Some(200.0),
                 Some(0.5),
-                Some(std::f32::consts::FRAC_PI_3),
+                Some(std::f64::consts::FRAC_PI_3),
             ))),
             camera_2d(Some(&options(
                 Some(10.0),
                 Some(10.0),
                 Some(1.5),
-                Some(-std::f32::consts::FRAC_PI_6),
+                Some(-std::f64::consts::FRAC_PI_6),
             ))),
         ];
         let viewports = [

@@ -20,7 +20,7 @@ fn fixed_projection() -> Arc<RwLock<PerspectiveProjection>> {
     return projection;
 }
 
-fn camera_with(projection: Projection, near: f32, far: f32) -> Camera3D {
+fn camera_with(projection: Projection, near: f64, far: f64) -> Camera3D {
     let mut camera = create_camera_3d();
     camera.far = far;
     camera.near = near;
@@ -163,7 +163,7 @@ mod get_camera_3d_view_projection_matrix4 {
 
     #[test]
     fn applies_the_oblique_near_clip_plane_when_present() {
-        let camera_projection = perspective_projection(std::f32::consts::FRAC_PI_3, Some(1.5));
+        let camera_projection = perspective_projection(std::f64::consts::FRAC_PI_3, Some(1.5));
         let mut camera = camera_with(camera_projection, 0.1, 100.0);
         let mut without_clip = create_matrix4();
         get_camera_3d_view_projection_matrix4(&mut without_clip, &camera, 1.5);
@@ -294,22 +294,22 @@ mod set_camera_3d_view_guard {
 }
 
 fn create_matrix4_from_values(
-    m00: f32,
-    m01: f32,
-    m02: f32,
-    m03: f32,
-    m10: f32,
-    m11: f32,
-    m12: f32,
-    m13: f32,
-    m20: f32,
-    m21: f32,
-    m22: f32,
-    m23: f32,
-    m30: f32,
-    m31: f32,
-    m32: f32,
-    m33: f32,
+    m00: f64,
+    m01: f64,
+    m02: f64,
+    m03: f64,
+    m10: f64,
+    m11: f64,
+    m12: f64,
+    m13: f64,
+    m20: f64,
+    m21: f64,
+    m22: f64,
+    m23: f64,
+    m30: f64,
+    m31: f64,
+    m32: f64,
+    m33: f64,
 ) -> flight_geometry::Matrix4 {
     let mut out = create_matrix4();
     flight_geometry::set_matrix4(

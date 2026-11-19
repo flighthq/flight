@@ -11,11 +11,11 @@ use crate::types::*;
 /// fixed on screen (TS `zoomCamera2DAtScreenPoint`).
 pub fn zoom_camera_2d_at_screen_point(
     camera: &mut Camera2D,
-    viewport_width: f32,
-    viewport_height: f32,
-    screen_x: f32,
-    screen_y: f32,
-    zoom: f32,
+    viewport_width: f64,
+    viewport_height: f64,
+    screen_x: f64,
+    screen_y: f64,
+    zoom: f64,
 ) {
     let mut before = create_vector2(0.0, 0.0);
     unproject_camera_2d_point(

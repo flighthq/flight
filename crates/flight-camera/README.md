@@ -57,5 +57,7 @@ Each method has one inline comparison against its free function in `camera_sugar
 
 ## Precision
 
-All math is `f32` per D1 (the source declares plain `number`). The only `f64` is the injected guard
-clock's millisecond timestamp.
+Camera authoring math is `f64` end to end: coordinates, distances, angles, viewport dimensions,
+time and duration values, matrices, projection and frustum parameters, planes, and measured
+diagnostics. This crate has no GPU, normalized, color, or UV storage seam, so its retained `f32`
+boundary inventory is intentionally empty and frozen by a source scanner with mutation coverage.

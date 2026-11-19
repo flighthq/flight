@@ -11,9 +11,9 @@ use crate::view_matrix::get_camera_2d_view_matrix;
 /// `getCamera2DParallaxPoint`). Factor 0 is screen-locked; factor 1 moves exactly like the world.
 pub fn get_camera_2d_parallax_point(
     camera: &Camera2D,
-    viewport_width: f32,
-    viewport_height: f32,
-    factor: f32,
+    viewport_width: f64,
+    viewport_height: f64,
+    factor: f64,
     out: &mut Vector2,
 ) {
     let mut matrix = create_matrix(1.0, 0.0, 0.0, 1.0, 0.0, 0.0);

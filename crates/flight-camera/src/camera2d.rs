@@ -26,7 +26,7 @@ pub fn initialize_camera_2d(out: &mut Camera2D) {
 }
 
 /// Centers the camera on a world position (TS `setCamera2DLookAt`).
-pub fn set_camera_2d_look_at(camera: &mut Camera2D, x: f32, y: f32) {
+pub fn set_camera_2d_look_at(camera: &mut Camera2D, x: f64, y: f64) {
     camera.x = x;
     camera.y = y;
 }

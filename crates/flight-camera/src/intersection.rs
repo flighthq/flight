@@ -14,7 +14,7 @@ pub fn get_camera_3d_ray_through_bounding_sphere(
     out: &mut Ray3D,
     camera: &Camera3D,
     sphere: &BoundingSphere,
-    aspect: f32,
+    aspect: f64,
 ) -> bool {
     if sphere.radius < 0.0 {
         return false;

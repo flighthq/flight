@@ -17,10 +17,10 @@ use flight_geometry::{Matrix4, Plane, Rectangle, Vector2, create_matrix4, create
 #[repr(C)]
 pub struct Camera3D {
     runtime: EntityRuntimeSlot,
-    pub far: f32,
+    pub far: f64,
     pub inverse_view_projection: Ref<Matrix4>,
     pub jitter: Ref<Vector2>,
-    pub near: f32,
+    pub near: f64,
     pub near_clip_plane: Option<Ref<Plane>>,
     pub projection: Projection,
     pub view: Ref<Matrix4>,
@@ -33,10 +33,10 @@ pub struct Camera3D {
 #[repr(C)]
 pub struct Camera2D {
     runtime: EntityRuntimeSlot,
-    pub rotation: f32,
-    pub x: f32,
-    pub y: f32,
-    pub zoom: f32,
+    pub rotation: f64,
+    pub x: f64,
+    pub y: f64,
+    pub zoom: f64,
 }
 
 /// A perspective projection (TS `PerspectiveProjection`, an Entity): vertical field of view in
@@ -45,8 +45,8 @@ pub struct Camera2D {
 #[repr(C)]
 pub struct PerspectiveProjection {
     runtime: EntityRuntimeSlot,
-    pub aspect: f32,
-    pub fov_y: f32,
+    pub aspect: f64,
+    pub fov_y: f64,
 }
 
 /// An orthographic projection (TS `OrthographicProjection`, an Entity): half-extents of the view
@@ -55,8 +55,8 @@ pub struct PerspectiveProjection {
 #[repr(C)]
 pub struct OrthographicProjection {
     runtime: EntityRuntimeSlot,
-    pub half_height: f32,
-    pub half_width: f32,
+    pub half_height: f64,
+    pub half_width: f64,
 }
 
 /// A pre-built projection matrix used verbatim (TS `RawProjection`, an Entity). The system cannot
@@ -80,8 +80,8 @@ pub enum Projection {
 #[derive(Clone)]
 #[repr(C)]
 pub struct Camera3DOptions {
-    pub far: f32,
-    pub near: f32,
+    pub far: f64,
+    pub near: f64,
     pub near_clip_plane: Option<Ref<Plane>>,
     pub projection: Projection,
 }
@@ -90,10 +90,10 @@ pub struct Camera3DOptions {
 /// identity defaults (`x` = `y` = 0, `zoom` = 1, `rotation` = 0).
 #[derive(Clone, Default, PartialEq)]
 pub struct Camera2DOptions {
-    pub rotation: Option<f32>,
-    pub x: Option<f32>,
-    pub y: Option<f32>,
-    pub zoom: Option<f32>,
+    pub rotation: Option<f64>,
+    pub x: Option<f64>,
+    pub y: Option<f64>,
+    pub zoom: Option<f64>,
 }
 
 /// Optional target-follow parameters for `update_camera_2d_follow` (TS `Camera2DFollowOptions`).
@@ -102,9 +102,9 @@ pub struct Camera2DOptions {
 /// source rectangle object retained by handle.
 #[derive(Clone, Default)]
 pub struct Camera2DFollowOptions {
-    pub deadzone_half_height: Option<f32>,
-    pub deadzone_half_width: Option<f32>,
-    pub smooth_time: Option<f32>,
+    pub deadzone_half_height: Option<f64>,
+    pub deadzone_half_width: Option<f64>,
+    pub smooth_time: Option<f64>,
     pub world_bounds: Option<Ref<Rectangle>>,
 }
 
@@ -113,8 +113,8 @@ pub struct Camera2DFollowOptions {
 #[derive(Clone, Copy, Debug, PartialEq)]
 #[repr(C)]
 pub struct OrthographicProjectionOptions {
-    pub half_height: f32,
-    pub half_width: f32,
+    pub half_height: f64,
+    pub half_width: f64,
 }
 
 /// Source-compatible perspective projection field bundle (TS `PerspectiveProjectionOptions`).
@@ -122,8 +122,8 @@ pub struct OrthographicProjectionOptions {
 #[derive(Clone, Copy, Debug, PartialEq)]
 #[repr(C)]
 pub struct PerspectiveProjectionOptions {
-    pub aspect: Option<f32>,
-    pub fov_y: f32,
+    pub aspect: Option<f64>,
+    pub fov_y: f64,
 }
 
 /// Source-compatible raw projection field bundle (TS `RawProjectionOptions`). Callers copy its
@@ -138,11 +138,11 @@ pub struct RawProjectionOptions {
 #[derive(Clone, Copy, Debug, PartialEq)]
 #[repr(C)]
 pub struct Camera3DViewExplanation {
-    pub determinant: f32,
+    pub determinant: f64,
     pub is_orthonormal: bool,
     pub is_reflection: bool,
-    pub scale_deviation: f32,
-    pub shear_deviation: f32,
+    pub scale_deviation: f64,
+    pub shear_deviation: f64,
 }
 
 /// The optional non-orthonormal view hook (TS module-level `camera3DViewGuard`).

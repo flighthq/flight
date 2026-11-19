@@ -7,7 +7,7 @@ use crate::types::*;
 
 /// Loose enough to pass a matrix through a decompose/recompose float32 round trip, tight enough to
 /// report a deliberate 1% scale.
-const ORTHONORMAL_TOLERANCE: f32 = 1e-3;
+const ORTHONORMAL_TOLERANCE: f64 = 1e-3;
 
 /// Reports whether a camera's view matrix satisfies the orthonormality precondition its consumers
 /// rely on, as plain data (TS `explainCamera3DView`). Reflections pass: the determinant is reported
@@ -42,7 +42,7 @@ pub fn explain_camera_3d_view(camera: &Camera3D) -> Camera3DViewExplanation {
     };
 }
 
-fn max3(a: f32, b: f32, c: f32) -> f32 {
+fn max3(a: f64, b: f64, c: f64) -> f64 {
     let mut out = a;
     if b > out {
         out = b;

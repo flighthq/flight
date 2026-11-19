@@ -13,7 +13,7 @@ pub(crate) fn guard_state() -> CameraGuardStateRef {
     }));
 }
 
-pub(crate) fn perspective_projection(fov_y: f32, aspect: Option<f32>) -> Projection {
+pub(crate) fn perspective_projection(fov_y: f64, aspect: Option<f64>) -> Projection {
     let projection = create_perspective_projection();
     {
         let mut projection = projection.write().unwrap();
@@ -23,7 +23,7 @@ pub(crate) fn perspective_projection(fov_y: f32, aspect: Option<f32>) -> Project
     return Projection::Perspective(projection);
 }
 
-pub(crate) fn camera_3d(near: f32, far: f32, fov_y: f32) -> Camera3D {
+pub(crate) fn camera_3d(near: f64, far: f64, fov_y: f64) -> Camera3D {
     let mut camera = create_camera_3d();
     camera.far = far;
     camera.near = near;
@@ -42,7 +42,7 @@ pub(crate) fn camera_2d(options: Option<&Camera2DOptions>) -> Camera2D {
     return camera;
 }
 
-pub(crate) fn look_at(camera: &mut Camera3D, eye: (f32, f32, f32), target: (f32, f32, f32)) {
+pub(crate) fn look_at(camera: &mut Camera3D, eye: (f64, f64, f64), target: (f64, f64, f64)) {
     let eye = create_vector3(eye.0, eye.1, eye.2);
     let target = create_vector3(target.0, target.1, target.2);
     let up = create_vector3(0.0, 1.0, 0.0);
@@ -82,27 +82,27 @@ pub(crate) fn identity4() -> Matrix4 {
     return create_matrix4();
 }
 
-pub(crate) fn assert_close(actual: f32, expected: f32) {
+pub(crate) fn assert_close(actual: f64, expected: f64) {
     assert!(
         (actual - expected).abs() <= 1e-4,
         "expected {expected}, got {actual}"
     );
 }
 
-pub(crate) fn assert_close_within(actual: f32, expected: f32, tolerance: f32) {
+pub(crate) fn assert_close_within(actual: f64, expected: f64, tolerance: f64) {
     assert!(
         (actual - expected).abs() <= tolerance,
         "expected {expected} +/- {tolerance}, got {actual}"
     );
 }
 
-pub(crate) fn assert_vec3_close(actual: &Vector3, expected: (f32, f32, f32)) {
+pub(crate) fn assert_vec3_close(actual: &Vector3, expected: (f64, f64, f64)) {
     assert_close(actual.x, expected.0);
     assert_close(actual.y, expected.1);
     assert_close(actual.z, expected.2);
 }
 
-pub(crate) fn assert_vec2_close(actual: &Vector2, expected: (f32, f32)) {
+pub(crate) fn assert_vec2_close(actual: &Vector2, expected: (f64, f64)) {
     assert_close_within(actual.x, expected.0, 1e-3);
     assert_close_within(actual.y, expected.1, 1e-3);
 }
@@ -115,7 +115,7 @@ pub(crate) fn assert_mat4_close(actual: &Matrix4, expected: &Matrix4) {
     }
 }
 
-pub(crate) fn projection_aspect(projection: &Projection) -> f32 {
+pub(crate) fn projection_aspect(projection: &Projection) -> f64 {
     return match projection {
         Projection::Perspective(perspective) => perspective.read().unwrap().aspect,
         _ => -1.0,

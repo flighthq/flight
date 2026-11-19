@@ -6,7 +6,7 @@ use crate::types::*;
 /// Converts a raw NDC depth value (ndcZ in [-1, 1]) to a linear view-space Z (TS
 /// `getCamera3DLinearDepth`). Negative values are in front of the camera. Returns 0 for a degenerate
 /// clip range or denominator.
-pub fn get_camera_3d_linear_depth(camera: &Camera3D, ndc_z: f32) -> f32 {
+pub fn get_camera_3d_linear_depth(camera: &Camera3D, ndc_z: f64) -> f64 {
     let near = camera.near;
     let far = camera.far;
     let range = far - near;
@@ -25,6 +25,6 @@ pub fn get_camera_3d_linear_depth(camera: &Camera3D, ndc_z: f32) -> f32 {
 
 /// Converts a raw NDC depth value to a positive linear depth in [near, far] (TS
 /// `getCamera3DViewSpaceZ`).
-pub fn get_camera_3d_view_space_z(camera: &Camera3D, ndc_z: f32) -> f32 {
+pub fn get_camera_3d_view_space_z(camera: &Camera3D, ndc_z: f64) -> f64 {
     return -get_camera_3d_linear_depth(camera, ndc_z);
 }

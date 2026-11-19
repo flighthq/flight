@@ -17,9 +17,9 @@ use crate::types::*;
 pub fn get_camera_3d_screen_to_world_ray(
     out: &mut Ray3D,
     camera: &Camera3D,
-    ndc_x: f32,
-    ndc_y: f32,
-    aspect: f32,
+    ndc_x: f64,
+    ndc_y: f64,
+    aspect: f64,
 ) -> bool {
     let mut view_projection = create_matrix4();
     get_camera_3d_view_projection_matrix4(&mut view_projection, camera, aspect);
@@ -72,7 +72,7 @@ pub fn get_camera_3d_world_to_screen(
     out: &mut Vector3,
     camera: &Camera3D,
     world_point: &Vector3,
-    aspect: f32,
+    aspect: f64,
 ) -> bool {
     let mut view_projection = create_matrix4();
     get_camera_3d_view_projection_matrix4(&mut view_projection, camera, aspect);

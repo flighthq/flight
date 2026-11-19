@@ -6,7 +6,7 @@ use flight_geometry::{create_bounding_sphere, create_plane, create_ray3d, create
 use crate::common::*;
 
 fn make_camera() -> Camera3D {
-    let mut camera = camera_3d(0.1, 100.0, std::f32::consts::FRAC_PI_2);
+    let mut camera = camera_3d(0.1, 100.0, std::f64::consts::FRAC_PI_2);
     look_at(&mut camera, (0.0, 0.0, 10.0), (0.0, 0.0, 0.0));
     return camera;
 }

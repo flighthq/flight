@@ -16,6 +16,8 @@ mod flight_camera_depth_test;
 mod flight_camera_enable_camera_guards_test;
 #[path = "explain_camera_3d_view_test.rs"]
 mod flight_camera_explain_camera_3d_view_test;
+#[path = "f64_bridge_test.rs"]
+mod flight_camera_f64_bridge_test;
 #[path = "frustum_corners_test.rs"]
 mod flight_camera_frustum_corners_test;
 #[path = "intersection_test.rs"]

@@ -67,7 +67,7 @@ fn degenerate_camera() -> Camera2D {
     return camera_2d(Some(&options));
 }
 
-fn camera_3d_with_view(guard: &CameraGuardStateRef, values: [f32; 16]) -> Camera3D {
+fn camera_3d_with_view(guard: &CameraGuardStateRef, values: [f64; 16]) -> Camera3D {
     let mut camera = camera_3d(0.1, 100.0, 1.0);
     let mut view = create_matrix4();
     set_matrix4(

@@ -6,7 +6,7 @@ use flight_geometry::{create_ray3d, create_vector3};
 use crate::common::*;
 
 fn make_camera() -> Camera3D {
-    return camera_3d(0.1, 100.0, std::f32::consts::FRAC_PI_2);
+    return camera_3d(0.1, 100.0, std::f64::consts::FRAC_PI_2);
 }
 
 mod get_camera_3d_screen_to_world_ray {

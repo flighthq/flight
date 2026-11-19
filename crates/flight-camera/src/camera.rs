@@ -39,7 +39,7 @@ pub fn initialize_camera_3d(out: &mut Camera3D) {
 /// Applies an NDC translation to a projection matrix: clip.xy += jitter * clip.w (TS
 /// `applyCamera3DProjectionJitter`). Row operations handle perspective and orthographic matrices
 /// uniformly.
-fn apply_camera_3d_projection_jitter(out: &mut Matrix4, x: f32, y: f32) {
+fn apply_camera_3d_projection_jitter(out: &mut Matrix4, x: f64, y: f64) {
     let m = &mut out.m;
     m[0] += x * m[3];
     m[4] += x * m[7];
@@ -58,7 +58,7 @@ fn apply_camera_3d_projection_jitter(out: &mut Matrix4, x: f32, y: f32) {
 pub fn get_camera_3d_inverse_view_projection_matrix4(
     out: &mut Matrix4,
     camera: &Camera3D,
-    aspect: f32,
+    aspect: f64,
 ) -> bool {
     let mut view_projection = create_matrix4();
     get_camera_3d_view_projection_matrix4(&mut view_projection, camera, aspect);
@@ -68,7 +68,7 @@ pub fn get_camera_3d_inverse_view_projection_matrix4(
 /// Writes the camera's view-projection matrix (projection × view) into `out` (TS
 /// `getCamera3DViewProjectionMatrix4`). Applies the per-frame jitter and, when present, the oblique
 /// near clip plane. Alias-safe: the view matrix is copied before `out` is written.
-pub fn get_camera_3d_view_projection_matrix4(out: &mut Matrix4, camera: &Camera3D, aspect: f32) {
+pub fn get_camera_3d_view_projection_matrix4(out: &mut Matrix4, camera: &Camera3D, aspect: f64) {
     let mut projection = create_matrix4();
     set_projection_matrix4(
         &mut projection,
@@ -98,7 +98,7 @@ pub fn get_camera_3d_view_projection_matrix4(out: &mut Matrix4, camera: &Camera3
 /// Sets the viewport aspect ratio on the camera's projection in place (TS `setCamera3DAspect`).
 /// Perspective writes `aspect`; orthographic keeps `half_height` and sets
 /// `half_width = half_height * aspect`; a raw projection is a no-op.
-pub fn set_camera_3d_aspect(camera: &mut Camera3D, aspect: f32) {
+pub fn set_camera_3d_aspect(camera: &mut Camera3D, aspect: f64) {
     match &mut camera.projection {
         Projection::Perspective(projection) => {
             projection.write().unwrap().aspect = aspect;
@@ -113,7 +113,7 @@ pub fn set_camera_3d_aspect(camera: &mut Camera3D, aspect: f32) {
 
 /// Sets the camera's per-frame sub-pixel jitter offset (in NDC) in place (TS
 /// `setCamera3DJitter`).
-pub fn set_camera_3d_jitter(camera: &mut Camera3D, x: f32, y: f32) {
+pub fn set_camera_3d_jitter(camera: &mut Camera3D, x: f64, y: f64) {
     let mut jitter = camera.jitter.write().unwrap();
     jitter.x = x;
     jitter.y = y;
@@ -163,7 +163,7 @@ pub fn set_camera_3d_view_matrix4_from_matrix4(
 /// Refreshes the camera's inverse-view-projection cache for the supplied aspect (TS
 /// `updateCamera3DInverseViewProjection`). Returns true on success; on failure the prior valid cache
 /// is left untouched.
-pub fn update_camera_3d_inverse_view_projection(camera: &Camera3D, aspect: f32) -> bool {
+pub fn update_camera_3d_inverse_view_projection(camera: &Camera3D, aspect: f64) -> bool {
     let mut inverse = create_matrix4();
     let ok = get_camera_3d_inverse_view_projection_matrix4(&mut inverse, camera, aspect);
     if ok {

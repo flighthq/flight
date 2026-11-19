@@ -9,7 +9,7 @@ fn make_camera() -> Camera3D {
     let mut camera = create_camera_3d();
     camera.far = 100.0;
     camera.near = 1.0;
-    camera.projection = perspective_projection(std::f32::consts::FRAC_PI_2, Some(1.0));
+    camera.projection = perspective_projection(std::f64::consts::FRAC_PI_2, Some(1.0));
     look_at(&mut camera, (0.0, 0.0, 10.0), (0.0, 0.0, 0.0));
     return camera;
 }

@@ -9,7 +9,7 @@ fn make_camera() -> Camera3D {
     return camera_3d(0.1, 1000.0, 1.0);
 }
 
-fn forward(camera: &Camera3D) -> (f32, f32, f32) {
+fn forward(camera: &Camera3D) -> (f64, f64, f64) {
     let m = camera.view.read().unwrap().m;
     return (-m[2], -m[6], -m[10]);
 }
@@ -25,7 +25,7 @@ mod get_cube_capture_face_camera_3d {
         match &camera.projection {
             Projection::Perspective(projection) => {
                 let borrowed = projection.read().unwrap();
-                assert_close(borrowed.fov_y, std::f32::consts::FRAC_PI_2);
+                assert_close(borrowed.fov_y, std::f64::consts::FRAC_PI_2);
                 assert_close(borrowed.aspect, 1.0);
             }
             _ => panic!("expected a perspective projection"),
@@ -59,7 +59,7 @@ mod get_cube_capture_face_camera_3d {
     fn produces_six_distinct_view_matrices() {
         let mut camera = make_camera();
         let origin = create_vector3(0.0, 0.0, 0.0);
-        let mut views: Vec<[f32; 16]> = Vec::new();
+        let mut views: Vec<[f64; 16]> = Vec::new();
         let mut face = 0;
         while face < 6 {
             get_cube_capture_face_camera_3d(&mut camera, &origin, face);

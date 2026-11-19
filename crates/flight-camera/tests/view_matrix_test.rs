@@ -8,7 +8,7 @@ use crate::common::*;
 mod get_camera_2d_view_matrix {
     use super::*;
 
-    fn project(camera: &Camera2D, x: f32, y: f32) -> (f32, f32) {
+    fn project(camera: &Camera2D, x: f64, y: f64) -> (f64, f64) {
         let mut view = create_matrix(1.0, 0.0, 0.0, 1.0, 0.0, 0.0);
         get_camera_2d_view_matrix(camera, 800.0, 600.0, &mut view);
         let mut out = zero2();
@@ -43,7 +43,7 @@ mod get_camera_2d_view_matrix {
     #[test]
     fn rotates_the_view_opposite_the_camera_rotation() {
         let options = Camera2DOptions {
-            rotation: Some(std::f32::consts::FRAC_PI_2),
+            rotation: Some(std::f64::consts::FRAC_PI_2),
             x: None,
             y: None,
             zoom: None,
@@ -54,7 +54,7 @@ mod get_camera_2d_view_matrix {
         );
     }
 
-    fn assert_vec2_close_bare(actual: (f32, f32), expected: (f32, f32)) {
+    fn assert_vec2_close_bare(actual: (f64, f64), expected: (f64, f64)) {
         assert_close_within(actual.0, expected.0, 1e-2);
         assert_close_within(actual.1, expected.1, 1e-2);
     }

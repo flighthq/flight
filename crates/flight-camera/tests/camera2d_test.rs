@@ -19,7 +19,7 @@ mod create_camera_2d {
     #[test]
     fn applies_overrides_from_options() {
         let options = Camera2DOptions {
-            rotation: Some(std::f32::consts::FRAC_PI_4),
+            rotation: Some(std::f64::consts::FRAC_PI_4),
             x: Some(10.0),
             y: Some(20.0),
             zoom: Some(2.0),
@@ -28,7 +28,7 @@ mod create_camera_2d {
         assert_eq!(camera.x, 10.0);
         assert_eq!(camera.y, 20.0);
         assert_eq!(camera.zoom, 2.0);
-        assert_close(camera.rotation, std::f32::consts::FRAC_PI_4);
+        assert_close(camera.rotation, std::f64::consts::FRAC_PI_4);
     }
 }
 

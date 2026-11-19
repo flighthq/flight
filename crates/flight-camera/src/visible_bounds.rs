@@ -8,8 +8,8 @@ use crate::types::*;
 use crate::view_matrix::get_camera_2d_view_matrix;
 
 /// Finite extremes rather than infinities: with an infinite origin and extent, `x + width` is NaN.
-const UNBOUNDED_EXTENT: f32 = f32::MAX;
-const UNBOUNDED_ORIGIN: f32 = -f32::MAX / 2.0;
+const UNBOUNDED_EXTENT: f64 = f64::MAX;
+const UNBOUNDED_ORIGIN: f64 = -f64::MAX / 2.0;
 
 /// Writes the axis-aligned world rectangle the viewport currently covers into `out` (TS
 /// `getCamera2DVisibleBounds`). A zero zoom makes the view matrix singular; the failure is handled
@@ -19,8 +19,8 @@ const UNBOUNDED_ORIGIN: f32 = -f32::MAX / 2.0;
 pub fn get_camera_2d_visible_bounds(
     guard_state: &CameraGuardStateRef,
     camera: &Camera2D,
-    viewport_width: f32,
-    viewport_height: f32,
+    viewport_width: f64,
+    viewport_height: f64,
     out: &mut Rectangle,
 ) {
     let mut matrix = create_matrix(1.0, 0.0, 0.0, 1.0, 0.0, 0.0);

@@ -13,7 +13,7 @@ fn bounds() -> flight_geometry::Aabb {
     return create_aabb(-1.0, -1.0, -1.0, 1.0, 1.0, 1.0);
 }
 
-fn orthographic(projection: &Projection) -> (f32, f32) {
+fn orthographic(projection: &Projection) -> (f64, f64) {
     return match projection {
         Projection::Orthographic(value) => {
             let borrowed = value.read().unwrap();
@@ -35,7 +35,7 @@ mod configure_directional_shadow_camera_3d {
             &bounds(),
         );
         assert!(is_orthographic_projection(&camera.projection));
-        let radius = 1.0_f32.hypot(1.0).hypot(1.0);
+        let radius = 1.0_f64.hypot(1.0).hypot(1.0);
         let (half_width, _half_height) = orthographic(&camera.projection);
         assert_close(half_width, radius);
         assert_close(camera.near, radius);
@@ -50,7 +50,7 @@ mod configure_directional_shadow_camera_3d {
             &create_vector3(0.0, -1.0, 0.0),
             &bounds(),
         );
-        let distance = 1.0_f32.hypot(1.0).hypot(1.0) * 2.0;
+        let distance = 1.0_f64.hypot(1.0).hypot(1.0) * 2.0;
         let view = camera.view.read().unwrap();
         assert_close(view.m[12], 0.0);
         assert_close(view.m[13], 0.0);

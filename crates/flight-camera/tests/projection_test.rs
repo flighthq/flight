@@ -161,7 +161,7 @@ mod set_projection_matrix4 {
 
     #[test]
     fn matches_the_geometry_perspective_builder_using_tan_half_fov() {
-        let fov_y = std::f32::consts::FRAC_PI_2;
+        let fov_y = std::f64::consts::FRAC_PI_2;
         let projection = perspective_projection(fov_y, Some(1.6));
         let mut out = create_matrix4();
         set_projection_matrix4(&mut out, &projection, 1.6, 0.1, 100.0);
@@ -174,7 +174,7 @@ mod set_projection_matrix4 {
         let projection = perspective_projection(1.0, Some(1.0));
         let mut out = create_matrix4();
         set_projection_matrix4(&mut out, &projection, 2.0, 0.5, 50.0);
-        let expected = create_perspective_matrix4((1.0_f32 * 0.5).tan(), 2.0, 0.5, 50.0);
+        let expected = create_perspective_matrix4((1.0_f64 * 0.5).tan(), 2.0, 0.5, 50.0);
         assert_mat4_close(&out, &expected);
     }
 
@@ -183,7 +183,7 @@ mod set_projection_matrix4 {
         let mut source = create_matrix4();
         set_perspective_matrix4(
             &mut source,
-            (std::f32::consts::PI / 4.0).tan(),
+            (std::f64::consts::PI / 4.0).tan(),
             1.5,
             0.1,
             100.0,
