@@ -321,30 +321,31 @@ impl Default for CanvasSurface {
 }
 
 // The placeholder's drawing API before a context is acquired: it draws nothing and measures zero.
+// flight-lint: allow(f64) Canvas 2D spatial arguments are TS Numbers carried as f64 (foreman-536d86b7); this unacquired context ignores them
 impl Canvas2DContext for UnacquiredCanvas2DContext {
     fn begin_path(&self) {}
-    fn clear_rect(&self, _x: f32, _y: f32, _width: f32, _height: f32) {}
+    fn clear_rect(&self, _x: f64, _y: f64, _width: f64, _height: f64) {}
     fn clip(&self) {}
-    fn fill_rect(&self, _x: f32, _y: f32, _width: f32, _height: f32) {}
-    fn fill_text(&self, _text: &str, _x: f32, _y: f32) {}
-    fn line_to(&self, _x: f32, _y: f32) {}
+    fn fill_rect(&self, _x: f64, _y: f64, _width: f64, _height: f64) {}
+    fn fill_text(&self, _text: &str, _x: f64, _y: f64) {}
+    fn line_to(&self, _x: f64, _y: f64) {}
     fn measure_text(&self, _text: &str) -> CanvasTextMetrics {
         return CanvasTextMetrics::default();
     }
-    fn move_to(&self, _x: f32, _y: f32) {}
-    fn rect(&self, _x: f32, _y: f32, _width: f32, _height: f32) {}
+    fn move_to(&self, _x: f64, _y: f64) {}
+    fn rect(&self, _x: f64, _y: f64, _width: f64, _height: f64) {}
     fn restore(&self) {}
     fn save(&self) {}
     fn set_fill_style(&self, _style: &str) {}
     fn set_font(&self, _font: &str) {}
     fn set_global_alpha(&self, _alpha: f32) {}
-    fn set_line_width(&self, _width: f32) {}
+    fn set_line_width(&self, _width: f64) {}
     fn set_stroke_style(&self, _style: &str) {}
     fn set_text_align(&self, _align: &str) {}
     fn set_text_baseline(&self, _baseline: &str) {}
-    fn set_transform(&self, _a: f32, _b: f32, _c: f32, _d: f32, _e: f32, _f: f32) {}
+    fn set_transform(&self, _a: f64, _b: f64, _c: f64, _d: f64, _e: f64, _f: f64) {}
     fn stroke(&self) {}
-    fn stroke_rect(&self, _x: f32, _y: f32, _width: f32, _height: f32) {}
+    fn stroke_rect(&self, _x: f64, _y: f64, _width: f64, _height: f64) {}
 }
 
 impl Default for WgpuHostAcquisition {

@@ -26,19 +26,19 @@ impl Canvas2DContext for RecordingCanvas2D {
     fn begin_path(&self) {
         self.log("beginPath()".to_string());
     }
-    fn clear_rect(&self, x: f32, y: f32, width: f32, height: f32) {
+    fn clear_rect(&self, x: f64, y: f64, width: f64, height: f64) {
         self.log(format!("clearRect({x},{y},{width},{height})"));
     }
     fn clip(&self) {
         self.log("clip()".to_string());
     }
-    fn fill_rect(&self, x: f32, y: f32, width: f32, height: f32) {
+    fn fill_rect(&self, x: f64, y: f64, width: f64, height: f64) {
         self.log(format!("fillRect({x},{y},{width},{height})"));
     }
-    fn fill_text(&self, text: &str, x: f32, y: f32) {
+    fn fill_text(&self, text: &str, x: f64, y: f64) {
         self.log(format!("fillText({text},{x},{y})"));
     }
-    fn line_to(&self, x: f32, y: f32) {
+    fn line_to(&self, x: f64, y: f64) {
         self.log(format!("lineTo({x},{y})"));
     }
     fn measure_text(&self, text: &str) -> CanvasTextMetrics {
@@ -46,10 +46,10 @@ impl Canvas2DContext for RecordingCanvas2D {
             width: text.chars().count() as f32 * 5.0,
         };
     }
-    fn move_to(&self, x: f32, y: f32) {
+    fn move_to(&self, x: f64, y: f64) {
         self.log(format!("moveTo({x},{y})"));
     }
-    fn rect(&self, x: f32, y: f32, width: f32, height: f32) {
+    fn rect(&self, x: f64, y: f64, width: f64, height: f64) {
         self.log(format!("rect({x},{y},{width},{height})"));
     }
     fn restore(&self) {
@@ -67,7 +67,7 @@ impl Canvas2DContext for RecordingCanvas2D {
     fn set_global_alpha(&self, alpha: f32) {
         self.log(format!("globalAlpha={alpha}"));
     }
-    fn set_line_width(&self, width: f32) {
+    fn set_line_width(&self, width: f64) {
         self.log(format!("lineWidth={width}"));
     }
     fn set_stroke_style(&self, style: &str) {
@@ -79,13 +79,13 @@ impl Canvas2DContext for RecordingCanvas2D {
     fn set_text_baseline(&self, baseline: &str) {
         self.log(format!("textBaseline={baseline}"));
     }
-    fn set_transform(&self, a: f32, b: f32, c: f32, d: f32, e: f32, f: f32) {
+    fn set_transform(&self, a: f64, b: f64, c: f64, d: f64, e: f64, f: f64) {
         self.log(format!("setTransform({a},{b},{c},{d},{e},{f})"));
     }
     fn stroke(&self) {
         self.log("stroke()".to_string());
     }
-    fn stroke_rect(&self, x: f32, y: f32, width: f32, height: f32) {
+    fn stroke_rect(&self, x: f64, y: f64, width: f64, height: f64) {
         self.log(format!("strokeRect({x},{y},{width},{height})"));
     }
 }
@@ -184,6 +184,29 @@ fn native_handles_keep_their_platform_object_and_provider_through_a_copy() {
 }
 
 // The 2D handle is the drawing API itself: callers draw through it directly, with no narrowing, and
+// Spatial arguments are TS Numbers: 16777217 has no f32 value, so an f32 API would record 16777216.
+#[test]
+fn a_canvas_2d_context_carries_spatial_arguments_as_exact_numbers() {
+    let canvas = Arc::new(RecordingCanvas2D::default());
+    let context = CanvasRenderingContext2D {
+        provider: Arc::new(()),
+        handle: canvas.clone(),
+    };
+    context
+        .handle
+        .set_transform(1.1, 0.0, 0.0, 1.1, -16_777_217.0, 0.1);
+    context.handle.fill_rect(0.1, 16_777_217.0, 2.5, 1.0);
+    context.handle.fill_text("a", 16_777_217.0, 0.1);
+    assert_eq!(
+        *canvas.calls.lock().unwrap(),
+        vec![
+            "setTransform(1.1,0,0,1.1,-16777217,0.1)".to_string(),
+            "fillRect(0.1,16777217,2.5,1)".to_string(),
+            "fillText(a,16777217,0.1)".to_string()
+        ]
+    );
+}
+
 // a copy draws into the same platform object.
 #[test]
 fn a_canvas_2d_context_handle_draws_through_the_platform_api_it_carries() {

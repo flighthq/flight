@@ -19,26 +19,26 @@ use crate::provider_ref::ProviderRef;
 /// recording fake. Every member takes `&self`: a context is a shared host object.
 pub trait Canvas2DContext: Send + Sync {
     fn begin_path(&self);
-    fn clear_rect(&self, x: f32, y: f32, width: f32, height: f32);
+    fn clear_rect(&self, x: f64, y: f64, width: f64, height: f64);
     fn clip(&self);
-    fn fill_rect(&self, x: f32, y: f32, width: f32, height: f32);
-    fn fill_text(&self, text: &str, x: f32, y: f32);
-    fn line_to(&self, x: f32, y: f32);
+    fn fill_rect(&self, x: f64, y: f64, width: f64, height: f64);
+    fn fill_text(&self, text: &str, x: f64, y: f64);
+    fn line_to(&self, x: f64, y: f64);
     fn measure_text(&self, text: &str) -> CanvasTextMetrics;
-    fn move_to(&self, x: f32, y: f32);
-    fn rect(&self, x: f32, y: f32, width: f32, height: f32);
+    fn move_to(&self, x: f64, y: f64);
+    fn rect(&self, x: f64, y: f64, width: f64, height: f64);
     fn restore(&self);
     fn save(&self);
     fn set_fill_style(&self, style: &str);
     fn set_font(&self, font: &str);
     fn set_global_alpha(&self, alpha: f32);
-    fn set_line_width(&self, width: f32);
+    fn set_line_width(&self, width: f64);
     fn set_stroke_style(&self, style: &str);
     fn set_text_align(&self, align: &str);
     fn set_text_baseline(&self, baseline: &str);
-    fn set_transform(&self, a: f32, b: f32, c: f32, d: f32, e: f32, f: f32);
+    fn set_transform(&self, a: f64, b: f64, c: f64, d: f64, e: f64, f: f64);
     fn stroke(&self);
-    fn stroke_rect(&self, x: f32, y: f32, width: f32, height: f32);
+    fn stroke_rect(&self, x: f64, y: f64, width: f64, height: f64);
 }
 
 /// A host Canvas 2D context (TS `CanvasRenderingContext2D`), returned by `HostCanvasCapability`.
