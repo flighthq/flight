@@ -17,6 +17,7 @@ import {
 } from '@flighthq/materials/contract';
 import { concatKindMap, withKindMapEntry } from '@flighthq/registry/contract';
 import { standardWgpuTextureResolvers } from '@flighthq/render-wgpu/contract';
+import type { WgpuRenderState } from '@flighthq/render-wgpu/contract';
 import type {
   WgpuMeshMaterialRenderer,
   WgpuModifierSnippet,
@@ -24,7 +25,7 @@ import type {
   WgpuRenderRegistries,
   WgpuTextureResolver,
 } from '@flighthq/render-wgpu/contract';
-import { wgpuScene2DRenderPreset } from '@flighthq/scene2d-wgpu/contract';
+import { registerWgpuRenderPreset, wgpuScene2DRenderPreset } from '@flighthq/scene2d-wgpu/contract';
 import { ShadedMaterialKind } from '@flighthq/shading/contract';
 
 import { wgpuBlinnPhongMeshMaterialRenderer } from './wgpuBlinnPhongMeshMaterialRenderer.ts';
@@ -107,3 +108,8 @@ export const wgpuScene3DRenderPreset: Readonly<WgpuRenderRegistries> = Object.fr
   modifierSnippets: buildScene3DWgpuModifierSnippets(wgpuScene2DRenderPreset.modifierSnippets),
   textureResolvers: buildScene3DWgpuTextureResolvers(wgpuScene2DRenderPreset.textureResolvers),
 });
+
+/** Registers the complete standard 3D WebGPU configuration, wgpuScene3DRenderPreset, on an existing state. */
+export function registerWgpuScene3DRenderPreset(state: WgpuRenderState): void {
+  registerWgpuRenderPreset(state, wgpuScene3DRenderPreset);
+}

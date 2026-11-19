@@ -1,3 +1,4 @@
+import { EntityRuntimeKey } from '@flighthq/entity/contract';
 import {
   BlinnPhongMaterialKind,
   CustomShaderMaterialKind,
@@ -19,8 +20,13 @@ import {
 import { ParticleEmitter2DKind } from '@flighthq/particleemitter/contract';
 import { QuadBatchKind } from '@flighthq/quadbatch/contract';
 import { getKindMapKeys } from '@flighthq/registry/contract';
-import {} from '@flighthq/render-wgpu/contract';
-import { RenderCacheKind } from '@flighthq/render/contract';
+import type { WgpuDevice, WgpuRenderState } from '@flighthq/render-wgpu/contract';
+import {
+  createWgpuDeviceState,
+  createWgpuRenderStateRuntime,
+  getWgpuRenderStateRuntime,
+} from '@flighthq/render-wgpu/contract';
+import { RenderCacheKind, getRenderStateRuntime } from '@flighthq/render/contract';
 import { wgpuScene2DRenderPreset } from '@flighthq/scene2d-wgpu/contract';
 import { DisplayObjectKind, Scale9SpriteKind, SpriteKind } from '@flighthq/scene2d/contract';
 import {
@@ -44,7 +50,7 @@ import {
 import { TilemapKind } from '@flighthq/tilemap/contract';
 import { describe, expect, it } from 'vitest';
 
-import { wgpuScene3DRenderPreset } from './scene3DWgpuPipeline.ts';
+import { wgpuScene3DRenderPreset, registerWgpuScene3DRenderPreset } from './scene3DWgpuPipeline.ts';
 import { getWgpuSkinningAdapter } from './wgpuScene3DRuntime.ts';
 import { makeWgpuScene3DState } from './wgpuScene3DTestHelper.ts';
 import { wgpuSkinningAdapter } from './wgpuSkinPalette.ts';
@@ -54,6 +60,30 @@ function registryKeys(table: ReadonlyMap<string, unknown>): string[] {
   getKindMapKeys(keys, table);
   return keys;
 }
+
+describe('registerWgpuScene3DRenderPreset', () => {
+  it('registers every table of the 3D preset', () => {
+    const state = createRegistrationTestState();
+    registerWgpuScene3DRenderPreset(state);
+    const nodeRenderers = getRenderStateRuntime(state).registries.nodeRenderers;
+    for (const [kind, renderer] of wgpuScene3DRenderPreset.nodeRenderers) {
+      expect(nodeRenderers.get(kind)).toBe(renderer);
+    }
+    const registries = getWgpuRenderStateRuntime(state).registries;
+    for (const [kind, renderer] of wgpuScene3DRenderPreset.materialRenderers) {
+      expect(registries.materialRenderers.get(kind)).toBe(renderer);
+    }
+    for (const [kind, snippet] of wgpuScene3DRenderPreset.modifierSnippets) {
+      expect(registries.modifierSnippets.get(kind)).toBe(snippet);
+    }
+    for (const [kind, resolver] of wgpuScene3DRenderPreset.textureResolvers) {
+      expect(registries.textureResolvers.get(kind)).toBe(resolver);
+    }
+    expect(registries.gpuSkinning).toBe(wgpuScene3DRenderPreset.gpuSkinning);
+    expect(registries.gpuSkinning).not.toBeNull();
+  });
+});
+import { BitmapTextKind } from '@flighthq/bitmaptext/contract';
 
 describe('wgpuScene3DRenderPreset', () => {
   const registries = wgpuScene3DRenderPreset;
@@ -136,4 +166,9 @@ describe('wgpuScene3DRenderPreset', () => {
     expect('pbrExtensions' in registries).toBe(false);
   });
 });
-import { BitmapTextKind } from '@flighthq/bitmaptext/contract';
+
+function createRegistrationTestState(): WgpuRenderState {
+  const state = {} as WgpuRenderState;
+  state[EntityRuntimeKey] = createWgpuRenderStateRuntime(createWgpuDeviceState({} as WgpuDevice));
+  return state;
+}

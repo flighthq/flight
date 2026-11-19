@@ -18,8 +18,9 @@ use flight_materials::{
 use flight_registry::{KindMap, concat_kind_map, with_kind_map_entry};
 use flight_render_wgpu::{
     STANDARD_WGPU_TEXTURE_RESOLVERS, WgpuMaterialRenderer, WgpuMeshMaterialRenderer,
-    WgpuModifierSnippet, WgpuTextureResolver,
+    WgpuModifierSnippet, WgpuRenderState, WgpuTextureResolver,
 };
+use flight_scene2d_wgpu::contract::register_wgpu_render_preset;
 use flight_scene2d_wgpu::{WGPU_SCENE2D_RENDER_PRESET, WgpuScene2DRenderPreset};
 use flight_shading::SHADED_MATERIAL_KIND;
 
@@ -144,4 +145,10 @@ fn build_scene3d_wgpu_texture_resolvers(
     base: &KindMap<WgpuTextureResolver>,
 ) -> KindMap<WgpuTextureResolver> {
     return concat_kind_map(base, &STANDARD_WGPU_TEXTURE_RESOLVERS);
+}
+
+/// Registers the complete standard 3D WebGPU configuration, `WGPU_SCENE3D_RENDER_PRESET`, on an
+/// existing state (TS `registerWgpuScene3DRenderPreset`).
+pub fn register_wgpu_scene3d_render_preset(state: &mut WgpuRenderState) {
+    register_wgpu_render_preset(state, &WGPU_SCENE3D_RENDER_PRESET);
 }

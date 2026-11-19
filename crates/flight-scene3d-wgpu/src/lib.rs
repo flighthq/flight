@@ -86,6 +86,7 @@ pub use contract::register_wgpu_modifier_snippet;
 pub use contract::register_wgpu_normal_material;
 pub use contract::register_wgpu_particle_emitter3d_pass;
 pub use contract::register_wgpu_phong_material;
+pub use contract::register_wgpu_scene3d_render_preset;
 pub use contract::register_wgpu_shaded_material;
 pub use contract::register_wgpu_specular_glossiness_pbr_material;
 pub use contract::register_wgpu_standard_pbr_material;

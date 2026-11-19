@@ -31,6 +31,59 @@ fn kinds(values: &[&str]) -> Vec<Kind> {
     return values.iter().map(|value| value.to_string()).collect();
 }
 
+mod register_wgpu_scene3d_render_preset {
+    use super::*;
+
+    #[test]
+    fn registers_every_table_of_the_3d_preset() {
+        let mut test = make_wgpu_scene3d_state(None);
+        register_wgpu_scene3d_render_preset(&mut test.state);
+        let preset = &*WGPU_SCENE3D_RENDER_PRESET;
+        for kind in &preset.node_renderers.key_order {
+            let registered = {
+                use flight_render::RenderState;
+                *test
+                    .state
+                    .render_registries()
+                    .node_renderers
+                    .entries
+                    .get(kind)
+                    .unwrap()
+            };
+            assert!(
+                std::ptr::eq(
+                    registered,
+                    *preset.node_renderers.entries.get(kind).unwrap()
+                ),
+                "{kind}"
+            );
+        }
+        let registries = &get_wgpu_render_state_runtime(&test.state).registries;
+        for (table, expected) in [
+            (
+                registry_keys(&registries.material_renderers),
+                registry_keys(&preset.registries.material_renderers),
+            ),
+            (
+                registry_keys(&registries.modifier_snippets),
+                registry_keys(&preset.registries.modifier_snippets),
+            ),
+            (
+                registry_keys(&registries.texture_resolvers),
+                registry_keys(&preset.registries.texture_resolvers),
+            ),
+        ] {
+            for kind in expected {
+                assert!(table.contains(&kind), "{kind}");
+            }
+        }
+        assert!(std::ptr::eq(
+            registries.gpu_skinning.unwrap(),
+            &WGPU_SKINNING_ADAPTER
+        ));
+    }
+}
+
 mod wgpu_scene3d_render_preset {
     use super::*;
 
