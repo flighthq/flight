@@ -24,6 +24,35 @@ fn create_test_texture(native: &WgpuNativeDevice, width: u32, height: u32) -> wg
     });
 }
 
+fn display_required<T>() -> T {
+    panic!("display-backed surface required");
+}
+
+mod acquire_wgpu_native_surface_frame {
+    use super::*;
+
+    // The display-backed flight-host-winit G3 test executes this path against a real surface.
+    #[test]
+    #[ignore = "requires a display-backed wgpu surface; covered by flight-host-winit G3"]
+    fn has_the_native_surface_signature() {
+        let surface: &wgpu::Surface<'static> = display_required();
+        let _ = acquire_wgpu_native_surface_frame(surface);
+    }
+}
+
+mod configure_wgpu_native_surface {
+    use super::*;
+
+    // The display-backed flight-host-winit G3 test configures and resizes a real surface.
+    #[test]
+    #[ignore = "requires a display-backed wgpu surface; covered by flight-host-winit G3"]
+    fn has_the_native_surface_signature() {
+        let surface: &wgpu::Surface<'static> = display_required();
+        let configuration: &WgpuCanvasConfiguration = display_required();
+        configure_wgpu_native_surface(surface, configuration);
+    }
+}
+
 mod create_wgpu_canvas_frame {
     use super::*;
 
@@ -103,5 +132,18 @@ mod create_wgpu_surface_context {
         WgpuCanvasContext::unconfigure(&*carried);
 
         assert_eq!(canvas.context.unconfigure_count.load(Ordering::SeqCst), 1);
+    }
+}
+
+mod present_wgpu_native_surface_frame {
+    use super::*;
+
+    // The display-backed flight-host-winit G3 test presents real surface leases through this path.
+    #[test]
+    #[ignore = "requires a display-backed wgpu surface lease; covered by flight-host-winit G3"]
+    fn has_the_native_surface_signature() {
+        let device: &WgpuNativeDevice = display_required();
+        let frame: WgpuCanvasFrame = display_required();
+        present_wgpu_native_surface_frame(device, frame);
     }
 }

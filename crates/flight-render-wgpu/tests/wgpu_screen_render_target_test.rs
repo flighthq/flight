@@ -208,9 +208,9 @@ mod bind_wgpu_screen_render_target {
         assert_eq!(count(&context.configure_count), 2);
     }
 
-    // D17: a lost surface takes the device-lost path and presents nothing.
+    // A lost surface is recoverable: skip once, reconfigure and acquire again next frame.
     #[test]
-    fn reports_the_device_lost_when_the_surface_is_lost() {
+    fn skips_a_lost_surface_and_reconfigures_before_the_next_acquire() {
         let mut state = create_wgpu_render_state_for_test(None);
         let rig = create_screen_rig(&state, 8, 8, None);
 
@@ -219,12 +219,13 @@ mod bind_wgpu_screen_render_target {
             .fail_next_acquire(WgpuCanvasFrameError::Lost);
         run_screen_frame(&mut state, &rig.screen);
 
-        assert!(is_wgpu_device_lost(&state));
-        assert_eq!(
-            get_wgpu_device_loss(&state).map(|loss| loss.reason),
-            Some(WgpuDeviceLostReason::Unknown)
-        );
+        assert!(!is_wgpu_device_lost(&state));
         assert_eq!(count(&rig.canvas.context.present_count), 0);
+
+        run_screen_frame(&mut state, &rig.screen);
+        assert_eq!(count(&rig.canvas.context.configure_count), 2);
+        assert_eq!(count(&rig.canvas.context.acquire_count), 2);
+        assert_eq!(count(&rig.canvas.context.present_count), 1);
     }
 
     #[test]

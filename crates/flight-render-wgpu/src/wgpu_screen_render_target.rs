@@ -14,7 +14,6 @@ use crate::types::*;
 use crate::wgpu_canvas_context::{
     WgpuCanvasConfiguration, WgpuCanvasFrameError, narrow_wgpu_canvas_context,
 };
-use crate::wgpu_device_loss::report_wgpu_device_lost;
 use crate::wgpu_texture_format::get_wgpu_texture_format_name;
 
 fn create_wgpu_screen_depth_stencil_texture(
@@ -71,7 +70,7 @@ pub fn initialize_wgpu_screen_render_target(
 // Acquires this frame's presentation texture natively and keeps its lease on the target until the
 // frame presents. A skipped frame draws into scratch storage that is never presented.
 fn acquire_wgpu_screen_presentation_view(
-    state: &mut WgpuRenderState,
+    _state: &mut WgpuRenderState,
     target: &mut WgpuScreenRenderTarget,
 ) -> wgpu::TextureView {
     let context = narrow_wgpu_canvas_context(&target.context);
@@ -90,14 +89,9 @@ fn acquire_wgpu_screen_presentation_view(
             return view;
         }
         Err(WgpuCanvasFrameError::Timeout) => {}
-        Err(WgpuCanvasFrameError::Outdated) => target.reconfigure_pending = true,
-        Err(WgpuCanvasFrameError::Lost) => report_wgpu_device_lost(
-            &state.runtime.context,
-            WgpuDeviceLostInfo {
-                message: "the presentation surface was lost".to_string(),
-                reason: WgpuDeviceLostReason::Unknown,
-            },
-        ),
+        Err(WgpuCanvasFrameError::Outdated | WgpuCanvasFrameError::Lost) => {
+            target.reconfigure_pending = true
+        }
         Err(WgpuCanvasFrameError::OutOfMemory) => {
             panic!("bindWgpuScreenRenderTarget: out of memory acquiring the presentation texture")
         }
@@ -111,8 +105,9 @@ fn acquire_wgpu_screen_presentation_view(
 /// Acquires the color view a screen pass attaches to, sizing storage to the surface first (TS
 /// `bindWgpuScreenRenderTarget`). With capture on the frame renders into the capture texture and
 /// never touches the swap chain. A native frame that cannot be acquired (`Timeout`, `Outdated`) is
-/// skipped: it draws into an unpresented scratch texture, and `Outdated` reconfigures before the
-/// next acquire; `Lost` also reports the device lost; `OutOfMemory` and any other failure panic.
+/// skipped: it draws into an unpresented scratch texture, and `Outdated` or `Lost` reconfigures
+/// before the next acquire; `OutOfMemory` and any other failure panic. A surface loss is not a
+/// device loss.
 // flight-lint: allow(conform-params) D17: the target is passed with its shared screen-target reference
 pub fn bind_wgpu_screen_render_target(
     state: &mut WgpuRenderState,

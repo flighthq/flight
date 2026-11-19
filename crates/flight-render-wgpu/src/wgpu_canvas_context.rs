@@ -73,7 +73,9 @@ pub fn create_wgpu_surface_context(
     };
 }
 
-fn acquire_wgpu_native_surface_frame(
+/// Acquires a native surface frame for a host canvas-context adapter.
+// flight-lint: allow(conform-extra) D17 native hosts may add presentation hooks around the shared surface acquisition protocol
+pub fn acquire_wgpu_native_surface_frame(
     surface: &wgpu::Surface<'static>,
 ) -> Result<WgpuCanvasFrame, WgpuCanvasFrameError> {
     return match surface.get_current_texture() {
@@ -91,7 +93,9 @@ fn acquire_wgpu_native_surface_frame(
     };
 }
 
-fn configure_wgpu_native_surface(
+/// Configures a native surface for a host canvas-context adapter.
+// flight-lint: allow(conform-extra) D17 native hosts may add presentation hooks around the shared surface configuration protocol
+pub fn configure_wgpu_native_surface(
     surface: &wgpu::Surface<'static>,
     configuration: &WgpuCanvasConfiguration,
 ) {
@@ -123,7 +127,9 @@ pub(crate) fn narrow_wgpu_canvas_context(
         .clone();
 }
 
-fn present_wgpu_native_surface_frame(device: &WgpuNativeDevice, frame: WgpuCanvasFrame) {
+/// Presents a native surface frame for a host canvas-context adapter.
+// flight-lint: allow(conform-extra) D17 native hosts may call pre-present platform hooks before delegating the shared presentation protocol
+pub fn present_wgpu_native_surface_frame(device: &WgpuNativeDevice, frame: WgpuCanvasFrame) {
     if let Some(surface_texture) = frame.surface_texture {
         device.queue.present(surface_texture);
     }

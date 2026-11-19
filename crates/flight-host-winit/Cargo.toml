@@ -1,0 +1,44 @@
+[package]
+name = "flight-host-winit"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+repository.workspace = true
+homepage.workspace = true
+authors.workspace = true
+description = "winit 0.30 native window, input, screen and wgpu capability provider for Flight"
+
+[dependencies]
+flight-app = { workspace = true }
+flight-entity = { workspace = true }
+flight-geometry = { workspace = true }
+flight-host = { workspace = true }
+flight-input = { workspace = true }
+flight-lifecycle = { workspace = true }
+flight-render-wgpu = { workspace = true }
+flight-screen = { workspace = true }
+flight-surface = { workspace = true }
+futures = "0.3"
+wgpu = { version = "30.0.1", default-features = true, features = ["std", "wgsl"] }
+winit = "0.30"
+
+[dev-dependencies]
+flight-bitmap = { workspace = true }
+flight-node = { workspace = true }
+flight-render = { workspace = true }
+flight-scene2d = { workspace = true }
+flight-scene2d-wgpu = { workspace = true }
+flight-shape = { workspace = true }
+flight-signals = { workspace = true }
+flight-texture = { workspace = true }
+
+[[test]]
+name = "g3_winit_test"
+harness = false
+
+[[test]]
+name = "winit_host_test"
+harness = false
+
+[lints]
+workspace = true
