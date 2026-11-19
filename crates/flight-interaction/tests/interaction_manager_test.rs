@@ -735,6 +735,84 @@ mod dispatch_interaction_pointer_down {
     use super::*;
 
     #[test]
+    fn finds_a_subscriber_deep_in_the_graph_and_skips_when_none_remain() {
+        let (root, children) = interaction_fixture::tree_with_children(1);
+        let grandchild = interaction_fixture::interactive_node();
+        flight_node::add_node_child(&children[0], &grandchild);
+        let manager = interaction_fixture::shared_manager_for(&root);
+        capture_interaction_pointer(&mut manager.write().unwrap(), 0, grandchild.clone());
+        let (calls, slot) = z_counting_slot();
+        let signals = interaction_fixture::signals_for(&grandchild);
+        let id =
+            flight_signals::connect_signal(&signals.read().unwrap().on_pointer_down, slot, None);
+        dispatch_interaction_pointer_down(&manager, 1.0, 1.0, 0, None);
+        assert_eq!(calls.load(SeqCst), 1);
+        assert!(
+            manager.read().unwrap().pointer_states[&0]
+                .pointer_down_target
+                .is_some()
+        );
+        flight_signals::disconnect_signal(&signals.read().unwrap().on_pointer_down, id);
+        manager.write().unwrap().pointer_states.clear();
+        dispatch_interaction_pointer_down(&manager, 1.0, 1.0, 0, None);
+        assert_eq!(calls.load(SeqCst), 1);
+        assert!(
+            manager
+                .read()
+                .unwrap()
+                .pointer_states
+                .get(&0)
+                .is_none_or(|state| state.pointer_down_target.is_none()),
+            "with no subscriber anywhere the dispatch is skipped before targeting"
+        );
+    }
+
+    #[test]
+    fn reaches_a_slot_connected_directly_on_a_node_signal_by_default() {
+        let (manager, child) = z_captured_manager();
+        let (calls, slot) = z_counting_slot();
+        flight_signals::connect_signal(
+            &interaction_fixture::signals_for(&child)
+                .read()
+                .unwrap()
+                .on_pointer_down,
+            slot,
+            None,
+        );
+        assert_eq!(z_count(&manager, OnPointerDown), 0);
+        dispatch_interaction_pointer_down(&manager, 1.0, 1.0, 0, None);
+        assert_eq!(calls.load(SeqCst), 1);
+    }
+
+    #[test]
+    fn requires_a_tracked_subscriber_when_tracked_subscribers_only() {
+        let (root, children) = interaction_fixture::tree_with_children(1);
+        let child = children[0].clone();
+        let mut options = create_interaction_manager_options();
+        options.tracked_subscribers_only = Some(true);
+        let manager = create_interaction_manager(root, Some(&options));
+        capture_interaction_pointer(&mut manager.write().unwrap(), 0, child.clone());
+        let (calls, slot) = z_counting_slot();
+        flight_signals::connect_signal(
+            &interaction_fixture::signals_for(&child)
+                .read()
+                .unwrap()
+                .on_pointer_down,
+            slot.clone(),
+            None,
+        );
+        dispatch_interaction_pointer_down(&manager, 1.0, 1.0, 0, None);
+        assert_eq!(calls.load(SeqCst), 0);
+        connect_interaction_signal(&manager, &child, OnPointerDown, slot, None);
+        dispatch_interaction_pointer_down(&manager, 1.0, 1.0, 0, None);
+        assert_eq!(
+            calls.load(SeqCst),
+            2,
+            "the direct and the tracked connection both run"
+        );
+    }
+
+    #[test]
     fn on_empty_tree_does_not_panic() {
         let root = interaction_fixture::node();
         let mgr = interaction_fixture::shared_manager_for(&root);

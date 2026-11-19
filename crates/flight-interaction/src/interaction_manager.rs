@@ -6,10 +6,11 @@ use std::sync::{Arc, OnceLock, RwLock};
 use flight_entity::{Ref, UnknownValue};
 use flight_input::PointerType;
 
-use flight_node::{NodeRef, get_node_parent};
+use flight_node::{NodeRef, for_each_node_child, get_node_parent};
 use flight_signals::{
     SignalConnectOptions, SignalSlot, SlotId, connect_signal, connect_signal_tracked,
-    create_signal, disconnect_signal, disconnect_signal_connection, emit_signal, is_slot_connected,
+    create_signal, disconnect_signal, disconnect_signal_connection, emit_signal, has_signal_slots,
+    is_slot_connected,
 };
 
 use crate::hit_tests::{
@@ -1025,6 +1026,25 @@ fn get_signal_by_name_pointer<'a>(
     };
 }
 
+// Whether any node in `source`'s subtree has a slot connected to its `name` pointer signal (TS
+// `hasInteractionSignalSubscriberInGraph`), for managers that do not require tracked subscribers.
+fn has_interaction_signal_subscriber_in_graph(
+    source: &NodeRef,
+    name: InteractionSignalName,
+) -> bool {
+    if let Some(signals) = get_interaction_signals(source)
+        && has_signal_slots(get_signal_by_name_pointer(&signals.read().unwrap(), name))
+    {
+        return true;
+    }
+    let mut found = false;
+    for_each_node_child(source, &mut |child, _| {
+        found = has_interaction_signal_subscriber_in_graph(child, name);
+        return !found;
+    });
+    return found;
+}
+
 fn input_pointer_to_options(data: &flight_input::InputPointerData) -> InteractionPointerOptions {
     return InteractionPointerOptions {
         alt_key: Some(data.alt_key),
@@ -1076,7 +1096,12 @@ fn is_pointer_signal_needed(manager: &InteractionManager, names: &[InteractionSi
             return true;
         }
     }
-    return false;
+    if manager.tracked_subscribers_only {
+        return false;
+    }
+    return names
+        .iter()
+        .any(|name| has_interaction_signal_subscriber_in_graph(&manager.root, *name));
 }
 
 fn make_pointer_data(
