@@ -15,7 +15,7 @@ use std::process::Command;
 
 #[test]
 fn c_consumer_links_static_library_and_runs() {
-    if let Some(stdout) = z_compile_link_and_run("consumer.c", "consumer") {
+    if let Some(stdout) = z_compile_link_and_run("consumer.c", "consumer", true) {
         assert_eq!(stdout.trim(), "flight-ffi C consumer: ok");
     }
 }
@@ -25,6 +25,7 @@ fn interaction_signal_rejection_links_static_library_and_runs() {
     if let Some(stdout) = z_compile_link_and_run(
         "interaction_signal_rejection.c",
         "interaction_signal_rejection",
+        false,
     ) {
         assert_eq!(stdout.trim(), "flight-ffi interaction rejection: ok");
     }
@@ -77,7 +78,7 @@ fn run(command: &mut Command, purpose: &str) -> std::process::Output {
 
 // Compiles `tests/c_consumer/<source_name>` strictly as C against the generated header, links it
 // with the static library, runs it, and returns its stdout; `None` when the target is not the host.
-fn z_compile_link_and_run(source_name: &str, stem: &str) -> Option<String> {
+fn z_compile_link_and_run(source_name: &str, stem: &str, address_sanitizer: bool) -> Option<String> {
     if env!("FLIGHT_FFI_TARGET") != env!("FLIGHT_FFI_HOST") {
         eprintln!(
             "skipping the flight-ffi C consumer: it is built for {} and cannot run on host {}",
@@ -114,7 +115,11 @@ fn z_compile_link_and_run(source_name: &str, stem: &str) -> Option<String> {
     let mut compile = compiler.to_command();
     compile
         .args(["-std=c11", "-Wall", "-Wextra", "-Wpedantic", "-Werror"])
-        .arg(format!("-I{}", env!("OUT_DIR")))
+        .arg(format!("-I{}", env!("OUT_DIR")));
+    if address_sanitizer {
+        compile.args(["-fsanitize=address", "-fno-omit-frame-pointer"]);
+    }
+    compile
         .arg("-c")
         .arg(&source)
         .arg("-o")
@@ -137,8 +142,15 @@ fn z_compile_link_and_run(source_name: &str, stem: &str) -> Option<String> {
         .arg(format!("link-arg={}", library.display()))
         .arg("-o")
         .arg(&executable);
+    if address_sanitizer {
+        link.arg("-C").arg("link-arg=-fsanitize=address");
+    }
     run(&mut link, "link the C consumer");
 
-    let ran = run(&mut Command::new(&executable), "run the C consumer");
+    let mut executable_command = Command::new(&executable);
+    if address_sanitizer {
+        executable_command.env("ASAN_OPTIONS", "detect_leaks=0:halt_on_error=1");
+    }
+    let ran = run(&mut executable_command, "run the C consumer");
     return Some(String::from_utf8_lossy(&ran.stdout).into_owned());
 }

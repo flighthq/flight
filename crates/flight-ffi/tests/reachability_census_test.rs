@@ -117,30 +117,24 @@ fn carrier_graph_preserves_thin_fat_raw_and_policy_distinctions() {
 
     assert_eq!(
         edge_rows("produce", "flight_create_sprite"),
-        ["Box<flight_sdk::Ref<flight_sdk::Sprite>>"]
-            .into_iter()
-            .collect()
+        ["Box<FlightNode>"].into_iter().collect()
     );
     assert_eq!(
         edge_rows("consume", "flight_add_node_child"),
-        ["Box<flight_sdk::Ref<dyn flight_sdk::Node>>"]
-            .into_iter()
-            .collect()
+        ["Box<FlightNode>"].into_iter().collect()
     );
     assert_eq!(
-        functions["flight_add_node_child"].classification,
-        "unreachable"
+        edge_rows("produce", "flight_add_node_child"),
+        ["Box<FlightNode>"].into_iter().collect()
     );
-    assert_eq!(
-        functions["flight_add_node_child"].blocker,
-        "Box<flight_sdk::Ref<dyn flight_sdk::Node>>"
-    );
+    assert_eq!(functions["flight_add_node_child"].classification, "reachable");
+    assert_eq!(functions["flight_add_node_child"].blocker, "-");
     assert_eq!(
         edge_rows("consume", "flight_add_node_children"),
-        ["Box<flight_sdk::Ref<dyn flight_sdk::Node>>"]
+        ["Box<FlightNode>", "Box<FlightNodeArray>"]
             .into_iter()
             .collect(),
-        "an opaque handle slice consumes its element carrier"
+        "a node slice consumes only the shared node and node-array carriers"
     );
     // The slice is an `Option`, so its carrier is optional coverage rather than a blocker.
     assert_eq!(
@@ -158,16 +152,45 @@ fn carrier_graph_preserves_thin_fat_raw_and_policy_distinctions() {
                 || name.starts_with("flight_set_node2_dfields_")
         })
         .collect();
-    assert_eq!(node2d_accessors.len(), 22);
-    assert!(node2d_accessors.iter().all(|(_, row)| {
-        row.kind == "surface"
-            && row.classification == "unreachable"
-            && (row.blocker == "*const flight_sdk::Node2DFields"
-                || row.blocker == "*mut flight_sdk::Node2DFields")
+    assert_eq!(node2d_accessors.len(), 30);
+    assert!(node2d_accessors.iter().all(|(name, row)| {
+        if matches!(
+            **name,
+            "flight_set_node2_dfields_material" | "flight_set_node2_dfields_material_data"
+        ) {
+            row.kind == "surface"
+                && row.classification == "unreachable"
+                && row.blocker.starts_with("Box<flight_sdk::Ref<dyn flight_sdk::Material")
+        } else {
+            row.kind == "surface" && row.classification == "reachable" && row.blocker == "-"
+        }
     }));
 
     // Item C: the per-payload connect wrappers produce an owned SignalConnection, so its
     // operations left the unreachable census.
+    let node3d_accessors: Vec<_> = functions
+        .iter()
+        .filter(|(name, _)| {
+            name.starts_with("flight_get_node3_dfields_")
+                || name.starts_with("flight_set_node3_dfields_")
+        })
+        .collect();
+    assert_eq!(node3d_accessors.len(), 24);
+    assert!(node3d_accessors.iter().all(|(_, row)| {
+        row.kind == "surface" && row.classification == "reachable" && row.blocker == "-"
+    }));
+
+    assert_eq!(
+        edge_rows("consume", "flight_get_clock_elapsed"),
+        ["Box<flight_sdk::Ref<flight_sdk::Clock>>"]
+            .into_iter()
+            .collect()
+    );
+    assert_eq!(
+        functions["flight_get_clock_elapsed"].classification,
+        "reachable"
+    );
+
     for function in [
         "flight_disconnect_signal_connection",
         "flight_pause_signal_connection",

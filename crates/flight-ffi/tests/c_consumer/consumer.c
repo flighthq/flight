@@ -694,6 +694,73 @@ static void check_shape_bounds_context(void) {
   expect(recording.flush_calls == 1, "a failing ShapeBoundsContext callback still runs exactly once");
 }
 
+static void check_node_carriers(void) {
+  FlightNode *container = flight_create_display_object();
+  FlightNode *sprite = flight_create_sprite();
+  FlightNode *shape = flight_create_shape();
+  FlightNode *bitmap_text = flight_create_bitmap_text(NULL);
+  FlightNode *text_label = flight_create_text_label(NULL);
+  expect(container != NULL && sprite != NULL && shape != NULL && bitmap_text != NULL && text_label != NULL,
+         "all concrete node families use FlightNode");
+
+  uint32_t revision = flight_get_node_local_transform_revision(sprite);
+  expect(near(flight_set_node2_dfields_x(sprite, 9.5f), 9.5f), "Node2DFields writes through FlightNode");
+  expect(near(flight_get_node2_dfields_x(sprite), 9.5f), "Node2DFields reads through FlightNode");
+  expect(flight_get_node_local_transform_revision(sprite) == revision, "field writes do not implicitly invalidate");
+  flight_invalidate_node_local_transform(sprite);
+  expect(flight_get_node_local_transform_revision(sprite) == revision + 1,
+         "explicit node invalidation remains caller controlled");
+
+  expect(flight_set_node_fields_name(sprite, "c-sprite"), "NodeFields name accepts UTF-8");
+  char *name = flight_get_node_fields_name(sprite);
+  expect(name != NULL && strcmp(name, "c-sprite") == 0, "NodeFields name returns an owned copy");
+  flight_free_string(name);
+  expect(!flight_has_node2_dfields_blend_mode(sprite), "blend mode begins absent");
+  expect(flight_set_node2_dfields_blend_mode(sprite, 3, true), "blend mode accepts its integer lane");
+  expect(flight_has_node2_dfields_blend_mode(sprite) && flight_get_node2_dfields_blend_mode(sprite) == 3,
+         "blend mode preserves value and presence");
+  expect(flight_set_node2_dfields_blend_mode(sprite, 99, false), "absent blend mode ignores its integer lane");
+  expect(!flight_has_node2_dfields_blend_mode(sprite) && flight_get_node2_dfields_blend_mode(sprite) == -1,
+         "absent blend mode has the documented sentinel");
+  expect(flight_get_text_label_string(sprite) == NULL, "a wrong concrete node kind returns its pointer sentinel");
+
+  FlightNodeArray *children = flight_node_array_create();
+  expect(flight_node_array_push(children, sprite), "node array accepts sprite");
+  expect(flight_node_array_push(children, shape), "node array accepts shape");
+  expect(flight_node_array_push(children, bitmap_text), "node array accepts bitmap text");
+  expect(flight_node_array_push(children, text_label), "node array accepts text");
+  flight_add_node_children(container, children);
+  flight_free_node_array(children);
+  expect(flight_get_node_child_count(container) == 4, "a freed input array leaves retained hierarchy children");
+
+  FlightNodeArray *snapshot = flight_node_array_create();
+  flight_get_node_children(snapshot, container);
+  expect(flight_node_array_len(snapshot) == 4, "node array receives hierarchy output");
+  FlightNode *first = flight_node_array_get(snapshot, 0);
+  expect(flight_node_equals(first, sprite), "node array get preserves Arc identity");
+  flight_free_node(first);
+
+  flight_set_node_child_index(container, text_label, 0);
+  flight_node_array_clear(snapshot);
+  flight_get_node_children(snapshot, container);
+  first = flight_node_array_get(snapshot, 0);
+  expect(flight_node_equals(first, text_label), "hierarchy reorder preserves FlightNode identity");
+  flight_free_node(first);
+
+  FlightNode *removed = flight_remove_node_child(container, shape);
+  expect(flight_node_equals(removed, shape), "hierarchy removal returns the same node identity");
+  expect(flight_get_node_child_count(container) == 3, "hierarchy removal updates the child count");
+  flight_free_node(removed);
+
+  flight_free_node_array(snapshot);
+  flight_free_node(container);
+  flight_free_node(sprite);
+  flight_free_node(shape);
+  flight_free_node(bitmap_text);
+  flight_free_node(text_label);
+  flight_free_node(NULL);
+}
+
 int main(void) {
   check_scalars();
   check_handles();
@@ -719,6 +786,7 @@ int main(void) {
   check_async_callbacks();
   check_task_m_carriers();
   check_shape_bounds_context();
+  check_node_carriers();
   if (failures != 0) {
     fprintf(stderr, "flight-ffi C consumer: %d failure(s)\n", failures);
     return 1;
