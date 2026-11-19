@@ -9,38 +9,38 @@ use flight_signals::{Signal, create_signal};
 use std::sync::{Arc, RwLock};
 pub type ScrollBarController = GuiController<ScrollBarControllerFields>;
 pub struct ScrollBarControllerOptions {
-    pub maximum: Option<f32>,
-    pub minimum: Option<f32>,
+    pub maximum: Option<f64>,
+    pub minimum: Option<f64>,
     pub orientation: Option<GuiOrientation>,
     pub thumb: Node2DRef,
     pub track: Node2DRef,
-    pub value: Option<f32>,
+    pub value: Option<f64>,
     pub transition: Option<Arc<GuiTransitionDescriptor>>,
     pub down_button: Option<Node2DRef>,
     pub up_button: Option<Node2DRef>,
-    pub line_size: Option<f32>,
-    pub page_size: Option<f32>,
-    pub repeat_interval: Option<f32>,
+    pub line_size: Option<f64>,
+    pub page_size: Option<f64>,
+    pub repeat_interval: Option<f64>,
 }
 pub struct ScrollBarControllerSignals {
-    pub on_change: Ref<Signal<f32>>,
+    pub on_change: Ref<Signal<f64>>,
 }
 pub struct ScrollBarControllerFields {
     pub drag_pointer: i32,
-    pub drag_start_coordinate: f32,
-    pub drag_start_value: f32,
-    pub maximum: f32,
-    pub minimum: f32,
+    pub drag_start_coordinate: f64,
+    pub drag_start_value: f64,
+    pub maximum: f64,
+    pub minimum: f64,
     pub orientation: GuiOrientation,
     pub signals: Ref<ScrollBarControllerSignals>,
     pub thumb: Option<Node2DRef>,
     pub track: Option<Node2DRef>,
-    pub value: f32,
+    pub value: f64,
     pub down_button: Option<Node2DRef>,
     pub up_button: Option<Node2DRef>,
-    pub line_size: f32,
-    pub page_size: f32,
-    pub repeat_interval: f32,
+    pub line_size: f64,
+    pub page_size: f64,
+    pub repeat_interval: f64,
     pub repeat_timer: Option<TimerHandle>,
     pub timer: Arc<HostTimerCapability>,
 }
@@ -63,7 +63,7 @@ pub fn initialize_scroll_bar_controller(
     let minimum = options.minimum.unwrap_or(0.0);
     let requested = options.maximum.unwrap_or(100.0);
     let maximum = if minimum.is_nan() || requested.is_nan() {
-        f32::NAN
+        f64::NAN
     } else {
         minimum.max(requested)
     };
@@ -230,7 +230,7 @@ pub fn initialize_scroll_bar_controller(
 fn connect_repeat_button(
     r: &Ref<GuiControllerRuntime<ScrollBarControllerFields>>,
     target: &Node2DRef,
-    direction: f32,
+    direction: f64,
 ) {
     let state = r.clone();
     let advance: Arc<dyn Fn() + Send + Sync> = Arc::new(move || {
@@ -253,7 +253,7 @@ fn connect_repeat_button(
                     let s = state.read().unwrap();
                     (s.fields.timer.clone(), s.fields.repeat_interval)
                 };
-                let handle = (timer.set_interval)(interval.into(), advance.clone());
+                let handle = (timer.set_interval)(interval, advance.clone());
                 state.write().unwrap().fields.repeat_timer = Some(handle);
             }),
         }),
@@ -298,7 +298,7 @@ pub fn get_scroll_bar_controller_signals(
         .clone();
 }
 
-pub fn get_scroll_bar_controller_value(controller: &ScrollBarController) -> f32 {
+pub fn get_scroll_bar_controller_value(controller: &ScrollBarController) -> f64 {
     return get_gui_controller_runtime(controller)
         .read()
         .unwrap()
@@ -306,7 +306,7 @@ pub fn get_scroll_bar_controller_value(controller: &ScrollBarController) -> f32 
         .value;
 }
 
-fn get_travel(r: &Ref<GuiControllerRuntime<ScrollBarControllerFields>>) -> f32 {
+fn get_travel(r: &Ref<GuiControllerRuntime<ScrollBarControllerFields>>) -> f64 {
     let (track, thumb, orientation) = {
         let s = r.read().unwrap();
         (
@@ -326,13 +326,13 @@ fn get_travel(r: &Ref<GuiControllerRuntime<ScrollBarControllerFields>>) -> f32 {
     };
 }
 
-pub fn set_scroll_bar_controller_value(controller: &ScrollBarController, value: f32) {
+pub fn set_scroll_bar_controller_value(controller: &ScrollBarController, value: f64) {
     set_value_runtime(&get_gui_controller_runtime(controller), value);
 }
 
 pub(crate) fn set_value_runtime(
     r: &Ref<GuiControllerRuntime<ScrollBarControllerFields>>,
-    value: f32,
+    value: f64,
 ) {
     let next = {
         let mut s = r.write().unwrap();

@@ -146,8 +146,7 @@ mod create_button_controller {
         // D1 f32 bound (TS: 0)
         assert!((up.read().unwrap().alpha - 0.8).abs() <= 4.0 * f32::EPSILON);
         emit_gui_pointer(&target, InteractionSignalName::OnPointerDown, None);
-        // D1 f32 bound (TS: 0)
-        assert!((up.read().unwrap().scale_x - 0.9).abs() <= 4.0 * f32::EPSILON);
+        assert_eq!(up.read().unwrap().scale_x, 0.9);
         set_button_controller_disabled(&controller, true);
         // D1 f32 bound (TS: 0)
         assert!((up.read().unwrap().alpha - 0.4).abs() <= 4.0 * f32::EPSILON);

@@ -90,7 +90,7 @@ pub fn initialize_gui_controller<F>(
     out.state = Some(runtime);
 }
 
-pub fn clamp_gui_value(value: f32, minimum: f32, maximum: f32) -> f32 {
+pub fn clamp_gui_value(value: f64, minimum: f64, maximum: f64) -> f64 {
     if !value.is_finite() {
         return minimum;
     }
@@ -100,7 +100,7 @@ pub fn clamp_gui_value(value: f32, minimum: f32, maximum: f32) -> f32 {
         (minimum, maximum)
     };
     if minimum.is_nan() || maximum.is_nan() {
-        return f32::NAN;
+        return f64::NAN;
     }
     return value.min(maximum).max(minimum);
 }
@@ -245,7 +245,7 @@ pub fn get_gui_controller_runtime<F>(
         .clone();
 }
 
-pub fn get_gui_length(target: &Node2DRef, orientation: GuiOrientation) -> f32 {
+pub fn get_gui_length(target: &Node2DRef, orientation: GuiOrientation) -> f64 {
     let node: NodeRef = target.clone();
     return if orientation == GuiOrientation::Horizontal {
         get_node_width(&node)
@@ -262,7 +262,7 @@ pub fn get_gui_orientation_string(value: GuiOrientation) -> &'static str {
     };
 }
 
-pub fn get_gui_position(target: &Node2DRef, orientation: GuiOrientation) -> f32 {
+pub fn get_gui_position(target: &Node2DRef, orientation: GuiOrientation) -> f64 {
     let target = target.read().unwrap();
     let fields = target.node2d_fields();
     return if orientation == GuiOrientation::Horizontal {
@@ -291,9 +291,8 @@ pub(crate) fn keyboard_signal(
     };
 }
 
-// flight-lint: allow(f64) the canonical existing interactive-state transition protocol stores Number(f64); this losslessly promotes a canonical f32 property, without widening GUI arithmetic
-pub(crate) fn number_value(value: f32) -> GuiTransitionValue {
-    return GuiTransitionValue::Number(f64::from(value));
+pub(crate) fn number_value(value: f64) -> GuiTransitionValue {
+    return GuiTransitionValue::Number(value);
 }
 
 // flight-lint: allow(conform-extra) D9e parser for the source GuiOrientation string union
@@ -328,13 +327,12 @@ pub(crate) fn pointer_signal(
     };
 }
 
-// flight-lint: allow(f64) read the canonical f32 visual into the existing shared transition Number(f64) carrier, preserving the source descriptor protocol
 fn read_visual(target: &Node2DRef, property: GuiTransitionProperty) -> GuiTransitionValue {
     let target = target.read().unwrap();
     let fields = target.node2d_fields();
     return match property {
         GuiTransitionProperty::Visible => GuiTransitionValue::Boolean(fields.visible),
-        GuiTransitionProperty::Alpha => number_value(fields.alpha),
+        GuiTransitionProperty::Alpha => number_value(f64::from(fields.alpha)),
         GuiTransitionProperty::ScaleX => number_value(fields.scale_x),
         GuiTransitionProperty::ScaleY => number_value(fields.scale_y),
         GuiTransitionProperty::X => number_value(fields.x),
@@ -346,7 +344,7 @@ pub fn set_gui_position<F>(
     runtime: &Ref<GuiControllerRuntime<F>>,
     target: Option<&Node2DRef>,
     orientation: GuiOrientation,
-    value: f32,
+    value: f64,
 ) {
     set_gui_visual_property(
         runtime,
@@ -364,7 +362,7 @@ pub fn set_gui_scale<F>(
     runtime: &Ref<GuiControllerRuntime<F>>,
     target: Option<&Node2DRef>,
     orientation: GuiOrientation,
-    value: f32,
+    value: f64,
 ) {
     set_gui_visual_property(
         runtime,
@@ -445,11 +443,10 @@ pub fn set_gui_visual_property<F>(
     }
 }
 
-// flight-lint: allow(f64) D1 exact integer rounding: preserve the source Number grid index and operation order until the final canonical f32 result
-fn snap_gui_grid(value: f32, minimum: f32, step: f32) -> f32 {
-    let value = f64::from(value);
-    let minimum = f64::from(minimum);
-    let step = f64::from(step);
+fn snap_gui_grid(value: f64, minimum: f64, step: f64) -> f64 {
+    let value = value;
+    let minimum = minimum;
+    let step = step;
     let ratio = (value - minimum) / step;
     let floor = ratio.floor();
     let rounded = if ratio - floor < 0.5 {
@@ -462,10 +459,10 @@ fn snap_gui_grid(value: f32, minimum: f32, step: f32) -> f32 {
     } else {
         rounded
     };
-    return (minimum + rounded * step) as f32;
+    return minimum + rounded * step;
 }
 
-pub fn snap_gui_value(value: f32, minimum: f32, step: Option<f32>) -> f32 {
+pub fn snap_gui_value(value: f64, minimum: f64, step: Option<f64>) -> f64 {
     let Some(step) = step else {
         return value;
     };
@@ -475,6 +472,7 @@ pub fn snap_gui_value(value: f32, minimum: f32, step: Option<f32>) -> f32 {
     return snap_gui_grid(value, minimum, step);
 }
 
+// flight-lint: allow(f32) node alpha is the f32 appearance lane; geometry properties write f64
 fn write_visual(target: &Node2DRef, property: GuiTransitionProperty, value: GuiTransitionValue) {
     let mut target = target.write().unwrap();
     let fields = target.node2d_fields_mut();
@@ -486,13 +484,13 @@ fn write_visual(target: &Node2DRef, property: GuiTransitionProperty, value: GuiT
             fields.alpha = value as f32
         }
         (GuiTransitionProperty::ScaleX, GuiTransitionValue::Number(value)) => {
-            fields.scale_x = value as f32
+            fields.scale_x = value
         }
         (GuiTransitionProperty::ScaleY, GuiTransitionValue::Number(value)) => {
-            fields.scale_y = value as f32
+            fields.scale_y = value
         }
-        (GuiTransitionProperty::X, GuiTransitionValue::Number(value)) => fields.x = value as f32,
-        (GuiTransitionProperty::Y, GuiTransitionValue::Number(value)) => fields.y = value as f32,
+        (GuiTransitionProperty::X, GuiTransitionValue::Number(value)) => fields.x = value,
+        (GuiTransitionProperty::Y, GuiTransitionValue::Number(value)) => fields.y = value,
         _ => {}
     }
 }

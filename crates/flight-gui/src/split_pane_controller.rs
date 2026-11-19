@@ -10,37 +10,37 @@ pub type SplitPaneController = GuiController<SplitPaneControllerFields>;
 pub struct SplitPaneControllerOptions {
     pub divider: Node2DRef,
     pub first_region: Node2DRef,
-    pub maximum_first: Option<f32>,
-    pub minimum_first: Option<f32>,
-    pub minimum_second: Option<f32>,
+    pub maximum_first: Option<f64>,
+    pub minimum_first: Option<f64>,
+    pub minimum_second: Option<f64>,
     pub orientation: Option<GuiOrientation>,
-    pub position: Option<f32>,
+    pub position: Option<f64>,
     pub second_region: Node2DRef,
-    pub total_size: Option<f32>,
+    pub total_size: Option<f64>,
     pub transition: Option<Arc<GuiTransitionDescriptor>>,
 }
 pub struct SplitPaneControllerSignals {
-    pub on_change: Ref<Signal<f32>>,
+    pub on_change: Ref<Signal<f64>>,
 }
 pub struct SplitPaneControllerFields {
     pub divider: Option<Node2DRef>,
     pub drag_pointer: i32,
-    pub drag_start_coordinate: f32,
-    pub drag_start_position: f32,
-    pub first_base_length: f32,
-    pub first_base_scale: f32,
-    pub first_origin: f32,
+    pub drag_start_coordinate: f64,
+    pub drag_start_position: f64,
+    pub first_base_length: f64,
+    pub first_base_scale: f64,
+    pub first_origin: f64,
     pub first_region: Option<Node2DRef>,
-    pub maximum_first: f32,
-    pub minimum_first: f32,
-    pub minimum_second: f32,
+    pub maximum_first: f64,
+    pub minimum_first: f64,
+    pub minimum_second: f64,
     pub orientation: GuiOrientation,
-    pub position: f32,
-    pub second_base_length: f32,
-    pub second_base_scale: f32,
+    pub position: f64,
+    pub second_base_length: f64,
+    pub second_base_scale: f64,
     pub second_region: Option<Node2DRef>,
     pub signals: Ref<SplitPaneControllerSignals>,
-    pub total_size: f32,
+    pub total_size: f64,
 }
 pub fn create_split_pane_controller(options: &SplitPaneControllerOptions) -> SplitPaneController {
     let mut out: SplitPaneController = allocate_entity();
@@ -69,10 +69,10 @@ pub fn initialize_split_pane_controller(
     );
     let minimum_first = maximum(0.0, options.minimum_first.unwrap_or(0.0));
     let minimum_second = maximum(0.0, options.minimum_second.unwrap_or(0.0));
-    let requested = options.maximum_first.unwrap_or(f32::INFINITY);
+    let requested = options.maximum_first.unwrap_or(f64::INFINITY);
     let derived = maximum(minimum_first, total_size - divider_length - minimum_second);
     let maximum_first = if requested.is_nan() || derived.is_nan() {
-        f32::NAN
+        f64::NAN
     } else {
         requested.min(derived)
     };
@@ -180,7 +180,7 @@ pub fn dispose_split_pane_controller(controller: &SplitPaneController) {
     });
 }
 
-pub fn get_split_pane_controller_position(controller: &SplitPaneController) -> f32 {
+pub fn get_split_pane_controller_position(controller: &SplitPaneController) -> f64 {
     return get_gui_controller_runtime(controller)
         .read()
         .unwrap()
@@ -199,15 +199,15 @@ pub fn get_split_pane_controller_signals(
         .clone();
 }
 
-fn maximum(a: f32, b: f32) -> f32 {
+fn maximum(a: f64, b: f64) -> f64 {
     return if a.is_nan() || b.is_nan() {
-        f32::NAN
+        f64::NAN
     } else {
         a.max(b)
     };
 }
 
-fn read_scale(node: &Node2DRef, orientation: GuiOrientation) -> f32 {
+fn read_scale(node: &Node2DRef, orientation: GuiOrientation) -> f64 {
     let node = node.read().unwrap();
     return if orientation == GuiOrientation::Horizontal {
         node.node2d_fields().scale_x
@@ -216,7 +216,7 @@ fn read_scale(node: &Node2DRef, orientation: GuiOrientation) -> f32 {
     };
 }
 
-fn set_position_runtime(r: &Ref<GuiControllerRuntime<SplitPaneControllerFields>>, position: f32) {
+fn set_position_runtime(r: &Ref<GuiControllerRuntime<SplitPaneControllerFields>>, position: f64) {
     let next = {
         let mut s = r.write().unwrap();
         let next = clamp_gui_value(position, s.fields.minimum_first, s.fields.maximum_first);
@@ -232,7 +232,7 @@ fn set_position_runtime(r: &Ref<GuiControllerRuntime<SplitPaneControllerFields>>
     emit_gui_signal(&signal, &next);
 }
 
-pub fn set_split_pane_controller_position(controller: &SplitPaneController, position: f32) {
+pub fn set_split_pane_controller_position(controller: &SplitPaneController, position: f64) {
     set_position_runtime(&get_gui_controller_runtime(controller), position);
 }
 

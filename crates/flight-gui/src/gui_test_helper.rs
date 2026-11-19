@@ -15,22 +15,22 @@ pub struct GuiPointerOptions {
     pub buttons: Option<i32>,
     pub ctrl_key: Option<bool>,
     pub current_target: Option<Option<flight_node::NodeRef>>,
-    pub delta_x: Option<f32>,
-    pub delta_y: Option<f32>,
-    pub local_x: Option<f32>,
-    pub local_y: Option<f32>,
+    pub delta_x: Option<f64>,
+    pub delta_y: Option<f64>,
+    pub local_x: Option<f64>,
+    pub local_y: Option<f64>,
     pub meta_key: Option<bool>,
     pub pointer_id: Option<i32>,
     pub pointer_type: Option<PointerType>,
     pub shift_key: Option<bool>,
     pub target: Option<Option<flight_node::NodeRef>>,
-    pub world_x: Option<f32>,
-    pub world_y: Option<f32>,
-    pub x: Option<f32>,
-    pub y: Option<f32>,
+    pub world_x: Option<f64>,
+    pub world_y: Option<f64>,
+    pub x: Option<f64>,
+    pub y: Option<f64>,
 }
 
-pub fn create_gui_test_node(width: Option<f32>, height: Option<f32>) -> Ref<DisplayObject> {
+pub fn create_gui_test_node(width: Option<f64>, height: Option<f64>) -> Ref<DisplayObject> {
     let width = width.unwrap_or(100.0);
     let height = height.unwrap_or(20.0);
     let node = create_display_object();

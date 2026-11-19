@@ -19,24 +19,24 @@ pub struct ScrollViewControllerOptions {
     pub transition: Option<Arc<GuiTransitionDescriptor>>,
 }
 pub struct ScrollViewControllerSignals {
-    pub on_scroll: Ref<Signal<(f32, f32)>>,
+    pub on_scroll: Ref<Signal<(f64, f64)>>,
 }
 pub struct ScrollViewControllerFields {
-    pub base_content_x: f32,
-    pub base_content_y: f32,
+    pub base_content_x: f64,
+    pub base_content_y: f64,
     pub content: Option<Node2DRef>,
     pub drag_pointer: i32,
-    pub drag_start_world_x: f32,
-    pub drag_start_world_y: f32,
-    pub drag_start_x: f32,
-    pub drag_start_y: f32,
+    pub drag_start_world_x: f64,
+    pub drag_start_world_y: f64,
+    pub drag_start_x: f64,
+    pub drag_start_y: f64,
     pub horizontal_scroll_bar: Option<Ref<ScrollBarController>>,
     pub mouse_wheel_enabled: bool,
     pub signals: Ref<ScrollViewControllerSignals>,
     pub vertical_scroll_bar: Option<Ref<ScrollBarController>>,
     pub viewport: Option<Node2DRef>,
-    pub x: f32,
-    pub y: f32,
+    pub x: f64,
+    pub y: f64,
 }
 pub fn create_scroll_view_controller(
     options: &ScrollViewControllerOptions,
@@ -203,7 +203,7 @@ pub fn get_scroll_view_controller_signals(
         .clone();
 }
 
-pub fn get_scroll_view_controller_x(controller: &ScrollViewController) -> f32 {
+pub fn get_scroll_view_controller_x(controller: &ScrollViewController) -> f64 {
     return get_gui_controller_runtime(controller)
         .read()
         .unwrap()
@@ -211,7 +211,7 @@ pub fn get_scroll_view_controller_x(controller: &ScrollViewController) -> f32 {
         .x;
 }
 
-pub fn get_scroll_view_controller_y(controller: &ScrollViewController) -> f32 {
+pub fn get_scroll_view_controller_y(controller: &ScrollViewController) -> f64 {
     return get_gui_controller_runtime(controller)
         .read()
         .unwrap()
@@ -219,7 +219,7 @@ pub fn get_scroll_view_controller_y(controller: &ScrollViewController) -> f32 {
         .y;
 }
 
-fn maximum_extent(content: &Node2DRef, viewport: &Node2DRef, orientation: GuiOrientation) -> f32 {
+fn maximum_extent(content: &Node2DRef, viewport: &Node2DRef, orientation: GuiOrientation) -> f64 {
     let length = get_gui_length(content, orientation) - get_gui_length(viewport, orientation);
     return if length.is_nan() {
         length
@@ -228,7 +228,7 @@ fn maximum_extent(content: &Node2DRef, viewport: &Node2DRef, orientation: GuiOri
     };
 }
 
-fn set_position_runtime(r: &Ref<GuiControllerRuntime<ScrollViewControllerFields>>, x: f32, y: f32) {
+fn set_position_runtime(r: &Ref<GuiControllerRuntime<ScrollViewControllerFields>>, x: f64, y: f64) {
     let (content, viewport) = {
         let s = r.read().unwrap();
         if s.disposed {
@@ -257,7 +257,7 @@ fn set_position_runtime(r: &Ref<GuiControllerRuntime<ScrollViewControllerFields>
     emit_gui_signal(&signal, &(next_x, next_y));
 }
 
-pub fn set_scroll_view_controller_position(controller: &ScrollViewController, x: f32, y: f32) {
+pub fn set_scroll_view_controller_position(controller: &ScrollViewController, x: f64, y: f64) {
     set_position_runtime(&get_gui_controller_runtime(controller), x, y);
 }
 

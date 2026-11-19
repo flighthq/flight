@@ -160,4 +160,16 @@ mod set_slider_controller_value {
         set_slider_controller_value(&controller, 5.0);
         assert_eq!(get_slider_controller_value(&controller), 1.0);
     }
+
+    #[test]
+    fn keeps_an_in_range_value_as_an_exact_double() {
+        // 0.1 has no exact f32: an f32 store would read back 0.10000000149011612.
+        let options = options(
+            create_gui_test_node(None, None),
+            create_gui_test_node(None, None),
+        );
+        let controller = controller(&options);
+        set_slider_controller_value(&controller, 0.1);
+        assert_eq!(get_slider_controller_value(&controller), 0.1);
+    }
 }

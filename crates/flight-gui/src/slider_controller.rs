@@ -8,30 +8,30 @@ use flight_signals::{Signal, create_signal};
 use std::sync::{Arc, RwLock};
 pub type SliderController = GuiController<SliderControllerFields>;
 pub struct SliderControllerOptions {
-    pub maximum: Option<f32>,
-    pub minimum: Option<f32>,
+    pub maximum: Option<f64>,
+    pub minimum: Option<f64>,
     pub orientation: Option<GuiOrientation>,
     pub thumb: Node2DRef,
     pub track: Node2DRef,
-    pub value: Option<f32>,
+    pub value: Option<f64>,
     pub transition: Option<Arc<GuiTransitionDescriptor>>,
-    pub step: Option<f32>,
+    pub step: Option<f64>,
 }
 pub struct SliderControllerSignals {
-    pub on_change: Ref<Signal<f32>>,
+    pub on_change: Ref<Signal<f64>>,
 }
 pub struct SliderControllerFields {
     pub drag_pointer: i32,
-    pub drag_start_coordinate: f32,
-    pub drag_start_value: f32,
-    pub maximum: f32,
-    pub minimum: f32,
+    pub drag_start_coordinate: f64,
+    pub drag_start_value: f64,
+    pub maximum: f64,
+    pub minimum: f64,
     pub orientation: GuiOrientation,
     pub signals: Ref<SliderControllerSignals>,
     pub thumb: Option<Node2DRef>,
     pub track: Option<Node2DRef>,
-    pub value: f32,
-    pub step: Option<f32>,
+    pub value: f64,
+    pub step: Option<f64>,
 }
 pub fn create_slider_controller(options: &SliderControllerOptions) -> SliderController {
     let mut out: SliderController = allocate_entity();
@@ -44,7 +44,7 @@ pub fn initialize_slider_controller(out: &mut SliderController, options: &Slider
     let minimum = options.minimum.unwrap_or(0.0);
     let requested = options.maximum.unwrap_or(1.0);
     let maximum = if minimum.is_nan() || requested.is_nan() {
-        f32::NAN
+        f64::NAN
     } else {
         minimum.max(requested)
     };
@@ -214,7 +214,7 @@ pub fn get_slider_controller_signals(
         .clone();
 }
 
-pub fn get_slider_controller_value(controller: &SliderController) -> f32 {
+pub fn get_slider_controller_value(controller: &SliderController) -> f64 {
     return get_gui_controller_runtime(controller)
         .read()
         .unwrap()
@@ -222,7 +222,7 @@ pub fn get_slider_controller_value(controller: &SliderController) -> f32 {
         .value;
 }
 
-fn get_travel(r: &Ref<GuiControllerRuntime<SliderControllerFields>>) -> f32 {
+fn get_travel(r: &Ref<GuiControllerRuntime<SliderControllerFields>>) -> f64 {
     let (track, thumb, orientation) = {
         let s = r.read().unwrap();
         (
@@ -242,7 +242,7 @@ fn get_travel(r: &Ref<GuiControllerRuntime<SliderControllerFields>>) -> f32 {
     };
 }
 
-fn set_from_track(r: &Ref<GuiControllerRuntime<SliderControllerFields>>, coordinate: f32) {
+fn set_from_track(r: &Ref<GuiControllerRuntime<SliderControllerFields>>, coordinate: f64) {
     let (track, orientation, minimum, maximum) = {
         let s = r.read().unwrap();
         (
@@ -264,11 +264,11 @@ fn set_from_track(r: &Ref<GuiControllerRuntime<SliderControllerFields>>, coordin
     set_value_runtime(r, minimum + ratio * (maximum - minimum));
 }
 
-pub fn set_slider_controller_value(controller: &SliderController, value: f32) {
+pub fn set_slider_controller_value(controller: &SliderController, value: f64) {
     set_value_runtime(&get_gui_controller_runtime(controller), value);
 }
 
-pub(crate) fn set_value_runtime(r: &Ref<GuiControllerRuntime<SliderControllerFields>>, value: f32) {
+pub(crate) fn set_value_runtime(r: &Ref<GuiControllerRuntime<SliderControllerFields>>, value: f64) {
     let next = {
         let mut s = r.write().unwrap();
         let next = clamp_gui_value(

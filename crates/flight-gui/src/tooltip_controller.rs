@@ -10,20 +10,20 @@ use std::sync::Arc;
 pub type TooltipController = GuiController<TooltipControllerFields>;
 pub struct TooltipControllerOptions {
     pub content: Node2DRef,
-    pub delay: Option<f32>,
+    pub delay: Option<f64>,
     pub offset: Option<Vector2>,
     pub target: Node2DRef,
     pub transition: Option<Arc<GuiTransitionDescriptor>>,
 }
 pub struct TooltipControllerFields {
     pub content: Option<Node2DRef>,
-    pub delay: f32,
-    pub offset_x: f32,
-    pub offset_y: f32,
+    pub delay: f64,
+    pub offset_x: f64,
+    pub offset_y: f64,
     pub target: Option<Node2DRef>,
     pub timer: Option<TimerHandle>,
-    pub world_x: f32,
-    pub world_y: f32,
+    pub world_x: f64,
+    pub world_y: f64,
     pub timer_capability: Arc<HostTimerCapability>,
 }
 // flight-lint: allow(conform-params) D5 source setTimeout requires the caller's canonical HostTimerCapability
@@ -97,8 +97,7 @@ pub fn initialize_tooltip_controller(
                     show_runtime(&r);
                 } else {
                     let state = r.clone();
-                    let handle =
-                        (timer.set_timeout)(delay.into(), Arc::new(move || show_runtime(&state)));
+                    let handle = (timer.set_timeout)(delay, Arc::new(move || show_runtime(&state)));
                     r.write().unwrap().fields.timer = Some(handle);
                 }
             }),

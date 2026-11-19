@@ -22,7 +22,7 @@ pub struct ListControllerSignals {
     pub on_select: Ref<Signal<i32>>,
 }
 pub struct ListControllerFields {
-    pub base_content_y: f32,
+    pub base_content_y: f64,
     pub content: Option<Node2DRef>,
     pub items: Vec<Node2DRef>,
     pub scroll_bar: Option<Ref<ScrollBarController>>,

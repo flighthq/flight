@@ -8,21 +8,21 @@ use std::sync::Arc;
 pub type ProgressBarController = GuiController<ProgressBarControllerFields>;
 pub struct ProgressBarControllerOptions {
     pub fill: Node2DRef,
-    pub maximum: Option<f32>,
-    pub minimum: Option<f32>,
+    pub maximum: Option<f64>,
+    pub minimum: Option<f64>,
     pub orientation: Option<GuiOrientation>,
     pub track: Node2DRef,
-    pub value: Option<f32>,
+    pub value: Option<f64>,
     pub transition: Option<Arc<GuiTransitionDescriptor>>,
 }
 pub struct ProgressBarControllerFields {
-    pub base_scale: f32,
+    pub base_scale: f64,
     pub fill: Option<Node2DRef>,
-    pub maximum: f32,
-    pub minimum: f32,
+    pub maximum: f64,
+    pub minimum: f64,
     pub orientation: GuiOrientation,
     pub track: Option<Node2DRef>,
-    pub value: f32,
+    pub value: f64,
 }
 pub fn create_progress_bar_controller(
     options: &ProgressBarControllerOptions,
@@ -74,7 +74,7 @@ pub fn dispose_progress_bar_controller(controller: &ProgressBarController) {
     });
 }
 
-pub fn get_progress_bar_controller_value(controller: &ProgressBarController) -> f32 {
+pub fn get_progress_bar_controller_value(controller: &ProgressBarController) -> f64 {
     return get_gui_controller_runtime(controller)
         .read()
         .unwrap()
@@ -82,14 +82,14 @@ pub fn get_progress_bar_controller_value(controller: &ProgressBarController) -> 
         .value;
 }
 
-fn js_max(a: f32, b: f32) -> f32 {
+fn js_max(a: f64, b: f64) -> f64 {
     if a.is_nan() || b.is_nan() {
-        return f32::NAN;
+        return f64::NAN;
     }
     return a.max(b);
 }
 
-pub fn set_progress_bar_controller_value(controller: &ProgressBarController, value: f32) {
+pub fn set_progress_bar_controller_value(controller: &ProgressBarController, value: f64) {
     let runtime = get_gui_controller_runtime(controller);
     {
         let mut r = runtime.write().unwrap();

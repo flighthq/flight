@@ -13,8 +13,8 @@ pub struct WindowControllerOptions {
     pub content: Option<Node2DRef>,
     pub draggable: Option<bool>,
     pub frame: Node2DRef,
-    pub minimum_height: Option<f32>,
-    pub minimum_width: Option<f32>,
+    pub minimum_height: Option<f64>,
+    pub minimum_width: Option<f64>,
     pub resizable: Option<bool>,
     pub resize_handle: Option<Node2DRef>,
     pub title_bar: Option<Node2DRef>,
@@ -22,31 +22,31 @@ pub struct WindowControllerOptions {
 }
 pub struct WindowControllerSignals {
     pub on_close: Ref<Signal<()>>,
-    pub on_move: Ref<Signal<(f32, f32)>>,
-    pub on_resize: Ref<Signal<(f32, f32)>>,
+    pub on_move: Ref<Signal<(f64, f64)>>,
+    pub on_resize: Ref<Signal<(f64, f64)>>,
 }
 pub struct WindowControllerFields {
     pub close_button: Option<Ref<ButtonController>>,
     pub content: Option<Node2DRef>,
     pub drag_pointer: i32,
-    pub drag_start_frame_x: f32,
-    pub drag_start_frame_y: f32,
-    pub drag_start_world_x: f32,
-    pub drag_start_world_y: f32,
+    pub drag_start_frame_x: f64,
+    pub drag_start_frame_y: f64,
+    pub drag_start_world_x: f64,
+    pub drag_start_world_y: f64,
     pub draggable: bool,
     pub frame: Option<Node2DRef>,
-    pub frame_base_height: f32,
-    pub frame_base_scale_x: f32,
-    pub frame_base_scale_y: f32,
-    pub frame_base_width: f32,
-    pub minimum_height: f32,
-    pub minimum_width: f32,
+    pub frame_base_height: f64,
+    pub frame_base_scale_x: f64,
+    pub frame_base_scale_y: f64,
+    pub frame_base_width: f64,
+    pub minimum_height: f64,
+    pub minimum_width: f64,
     pub resize_handle: Option<Node2DRef>,
     pub resize_pointer: i32,
-    pub resize_start_height: f32,
-    pub resize_start_width: f32,
-    pub resize_start_world_x: f32,
-    pub resize_start_world_y: f32,
+    pub resize_start_height: f64,
+    pub resize_start_width: f64,
+    pub resize_start_world_x: f64,
+    pub resize_start_world_y: f64,
     pub resizable: bool,
     pub signals: Ref<WindowControllerSignals>,
     pub title_bar: Option<Node2DRef>,
@@ -266,15 +266,15 @@ pub fn get_window_controller_signals(
         .clone();
 }
 
-fn maximum(a: f32, b: f32) -> f32 {
+fn maximum(a: f64, b: f64) -> f64 {
     return if a.is_nan() || b.is_nan() {
-        f32::NAN
+        f64::NAN
     } else {
         a.max(b)
     };
 }
 
-fn set_position_runtime(r: &Ref<GuiControllerRuntime<WindowControllerFields>>, x: f32, y: f32) {
+fn set_position_runtime(r: &Ref<GuiControllerRuntime<WindowControllerFields>>, x: f64, y: f64) {
     let frame = {
         let s = r.read().unwrap();
         if s.disposed {
@@ -301,8 +301,8 @@ fn set_position_runtime(r: &Ref<GuiControllerRuntime<WindowControllerFields>>, x
 
 fn set_size_runtime(
     r: &Ref<GuiControllerRuntime<WindowControllerFields>>,
-    width: f32,
-    height: f32,
+    width: f64,
+    height: f64,
 ) {
     let (next_width, next_height) = {
         let s = r.read().unwrap();
@@ -347,11 +347,11 @@ fn set_size_runtime(
     emit_gui_signal(&signal, &(next_width, next_height));
 }
 
-pub fn set_window_controller_position(controller: &WindowController, x: f32, y: f32) {
+pub fn set_window_controller_position(controller: &WindowController, x: f64, y: f64) {
     set_position_runtime(&get_gui_controller_runtime(controller), x, y);
 }
 
-pub fn set_window_controller_size(controller: &WindowController, width: f32, height: f32) {
+pub fn set_window_controller_size(controller: &WindowController, width: f64, height: f64) {
     set_size_runtime(&get_gui_controller_runtime(controller), width, height);
 }
 #[cfg(feature = "object-api")]

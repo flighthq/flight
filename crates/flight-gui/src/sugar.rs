@@ -7,8 +7,8 @@ use flight_entity::Ref;
 use flight_scene2d::Node2DRef;
 
 pub trait GuiNodeMethods {
-    fn gui_length(&self, orientation: GuiOrientation) -> f32;
-    fn gui_position(&self, orientation: GuiOrientation) -> f32;
+    fn gui_length(&self, orientation: GuiOrientation) -> f64;
+    fn gui_position(&self, orientation: GuiOrientation) -> f64;
     fn emit_gui_keyboard(
         &self,
         name: flight_interaction::contract::InteractionSignalName,
@@ -1697,10 +1697,10 @@ impl GuiNodeMethods for Node2DRef {
     ) {
         emit_gui_pointer(self, name, fields);
     }
-    fn gui_length(&self, orientation: GuiOrientation) -> f32 {
+    fn gui_length(&self, orientation: GuiOrientation) -> f64 {
         return get_gui_length(self, orientation);
     }
-    fn gui_position(&self, orientation: GuiOrientation) -> f32 {
+    fn gui_position(&self, orientation: GuiOrientation) -> f64 {
         return get_gui_position(self, orientation);
     }
 }
@@ -1762,10 +1762,10 @@ impl ProgressBarController {
     pub fn dispose(&self) {
         dispose_progress_bar_controller(self);
     }
-    pub fn set_value(&self, value: f32) {
+    pub fn set_value(&self, value: f64) {
         set_progress_bar_controller_value(self, value);
     }
-    pub fn value(&self) -> f32 {
+    pub fn value(&self) -> f64 {
         return get_progress_bar_controller_value(self);
     }
 }
@@ -1807,13 +1807,13 @@ impl SliderController {
     pub fn dispose(&self) {
         dispose_slider_controller(self);
     }
-    pub fn set_value(&self, value: f32) {
+    pub fn set_value(&self, value: f64) {
         set_slider_controller_value(self, value);
     }
     pub fn signals(&self) -> Ref<SliderControllerSignals> {
         return get_slider_controller_signals(self);
     }
-    pub fn value(&self) -> f32 {
+    pub fn value(&self) -> f64 {
         return get_slider_controller_value(self);
     }
 }
@@ -1823,13 +1823,13 @@ impl ScrollBarController {
     pub fn dispose(&self) {
         dispose_scroll_bar_controller(self);
     }
-    pub fn set_value(&self, value: f32) {
+    pub fn set_value(&self, value: f64) {
         set_scroll_bar_controller_value(self, value);
     }
     pub fn signals(&self) -> Ref<ScrollBarControllerSignals> {
         return get_scroll_bar_controller_signals(self);
     }
-    pub fn value(&self) -> f32 {
+    pub fn value(&self) -> f64 {
         return get_scroll_bar_controller_value(self);
     }
 }
@@ -1874,16 +1874,16 @@ impl ScrollViewController {
     pub fn dispose(&self) {
         dispose_scroll_view_controller(self);
     }
-    pub fn set_position(&self, x: f32, y: f32) {
+    pub fn set_position(&self, x: f64, y: f64) {
         set_scroll_view_controller_position(self, x, y);
     }
     pub fn signals(&self) -> Ref<ScrollViewControllerSignals> {
         return get_scroll_view_controller_signals(self);
     }
-    pub fn x(&self) -> f32 {
+    pub fn x(&self) -> f64 {
         return get_scroll_view_controller_x(self);
     }
-    pub fn y(&self) -> f32 {
+    pub fn y(&self) -> f64 {
         return get_scroll_view_controller_y(self);
     }
 }
@@ -1893,10 +1893,10 @@ impl SplitPaneController {
     pub fn dispose(&self) {
         dispose_split_pane_controller(self);
     }
-    pub fn position(&self) -> f32 {
+    pub fn position(&self) -> f64 {
         return get_split_pane_controller_position(self);
     }
-    pub fn set_position(&self, position: f32) {
+    pub fn set_position(&self, position: f64) {
         set_split_pane_controller_position(self, position);
     }
     pub fn signals(&self) -> Ref<SplitPaneControllerSignals> {
@@ -1909,10 +1909,10 @@ impl WindowController {
     pub fn dispose(&self) {
         dispose_window_controller(self);
     }
-    pub fn set_position(&self, x: f32, y: f32) {
+    pub fn set_position(&self, x: f64, y: f64) {
         set_window_controller_position(self, x, y);
     }
-    pub fn set_size(&self, width: f32, height: f32) {
+    pub fn set_size(&self, width: f64, height: f64) {
         set_window_controller_size(self, width, height);
     }
     pub fn signals(&self) -> Ref<WindowControllerSignals> {

@@ -389,9 +389,19 @@ fn update_caret(r: &Ref<GuiControllerRuntime<TextInputControllerFields>>) {
     };
     get_text_input_caret_rectangle(&mut rectangle, &field, &layout.read().unwrap());
     let caret = r.read().unwrap().fields.caret.clone();
-    set_gui_position(r, caret.as_ref(), GuiOrientation::Horizontal, rectangle.x);
+    set_gui_position(
+        r,
+        caret.as_ref(),
+        GuiOrientation::Horizontal,
+        f64::from(rectangle.x),
+    );
     let caret = r.read().unwrap().fields.caret.clone();
-    set_gui_position(r, caret.as_ref(), GuiOrientation::Vertical, rectangle.y);
+    set_gui_position(
+        r,
+        caret.as_ref(),
+        GuiOrientation::Vertical,
+        f64::from(rectangle.y),
+    );
 }
 #[cfg(feature = "object-api")]
 impl TextInputController {

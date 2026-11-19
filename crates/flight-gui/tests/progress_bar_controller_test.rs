@@ -89,4 +89,13 @@ mod set_progress_bar_controller_value {
         set_progress_bar_controller_value(&controller, 5.0);
         assert_eq!(fill.read().unwrap().scale_y, 0.5);
     }
+    #[test]
+    fn keeps_an_in_range_value_as_an_exact_double() {
+        // 0.1 has no exact f32: an f32 value store would read back 0.10000000149011612.
+        let fill = create_gui_test_node(None, None);
+        let options = progress_options(fill, create_gui_test_node(None, None));
+        let controller = create_progress_bar_controller(&options);
+        set_progress_bar_controller_value(&controller, 0.1);
+        assert_eq!(get_progress_bar_controller_value(&controller), 0.1);
+    }
 }

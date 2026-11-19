@@ -15,7 +15,7 @@ mod clamp_gui_value {
     fn clamps_finite_values_and_normalizes_reversed_bounds() {
         assert_eq!(clamp_gui_value(8.0, 0.0, 5.0), 5.0);
         assert_eq!(clamp_gui_value(2.0, 5.0, 0.0), 2.0);
-        assert_eq!(clamp_gui_value(f32::NAN, 2.0, 5.0), 2.0);
+        assert_eq!(clamp_gui_value(f64::NAN, 2.0, 5.0), 2.0);
     }
 }
 mod configure_gui_hit_area {
@@ -272,6 +272,22 @@ mod set_gui_position {
         set_gui_position(&runtime, Some(&handle), GuiOrientation::Vertical, 5.0);
         assert_eq!(node.read().unwrap().y, 5.0);
     }
+    #[test]
+    fn writes_both_axes_through_the_visual_path_as_exact_doubles() {
+        // 0.1 has no exact f32 and f32 spacing at 1e9 is 64: both survive only as doubles.
+        let runtime = create_gui_controller_runtime((), None);
+        let node = create_gui_test_node(None, None);
+        let handle: Node2DRef = node.clone();
+        set_gui_position(&runtime, Some(&handle), GuiOrientation::Horizontal, 0.1);
+        set_gui_position(
+            &runtime,
+            Some(&handle),
+            GuiOrientation::Vertical,
+            1_000_000_000.5,
+        );
+        let node = node.read().unwrap();
+        assert_eq!((node.x, node.y), (0.1, 1_000_000_000.5));
+    }
 }
 mod set_gui_scale {
     use super::*;
@@ -354,7 +370,7 @@ mod snap_gui_value {
     #[test]
     fn preserves_the_source_rounded_grid_index_at_f32_boundaries() {
         assert_eq!(snap_gui_value(0.49999997, 0.0, Some(1.0)), 0.0);
-        assert_eq!(snap_gui_value(-2.0_f32.powi(-25), -1.0, Some(2.0)), -1.0);
+        assert_eq!(snap_gui_value(-2.0_f64.powi(-25), -1.0, Some(2.0)), -1.0);
     }
     #[test]
     fn snaps_around_the_minimum() {
