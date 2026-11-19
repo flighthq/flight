@@ -2,6 +2,7 @@ mod callback_alias;
 mod native_bindings;
 mod public_perimeter;
 mod reachability;
+mod render_pass_bracket;
 mod signal_identity;
 mod signal_ref_connect;
 use std::collections::{BTreeMap, BTreeSet};
@@ -1386,6 +1387,11 @@ fn main() {
     all_output.push_str(&declared.output);
     writeln!(all_output).unwrap();
 
+    let brackets = generate_borrow_erased_brackets(crates_dir, &mut seen_names);
+    writeln!(all_output, "// borrow-erased brackets").unwrap();
+    all_output.push_str(&brackets.output);
+    writeln!(all_output).unwrap();
+
     assert_eq!(
         shape_bounds_handlers_seen.len(),
         SHAPE_BOUNDS_HANDLER_FNS.len(),
@@ -1470,6 +1476,19 @@ fn main() {
     .unwrap();
     for line in &declared.report {
         writeln!(stats_file, "  declared: {line}").unwrap();
+    }
+    writeln!(
+        stats_file,
+        "FFI borrow-erased brackets: {} brackets, {} consumers",
+        render_pass_bracket::BORROW_ERASED_BRACKETS.len(),
+        render_pass_bracket::BORROW_ERASED_BRACKETS
+            .iter()
+            .map(|bracket| bracket.consumers.len())
+            .sum::<usize>()
+    )
+    .unwrap();
+    for line in &brackets.report {
+        writeln!(stats_file, "  bracket: {line}").unwrap();
     }
     let mut sorted_skips: Vec<_> = stats_skipped.iter().collect();
     sorted_skips.sort_by(|a, b| b.1.cmp(a.1));
@@ -2098,6 +2117,156 @@ fn generate_declared_instantiations(
         ));
     }
     return DeclaredOutput { output, report };
+}
+
+// Emits every BORROW_ERASED_BRACKETS entry: its handle support, begin, end and free, then one bool
+// wrapper per consumer. Each begin, end and consumer signature must match the table exactly and be
+// TypeScript-public, and every symbol must be unused; any drift is a build error.
+fn generate_borrow_erased_brackets(
+    crates_dir: &Path,
+    seen_names: &mut BTreeSet<String>,
+) -> DeclaredOutput {
+    let mut output = String::new();
+    let mut report = Vec::new();
+    for bracket in render_pass_bracket::BORROW_ERASED_BRACKETS {
+        let signatures = collect_bracket_crate_signatures(crates_dir, bracket.crate_dir);
+        for (function, expected) in [
+            (bracket.begin, bracket.begin_signature),
+            (bracket.end, bracket.end_signature),
+        ] {
+            render_pass_bracket::check_bracket_signature(&signatures, function, expected)
+                .unwrap_or_else(|error| panic!("{error}"));
+            check_bracket_public(crates_dir, bracket.crate_dir, function);
+        }
+        let begin = parse_fn_signature(&format!(
+            "{} {{",
+            bracket.begin_signature.replacen("<'a>", "", 1)
+        ))
+        .expect("bracket begin signature parses");
+        let target = lower_bracket_param(&begin.params[1], "return std::ptr::null_mut();");
+        let clear = lower_bracket_param(&begin.params[2], "return std::ptr::null_mut();");
+        output.push_str(&render_pass_bracket::generate_bracket_support(
+            bracket, &target, &clear,
+        ));
+        for name in [bracket.ffi_begin, bracket.ffi_end, bracket.ffi_free] {
+            assert!(
+                seen_names.insert(name.to_string()),
+                "{name} collides with an existing FFI symbol"
+            );
+        }
+        report.push(format!(
+            "{} / {} / {} = {}::{}..{} over {}",
+            bracket.ffi_begin,
+            bracket.ffi_end,
+            bracket.ffi_free,
+            bracket.crate_dir,
+            bracket.begin,
+            bracket.end,
+            bracket.handle
+        ));
+        for consumer in bracket.consumers {
+            let signatures = collect_bracket_crate_signatures(crates_dir, consumer.crate_dir);
+            render_pass_bracket::check_bracket_signature(
+                &signatures,
+                consumer.function,
+                consumer.signature,
+            )
+            .unwrap_or_else(|error| panic!("{error}"));
+            check_bracket_public(crates_dir, consumer.crate_dir, consumer.function);
+            let func = parse_fn_signature(&format!("{} {{", consumer.signature))
+                .expect("bracket consumer signature parses");
+            let params: Vec<_> = func.params[1..]
+                .iter()
+                .map(|param| lower_bracket_param(param, "return false;"))
+                .collect();
+            output.push_str(&render_pass_bracket::generate_bracket_consumer(
+                bracket, consumer, &params,
+            ));
+            assert!(
+                seen_names.insert(consumer.ffi_name.to_string()),
+                "{} collides with an existing FFI symbol",
+                consumer.ffi_name
+            );
+            report.push(format!(
+                "{} = {}::{} over {}",
+                consumer.ffi_name, consumer.crate_dir, consumer.function, bracket.handle
+            ));
+        }
+        render_pass_bracket::check_bracket_free_link(&output, bracket)
+            .unwrap_or_else(|error| panic!("{error}"));
+    }
+    return DeclaredOutput { output, report };
+}
+
+// Every top-level `pub fn` signature in a crate's non-test source files.
+fn collect_bracket_crate_signatures(crates_dir: &Path, crate_dir: &str) -> Vec<String> {
+    let src_dir = crates_dir.join(crate_dir).join("src");
+    println!("cargo::rerun-if-changed={}", src_dir.display());
+    let mut files: Vec<_> = fs::read_dir(&src_dir)
+        .unwrap()
+        .filter_map(|e| e.ok())
+        .map(|e| e.path())
+        .filter(|path| {
+            path.extension().is_some_and(|ext| ext == "rs")
+                && !path.file_name().unwrap().to_string_lossy().contains("test")
+        })
+        .collect();
+    files.sort();
+    let mut signatures = Vec::new();
+    for path in files {
+        signatures.extend(collect_pub_fn_signatures(
+            &fs::read_to_string(&path).unwrap(),
+        ));
+    }
+    return signatures;
+}
+
+// A bracket function must be TypeScript-public in its crate, like any generated wrapper.
+fn check_bracket_public(crates_dir: &Path, crate_dir: &str, function: &str) {
+    let ts_exports = collect_ts_exports(&crates_dir.join(crate_dir).join("src"));
+    assert!(
+        ts_exports
+            .public
+            .contains(&public_perimeter::get_export_key(function)),
+        "borrow-erased bracket function {function} must be TypeScript-public in {crate_dir}"
+    );
+}
+
+// One non-handle bracket parameter through the ordinary parameter lowering. A pointer lowered from
+// an `Option` may be NULL; every other pointer is required. A binding that rejects its handle (a
+// node handle without the required view) returns `invalid_return`, the wrapper's failure result.
+fn lower_bracket_param(param: &Param, invalid_return: &str) -> render_pass_bracket::LoweredParam {
+    let mapped = map_param_to_ffi(&param.name, &param.ty).unwrap_or_else(|| {
+        panic!(
+            "borrow-erased bracket parameter {}: {} must lower ordinarily",
+            param.name, param.ty
+        )
+    });
+    let optional = strip_crate_paths(&strip_lifetimes(&resolve_type_alias(param.ty.trim())))
+        .starts_with("Option<");
+    let mut required = Vec::new();
+    let mut nullable = Vec::new();
+    for (name, ty) in &mapped.ffi_params {
+        if ty.starts_with('*') {
+            if optional {
+                nullable.push(name.clone());
+            } else {
+                required.push(name.clone());
+            }
+        }
+    }
+    let bindings = mapped
+        .bindings
+        .iter()
+        .map(|binding| binding.replace(INVALID_NODE_RETURN, invalid_return))
+        .collect();
+    return render_pass_bracket::LoweredParam {
+        ffi_params: mapped.ffi_params,
+        bindings,
+        call_expr: mapped.call_expr,
+        required,
+        nullable,
+    };
 }
 
 // Reads the entry's generic signature from its crate and substitutes each bound type parameter,

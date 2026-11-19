@@ -1,6 +1,6 @@
 format|ffi-reachability-baseline|1
 policy|host_capability|feature-gated native host crates supply borrowed Host*Capability carriers
-summary|policy-exempt|278|unreachable|2345|blocking-carriers|699
+summary|policy-exempt|278|unreachable|2351|blocking-carriers|701
 carrier|1|*const Option<String>
 carrier|2|*const flight_sdk::AbcInstruction
 carrier|1|*const flight_sdk::AccessibilityNode
@@ -330,6 +330,7 @@ carrier|1|*const flight_sdk::VideoChannelRuntimeStateRef
 carrier|2|*const flight_sdk::VideoResourceUrl
 carrier|2|*const flight_sdk::ViewportAlign
 carrier|1|*const flight_sdk::VoxelGrid
+carrier|1|*const flight_sdk::WgpuRenderTarget
 carrier|4|*const flight_sdk::WindowBounds
 carrier|1|*const flight_sdk::interaction::contract::HitTestContext
 carrier|1|*const flight_sdk::node::contract::AdjustmentRef
@@ -569,6 +570,7 @@ carrier|2|*mut flight_sdk::skeleton2d::contract::Skeleton2DGuardState
 carrier|1|*mut flight_sdk::skeleton2d::contract::Slot2D
 carrier|2|*mut flight_sdk::text_markup::contract::TextMarkupGuardState
 carrier|1|*mut flight_sdk::textlayout::contract::TextLayoutMeasureState
+carrier|5|Box<FfiWgpuRenderPassHandle>
 carrier|1|Box<Vec<flight_sdk::AnimationTrackValidationDiagnostic>>
 carrier|1|Box<Vec<flight_sdk::ColorKeyframe>>
 carrier|1|Box<Vec<flight_sdk::CommandRef>>
@@ -1050,6 +1052,7 @@ unreachable|flight_bake_color_lut|Box<flight_sdk::ColorTransformFunction>
 unreachable|flight_bake_color_lut_for_run|Box<flight_sdk::Ref<dyn flight_sdk::Adjustment>>
 unreachable|flight_begin_debug_span|Box<flight_sdk::Ref<flight_sdk::DebugState>>
 unreachable|flight_begin_log_group|Box<flight_sdk::Ref<flight_sdk::LogState>>
+unreachable|flight_begin_wgpu_render_pass|*const flight_sdk::WgpuRenderTarget
 unreachable|flight_bevel_bitmap|*const flight_sdk::BitmapBevelOptions
 unreachable|flight_box_blur_bitmap|*const flight_sdk::BitmapBoxBlurOptions
 unreachable|flight_build_rich_text_layout_params|Box<flight_sdk::TextMeasureFunction>
@@ -1278,6 +1281,7 @@ unreachable|flight_enable_video_channel_signals|Box<flight_sdk::Ref<flight_sdk::
 unreachable|flight_end_debug_span|Box<flight_sdk::Ref<flight_sdk::LogState>>
 unreachable|flight_end_log_group|Box<flight_sdk::Ref<flight_sdk::LogState>>
 unreachable|flight_end_log_timer|Box<flight_sdk::Ref<flight_sdk::LogState>>
+unreachable|flight_end_wgpu_render_pass|Box<FfiWgpuRenderPassHandle>
 unreachable|flight_enter_log_span|Box<flight_sdk::LogSpan>
 unreachable|flight_equals_skeleton_2d|*const flight_sdk::Skeleton2D
 unreachable|flight_equals_snapshot|Box<flight_sdk::Snapshot>
@@ -1335,6 +1339,7 @@ unreachable|flight_format_unit|*const flight_sdk::LocaleInput
 unreachable|flight_frame_orbit_camera_controller_to_sphere|*const flight_sdk::Projection
 unreachable|flight_free_material2_d_ref|Box<flight_sdk::Ref<dyn flight_sdk::Material2D>>
 unreachable|flight_free_material_data_ref|Box<flight_sdk::Ref<dyn flight_sdk::MaterialData>>
+unreachable|flight_free_wgpu_render_pass_handle|Box<FfiWgpuRenderPassHandle>
 unreachable|flight_get_abc_file_major_version|Box<flight_sdk::AbcFile>
 unreachable|flight_get_abc_file_minor_version|Box<flight_sdk::AbcFile>
 unreachable|flight_get_abc_instruction_offset|*const flight_sdk::AbcInstruction
@@ -2389,6 +2394,9 @@ unreachable|flight_remove_physics2d_collider|Box<flight_sdk::Ref<flight_sdk::Phy
 unreachable|flight_remove_physics2d_joint|*const flight_sdk::Physics2DJointRef
 unreachable|flight_remove_timeline_frame_script|*const flight_sdk::TimelineFrameArg
 unreachable|flight_remove_tray_balloon|Box<flight_sdk::Ref<flight_sdk::TrayIcon>>
+unreachable|flight_render_wgpu_environment_skybox|Box<FfiWgpuRenderPassHandle>
+unreachable|flight_render_wgpu_scene2d|Box<FfiWgpuRenderPassHandle>
+unreachable|flight_render_wgpu_scene3d|Box<FfiWgpuRenderPassHandle>
 unreachable|flight_reorder_bidi_line|Box<Vec<usize>>
 unreachable|flight_replace_flow_state|Box<flight_sdk::Ref<flight_sdk::FlowGuardState>>
 unreachable|flight_request_app_window_fullscreen|Box<flight_sdk::Ref<flight_sdk::FullscreenTargetHandle>>

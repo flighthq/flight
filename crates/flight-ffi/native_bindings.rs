@@ -217,7 +217,18 @@ fn carrier(ty: &Type) -> Carrier {
                 _ => None,
             };
             let is_char = matches!(&*pointer.elem, Type::Path(p) if p.path.segments.last().is_some_and(|s| s.ident == "c_char"));
-            let c = if is_shape_bounds_vtable {
+            // The borrow-erased pass handle is the one opaque SDK carrier C sees by name, so a pass
+            // cannot be passed where a state or target is expected.
+            let is_render_pass_handle = matches!(
+                &*pointer.elem,
+                Type::Path(p)
+                    if p.path.segments.last().is_some_and(|segment| {
+                        segment.ident == "FfiWgpuRenderPassHandle"
+                    })
+            );
+            let c = if is_render_pass_handle {
+                "FlightWgpuRenderPassHandle *".to_string()
+            } else if is_shape_bounds_vtable {
                 if pointer.const_token.is_some() {
                     "const FlightShapeBoundsContextVTable *".to_string()
                 } else {
@@ -991,6 +1002,7 @@ typedef struct FlightShapeBoundsContextVTable {\n\
   bool (*quadratic_curve_to)(void *context, double control_x, double control_y, double x, double y);\n\
   bool (*set_stroke_style)(void *context, double width, uint32_t caps, uint32_t joints, double miter_limit);\n\
 } FlightShapeBoundsContextVTable;\n\
+typedef struct FlightWgpuRenderPassHandle FlightWgpuRenderPassHandle;\n\
 #ifdef __cplusplus\nextern \"C\" {\n#endif\n",
     );
     let mut shim = String::from(
