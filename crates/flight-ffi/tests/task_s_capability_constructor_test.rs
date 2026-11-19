@@ -553,7 +553,13 @@ fn render_inventory(capabilities: &[Capability]) -> String {
             signature
         ));
     }
-    return out;
+    // Empty trailing columns are omitted rather than written as trailing tabs, so every frozen
+    // row is whitespace-clean under `git diff --check`; a reader treats missing trailing fields
+    // as empty.
+    return out
+        .lines()
+        .map(|line| format!("{}\n", line.trim_end_matches('\t')))
+        .collect();
 }
 
 #[test]
