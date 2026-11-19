@@ -351,6 +351,7 @@ fn layout_bitmap_text_lines(
     return BitmapTextLayoutResult { lines, truncated };
 }
 
+// flight-lint: allow(f64) the f32 glyph-layout bounds widen once into the f64 geometry Rectangle
 fn layout_bitmap_text_pages(bitmap_text: &mut BitmapText, guard_state: &BitmapTextGuardState) {
     let data = BitmapTextLayoutData {
         align: bitmap_text.data.align,
@@ -486,10 +487,12 @@ fn layout_bitmap_text_pages(bitmap_text: &mut BitmapText, guard_state: &BitmapTe
     if min_x == f32::INFINITY {
         set_empty_rectangle(bounds);
     } else {
-        bounds.x = min_x;
-        bounds.y = min_y;
-        bounds.width = max_x - min_x;
-        bounds.height = max_y - min_y;
+        // Glyph layout runs in the f32 font-metric and quad lane; the bounds widen into the f64
+        // Rectangle, with the extent taken in f64.
+        bounds.x = f64::from(min_x);
+        bounds.y = f64::from(min_y);
+        bounds.width = f64::from(max_x) - f64::from(min_x);
+        bounds.height = f64::from(max_y) - f64::from(min_y);
     }
     invalidate_bitmap_text_local_bounds(bitmap_text);
 }

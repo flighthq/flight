@@ -499,6 +499,22 @@ mod update_bitmap_text {
     }
 
     #[test]
+    fn subtracts_centered_bounds_endpoints_in_f64() {
+        // The f32 glyph endpoints widen before subtraction: subtracting in f32 first rounds the
+        // width to 16.200000762939453.
+        let text = text_with_options(BitmapTextOptions {
+            align: Some(BitmapTextAlign::Center),
+            letter_spacing: Some(2.2),
+            text: Some("AB".to_string()),
+            wrap_width: Some(Some(10.0)),
+            ..empty_bitmap_text_options()
+        });
+        layout(&text, &guard_state());
+        let bounds = get_bitmap_text_bounds(&text.read().unwrap());
+        assert_eq!(bounds.width, 16.199999809265137);
+    }
+
+    #[test]
     fn reports_bounds_covering_glyph_extent() {
         let text = text_with_options(bitmap_text_options("AB"));
         layout(&text, &guard_state());
