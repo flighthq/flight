@@ -226,7 +226,7 @@ pub fn is_scene3d_hit_front_facing(hit: &Scene3DHit, ray: &Ray3D) -> bool {
         <= 0.0;
 }
 
-fn write_normalized(out: &mut Vector3, x: f32, y: f32, z: f32) -> bool {
+fn write_normalized(out: &mut Vector3, x: f64, y: f64, z: f64) -> bool {
     let length_squared = x * x + y * y + z * z;
     if length_squared == 0.0 {
         return false;

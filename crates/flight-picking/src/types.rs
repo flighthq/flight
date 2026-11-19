@@ -24,17 +24,17 @@ use flight_scene3d::Mesh;
 pub struct Scene3DHit {
     runtime: EntityRuntimeSlot,
     pub node: Option<NodeRef>,
-    pub distance: f32,
+    pub distance: f64,
     pub triangle_index: i32,
-    pub u: f32,
-    pub v: f32,
-    pub w: f32,
-    pub point_x: f32,
-    pub point_y: f32,
-    pub point_z: f32,
-    pub normal_x: f32,
-    pub normal_y: f32,
-    pub normal_z: f32,
+    pub u: f64,
+    pub v: f64,
+    pub w: f64,
+    pub point_x: f64,
+    pub point_y: f64,
+    pub point_z: f64,
+    pub normal_x: f64,
+    pub normal_y: f64,
+    pub normal_z: f64,
 }
 
 /// Options for a scene pick raycast (TS `Scene3DPickOptions`). `predicate` is an include/exclude
@@ -45,7 +45,7 @@ pub struct Scene3DHit {
 #[derive(Clone, Default)]
 pub struct Scene3DPickOptions {
     pub cull_backfaces: Option<bool>,
-    pub max_distance: Option<f32>,
+    pub max_distance: Option<f64>,
     pub predicate: Option<Arc<dyn Fn(&Mesh) -> bool + Send + Sync>>,
 }
 

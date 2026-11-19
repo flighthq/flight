@@ -169,7 +169,7 @@ mod get_scene3d_hit_vertex_normal {
         invalidate_node_local_transform(&node(&mesh));
         let mut out = create_vector3(0.0, 0.0, 0.0);
         assert!(get_scene3d_hit_vertex_normal(&mut out, &hit));
-        let inverse_length = 1.0 / 1.25f32.sqrt();
+        let inverse_length = 1.0 / 1.25f64.sqrt();
         close(out.x, 0.5 * inverse_length, 2);
         close(out.y, inverse_length, 2);
         close(out.z, 0.0, 2);

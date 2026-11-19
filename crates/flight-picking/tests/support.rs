@@ -14,8 +14,8 @@ use flight_node::{NodeRef, add_node_child};
 use flight_scene3d::{Mesh, Node3DFields, create_mesh, create_node3d};
 
 // The source's `toBeCloseTo(expected, digits)`: |actual - expected| < 10^-digits / 2.
-pub fn close(actual: f32, expected: f32, digits: i32) {
-    let tolerance = 10f32.powi(-digits) / 2.0;
+pub fn close(actual: f64, expected: f64, digits: i32) {
+    let tolerance = 10f64.powi(-digits) / 2.0;
     assert!(
         (actual - expected).abs() < tolerance,
         "{actual} is not within {tolerance} of {expected}"
@@ -54,7 +54,7 @@ pub fn make_camera() -> Camera3D {
     {
         let mut projection = projection.write().unwrap();
         projection.aspect = 1.0;
-        projection.fov_y = std::f32::consts::FRAC_PI_2;
+        projection.fov_y = std::f64::consts::FRAC_PI_2;
     }
     camera.projection = Projection::Perspective(projection);
     // Look down -Z at the origin from z = 5.
@@ -69,7 +69,7 @@ pub fn make_camera() -> Camera3D {
 
 // Orthographic camera with a deliberately non-square view volume (half_width != half_height) to
 // guard against a horizontal/vertical mismap. Looks down -Z from z = 5.
-pub fn make_ortho_camera(half_width: f32, half_height: f32) -> Camera3D {
+pub fn make_ortho_camera(half_width: f64, half_height: f64) -> Camera3D {
     let mut camera = create_camera_3d();
     camera.far = 100.0;
     camera.near = 0.1;

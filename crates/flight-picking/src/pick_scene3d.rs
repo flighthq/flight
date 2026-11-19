@@ -58,7 +58,7 @@ pub fn initialize_scene3d_hit(out: &mut Scene3DHit) {
 // Unprojects a camera pick ray into `out`. Orthographic projections ignore `aspect` (their extents
 // are the half-width/half-height on the descriptor), so the passed value only matters for
 // perspective, where it must be the projection's own aspect to avoid a horizontal ray skew.
-fn build_camera_pick_ray(out: &mut Ray3D, camera: &Camera3D, screen_x: f32, screen_y: f32) -> bool {
+fn build_camera_pick_ray(out: &mut Ray3D, camera: &Camera3D, screen_x: f64, screen_y: f64) -> bool {
     let aspect = match &camera.projection {
         Projection::Perspective(projection) => projection.read().unwrap().aspect,
         _ => 1.0,
@@ -106,7 +106,7 @@ fn for_each_scene3d_ray_hit(
     let predicate = options.and_then(|o| o.predicate.as_ref());
     let max_distance = options
         .and_then(|o| o.max_distance)
-        .unwrap_or(f32::INFINITY);
+        .unwrap_or(f64::INFINITY);
     let cull_backfaces = options.and_then(|o| o.cull_backfaces).unwrap_or(false);
     let mut hit = create_scene3d_hit();
     pick_node(
@@ -136,7 +136,7 @@ fn for_each_scene3d_ray_hit(
 fn intersect_mesh_triangles(
     node: &NodeRef,
     ray: &Ray3D,
-    max_distance: f32,
+    max_distance: f64,
     cull_backfaces: bool,
     hit: &mut Scene3DHit,
     on_hit: &mut dyn FnMut(&Scene3DHit),
@@ -253,7 +253,7 @@ fn pick_node(
     node: &NodeRef,
     ray: &Ray3D,
     predicate: Option<&Arc<dyn Fn(&Mesh) -> bool + Send + Sync>>,
-    max_distance: f32,
+    max_distance: f64,
     cull_backfaces: bool,
     hit: &mut Scene3DHit,
     on_hit: &mut dyn FnMut(&Scene3DHit),
@@ -298,8 +298,8 @@ pub fn pick_scene3d(
     out: &mut Scene3DHit,
     scene: &NodeRef,
     camera: &Camera3D,
-    screen_x: f32,
-    screen_y: f32,
+    screen_x: f64,
+    screen_y: f64,
     options: Option<&Scene3DPickOptions>,
 ) -> bool {
     let mut camera_ray = create_ray3d(0.0, 0.0, 0.0, 0.0, 0.0, 0.0);
@@ -317,8 +317,8 @@ pub fn pick_scene3d_all(
     out_array: &mut Vec<Scene3DHit>,
     scene: &NodeRef,
     camera: &Camera3D,
-    screen_x: f32,
-    screen_y: f32,
+    screen_x: f64,
+    screen_y: f64,
     options: Option<&Scene3DPickOptions>,
 ) {
     let mut camera_ray = create_ray3d(0.0, 0.0, 0.0, 0.0, 0.0, 0.0);
@@ -373,7 +373,7 @@ pub fn pick_scene3d_with_ray3d(
     options: Option<&Scene3DPickOptions>,
 ) -> bool {
     let mut found = false;
-    let mut best_t = f32::INFINITY;
+    let mut best_t = f64::INFINITY;
     for_each_scene3d_ray_hit(scene, ray, options, &mut |hit| {
         if hit.distance >= best_t {
             return;

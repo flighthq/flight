@@ -247,7 +247,7 @@ mod pick_scene3d {
         let camera = make_camera();
         let (scene, _) = scene_with_centered_box();
         let mut out = create_scene3d_hit();
-        let within = |max_distance: f32| {
+        let within = |max_distance: f64| {
             return Scene3DPickOptions {
                 cull_backfaces: None,
                 max_distance: Some(max_distance),
@@ -312,7 +312,7 @@ mod pick_scene3d {
         set_quaternion_from_axis_angle(
             &mut q,
             &create_vector3(0.0, 0.0, 1.0),
-            std::f32::consts::FRAC_PI_4,
+            std::f64::consts::FRAC_PI_4,
         );
         copy_quaternion(&mut mesh.write().unwrap().rotation, &q);
         invalidate_node_local_transform(&node(&mesh));
@@ -426,6 +426,20 @@ mod pick_scene3d_all_with_ray3d {
 
 mod pick_scene3d_with_ray3d {
     use super::*;
+
+    #[test]
+    fn keeps_a_quarter_unit_hit_point_on_a_mesh_at_one_billion() {
+        // f32 spacing at 1e9 is 64: an f32 hit point would land on 1e9.
+        let scene = group();
+        let mesh = box_mesh();
+        set_vector3(&mut mesh.write().unwrap().position, 1.0e9, 0.0, 0.0);
+        invalidate_node_local_transform(&node(&mesh));
+        add_node_child(&scene, &node(&mesh));
+        let ray = create_ray3d(1.0e9 + 0.25, 0.0, 10.0, 0.0, 0.0, -1.0);
+        let mut out = create_scene3d_hit();
+        assert!(pick_scene3d_with_ray3d(&mut out, &scene, &ray, None));
+        assert_eq!(out.point_x, 1.0e9 + 0.25);
+    }
 
     #[test]
     fn resolves_the_nearest_hit_for_a_world_space_ray() {

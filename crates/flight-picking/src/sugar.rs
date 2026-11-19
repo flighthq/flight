@@ -149,7 +149,7 @@ mod sugar_tests {
         {
             let mut projection = projection.write().unwrap();
             projection.aspect = 1.0;
-            projection.fov_y = std::f32::consts::FRAC_PI_2;
+            projection.fov_y = std::f64::consts::FRAC_PI_2;
         }
         camera.projection = Projection::Perspective(projection);
         set_camera_3d_view_matrix4_from_look_at(
@@ -221,16 +221,16 @@ pub trait Scene3DPickMethods {
         &self,
         out: &mut Scene3DHit,
         camera: &Camera3D,
-        screen_x: f32,
-        screen_y: f32,
+        screen_x: f64,
+        screen_y: f64,
         options: Option<&Scene3DPickOptions>,
     ) -> bool;
     fn pick_all(
         &self,
         out_array: &mut Vec<Scene3DHit>,
         camera: &Camera3D,
-        screen_x: f32,
-        screen_y: f32,
+        screen_x: f64,
+        screen_y: f64,
         options: Option<&Scene3DPickOptions>,
     );
     fn pick_all_with_ray3d(
@@ -279,8 +279,8 @@ impl Scene3DPickMethods for NodeRef {
         &self,
         out: &mut Scene3DHit,
         camera: &Camera3D,
-        screen_x: f32,
-        screen_y: f32,
+        screen_x: f64,
+        screen_y: f64,
         options: Option<&Scene3DPickOptions>,
     ) -> bool {
         return pick_scene3d(out, self, camera, screen_x, screen_y, options);
@@ -290,8 +290,8 @@ impl Scene3DPickMethods for NodeRef {
         &self,
         out_array: &mut Vec<Scene3DHit>,
         camera: &Camera3D,
-        screen_x: f32,
-        screen_y: f32,
+        screen_x: f64,
+        screen_y: f64,
         options: Option<&Scene3DPickOptions>,
     ) {
         pick_scene3d_all(out_array, self, camera, screen_x, screen_y, options);
