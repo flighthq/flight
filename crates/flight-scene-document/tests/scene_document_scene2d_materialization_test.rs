@@ -55,7 +55,7 @@ fn apply_transform_fields(target: &NodeRef, fields: &FlightDocumentFields) {
         node.node_fields_mut().name = Some(name.clone());
     }
     let number_of = |name: &str| match get_record_value(fields, name) {
-        Some(FlightDocumentValue::Number(value)) => Some(*value as f32),
+        Some(FlightDocumentValue::Number(value)) => Some(*value),
         _ => None,
     };
     let node2d = node.node2d_fields_mut();
@@ -75,7 +75,7 @@ fn apply_transform_fields(target: &NodeRef, fields: &FlightDocumentFields) {
         node2d.rotation = rotation;
     }
     if let Some(alpha) = number_of("alpha") {
-        node2d.alpha = alpha;
+        node2d.alpha = alpha as f32;
     }
 }
 
@@ -92,11 +92,11 @@ fn write_transform_fields(out: &mut FlightDocumentFields, source: &NodeRef) {
         ("scaleX", node2d.scale_x, 1.0),
         ("scaleY", node2d.scale_y, 1.0),
         ("rotation", node2d.rotation, 0.0),
-        ("alpha", node2d.alpha, 1.0),
+        ("alpha", f64::from(node2d.alpha), 1.0),
     ];
     for (name, value, default) in entries {
         if value != default {
-            set_record_value(out, name.to_string(), number(f64::from(value)));
+            set_record_value(out, name.to_string(), number(value));
         }
     }
 }
@@ -198,7 +198,7 @@ fn root_of(materialization: &FlightDocumentScene2DMaterialization) -> NodeRef {
     return materialization.scene.read().unwrap().root.clone();
 }
 
-fn node_x(node: &NodeRef) -> f32 {
+fn node_x(node: &NodeRef) -> f64 {
     return as_node2d_ref(node)
         .unwrap()
         .read()

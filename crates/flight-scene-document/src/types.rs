@@ -6,8 +6,8 @@
 //!
 //! The logical model's numbers are document (JavaScript Number) values: text round trips, the
 //! safe-integer grammar, and 32-bit packed colors authored as plain integers all need double
-//! precision, so they are `f64` (D1). Canonical engine records embedded in a 3D scene (cameras,
-//! lights, transforms) keep their own f32 types.
+//! precision, so they are `f64` (D1), as are the canonical engine records embedded in a 3D scene
+//! (cameras, lights, transforms).
 
 // flight-lint: allow-file(f64) D1: FlightDocument values are JS Numbers; exact text round trips (e.g. 439812095, 4294967295) and Number.isSafeInteger grammar need double precision
 // flight-lint: allow-file(contract-vocabulary) D16 open node, light and material families are native handles; schema hooks, resolvers and transitions are canonical Arc callbacks

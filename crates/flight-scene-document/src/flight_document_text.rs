@@ -19,7 +19,7 @@ use flight_entity::{
 use flight_geometry::contract::{Transform3D, Vector3, create_transform3d};
 use flight_scene3d::{Scene3DDocumentCamera, Scene3DDocumentLight};
 
-use crate::flight_document_light::{canonical_number, get_flight_document_light_fields};
+use crate::flight_document_light::get_flight_document_light_fields;
 use crate::scene_document_refusal::{
     create_document_refusal, get_interactive_state_entries, get_interactive_state_phases,
 };
@@ -67,17 +67,11 @@ pub fn initialize_flight_document_refusal_explanation(out: &mut FlightDocumentRe
 }
 
 fn append_camera(lines: &mut Vec<String>, camera: &Scene3DDocumentCamera) {
-    lines.push(format!(
-        "      - far: {}",
-        format_canonical_number(camera.far)
-    ));
+    lines.push(format!("      - far: {}", format_number(camera.far)));
     if let Some(name) = &camera.name {
         lines.push(format!("        name: {}", format_string(name)));
     }
-    lines.push(format!(
-        "        near: {}",
-        format_canonical_number(camera.near)
-    ));
+    lines.push(format!("        near: {}", format_number(camera.near)));
     if let Some(node) = camera.node {
         lines.push(format!("        node: {}", format_number(f64::from(node))));
     }
@@ -346,11 +340,11 @@ fn append_projection(lines: &mut Vec<String>, projection: &Projection, indent: u
             let projection = projection.read().unwrap();
             lines.push(format!(
                 "{prefix}halfHeight: {}",
-                format_canonical_number(projection.half_height)
+                format_number(projection.half_height)
             ));
             lines.push(format!(
                 "{prefix}halfWidth: {}",
-                format_canonical_number(projection.half_width)
+                format_number(projection.half_width)
             ));
             "orthographic"
         }
@@ -358,12 +352,9 @@ fn append_projection(lines: &mut Vec<String>, projection: &Projection, indent: u
             let projection = projection.read().unwrap();
             lines.push(format!(
                 "{prefix}aspect: {}",
-                format_canonical_number(projection.aspect)
+                format_number(projection.aspect)
             ));
-            lines.push(format!(
-                "{prefix}fovY: {}",
-                format_canonical_number(projection.fov_y)
-            ));
+            lines.push(format!("{prefix}fovY: {}", format_number(projection.fov_y)));
             "perspective"
         }
         Projection::Raw(_) => "raw",
@@ -462,7 +453,7 @@ fn append_transform3d(lines: &mut Vec<String>, transform: &Transform3D, indent: 
     lines.push(format!(
         "{}w: {}",
         " ".repeat(indent + 2),
-        format_canonical_number(transform.rotation.w)
+        format_number(transform.rotation.w)
     ));
     let rotation = [
         transform.rotation.x,
@@ -478,11 +469,11 @@ fn append_vector3(lines: &mut Vec<String>, value: &Vector3, indent: usize) {
     append_vector3_components(lines, [value.x, value.y, value.z], indent);
 }
 
-fn append_vector3_components(lines: &mut Vec<String>, value: [f32; 3], indent: usize) {
+fn append_vector3_components(lines: &mut Vec<String>, value: [f64; 3], indent: usize) {
     let prefix = " ".repeat(indent);
-    lines.push(format!("{prefix}x: {}", format_canonical_number(value[0])));
-    lines.push(format!("{prefix}y: {}", format_canonical_number(value[1])));
-    lines.push(format!("{prefix}z: {}", format_canonical_number(value[2])));
+    lines.push(format!("{prefix}x: {}", format_number(value[0])));
+    lines.push(format!("{prefix}y: {}", format_number(value[1])));
+    lines.push(format!("{prefix}z: {}", format_number(value[2])));
 }
 
 // Nested mapping keys sort by UTF-16 code unit, the canonical order (Principal d1eaec43): the
@@ -550,12 +541,6 @@ fn copy_flight_document_value(
 /// `explainFlightDocumentText`).
 pub fn explain_flight_document_text(text: &str) -> Option<FlightDocumentRefusalExplanation> {
     return read_flight_document_text(text).refusal;
-}
-
-// Formats a canonical f32 engine field (camera, projection, transform) from its shortest round-trip
-// f32 decimal (Principal 68e645eb C3), laid out by the JavaScript Number formatter.
-fn format_canonical_number(value: f32) -> String {
-    return format_number(canonical_number(value));
 }
 
 /// Formats `document` as subset text (TS `formatFlightDocumentText`). Throws `RangeError` for an
@@ -739,9 +724,9 @@ fn read_camera(
         context,
     )?;
     return Some(Scene3DDocumentCamera {
-        far: far as f32,
+        far: far,
         name,
-        near: near as f32,
+        near: near,
         node,
         projection,
         transform,
@@ -1250,8 +1235,8 @@ fn read_projection(
             let projection = create_orthographic_projection();
             {
                 let mut projection = projection.write().unwrap();
-                projection.half_height = half_height as f32;
-                projection.half_width = half_width as f32;
+                projection.half_height = half_height;
+                projection.half_width = half_width;
             }
             Some(Projection::Orthographic(projection))
         }
@@ -1268,8 +1253,8 @@ fn read_projection(
             let projection = create_perspective_projection();
             {
                 let mut projection = projection.write().unwrap();
-                projection.aspect = aspect as f32;
-                projection.fov_y = fov_y as f32;
+                projection.aspect = aspect;
+                projection.fov_y = fov_y;
             }
             Some(Projection::Perspective(projection))
         }
@@ -1522,16 +1507,16 @@ fn read_transform3d(
         &VECTOR_3_KEYS,
     )?;
     let mut transform = create_transform3d();
-    transform.position.x = position[0] as f32;
-    transform.position.y = position[1] as f32;
-    transform.position.z = position[2] as f32;
-    transform.rotation.x = rotation[0] as f32;
-    transform.rotation.y = rotation[1] as f32;
-    transform.rotation.z = rotation[2] as f32;
-    transform.rotation.w = w as f32;
-    transform.scale.x = scale[0] as f32;
-    transform.scale.y = scale[1] as f32;
-    transform.scale.z = scale[2] as f32;
+    transform.position.x = position[0] as f64;
+    transform.position.y = position[1] as f64;
+    transform.position.z = position[2] as f64;
+    transform.rotation.x = rotation[0];
+    transform.rotation.y = rotation[1];
+    transform.rotation.z = rotation[2];
+    transform.rotation.w = w;
+    transform.scale.x = scale[0] as f64;
+    transform.scale.y = scale[1] as f64;
+    transform.scale.z = scale[2] as f64;
     return Some(transform);
 }
 

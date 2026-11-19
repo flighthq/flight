@@ -7,7 +7,7 @@
 //! recognized built-in descriptors into canonical lighting entities just before 3D materialization.
 //! A custom kind passes through as the descriptor itself.
 
-// flight-lint: allow-file(f64) D1: document light fields are JS Numbers; canonical f32 light fields promote from their shortest f32 decimal
+// flight-lint: allow-file(f64) D1: document light fields are JS Numbers, carried exactly into the f64 lighting fields
 // flight-lint: allow-file(contract-vocabulary) D16 open Light family handles retained by Ref<dyn Light>
 
 use std::sync::{Arc, RwLock};
@@ -23,14 +23,6 @@ use flight_lighting::{
 };
 
 use crate::types::*;
-
-// The JS Number of a canonical f32 field: its shortest round-trip f32 decimal (Principal 68e645eb
-// C3), so 0.4f32 is the document number 0.4.
-pub(crate) fn canonical_number(value: f32) -> f64 {
-    return format!("{value:e}")
-        .parse::<f64>()
-        .unwrap_or(f64::from(value));
-}
 
 fn decode_built_in_descriptor(descriptor: &FlightDocumentLightDescriptor) -> Option<LightRef> {
     let fields = &descriptor.fields;
@@ -52,8 +44,8 @@ fn decode_built_in_descriptor(descriptor: &FlightDocumentLightDescriptor) -> Opt
                 light.cascade_splits = splits
                     .iter()
                     .map(|split| match split {
-                        FlightDocumentValue::Number(split) => *split as f32,
-                        _ => f32::NAN,
+                        FlightDocumentValue::Number(split) => *split,
+                        _ => f64::NAN,
                     })
                     .collect();
             }
@@ -168,7 +160,7 @@ pub(crate) fn get_flight_document_light_fields(light: &dyn Light) -> Option<Flig
         let splits = light
             .cascade_splits
             .iter()
-            .map(|split| FlightDocumentValue::Number(canonical_number(*split)));
+            .map(|split| FlightDocumentValue::Number(*split));
         set_record_value(
             &mut out,
             "cascadeSplits".to_string(),
@@ -277,12 +269,8 @@ fn put_integer(out: &mut FlightDocumentFields, name: &str, value: f64) {
     set_record_value(out, name.to_string(), FlightDocumentValue::Number(value));
 }
 
-fn put_number(out: &mut FlightDocumentFields, name: &str, value: f32) {
-    set_record_value(
-        out,
-        name.to_string(),
-        FlightDocumentValue::Number(canonical_number(value)),
-    );
+fn put_number(out: &mut FlightDocumentFields, name: &str, value: f64) {
+    set_record_value(out, name.to_string(), FlightDocumentValue::Number(value));
 }
 
 fn put_unit(out: &mut FlightDocumentFields, value: LightUnit) {
@@ -307,9 +295,9 @@ fn take_boolean(fields: &FlightDocumentFields, name: &str, out: &mut bool) {
     }
 }
 
-fn take_number(fields: &FlightDocumentFields, name: &str, out: &mut f32) {
+fn take_number(fields: &FlightDocumentFields, name: &str, out: &mut f64) {
     if let Some(FlightDocumentValue::Number(value)) = get_record_value(fields, name) {
-        *out = *value as f32;
+        *out = *value;
     }
 }
 
@@ -337,9 +325,9 @@ fn take_vector3(fields: &FlightDocumentFields, name: &str, out: &mut Vector3) {
     let Some(FlightDocumentValue::Fields(vector)) = get_record_value(fields, name) else {
         return;
     };
-    let component = |axis: &str, fallback: f32| -> f32 {
+    let component = |axis: &str, fallback: f64| -> f64 {
         return match get_record_value(vector, axis) {
-            Some(FlightDocumentValue::Number(value)) => *value as f32,
+            Some(FlightDocumentValue::Number(value)) => *value,
             _ => fallback,
         };
     };

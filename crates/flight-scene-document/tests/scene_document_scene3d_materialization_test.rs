@@ -80,7 +80,7 @@ fn create_test_schemas() -> FlightDocumentSchemaRegistry {
                 get_record_value(fields, "positionX")
             {
                 let live = as_node3d_ref(&node).expect("a published 3D node");
-                live.write().unwrap().node3d_fields_mut().position.x = *position_x as f32;
+                live.write().unwrap().node3d_fields_mut().position.x = *position_x;
                 invalidate_node_local_transform(&node);
             }
             return Some(node);
@@ -213,7 +213,7 @@ fn scene3d_mut(document: &mut FlightDocument) -> &mut FlightDocumentScene3D {
     return scene;
 }
 
-fn perspective(aspect: f32, fov_y: f32) -> Projection {
+fn perspective(aspect: f64, fov_y: f64) -> Projection {
     let projection = create_perspective_projection();
     {
         let mut projection = projection.write().unwrap();
@@ -224,8 +224,8 @@ fn perspective(aspect: f32, fov_y: f32) -> Projection {
 }
 
 fn document_camera(
-    far: f32,
-    near: f32,
+    far: f64,
+    near: f64,
     node: Option<i32>,
     transform: Transform3D,
 ) -> Scene3DDocumentCamera {
@@ -351,7 +351,7 @@ fn unknown_child_scene() -> FlightDocumentNode {
     );
 }
 
-fn camera_view_m12(materialization: &FlightDocumentScene3DMaterialization) -> f32 {
+fn camera_view_m12(materialization: &FlightDocumentScene3DMaterialization) -> f64 {
     return materialization.cameras[0].view.read().unwrap().m[12];
 }
 
@@ -394,7 +394,7 @@ fn get_scene3d_light_kinds(lights: &Scene3DLights) -> Vec<String> {
     return out;
 }
 
-fn assert_close(actual: f32, expected: f32) {
+fn assert_close(actual: f64, expected: f64) {
     // vitest `toBeCloseTo` default precision: |actual - expected| < 0.005.
     assert!(
         (actual - expected).abs() < 0.005,
@@ -641,7 +641,7 @@ mod create_flight_document_scene3d_materialization {
         set_quaternion_from_axis_angle(
             &mut transform.rotation,
             &create_vector3(0.0, 1.0, 0.0),
-            std::f32::consts::FRAC_PI_2,
+            std::f64::consts::FRAC_PI_2,
         );
         let mut authored_point = create_point_light();
         authored_point.position = create_vector3(1.0, 0.0, 0.0);

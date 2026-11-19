@@ -340,6 +340,51 @@ mod format_flight_document_text {
     }
 
     #[test]
+    fn carries_camera_and_light_numbers_through_the_text_as_exact_doubles() {
+        // f32 spacing at 1e9 is 64, and 0.1 has no exact f32: both survive only as doubles.
+        let mut camera_transform = create_transform3d();
+        camera_transform.position.x = 1_000_000_000.5;
+        let mut scene3d: FlightDocumentScene3D = allocate_entity();
+        scene3d.cameras = vec![Scene3DDocumentCamera {
+            far: 1_000_000_000.5,
+            name: None,
+            near: 0.1,
+            node: None,
+            projection: Projection::Perspective(create_perspective_projection()),
+            transform: camera_transform,
+        }];
+        let mut ambient = create_ambient_light();
+        ambient.intensity = 0.1;
+        scene3d.lights = vec![Scene3DDocumentLight {
+            descriptor: Arc::new(RwLock::new(ambient)),
+            name: None,
+            node: None,
+            transform: create_transform3d(),
+        }];
+        scene3d.scene = node("Node3D", fields(vec![]), vec![]);
+        let source = document(vec![FlightDocumentScene::Scene3D(scene3d)]);
+
+        let reparsed = parse_flight_document_text(&format_flight_document_text(&source))
+            .expect("the formatted text reads back");
+
+        let FlightDocumentScene::Scene3D(reparsed) = &reparsed.scenes[0] else {
+            panic!("expected Scene3D");
+        };
+        assert_eq!(reparsed.cameras[0].far, 1_000_000_000.5);
+        assert_eq!(reparsed.cameras[0].near, 0.1);
+        assert_eq!(reparsed.cameras[0].transform.position.x, 1_000_000_000.5);
+        let descriptor = reparsed.lights[0].descriptor.read().unwrap();
+        let any: &dyn std::any::Any = &*descriptor;
+        let descriptor = any
+            .downcast_ref::<FlightDocumentLightDescriptor>()
+            .expect("an open-kind descriptor");
+        assert!(matches!(
+            get_record_value(&descriptor.fields, "intensity"),
+            Some(FlightDocumentValue::Number(intensity)) if *intensity == 0.1
+        ));
+    }
+
+    #[test]
     fn emits_only_the_accepted_yaml_subset_and_round_trips_a_mixed_scene_container() {
         let mut camera_transform = create_transform3d();
         camera_transform.position.z = 8.0;
