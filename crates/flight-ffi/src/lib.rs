@@ -10,6 +10,8 @@ mod import_diagnostic_list;
 #[cfg(test)]
 mod by_value_ownership_test;
 #[cfg(test)]
+mod declared_instantiation_test;
+#[cfg(test)]
 mod enum_parameter_test;
 #[cfg(test)]
 mod generic_carrier_test;

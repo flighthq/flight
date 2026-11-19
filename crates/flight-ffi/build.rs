@@ -566,6 +566,50 @@ const CONTRACT_LANE_TYPES: &[(&str, &str)] = &[
     ("TextMarkupExplanation", "text_markup"),
     ("TextMarkupGuardState", "text_markup"),
 ];
+
+// Explicit backend instantiations of generic render functions (Item E1). Nothing here is inferred:
+// a generic function absent from this table stays outside the scanner, and each entry must name a
+// public generic signature whose type parameters are exactly the ones it binds. The output name is
+// explicit so a lifecycle pair reads as one (`prepare`/`destroy`) and never collides with an
+// existing backend function.
+struct DeclaredInstantiation {
+    crate_dir: &'static str,
+    function: &'static str,
+    ffi_name: &'static str,
+    type_args: &'static [(&'static str, &'static str)],
+}
+
+const DECLARED_INSTANTIATIONS: &[DeclaredInstantiation] = &[
+    DeclaredInstantiation {
+        crate_dir: "flight-render",
+        function: "prepare_scene_2d_render",
+        ffi_name: "flight_prepare_wgpu_scene_2d_render",
+        type_args: &[("S", "WgpuRenderState")],
+    },
+    DeclaredInstantiation {
+        crate_dir: "flight-render",
+        function: "destroy_render_state",
+        ffi_name: "flight_destroy_wgpu_scene_2d_render",
+        type_args: &[("S", "WgpuRenderState")],
+    },
+];
+
+// Opaque carriers for generic containers, one per instantiation. A carrier is created from the
+// container's `Default` (the containers have no constructor function) and released by its paired
+// free; the instantiated functions above borrow it.
+struct DeclaredCarrier {
+    container: &'static str,
+    type_args: &'static [&'static str],
+    create_name: &'static str,
+    free_name: &'static str,
+}
+
+const DECLARED_CARRIERS: &[DeclaredCarrier] = &[DeclaredCarrier {
+    container: "RenderProxies2D",
+    type_args: &["WgpuRenderState"],
+    create_name: "flight_create_wgpu_scene_2d_render_proxies",
+    free_name: "flight_free_wgpu_scene_2d_render_proxies",
+}];
 fn main() {
     // The C consumer test builds and links its executable with the same target and rustc Cargo
     // builds this crate with.
@@ -839,6 +883,11 @@ fn main() {
         }
     }
 
+    let declared = generate_declared_instantiations(crates_dir, &mut seen_names);
+    writeln!(all_output, "// declared instantiations").unwrap();
+    all_output.push_str(&declared.output);
+    writeln!(all_output).unwrap();
+
     assert_eq!(
         shape_bounds_handlers_seen.len(),
         SHAPE_BOUNDS_HANDLER_FNS.len(),
@@ -914,6 +963,16 @@ fn main() {
         actionable_public_skips.len()
     )
     .unwrap();
+    writeln!(
+        stats_file,
+        "FFI declared instantiations: {} wrappers, {} carriers",
+        DECLARED_INSTANTIATIONS.len(),
+        DECLARED_CARRIERS.len()
+    )
+    .unwrap();
+    for line in &declared.report {
+        writeln!(stats_file, "  declared: {line}").unwrap();
+    }
     let mut sorted_skips: Vec<_> = stats_skipped.iter().collect();
     sorted_skips.sort_by(|a, b| b.1.cmp(a.1));
     for (reason, count) in &sorted_skips {
@@ -1410,6 +1469,200 @@ fn collect_pub_fn_signatures(content: &str) -> Vec<String> {
         i += 1;
         out.push(sig);
     }
+    return out;
+}
+
+struct DeclaredOutput {
+    output: String,
+    report: Vec<String>,
+}
+
+// Emits every DECLARED_INSTANTIATIONS wrapper and DECLARED_CARRIERS create/free pair, in table
+// order. Each entry must resolve, lower through the ordinary wrapper generator, and claim an unused
+// symbol; any failure is a build error, so the table can never silently shrink.
+fn generate_declared_instantiations(
+    crates_dir: &Path,
+    seen_names: &mut BTreeSet<String>,
+) -> DeclaredOutput {
+    let mut output = String::new();
+    let mut report = Vec::new();
+    for entry in DECLARED_INSTANTIATIONS {
+        let func = instantiate_declared_fn(crates_dir, entry);
+        let (wrapper, _) = generate_ffi_wrapper(&func).unwrap_or_else(|| {
+            panic!(
+                "declared instantiation {} must lower to a wrapper",
+                entry.ffi_name
+            )
+        });
+        let generic_symbol = format!("fn flight_{}(", entry.function);
+        assert_eq!(
+            wrapper.matches(&generic_symbol).count(),
+            1,
+            "{} must emit exactly one wrapper symbol",
+            entry.ffi_name
+        );
+        let generic_call = format!("{QUALIFIER}::{}(", entry.function);
+        assert_eq!(
+            wrapper.matches(&generic_call).count(),
+            1,
+            "{} must call its generic function exactly once",
+            entry.ffi_name
+        );
+        let turbofish: Vec<String> = entry
+            .type_args
+            .iter()
+            .map(|(_, concrete)| qualify_type(concrete))
+            .collect();
+        let wrapper = wrapper
+            .replace(&generic_symbol, &format!("fn {}(", entry.ffi_name))
+            .replace(
+                &generic_call,
+                &format!(
+                    "{QUALIFIER}::{}::<{}>(",
+                    entry.function,
+                    turbofish.join(", ")
+                ),
+            );
+        assert!(
+            seen_names.insert(entry.ffi_name.to_string()),
+            "{} collides with an existing FFI symbol",
+            entry.ffi_name
+        );
+        writeln!(output, "{wrapper}").unwrap();
+        let bindings: Vec<String> = entry
+            .type_args
+            .iter()
+            .map(|(param, concrete)| format!("{param} = {concrete}"))
+            .collect();
+        report.push(format!(
+            "{} = {}::{}<{}>",
+            entry.ffi_name,
+            entry.crate_dir,
+            entry.function,
+            bindings.join(", ")
+        ));
+    }
+    for carrier in DECLARED_CARRIERS {
+        let arguments: Vec<String> = carrier
+            .type_args
+            .iter()
+            .map(|ty| qualify_type(ty))
+            .collect();
+        let qualified = format!(
+            "{}<{}>",
+            qualify_type(carrier.container),
+            arguments.join(", ")
+        );
+        for name in [carrier.create_name, carrier.free_name] {
+            assert!(
+                seen_names.insert(name.to_string()),
+                "{name} collides with an existing FFI symbol"
+            );
+        }
+        writeln!(
+            output,
+            "#[doc = \"flight-ffi ownership|owned-return|{free}|{qualified}\"]\n#[unsafe(no_mangle)]\npub unsafe extern \"C\" fn {create}() -> *mut std::ffi::c_void {{\n    let carrier: {qualified} = Default::default();\n    return Box::into_raw(Box::new(carrier)) as *mut std::ffi::c_void;\n}}\n#[unsafe(no_mangle)]\npub unsafe extern \"C\" fn {free}(ptr: *mut {qualified}) {{\n    if !ptr.is_null() {{\n        unsafe {{ drop(Box::from_raw(ptr)); }}\n    }}\n}}",
+            create = carrier.create_name,
+            free = carrier.free_name,
+        )
+        .unwrap();
+        report.push(format!(
+            "{} / {} = {}<{}>",
+            carrier.create_name,
+            carrier.free_name,
+            carrier.container,
+            carrier.type_args.join(", ")
+        ));
+    }
+    return DeclaredOutput { output, report };
+}
+
+// Reads the entry's generic signature from its crate and substitutes each bound type parameter,
+// producing the concrete signature the ordinary generator lowers. The declared bindings must be
+// exactly the function's type parameters, so an instantiation can never leave one unbound.
+fn instantiate_declared_fn(crates_dir: &Path, entry: &DeclaredInstantiation) -> ParsedFn {
+    let src_dir = crates_dir.join(entry.crate_dir).join("src");
+    let prefix = format!("pub fn {}<", entry.function);
+    let mut matches = Vec::new();
+    let mut files: Vec<_> = fs::read_dir(&src_dir)
+        .unwrap()
+        .filter_map(|e| e.ok())
+        .map(|e| e.path())
+        .filter(|path| {
+            path.extension().is_some_and(|ext| ext == "rs")
+                && !path.file_name().unwrap().to_string_lossy().contains("test")
+        })
+        .collect();
+    files.sort();
+    for path in files {
+        let content = fs::read_to_string(&path).unwrap();
+        matches.extend(
+            collect_pub_fn_signatures(&content)
+                .into_iter()
+                .filter(|sig| sig.trim().starts_with(&prefix)),
+        );
+    }
+    assert_eq!(
+        matches.len(),
+        1,
+        "{} must name exactly one generic `{}` in {}",
+        entry.ffi_name,
+        entry.function,
+        entry.crate_dir
+    );
+    let sig = matches.remove(0);
+    let after_name = &sig.trim()[prefix.len() - 1..];
+    let params_start = after_name.find('(').unwrap();
+    let generics_end = after_name[..params_start].rfind('>').unwrap();
+    let declared: Vec<&str> = after_name[1..generics_end]
+        .split(',')
+        .map(|generic| generic.split(':').next().unwrap().trim())
+        .collect();
+    let bound: Vec<&str> = entry.type_args.iter().map(|(param, _)| *param).collect();
+    assert_eq!(
+        declared, bound,
+        "{} must bind exactly the type parameters of {}",
+        entry.ffi_name, entry.function
+    );
+    let mut rest = after_name[params_start..].to_string();
+    for (param, concrete) in entry.type_args {
+        rest = replace_type_parameter(&rest, param, concrete);
+    }
+    let concrete_sig = format!("pub fn {}{rest}", entry.function);
+    let mut func = parse_fn_signature(&concrete_sig)
+        .unwrap_or_else(|| panic!("{} must parse once instantiated", entry.ffi_name));
+    let ts_exports = collect_ts_exports(&src_dir);
+    func.lacks_public_export = !ts_exports
+        .public
+        .contains(&public_perimeter::get_export_key(&func.name));
+    assert!(
+        !func.lacks_public_export,
+        "{} must instantiate a TypeScript-public function",
+        entry.ffi_name
+    );
+    return func;
+}
+
+// Replaces whole-identifier occurrences of a type parameter, leaving longer identifiers intact.
+fn replace_type_parameter(text: &str, param: &str, concrete: &str) -> String {
+    let mut out = String::new();
+    let mut identifier = String::new();
+    for c in text.chars().chain(std::iter::once(' ')) {
+        if c.is_alphanumeric() || c == '_' {
+            identifier.push(c);
+            continue;
+        }
+        if !identifier.is_empty() {
+            out.push_str(if identifier == param {
+                concrete
+            } else {
+                &identifier
+            });
+            identifier.clear();
+        }
+        out.push(c);
+    }
+    out.pop();
     return out;
 }
 

@@ -30,6 +30,7 @@ serde_json = { version = "1", default-features = false, features = ["std"] }
 cc = "1.11.2"
 quote = "1"
 syn = { version = "2", features = ["fold", "full", "visit"] }
+wgpu = { version = "30.0.1", default-features = false, features = ["std", "wgsl", "noop"] }
 
 [build-dependencies]
 quote = "1"

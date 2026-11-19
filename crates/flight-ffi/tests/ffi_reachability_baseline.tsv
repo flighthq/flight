@@ -1,6 +1,6 @@
 format|ffi-reachability-baseline|1
 policy|host_capability|feature-gated native host crates supply borrowed Host*Capability carriers
-summary|policy-exempt|235|unreachable|3436|blocking-carriers|917
+summary|policy-exempt|235|unreachable|3438|blocking-carriers|918
 carrier|1|*const Option<String>
 carrier|1|*const Option<flight_sdk::Ref<dyn flight_sdk::Node2D>>
 carrier|2|*const flight_sdk::AbcInstruction
@@ -762,6 +762,7 @@ carrier|2|*mut flight_sdk::VelocitySample
 carrier|1|*mut flight_sdk::VertexDisplaceModifierOptions
 carrier|2|*mut flight_sdk::VideoChannel
 carrier|2|*mut flight_sdk::VoxelGrid
+carrier|2|*mut flight_sdk::WgpuRenderState
 carrier|5|*mut flight_sdk::WindowBounds
 carrier|4|*mut flight_sdk::path::contract::PathMeshPool
 carrier|2|*mut flight_sdk::skeleton2d::contract::Skeleton2DGuardState
@@ -1488,6 +1489,7 @@ unreachable|flight_destroy_canvas_surface|Box<flight_sdk::Ref<flight_sdk::Canvas
 unreachable|flight_destroy_power_keep_awake|*mut flight_sdk::PowerContext
 unreachable|flight_destroy_tray_icon|Box<flight_sdk::Ref<flight_sdk::TrayIcon>>
 unreachable|flight_destroy_video_channel|Box<flight_sdk::Ref<flight_sdk::VideoChannel>>
+unreachable|flight_destroy_wgpu_scene_2d_render|*mut flight_sdk::WgpuRenderState
 unreachable|flight_detach_gamepad_input|*const flight_sdk::InputIngressSource
 unreachable|flight_detach_keyboard_input|*const flight_sdk::InputIngressSource
 unreachable|flight_detach_pointer_input|*const flight_sdk::InputIngressSource
@@ -3144,6 +3146,7 @@ unreachable|flight_play_video_resource|*const flight_sdk::VideoChannelRuntimeSta
 unreachable|flight_pop_status_bar_style_entry|*mut flight_sdk::StatusBarStyleStacks
 unreachable|flight_popup_tray_context_menu|Box<flight_sdk::Ref<flight_sdk::TrayIcon>>
 unreachable|flight_prepare_element_for_input|*const flight_sdk::InputTargetHandle
+unreachable|flight_prepare_wgpu_scene_2d_render|*mut flight_sdk::WgpuRenderState
 unreachable|flight_prev_frame_timeline|Box<flight_sdk::Ref<flight_sdk::Timeline>>
 unreachable|flight_prewarm_particle_emitter_2d|*const flight_sdk::ParticleEmitterCallbacks
 unreachable|flight_prewarm_particle_emitter_3d|*const flight_sdk::ParticleEmitterCallbacks
