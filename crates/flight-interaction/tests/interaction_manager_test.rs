@@ -30,32 +30,6 @@ mod connect_input_to_interaction {
         return flight_input::create_input_manager();
     }
 
-    fn test_pointer_data() -> flight_input::InputPointerData {
-        return flight_input::InputPointerData {
-            alt_key: false,
-            button: 0,
-            buttons: 1,
-            ctrl_key: false,
-            delta_x: 0.0,
-            delta_y: 0.0,
-            height: 1.0,
-            is_primary: true,
-            meta_key: false,
-            pointer_id: 0,
-            pointer_type: flight_input::PointerType::Mouse,
-            pressure: 0.5,
-            shift_key: false,
-            tilt_x: 0.0,
-            tilt_y: 0.0,
-            time_stamp: 0.0,
-            twist: 0.0,
-            wheel_mode: flight_input::MouseWheelMode::Unknown,
-            width: 1.0,
-            x: 1.0,
-            y: 1.0,
-        };
-    }
-
     fn test_pointer_data(x: f64, y: f64, delta_y: f64) -> flight_input::InputPointerData {
         return flight_input::InputPointerData {
             alt_key: false,
@@ -136,11 +110,11 @@ mod connect_input_to_interaction {
     fn delivers_exact_double_coordinates_through_every_pointer_bridge() {
         // Each input closure must carry x = 1e9 + 0.25 (f32 spacing 64) and y = 0.1 (no exact f32).
         type InputSignal =
-            fn(&InteractionInputSource) -> &flight_signals::Signal<flight_input::InputPointerData>;
+            fn(&flight_input::InputManager) -> &flight_signals::Signal<flight_input::InputPointerData>;
         type NodeSignal =
             fn(
-                &flight_interaction::types::InteractionSignals,
-            ) -> &flight_signals::Signal<flight_interaction::types::PointerEventData>;
+                &flight_interaction::InteractionSignals,
+            ) -> &flight_signals::Signal<flight_interaction::PointerEventData>;
         let cases: [(InteractionSignalName, InputSignal, NodeSignal); 5] = [
             (
                 InteractionSignalName::OnPointerCancel,
@@ -175,7 +149,7 @@ mod connect_input_to_interaction {
             let seen2 = seen.clone();
             flight_signals::connect_signal(
                 node_signal(&sigs.read().unwrap()),
-                Arc::new(move |data: &flight_interaction::types::PointerEventData| {
+                Arc::new(move |data: &flight_interaction::PointerEventData| {
                     *seen2.write().unwrap() = Some((data.x, data.y));
                 }),
                 None,
@@ -183,15 +157,15 @@ mod connect_input_to_interaction {
             let mut manager = interaction_fixture::manager_for(&root);
             manager.enabled = true;
             capture_interaction_pointer(&mut manager, 0, root.clone());
-            let slot: flight_interaction::types::AnyInteractionSignalSlot =
-                Arc::new(|_data: &flight_interaction::types::PointerEventData| {});
+            let slot: flight_interaction::AnyInteractionSignalSlot =
+                Arc::new(|_data: &flight_interaction::PointerEventData| {});
             connect_interaction_signal(&mut manager, &root, name, slot);
             let input = test_input_source();
             let _dispose =
                 connect_input_to_interaction(&input, Arc::new(RwLock::new(manager)), 1.0);
 
             flight_signals::emit_signal(
-                input_signal(&input),
+                input_signal(&input.read().unwrap()),
                 &test_pointer_data(1_000_000_000.25, 0.1, 0.0),
             );
 
@@ -212,7 +186,7 @@ mod connect_input_to_interaction {
         let seen2 = seen.clone();
         flight_signals::connect_signal(
             &sigs.read().unwrap().on_wheel,
-            Arc::new(move |data: &flight_interaction::types::PointerEventData| {
+            Arc::new(move |data: &flight_interaction::PointerEventData| {
                 *seen2.write().unwrap() = Some((data.x, data.delta_y));
             }),
             None,
@@ -220,14 +194,14 @@ mod connect_input_to_interaction {
         let mut manager = interaction_fixture::manager_for(&root);
         manager.enabled = true;
         capture_interaction_pointer(&mut manager, 0, root.clone());
-        let slot: flight_interaction::types::AnyInteractionSignalSlot =
-            Arc::new(|_data: &flight_interaction::types::PointerEventData| {});
+        let slot: flight_interaction::AnyInteractionSignalSlot =
+            Arc::new(|_data: &flight_interaction::PointerEventData| {});
         connect_interaction_signal(&mut manager, &root, InteractionSignalName::OnWheel, slot);
         let input = test_input_source();
         let _dispose = connect_input_to_interaction(&input, Arc::new(RwLock::new(manager)), 1.0);
 
         flight_signals::emit_signal(
-            &input.on_wheel,
+            &input.read().unwrap().on_wheel,
             &test_pointer_data(1_000_000_000.25, 0.0, 16_777_216.5),
         );
 
@@ -304,7 +278,7 @@ mod connect_input_to_interaction {
             );
             let input = test_input_source();
             let _dispose = connect_input_to_interaction(&input, mgr.clone(), 1.0);
-            let data = test_pointer_data();
+            let data = test_pointer_data(1.0, 1.0, 0.0);
             flight_signals::emit_signal(&input.read().unwrap().on_pointer_down, &data);
             assert!(mgr.read().unwrap().precise);
         });
