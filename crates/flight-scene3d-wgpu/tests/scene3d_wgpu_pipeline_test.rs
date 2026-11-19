@@ -9,6 +9,7 @@ use flight_materials::{
     TOON_MATERIAL_KIND, UNLIT_MATERIAL_KIND, VERTEX_COLOR_MATERIAL_KIND, WIREFRAME_MATERIAL_KIND,
 };
 use flight_registry::{KindMap, get_kind_map_keys};
+use flight_render::RenderState;
 use flight_render_wgpu::*;
 use flight_scene2d_wgpu::WGPU_SCENE2D_RENDER_PRESET;
 use flight_scene3d_wgpu::contract::*;
@@ -41,7 +42,6 @@ mod register_wgpu_scene3d_render_preset {
         let preset = &*WGPU_SCENE3D_RENDER_PRESET;
         for kind in &preset.node_renderers.key_order {
             let registered = {
-                use flight_render::RenderState;
                 *test
                     .state
                     .render_registries()

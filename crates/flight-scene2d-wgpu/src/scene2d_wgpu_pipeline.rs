@@ -121,11 +121,20 @@ fn empty_kind_map<T>() -> KindMap<T> {
     };
 }
 
-/// Registers every table of `preset` on an existing state (TS `registerWgpuRenderPreset`): each node
-/// renderer through `register_node_renderer`, in the preset's key order, and each WGPU registry
-/// table overlaid on the state's own, so a preset entry replaces the same kind and every other
-/// registration the state already holds is kept. A preset slot that is unset leaves the state's
-/// slot untouched.
+/// Registers `preset`'s node renderers and WGPU registry tables on an existing state (TS
+/// `registerWgpuRenderPreset`); contract-only, the shared step behind the concrete preset
+/// registrars.
+///
+/// - Node renderers: each entry goes through `register_node_renderer`, in the preset's key order.
+/// - Kind maps (custom material shaders, effects, material renderers, modifier snippets, texture
+///   resolvers, velocity writers): the preset's table is overlaid on the state's, so a kind the
+///   preset names takes the preset value and every other kind the state holds is kept.
+/// - Option slots (color-adjustment feature and guard, compressed-texture decoder and upload, GPU
+///   skinning, shape rasterizer): `Some` replaces the state's value; `None` leaves it untouched.
+/// - Passes: one ordered list, so a preset `Some` list replaces the state's list wholesale rather
+///   than appending; `None` leaves it untouched.
+///
+/// Render-state fields outside these tables (device, format, pixel ratio, hosts) are not touched.
 pub fn register_wgpu_render_preset(state: &mut WgpuRenderState, preset: &WgpuScene2DRenderPreset) {
     for kind in &preset.node_renderers.key_order {
         if let Some(renderer) = preset.node_renderers.entries.get(kind) {

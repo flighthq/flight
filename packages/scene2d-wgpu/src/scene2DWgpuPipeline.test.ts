@@ -1,8 +1,14 @@
+import { BitmapTextKind } from '@flighthq/bitmaptext/contract';
 import { EntityRuntimeKey } from '@flighthq/entity/contract';
 import { StandardMaterialKind } from '@flighthq/materials/contract';
 import { ParticleEmitter2DKind } from '@flighthq/particleemitter/contract';
 import { QuadBatchKind } from '@flighthq/quadbatch/contract';
-import type { WgpuDevice, WgpuRenderState } from '@flighthq/render-wgpu/contract';
+import type {
+  WgpuDevice,
+  WgpuRenderRegistries,
+  WgpuRenderState,
+  WgpuScene3DPass,
+} from '@flighthq/render-wgpu/contract';
 import {
   buildWgpuRenderRegistries,
   createWgpuDeviceState,
@@ -28,26 +34,85 @@ import { wgpuSpriteRenderer } from './wgpuSprite.ts';
 import { registerWgpuStandardMaterial, standardWgpuQuadMaterialRenderer } from './wgpuStandardMaterial.ts';
 
 describe('registerWgpuRenderPreset', () => {
-  it('overlays each table and keeps registrations the preset does not name', () => {
+  it('keeps unrelated kind-map keys and takes the preset value for shared keys', () => {
+    const state = createRegistrationTestState();
+    const registries = getWgpuRenderStateRuntime(state).registries;
+    const keep = {};
+    const old = {};
+    const updated = {};
+    const added = {};
+    for (const map of KIND_MAP_SLOTS) {
+      (registries as unknown as Record<string, ReadonlyMap<string, unknown>>)[map] = new Map([
+        ['Keep', keep],
+        ['Shared', old],
+      ]);
+    }
+    const preset = { ...buildWgpuRenderRegistries({}), nodeRenderers: new Map() } as Record<string, unknown>;
+    for (const map of KIND_MAP_SLOTS) {
+      preset[map] = new Map([
+        ['Shared', updated],
+        ['Added', added],
+      ]);
+    }
+    registerWgpuRenderPreset(state, preset as unknown as WgpuRenderRegistries);
+    for (const map of KIND_MAP_SLOTS) {
+      const table = (registries as unknown as Record<string, ReadonlyMap<string, unknown>>)[map];
+      expect([map, table.get('Keep')]).toEqual([map, keep]);
+      expect([map, table.get('Shared')]).toEqual([map, updated]);
+      expect([map, table.get('Added')]).toEqual([map, added]);
+      expect([map, table.size]).toEqual([map, 3]);
+    }
+  });
+
+  it('replaces preset node-renderer kinds and keeps other kinds', () => {
     const state = createRegistrationTestState();
     registerNodeRenderer(state, 'Custom', wgpuSpriteRenderer);
     registerWgpuShapeRenderer(state);
-    registerWgpuStandardMaterial(state);
-    const preset = {
+    registerWgpuRenderPreset(state, {
       ...buildWgpuRenderRegistries({}),
-      materialRenderers: new Map([['PresetMaterial', standardWgpuQuadMaterialRenderer]]),
       nodeRenderers: new Map([[ShapeKind, wgpuMeshShapeRenderer]]),
-    };
-    registerWgpuRenderPreset(state, preset);
+    });
     const nodeRenderers = getRenderStateRuntime(state).registries.nodeRenderers;
     expect(nodeRenderers.get(ShapeKind)).toBe(wgpuMeshShapeRenderer);
     expect(nodeRenderers.get('Custom')).toBe(wgpuSpriteRenderer);
-    expect(getWgpuQuadMaterialRenderer(state, 'PresetMaterial')).toBe(standardWgpuQuadMaterialRenderer);
-    expect(getWgpuQuadMaterialRenderer(state, StandardMaterialKind)).toBe(standardWgpuQuadMaterialRenderer);
-    expect(getWgpuRenderStateRuntime(state).registries.gpuSkinning).toBeNull();
+  });
+
+  it('keeps each option slot when the preset leaves it unset and takes it when the preset sets it', () => {
+    const state = createRegistrationTestState();
+    const registries = getWgpuRenderStateRuntime(state).registries as unknown as Record<string, unknown>;
+    const initial = Object.fromEntries(OPTION_SLOTS.map((slot) => [slot, { slot, value: 'initial' }]));
+    Object.assign(registries, initial);
+    for (const unset of [null, undefined]) {
+      const preset = { ...buildWgpuRenderRegistries({}), nodeRenderers: new Map() } as Record<string, unknown>;
+      for (const slot of OPTION_SLOTS) preset[slot] = unset;
+      registerWgpuRenderPreset(state, preset as unknown as WgpuRenderRegistries);
+      for (const slot of OPTION_SLOTS) expect([slot, registries[slot]]).toEqual([slot, initial[slot]]);
+    }
+    const replacement = Object.fromEntries(OPTION_SLOTS.map((slot) => [slot, { slot, value: 'preset' }]));
+    registerWgpuRenderPreset(state, {
+      ...buildWgpuRenderRegistries({}),
+      nodeRenderers: new Map(),
+      ...replacement,
+    } as unknown as WgpuRenderRegistries);
+    for (const slot of OPTION_SLOTS) expect([slot, registries[slot]]).toEqual([slot, replacement[slot]]);
+  });
+
+  it('replaces the pass list wholesale instead of appending to it', () => {
+    const state = createRegistrationTestState();
+    const registries = getWgpuRenderStateRuntime(state).registries;
+    const statePass = (() => {}) as unknown as WgpuScene3DPass;
+    const presetPass = (() => {}) as unknown as WgpuScene3DPass;
+    registries.passes = [statePass];
+    const presetPasses = [presetPass];
+    registerWgpuRenderPreset(state, {
+      ...buildWgpuRenderRegistries({}),
+      nodeRenderers: new Map(),
+      passes: presetPasses,
+    });
+    expect(registries.passes).toBe(presetPasses);
+    expect(registries.passes).toEqual([presetPass]);
   });
 });
-import { BitmapTextKind } from '@flighthq/bitmaptext/contract';
 
 describe('registerWgpuScene2DRenderPreset', () => {
   it('registers every preset node renderer and the standard material', () => {
@@ -107,3 +172,22 @@ function createRegistrationTestState(): WgpuRenderState {
   state[EntityRuntimeKey] = createWgpuRenderStateRuntime(createWgpuDeviceState({} as WgpuDevice));
   return state;
 }
+
+const KIND_MAP_SLOTS = [
+  'customMaterialShaders',
+  'effects',
+  'materialRenderers',
+  'modifierSnippets',
+  'textureResolvers',
+  'velocityWriters',
+] as const;
+
+const OPTION_SLOTS = [
+  'colorAdjustmentFeature',
+  'colorAdjustmentFeatureGuard',
+  'compressedTextureDecoder',
+  'compressedTextureUpload',
+  'gpuSkinning',
+  'passes',
+  'shapeRasterizer',
+] as const;

@@ -5,7 +5,7 @@
 //! canvas-context fake, host images through an external-image fake, and Canvas 2D drawing through a
 //! recording `Canvas2DContext` fake. These are test fixtures only, never a public provider.
 
-use flight_render::RenderTargetClear;
+use flight_render::{RenderState, RenderTargetClear};
 use std::collections::VecDeque;
 use std::future::Future;
 use std::sync::atomic::{AtomicBool, AtomicU32, Ordering};
@@ -1315,7 +1315,6 @@ pub fn get_registered_node_renderer(
     state: &WgpuRenderState,
     kind: &str,
 ) -> Option<&'static flight_render::NodeRenderer<WgpuRenderState>> {
-    use flight_render::RenderState;
     return state
         .render_registries()
         .node_renderers

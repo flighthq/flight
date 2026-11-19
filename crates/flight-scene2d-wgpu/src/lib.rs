@@ -61,7 +61,6 @@ pub use contract::register_wgpu_particle_emitter2d_renderer;
 pub use contract::register_wgpu_quad_batch_renderer;
 pub use contract::register_wgpu_raster_shape_renderer;
 pub use contract::register_wgpu_render_cache_renderer;
-pub use contract::register_wgpu_render_preset;
 pub use contract::register_wgpu_rich_text_renderer;
 pub use contract::register_wgpu_scale9_shape_renderer;
 pub use contract::register_wgpu_scale9_sprite_renderer;

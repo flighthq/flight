@@ -1,3 +1,5 @@
+import type { BitmapText, BitmapTextRuntime } from '@flighthq/bitmaptext/contract';
+import { BitmapTextKind } from '@flighthq/bitmaptext/contract';
 import {
   getWgpuRenderStateRuntime,
   resolveWgpuQuadMaterialRenderer,
@@ -128,8 +130,6 @@ export const wgpuBitmapTextRenderer: SpriteRenderer = {
 };
 
 const glyphTransform = { a: 1, b: 0, c: 0, d: 1, tx: 0, ty: 0 };
-import type { BitmapText, BitmapTextRuntime } from '@flighthq/bitmaptext/contract';
-import { BitmapTextKind } from '@flighthq/bitmaptext/contract';
 
 /** Registers wgpuBitmapTextRenderer for BitmapTextKind on this state. */
 export function registerWgpuBitmapTextRenderer(state: WgpuRenderState): void {

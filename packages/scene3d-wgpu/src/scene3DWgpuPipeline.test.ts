@@ -1,3 +1,4 @@
+import { BitmapTextKind } from '@flighthq/bitmaptext/contract';
 import { EntityRuntimeKey } from '@flighthq/entity/contract';
 import {
   BlinnPhongMaterialKind,
@@ -83,7 +84,6 @@ describe('registerWgpuScene3DRenderPreset', () => {
     expect(registries.gpuSkinning).not.toBeNull();
   });
 });
-import { BitmapTextKind } from '@flighthq/bitmaptext/contract';
 
 describe('wgpuScene3DRenderPreset', () => {
   const registries = wgpuScene3DRenderPreset;

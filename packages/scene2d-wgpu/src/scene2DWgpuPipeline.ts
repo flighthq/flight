@@ -1,3 +1,4 @@
+import { BitmapTextKind } from '@flighthq/bitmaptext/contract';
 import type { Kind } from '@flighthq/entity/contract';
 import { StandardMaterialKind } from '@flighthq/materials/contract';
 import { ParticleEmitter2DKind } from '@flighthq/particleemitter/contract';
@@ -62,13 +63,22 @@ export const wgpuScene2DRenderPreset: Readonly<WgpuRenderRegistries> = Object.fr
   ...wgpuRenderInfrastructure,
   nodeRenderers: buildScene2dWgpuRenderers(),
 });
-import { BitmapTextKind } from '@flighthq/bitmaptext/contract';
 
 /**
- * Registers every table of `preset` on an existing state: each node renderer through
- * registerNodeRenderer, in the preset's key order, and each WGPU registry table overlaid on the
- * state's own, so a preset entry replaces the same kind and every other registration the state
- * already holds is kept. A preset slot that is unset leaves the state's slot untouched.
+ * Registers `preset`'s node renderers and WGPU registry tables on an existing state. Contract-only:
+ * the shared step behind the concrete preset registrars.
+ *
+ * - Node renderers: each entry goes through registerNodeRenderer, in the preset's key order.
+ * - Kind maps (customMaterialShaders, effects, materialRenderers, modifierSnippets,
+ *   textureResolvers, velocityWriters): the preset's map is overlaid on the state's, so a kind the
+ *   preset names takes the preset value and every other kind the state holds is kept.
+ * - Option slots (colorAdjustmentFeature and its guard, compressedTextureDecoder and
+ *   compressedTextureUpload, gpuSkinning, shapeRasterizer): a set value replaces the state's; an
+ *   unset (null or undefined) value leaves it untouched.
+ * - passes: one ordered list, so a preset list replaces the state's list wholesale rather than
+ *   appending; null leaves it untouched.
+ *
+ * Render-state fields outside these tables (device, format, pixel ratio, hosts) are not touched.
  */
 export function registerWgpuRenderPreset(state: WgpuRenderState, preset: Readonly<WgpuRenderRegistries>): void {
   for (const [kind, renderer] of preset.nodeRenderers) registerNodeRenderer(state, kind, renderer);
@@ -77,15 +87,15 @@ export function registerWgpuRenderPreset(state: WgpuRenderState, preset: Readonl
   if (preset.colorAdjustmentFeatureGuard != null) {
     registries.colorAdjustmentFeatureGuard = preset.colorAdjustmentFeatureGuard;
   }
-  if (preset.compressedTextureDecoder !== null) registries.compressedTextureDecoder = preset.compressedTextureDecoder;
-  if (preset.compressedTextureUpload !== null) registries.compressedTextureUpload = preset.compressedTextureUpload;
+  if (preset.compressedTextureDecoder != null) registries.compressedTextureDecoder = preset.compressedTextureDecoder;
+  if (preset.compressedTextureUpload != null) registries.compressedTextureUpload = preset.compressedTextureUpload;
   registries.customMaterialShaders = concatKindMap(registries.customMaterialShaders, preset.customMaterialShaders);
   registries.effects = concatKindMap(registries.effects, preset.effects);
-  if (preset.gpuSkinning !== null) registries.gpuSkinning = preset.gpuSkinning;
+  if (preset.gpuSkinning != null) registries.gpuSkinning = preset.gpuSkinning;
   registries.materialRenderers = concatKindMap(registries.materialRenderers, preset.materialRenderers);
   registries.modifierSnippets = concatKindMap(registries.modifierSnippets, preset.modifierSnippets);
-  if (preset.passes !== null) registries.passes = preset.passes;
-  if (preset.shapeRasterizer !== null) registries.shapeRasterizer = preset.shapeRasterizer;
+  if (preset.passes != null) registries.passes = preset.passes;
+  if (preset.shapeRasterizer != null) registries.shapeRasterizer = preset.shapeRasterizer;
   registries.textureResolvers = concatKindMap(registries.textureResolvers, preset.textureResolvers);
   registries.velocityWriters = concatKindMap(registries.velocityWriters, preset.velocityWriters);
 }

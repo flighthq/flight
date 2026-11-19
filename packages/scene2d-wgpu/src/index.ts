@@ -1,6 +1,10 @@
 export * from './enableWgpuColorAdjustmentGuards.ts';
 export * from './enableWgpuStrokePathTessellation.ts';
-export * from './scene2DWgpuPipeline.ts';
+export {
+  registerWgpuScene2DRenderPreset,
+  wgpuRenderInfrastructure,
+  wgpuScene2DRenderPreset,
+} from './scene2DWgpuPipeline.ts';
 export * from './wgpuBitmapText.ts';
 export {
   createWgpuCacheState,
