@@ -20,8 +20,8 @@ pub struct VelocityExplanation {
     pub explicit: bool,
     pub last_frame_id: i32,
     pub reason: VelocityReason,
-    pub x: f32,
-    pub y: f32,
+    pub x: f64,
+    pub y: f64,
 }
 
 // flight-lint: allow(conform-extra) D9 enum-string conversion for the TS VelocityExplanation reason union; @flighthq/types exports the union only

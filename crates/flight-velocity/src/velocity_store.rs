@@ -61,7 +61,7 @@ pub fn begin_velocity_frame(field: &mut VelocityField) {
     field.frame_id += 1;
 }
 
-pub fn contribute_velocity(field: &mut VelocityField, source: SourceId, x: f32, y: f32) {
+pub fn contribute_velocity(field: &mut VelocityField, source: SourceId, x: f64, y: f64) {
     let frame_id = field.frame_id;
     write_velocity_sample(ensure_velocity_sample(field, source), frame_id, x, y);
 }

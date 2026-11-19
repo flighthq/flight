@@ -96,8 +96,8 @@ pub fn explain_velocity_sample(
 pub fn get_velocity_sample_at(
     sample: &VelocitySample,
     current_world_transform: &Matrix,
-    point_x: f32,
-    point_y: f32,
+    point_x: f64,
+    point_y: f64,
     out: &mut Velocity2D,
 ) {
     if let Some(prev) = sample.previous_world_transform.as_ref() {
@@ -147,7 +147,7 @@ pub fn read_velocity_sample(sample: Option<&VelocitySample>, frame_id: i32, out:
 /// velocity, and both the last-touched and explicit frame ids, so a transform
 /// baseline run later in the same frame leaves it in place.
 // flight-lint: allow(conform-extra) approved velocity native-store split: portable sample rule, contract-only until the generated TS velocitySample carries it
-pub fn write_velocity_sample(sample: &mut VelocitySample, frame_id: i32, x: f32, y: f32) {
+pub fn write_velocity_sample(sample: &mut VelocitySample, frame_id: i32, x: f64, y: f64) {
     sample.velocity.x = x;
     sample.velocity.y = y;
     sample.last_frame_id = frame_id;

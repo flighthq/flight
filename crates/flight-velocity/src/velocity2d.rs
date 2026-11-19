@@ -2,8 +2,8 @@
 #[derive(Debug, Clone, Copy, PartialEq, Default)]
 #[repr(C)]
 pub struct Velocity2D {
-    pub x: f32,
-    pub y: f32,
+    pub x: f64,
+    pub y: f64,
 }
 
 /// Adds velocity contributions: `out = a + b`.
@@ -19,7 +19,7 @@ pub fn add_velocity(out: &mut Velocity2D, a: &Velocity2D, b: &Velocity2D) {
 /// Clamps velocity to `max_length` (alias-safe: `out` may equal `velocity`).
 /// The most common motion-blur safety helper -- prevents runaway blur lengths
 /// on fast objects.
-pub fn clamp_velocity(out: &mut Velocity2D, velocity: &Velocity2D, max_length: f32) {
+pub fn clamp_velocity(out: &mut Velocity2D, velocity: &Velocity2D, max_length: f64) {
     let vx = velocity.x;
     let vy = velocity.y;
     let len_sq = vx * vx + vy * vy;
@@ -58,7 +58,7 @@ pub fn damp_velocity(
     out: &mut Velocity2D,
     current: &Velocity2D,
     previous: &Velocity2D,
-    factor: f32,
+    factor: f64,
 ) {
     let cx = current.x;
     let cy = current.y;
@@ -70,19 +70,19 @@ pub fn damp_velocity(
 
 /// Returns true if the velocity vector's magnitude is within `epsilon` of zero.
 /// Useful for skipping velocity-buffer writes on effectively-still objects.
-pub fn is_velocity_zero(velocity: &Velocity2D, epsilon: Option<f32>) -> bool {
+pub fn is_velocity_zero(velocity: &Velocity2D, epsilon: Option<f64>) -> bool {
     let epsilon = epsilon.unwrap_or(0.0);
     return velocity.x.abs() <= epsilon && velocity.y.abs() <= epsilon;
 }
 
 /// Returns the magnitude (length) of the velocity vector.
-pub fn length_of_velocity(velocity: &Velocity2D) -> f32 {
+pub fn length_of_velocity(velocity: &Velocity2D) -> f64 {
     return (velocity.x * velocity.x + velocity.y * velocity.y).sqrt();
 }
 
 /// Linearly interpolates between two velocity values. Alias-safe: `out` may
 /// equal `a` or `b`.
-pub fn lerp_velocity(out: &mut Velocity2D, a: &Velocity2D, b: &Velocity2D, t: f32) {
+pub fn lerp_velocity(out: &mut Velocity2D, a: &Velocity2D, b: &Velocity2D, t: f64) {
     let ax = a.x;
     let ay = a.y;
     let bx = b.x;
@@ -109,7 +109,7 @@ pub fn normalize_velocity(out: &mut Velocity2D, source: &Velocity2D) {
 
 /// Scales a velocity by a scalar factor. Used for pixel-ratio conversion and
 /// unit normalization. Alias-safe: `out` may equal `velocity`.
-pub fn scale_velocity(out: &mut Velocity2D, velocity: &Velocity2D, scale: f32) {
+pub fn scale_velocity(out: &mut Velocity2D, velocity: &Velocity2D, scale: f64) {
     let vx = velocity.x;
     let vy = velocity.y;
     out.x = vx * scale;
@@ -140,27 +140,27 @@ impl Velocity2D {
         return out;
     }
 
-    pub fn clamped(&self, max_length: f32) -> Self {
+    pub fn clamped(&self, max_length: f64) -> Self {
         let mut out = Self::default();
         clamp_velocity(&mut out, self, max_length);
         return out;
     }
 
-    pub fn damped(&self, previous: &Self, factor: f32) -> Self {
+    pub fn damped(&self, previous: &Self, factor: f64) -> Self {
         let mut out = Self::default();
         damp_velocity(&mut out, self, previous, factor);
         return out;
     }
 
-    pub fn is_zero(&self, epsilon: Option<f32>) -> bool {
+    pub fn is_zero(&self, epsilon: Option<f64>) -> bool {
         return is_velocity_zero(self, epsilon);
     }
 
-    pub fn length(&self) -> f32 {
+    pub fn length(&self) -> f64 {
         return length_of_velocity(self);
     }
 
-    pub fn lerp(&self, other: &Self, t: f32) -> Self {
+    pub fn lerp(&self, other: &Self, t: f64) -> Self {
         let mut out = Self::default();
         lerp_velocity(&mut out, self, other, t);
         return out;
@@ -172,7 +172,7 @@ impl Velocity2D {
         return out;
     }
 
-    pub fn scaled(&self, scale: f32) -> Self {
+    pub fn scaled(&self, scale: f64) -> Self {
         let mut out = Self::default();
         scale_velocity(&mut out, self, scale);
         return out;

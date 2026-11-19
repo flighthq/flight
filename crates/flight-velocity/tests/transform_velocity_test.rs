@@ -9,7 +9,7 @@ fn create_display_node() -> NodeRef {
     return create_display_object();
 }
 
-fn move_node(node: &NodeRef, x: f32, y: f32) {
+fn move_node(node: &NodeRef, x: f64, y: f64) {
     {
         let mut guard = node.write().unwrap();
         let transform = guard
@@ -34,6 +34,22 @@ fn source_of(node: &NodeRef) -> SourceId {
 
 mod contribute_transform_velocity {
     use super::*;
+
+    #[test]
+    fn derives_a_half_unit_step_at_one_billion() {
+        // f32 spacing at 1e9 is 64: in f32 both positions round to 1e9 and the delta vanishes.
+        let mut field = create_velocity_field();
+        let obj = create_display_node();
+        move_node(&obj, 1.0e9, 0.0);
+        contribute_transform_velocity(&mut field, &obj);
+
+        move_node(&obj, 1_000_000_000.5, 0.0);
+        begin_velocity_frame(&mut field);
+        contribute_transform_velocity(&mut field, &obj);
+
+        assert_eq!(1_000_000_000.5_f64 as f32 - 1.0e9_f32, 0.0);
+        assert_eq!(read_node_velocity(&field, &obj).x, 0.5);
+    }
 
     #[test]
     fn reports_zero_velocity_on_the_first_frame() {
