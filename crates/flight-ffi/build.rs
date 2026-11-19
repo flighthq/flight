@@ -468,7 +468,7 @@ const BEHAVIOR_POLICY_SKIP_FNS: &[&str] = &[
 // It is an extension boundary, unlike the immediate consumption callbacks Task M lowers below.
 const GUARD_POLICY_SKIP_FNS: &[&str] = &["enable_scene3d_resource_failure_guards"];
 // The header contract every `flight_connect_<payload>_signal` carries.
-const SIGNAL_CONNECT_CONTRACT: &str = "Connects callback_fn(callback_ctx, payload) to signal and returns an owned connection; NULL signal or callback_fn returns NULL without connecting and without calling release_fn. Callbacks run synchronously on the thread that emits the signal; borrowed payload pointers and handles are valid only during the call. release_fn (nullable) receives callback_ctx exactly once when the slot is torn down: flight_free_signal_connection (which disconnects), flight_disconnect_signal_connection, a once connection firing, disconnecting scope, or clearing the signal. The callback never runs after release_fn; a call already running on another thread finishes first. release_fn may run while the signal is locked, so it must only release the context and must not call into the same signal. Higher priority runs first and equal priorities keep connect order; once disconnects after the first call; scope may be NULL.";
+const SIGNAL_CONNECT_CONTRACT: &str = "Connects callback_fn(callback_ctx, payload) to signal and returns an owned connection; NULL signal or callback_fn returns NULL without connecting and without calling release_fn. Callbacks run synchronously on the thread that emits the signal; borrowed payload pointers and handles are valid only during the call. release_fn (nullable) receives callback_ctx exactly once, with no signal or scope lock held, when the slot is torn down: flight_free_signal_connection (which disconnects), flight_disconnect_signal_connection, a once connection firing, disconnecting scope, clearing the signal, or dropping the last handle to the signal. The callback never runs after release_fn; a call already running on another thread finishes first, and the connection reports disconnected as soon as it is torn down. release_fn may call back into the signal. Higher priority runs first and equal priorities keep connect order; once disconnects after the first call; scope may be NULL.";
 // Item C: the decision for every `Signal<T>` payload on the public perimeter. `connect` emits one
 // `flight_connect_<payload>_signal` wrapper whose callback argument follows Task M's lowering
 // rules (unit, scalar, checked enum as u32, `&PlainStruct` and `&Ref<T>` as borrowed handles);
@@ -4680,43 +4680,27 @@ fn generate_signal_connect_wrappers() -> String {
 // `SignalConnection`, context released exactly once) instead of the generic disposer lowering, so
 // its wrapper is written here and counted as that source's generated wrapper.
 fn generate_signal_at_frame_rate_wrapper() -> String {
-    return r#"#[doc = "flight-ffi contract|Connects callback_fn(callback_ctx, accumulated_ms) to a FrameTick signal at a reduced frame rate and returns an owned connection; NULL source or callback_fn returns NULL without calling release_fn. Teardown matches flight_connect_*_signal: release_fn(callback_ctx) runs exactly once when flight_free_signal_connection disconnects it or the source is cleared, and the callback never runs after it. Callbacks run on the emitting thread; release_fn may run while the source is locked and must not call into it."]
+    return format!(
+        r#"#[doc = "flight-ffi contract|{SIGNAL_AT_FRAME_RATE_CONTRACT}"]
 #[doc = "flight-ffi ownership|owned-return|flight_free_signal_connection|flight_sdk::SignalConnection"]
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn flight_connect_signal_at_frame_rate(source: *const flight_sdk::Signal<flight_sdk::FrameTick>, fps: f64, callback_fn: Option<extern "C" fn(*mut std::ffi::c_void, f64)>, callback_ctx: *mut std::ffi::c_void, release_fn: Option<extern "C" fn(*mut std::ffi::c_void)>) -> *mut flight_sdk::SignalConnection {
-    if source.is_null() {
+pub unsafe extern "C" fn flight_connect_signal_at_frame_rate(source: *const flight_sdk::Signal<flight_sdk::FrameTick>, fps: f64, callback_fn: Option<extern "C" fn(*mut std::ffi::c_void, f64)>, callback_ctx: *mut std::ffi::c_void, release_fn: Option<extern "C" fn(*mut std::ffi::c_void)>) -> *mut flight_sdk::SignalConnection {{
+    if source.is_null() {{
         return std::ptr::null_mut();
-    }
-    let Some(callback) = callback_fn else {
+    }}
+    let Some(callback) = callback_fn else {{
         return std::ptr::null_mut();
-    };
-    let guard = FfiSignalCallbackRelease { ctx: callback_ctx as usize, release: release_fn };
-    let paused = std::sync::Arc::new(std::sync::atomic::AtomicBool::new(false));
-    let slot_paused = paused.clone();
-    let slot: std::sync::Arc<dyn Fn(f64) + Send + Sync> = std::sync::Arc::new(move |total: f64| {
-        if !slot_paused.load(std::sync::atomic::Ordering::Acquire) {
-            callback(guard.ctx(), total);
-        }
-    });
-    let live = std::sync::Arc::downgrade(&slot);
-    let dispose = flight_sdk::connect_signal_at_frame_rate(unsafe { &*source }, fps, slot);
-    let connected = std::sync::Arc::new(std::sync::atomic::AtomicBool::new(true));
-    let disconnect_connected = connected.clone();
-    let is_connected = move || connected.load(std::sync::atomic::Ordering::Acquire) && live.strong_count() > 0;
-    let connection = flight_sdk::SignalConnection {
-        disconnect: std::sync::Arc::new(move || {
-            if disconnect_connected.swap(false, std::sync::atomic::Ordering::AcqRel) {
-                dispose();
-            }
-        }),
-        set_paused: std::sync::Arc::new(move |value| paused.store(value, std::sync::atomic::Ordering::Release)),
-        is_connected: std::sync::Arc::new(is_connected),
-        paused: std::sync::Arc::new(std::sync::RwLock::new(false)),
-    };
+    }};
+    let guard = FfiSignalCallbackRelease {{ ctx: callback_ctx as usize, release: release_fn }};
+    let slot: std::sync::Arc<dyn Fn(f64) + Send + Sync> = std::sync::Arc::new(move |total: f64| callback(guard.ctx(), total));
+    let connection = flight_sdk::signals::contract::connect_signal_at_frame_rate_tracked(unsafe {{ &*source }}, fps, slot, None);
     return Box::into_raw(Box::new(connection));
-}"#
-        .to_string();
+}}"#
+    );
 }
+
+// The header contract `flight_connect_signal_at_frame_rate` carries.
+const SIGNAL_AT_FRAME_RATE_CONTRACT: &str = "Connects callback_fn(callback_ctx, accumulated_ms) to a FrameTick signal at a reduced frame rate and returns an owned connection; NULL source or callback_fn returns NULL without calling release_fn. Teardown matches flight_connect_*_signal: release_fn(callback_ctx) runs exactly once, with no signal lock held, when flight_free_signal_connection or flight_disconnect_signal_connection disconnects it, the source is cleared, or the last handle to the source is dropped; the callback never runs after it. Callbacks run on the emitting thread, and the connection reports disconnected as soon as it is torn down, even while a callback already running on another thread finishes.";
 
 fn generate_signal_connection_support() -> &'static str {
     r#"struct FfiSignalCallbackRelease {

@@ -19,6 +19,25 @@ struct Probe {
     self_connection: Mutex<Option<usize>>,
     thread: Mutex<Option<std::thread::ThreadId>>,
     values: Mutex<Vec<f64>>,
+    release_hook: Mutex<Option<Box<dyn FnOnce() + Send>>>,
+    block: AtomicBool,
+    entered: AtomicBool,
+}
+
+#[test]
+fn a_nested_emission_cannot_repeat_a_once_callback() {
+    let signal = flight_sdk::create_signal::<()>();
+    let mut probe = Probe::default();
+    probe.reemit = Some(signal.clone());
+    let connection = z_connect_unit(&signal, &probe, 0, true);
+    flight_sdk::emit_signal(&signal, &());
+    assert_eq!(
+        (z_get_probe_calls(&probe), z_get_probe_releases(&probe)),
+        (1, 1)
+    );
+    assert!(!probe.released_during_call.load(Ordering::SeqCst));
+    unsafe { crate::flight_free_signal_connection(connection) };
+    assert_eq!(z_get_probe_releases(&probe), 1);
 }
 
 #[test]
@@ -75,6 +94,42 @@ fn disconnect_releases_once_and_free_does_not_release_again() {
         (z_get_probe_calls(&probe), z_get_probe_releases(&probe)),
         (0, 1)
     );
+}
+
+#[test]
+fn dropping_the_only_source_releases_once_and_disconnects() {
+    let signal = flight_sdk::create_signal::<()>();
+    let probe = Probe::default();
+    let connection = z_connect_unit(&signal, &probe, 0, false);
+    drop(signal);
+    assert_eq!(z_get_probe_releases(&probe), 1);
+    assert!(!flight_sdk::is_signal_connection_connected(unsafe {
+        &*connection
+    }));
+    unsafe { crate::flight_free_signal_connection(connection) };
+    assert_eq!(
+        (z_get_probe_calls(&probe), z_get_probe_releases(&probe)),
+        (0, 1)
+    );
+
+    let source = flight_sdk::create_signal::<flight_sdk::FrameTick>();
+    let ticks = Probe::default();
+    let connection = unsafe {
+        crate::flight_connect_signal_at_frame_rate(
+            &source,
+            10.0,
+            Some(z_record_f64),
+            z_get_probe_context(&ticks),
+            Some(z_release),
+        )
+    };
+    drop(source);
+    assert_eq!(z_get_probe_releases(&ticks), 1);
+    assert!(!flight_sdk::is_signal_connection_connected(unsafe {
+        &*connection
+    }));
+    unsafe { crate::flight_free_signal_connection(connection) };
+    assert_eq!(z_get_probe_releases(&ticks), 1);
 }
 
 #[test]
@@ -218,6 +273,43 @@ fn frame_rate_connection_shares_the_signal_connection_teardown() {
         .is_null()
     );
     assert_eq!(z_get_probe_releases(&refused), 0);
+}
+
+#[test]
+// flight-lint: allow(f64) frame-rate callbacks receive the SDK's f64 accumulated milliseconds
+fn frame_rate_reports_disconnected_on_clear_while_a_callback_is_blocked() {
+    z_run_within_deadline(|| {
+        let source = flight_sdk::create_signal::<flight_sdk::FrameTick>();
+        let probe = Box::leak(Box::new(Probe::default()));
+        probe.block.store(true, Ordering::SeqCst);
+        let connection = unsafe {
+            crate::flight_connect_signal_at_frame_rate(
+                &source,
+                1000.0,
+                Some(z_record_f64),
+                z_get_probe_context(probe),
+                Some(z_release),
+            )
+        };
+        let emitter = source.clone();
+        let emission = std::thread::spawn(move || {
+            flight_sdk::emit_signal(&emitter, &flight_sdk::FrameTick { delta_time: 5.0 });
+        });
+        while !probe.entered.load(Ordering::SeqCst) {
+            std::thread::sleep(std::time::Duration::from_millis(1));
+        }
+        flight_sdk::clear_signal(&source);
+        assert!(!flight_sdk::is_signal_connection_connected(unsafe {
+            &*connection
+        }));
+        assert_eq!(z_get_probe_releases(probe), 0);
+        probe.block.store(false, Ordering::SeqCst);
+        emission.join().unwrap();
+        assert_eq!(z_get_probe_releases(probe), 1);
+        assert!(!probe.released_during_call.load(Ordering::SeqCst));
+        unsafe { crate::flight_free_signal_connection(connection) };
+        assert_eq!(z_get_probe_releases(probe), 1);
+    });
 }
 
 #[test]
@@ -439,6 +531,64 @@ fn reentrant_emit_from_a_callback_does_not_deadlock() {
 }
 
 #[test]
+fn release_may_call_back_into_the_signal_on_every_teardown_path() {
+    for path in ["free", "disconnect", "clear", "scope", "once", "frame-rate"] {
+        z_run_within_deadline(move || {
+            let signal = flight_sdk::create_signal::<()>();
+            let ticks = flight_sdk::create_signal::<flight_sdk::FrameTick>();
+            let scope = flight_sdk::create_signal_scope();
+            let side = flight_sdk::connect_signal_tracked(&signal, Arc::new(|_: &()| {}), None);
+            let probe = Box::leak(Box::new(Probe::default()));
+            let (hook_signal, hook_ticks) = (signal.clone(), ticks.clone());
+            *probe.release_hook.lock().unwrap() = Some(Box::new(move || {
+                flight_sdk::has_signal_slots(&hook_signal);
+                flight_sdk::disconnect_signal_connection(&side);
+                flight_sdk::clear_signal(&hook_signal);
+                flight_sdk::has_signal_slots(&hook_ticks);
+                flight_sdk::clear_signal(&hook_ticks);
+            }));
+            let connection = if path == "frame-rate" {
+                unsafe {
+                    crate::flight_connect_signal_at_frame_rate(
+                        &ticks,
+                        10.0,
+                        Some(z_record_f64),
+                        z_get_probe_context(probe),
+                        Some(z_release),
+                    )
+                }
+            } else {
+                unsafe {
+                    crate::flight_connect_unit_signal(
+                        &signal,
+                        Some(z_record_unit),
+                        z_get_probe_context(probe),
+                        Some(z_release),
+                        0,
+                        path == "once",
+                        if path == "scope" {
+                            &scope
+                        } else {
+                            std::ptr::null()
+                        },
+                    )
+                }
+            };
+            match path {
+                "disconnect" => flight_sdk::disconnect_signal_connection(unsafe { &*connection }),
+                "clear" => flight_sdk::clear_signal(&signal),
+                "scope" => flight_sdk::disconnect_signal_scope(&scope),
+                "once" => flight_sdk::emit_signal(&signal, &()),
+                _ => {}
+            }
+            unsafe { crate::flight_free_signal_connection(connection) };
+            assert_eq!(z_get_probe_releases(probe), 1, "{path}");
+            assert!(!flight_sdk::has_signal_slots(&signal), "{path}");
+        });
+    }
+}
+
+#[test]
 fn scope_disconnect_releases_once() {
     let signal = flight_sdk::create_signal::<()>();
     let scope = flight_sdk::create_signal_scope();
@@ -545,7 +695,14 @@ fn z_get_probe_releases(probe: &Probe) -> usize {
 
 // flight-lint: allow(f64) signal callback ABI and frame deltas are defined by the SDK
 extern "C" fn z_record_f64(ctx: *mut c_void, value: f64) {
-    z_enter(ctx).values.lock().unwrap().push(value);
+    let probe = z_enter(ctx);
+    probe.values.lock().unwrap().push(value);
+    probe.in_call.store(true, Ordering::SeqCst);
+    probe.entered.store(true, Ordering::SeqCst);
+    while probe.block.load(Ordering::SeqCst) {
+        std::thread::sleep(std::time::Duration::from_millis(1));
+    }
+    probe.in_call.store(false, Ordering::SeqCst);
 }
 
 extern "C" fn z_record_frame_tick(ctx: *mut c_void, tick: *const flight_sdk::FrameTick) {
@@ -593,6 +750,26 @@ extern "C" fn z_release(ctx: *mut c_void) {
         probe.released_during_call.store(true, Ordering::SeqCst);
     }
     probe.releases.fetch_add(1, Ordering::SeqCst);
+    let hook = probe.release_hook.lock().unwrap().take();
+    if let Some(hook) = hook {
+        hook();
+    }
+}
+
+// Runs `test` on its own thread and fails instead of hanging when it deadlocks.
+fn z_run_within_deadline(test: impl FnOnce() + Send + 'static) {
+    let (done, finished) = std::sync::mpsc::channel();
+    let worker = std::thread::spawn(move || {
+        test();
+        done.send(()).unwrap();
+    });
+    if finished
+        .recv_timeout(std::time::Duration::from_secs(5))
+        .is_err()
+    {
+        panic!("signal teardown deadlocked or panicked");
+    }
+    worker.join().unwrap();
 }
 
 impl Drop for Probe {
