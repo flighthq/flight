@@ -230,6 +230,7 @@ static void check_shared_values(void) {
   expect(flight_get_timeline_labels_result_get(labels, 0) == NULL, "an out-of-range label reads NULL");
   flight_get_timeline_labels_result_free(labels);
   flight_get_timeline_labels_result_free(NULL);
+  flight_free_timeline_ref(timeline);
 }
 
 static void check_slice_carriers(void) {
@@ -240,6 +241,7 @@ static void check_slice_carriers(void) {
   void *region = flight_create_clip_region_from_contours(contours, (void *)lengths, 1, 0);
   expect(flight_clip_region_contains_point(region, 5.0, 5.0), "a contour clip region contains its interior");
   expect(!flight_clip_region_contains_point(region, 15.0, 5.0), "a contour clip region excludes its exterior");
+  flight_free_clip_region_ref(region);
 
   /* A nested list return is read one inner list at a time and freed once. */
   void *path = flight_create_path(-1);
@@ -296,6 +298,7 @@ static void check_typed_array_refs(void) {
   expect(near(read[1], -0.5f), "channel data matches the samples");
   expect(flight_get_audio_resource_channel_data(resource, -1) == NULL, "a missing channel reads NULL");
   flight_free_float32_array_ref(data);
+  flight_free_audio_resource_ref(resource);
   flight_free_float32_array_ref(channel);
   flight_free_float32_array_ref(NULL);
   expect(flight_get_uint8_array_ref_length(NULL) == 0, "a NULL typed array Ref is empty");
