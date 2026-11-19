@@ -22,6 +22,8 @@ mod interaction_signal_runtime_test;
 #[cfg(test)]
 mod node_handle_runtime_test;
 #[cfg(test)]
+mod render_pass_bracket_runtime_test;
+#[cfg(test)]
 mod shape_bounds_context_test;
 #[cfg(test)]
 mod signal_connection_runtime_test;
