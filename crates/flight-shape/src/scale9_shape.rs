@@ -1,7 +1,6 @@
 //! flight-compiler: target-native
 
 //! Nine-slice shape kinds (TS `scale9Shape.ts`).
-// flight-lint: allow-file(f64) D1: shape command tokens, path geometry and morph progress use the canonical f64 Path lane; matrices stay f32
 
 use flight_entity::{Ref, allocate_entity};
 use flight_scene2d::contract::{Node2DRuntime, create_node2d};

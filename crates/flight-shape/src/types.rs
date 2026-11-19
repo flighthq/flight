@@ -85,7 +85,6 @@ use flight_scene2d::contract::{Node2DFields, Node2DShapeCommandStream};
 
 use flight_texture::contract::Texture;
 
-// flight-lint: allow-file(f64) D1: shape command tokens, path geometry and morph progress use the canonical f64 Path lane; matrices stay f32
 // flight-lint: allow-file(contract-vocabulary, sugar-delegates) D16 structural shape family accessors preserve the open kinds and are contract dispatch, not convenience methods
 use std::any::Any;
 
@@ -166,8 +165,7 @@ pub struct ShapeCommandNumbers {
 }
 
 /// One slot of the flat heterogeneous command buffer (TS `ShapeCommandToken`). Numbers are f64
-/// because the tokens carry path-space coordinates consumed by the canonical f64 Path lane and by
-/// morph/gradient interpolation; matrices remain the canonical f32 geometry record.
+/// path-space coordinates, consumed by the f64 Path lane and by morph/gradient interpolation.
 #[derive(Clone, Debug)]
 pub enum ShapeCommandToken {
     Boolean(bool),
@@ -231,6 +229,7 @@ pub struct MorphShapePathBinding {
 /// A color paint endpoint (TS `MorphShapeColorEndpoint`): packed RGBA plus optional alpha.
 #[derive(Clone, Debug, PartialEq)]
 #[repr(C)]
+// flight-lint: allow(f32) alpha is a normalized opacity factor, not spatial data
 pub struct MorphShapeColorEndpoint {
     pub alpha: Option<f32>,
     pub color: u32,
@@ -249,6 +248,7 @@ pub struct MorphShapeGradientEndpoint {
 /// A line paint endpoint (TS `MorphShapeLineEndpoint`).
 #[derive(Clone, Debug, PartialEq)]
 #[repr(C)]
+// flight-lint: allow(f32) alpha is a normalized opacity factor, not spatial data
 pub struct MorphShapeLineEndpoint {
     pub alpha: Option<f32>,
     pub color: u32,
@@ -258,6 +258,7 @@ pub struct MorphShapeLineEndpoint {
 /// A retained solid-color paint binding (TS `MorphShapeColorPaintBinding`).
 #[derive(Clone, Debug, PartialEq)]
 #[repr(C)]
+// flight-lint: allow(f32) alpha is a normalized opacity factor, not spatial data
 pub struct MorphShapeColorPaintBinding {
     pub command_index: usize,
     pub end_alpha: f32,
@@ -287,6 +288,7 @@ pub struct MorphShapeGradientPaintBinding {
 /// A retained line paint binding (TS `MorphShapeLinePaintBinding`).
 #[derive(Clone, Debug, PartialEq)]
 #[repr(C)]
+// flight-lint: allow(f32) alpha is a normalized opacity factor, not spatial data
 pub struct MorphShapeLinePaintBinding {
     pub command_index: usize,
     pub end_alpha: f32,
@@ -342,14 +344,14 @@ pub struct Scale9Shape {
 #[derive(Clone, Copy, Debug, Default, PartialEq)]
 #[repr(C)]
 pub struct ShapeScale9Grid {
-    pub x: f32,
-    pub y: f32,
-    pub width: f32,
-    pub height: f32,
+    pub x: f64,
+    pub y: f64,
+    pub width: f64,
+    pub height: f64,
 }
 
 /// Maps a coordinate through a nine-slice grid (TS `Scale9Mapper`).
-pub type Scale9Mapper = Arc<dyn Fn(f32) -> f32 + Send + Sync>;
+pub type Scale9Mapper = Arc<dyn Fn(f64) -> f64 + Send + Sync>;
 
 /// Maps both axes of a nine-slice grid (TS `Scale9Mapper`'s mapX/mapY pair).
 pub struct ShapeScale9Mapper {
@@ -436,6 +438,7 @@ pub type ShapeBoundsStateRef = Ref<ShapeBoundsState>;
 /// One solid-color filled region (TS `ShapeFillRegion`).
 #[derive(Clone)]
 #[repr(C)]
+// flight-lint: allow(f32) alpha is a normalized opacity factor, not spatial data
 pub struct ShapeFillRegion {
     pub alpha: f32,
     pub color: u32,
@@ -445,6 +448,7 @@ pub struct ShapeFillRegion {
 /// One solid-color stroke region: the authored centerline plus its style (TS `ShapeStrokeRegion`).
 #[derive(Clone)]
 #[repr(C)]
+// flight-lint: allow(f32) alpha is a normalized opacity factor, not spatial data
 pub struct ShapeStrokeRegion {
     pub alpha: f32,
     pub color: u32,

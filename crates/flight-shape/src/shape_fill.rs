@@ -1,7 +1,6 @@
 //! flight-compiler: target-native
 
 //! Solid fill-region resolution and shared geometry expansion (TS `shapeFill.ts`).
-// flight-lint: allow-file(f64) D1: shape command tokens, path geometry and morph progress use the canonical f64 Path lane; matrices stay f32
 
 use std::sync::{Arc, RwLock};
 
@@ -12,7 +11,7 @@ use flight_path::{Path, PathCommand, PathWinding, create_path};
 use crate::types::*;
 
 fn append_ellipse_to_path(path: &mut Path, cx: f64, cy: f64, rx: f64, ry: f64) {
-    let kappa = CIRCLE_KAPPA as f64;
+    let kappa = CIRCLE_KAPPA;
     let kx = rx * kappa;
     let ky = ry * kappa;
     push_verb(path, PathCommand::MOVE_TO, cx + rx, cy);
@@ -58,7 +57,7 @@ fn append_round_rectangle_to_path(
         .min(height.abs() / 2.0);
     let right = x + width;
     let bottom = y + height;
-    let kappa_radius = radius * CIRCLE_KAPPA as f64;
+    let kappa_radius = radius * CIRCLE_KAPPA;
     push_verb(path, PathCommand::MOVE_TO, x + radius, y);
     push_verb(path, PathCommand::LINE_TO, right - radius, y);
     push_cubic(
@@ -187,6 +186,7 @@ fn arg(commands: &[ShapeCommandToken], index: usize) -> f64 {
     return number(commands, index);
 }
 
+// flight-lint: allow(f32) alpha is a normalized opacity factor, not spatial data
 fn fill_region(path: Path, color: u32, alpha: f64) -> ShapeFillRegion {
     return ShapeFillRegion {
         alpha: alpha as f32,

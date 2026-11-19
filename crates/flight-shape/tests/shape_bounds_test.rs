@@ -124,7 +124,7 @@ mod bounds_source_parity {
             &*shape.read().unwrap(),
             None
         ));
-        assert!(((out.y + out.height) as f64 - 15.0).abs() < 1e-4);
+        assert!(((out.y + out.height) - 15.0).abs() < 1e-4);
     }
 
     #[test]
@@ -201,7 +201,7 @@ mod bounds_source_parity {
         assert_eq!(out.x, 0.0);
         assert_eq!(out.y, 0.0);
         assert_eq!(out.width, 200.0);
-        assert!((out.height as f64 - 200.0 / 3.0).abs() < 1e-4);
+        assert!((out.height - 200.0 / 3.0).abs() < 1e-4);
     }
 
     #[test]
@@ -242,7 +242,7 @@ mod bounds_source_parity {
         assert_eq!(tangent_bounds.x, 0.0);
         assert_eq!(tangent_bounds.y, 0.0);
         assert_eq!(tangent_bounds.width, 100.0);
-        assert!((tangent_bounds.height as f64 - 20.0).abs() < 1e-4);
+        assert!((tangent_bounds.height - 20.0).abs() < 1e-4);
     }
 
     #[test]

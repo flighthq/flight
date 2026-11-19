@@ -1,7 +1,6 @@
 //! flight-compiler: target-native
 
 //! Retained shape command stream appenders (TS `shapeCommands.ts`).
-// flight-lint: allow-file(f64) D1: shape command tokens, path geometry and morph progress use the canonical f64 Path lane; matrices stay f32
 // flight-lint: allow-file(contract-vocabulary) D16 open shape family: ShapeNode bounds and structural node dispatch on the shape command/bounds surface are contract dispatch, not arbitrary vocabulary types
 
 use flight_entity::Ref;
@@ -544,7 +543,7 @@ pub fn append_shape_rounded_rectangle_with_corner_radii<T: ShapeNode + 'static>(
 ) {
     let right = x + width;
     let bottom = y + height;
-    let kappa = CIRCLE_KAPPA as f64;
+    let kappa = CIRCLE_KAPPA;
     let k_tr = top_right * kappa;
     let k_br = bottom_right * kappa;
     let k_bl = bottom_left * kappa;

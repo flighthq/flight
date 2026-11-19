@@ -154,8 +154,8 @@ src/morph_shape.rs: pub fn get_morph_shape_runtime(source: &dyn flight_node::con
 src/morph_shape.rs: pub fn initialize_morph_shape(out: &mut MorphShape, morph: &Ref<PathMorph>)
 src/morph_shape.rs: pub fn initialize_morph_shape_data(out: &mut MorphShapeData, morph: &Ref<PathMorph>,)
 src/morph_shape.rs: pub fn set_morph_shape_progress(shape: &Ref<MorphShape>, progress: f64)
-src/morph_shape_animation.rs: pub fn apply_animation_clip_to_morph_shape(clip: &AnimationClip, time: f32)
-src/morph_shape_animation.rs: pub fn apply_morph_shape_animation_sample(sampled: &[f32], channel: &AnimationChannel) -> bool
+src/morph_shape_animation.rs: pub fn apply_animation_clip_to_morph_shape(clip: &AnimationClip, time: f64)
+src/morph_shape_animation.rs: pub fn apply_morph_shape_animation_sample(sampled: &[f64], channel: &AnimationChannel) -> bool
 src/morph_shape_animation.rs: pub fn create_morph_shape_animation_target(shape: &Ref<MorphShape>,) -> Ref<MorphShapeAnimationTarget>
 src/morph_shape_animation.rs: pub fn initialize_morph_shape_animation_target(out: &mut MorphShapeAnimationTarget, shape: &Ref<MorphShape>,)
 src/morph_shape_paint.rs: pub fn append_morph_shape_begin_fill(shape: &Ref<MorphShape>, start: &MorphShapeColorEndpoint, end: &MorphShapeColorEndpoint,)
@@ -263,7 +263,6 @@ src/types.rs: #[derive(Clone)] pub struct MorphShapePathBinding { pub command_in
 src/types.rs: #[derive(Clone)] pub struct ShapeBoundsCommand { pub fill_bounds: Option<ShapeBoundsCommandHandler>, pub key: String, pub stroke_bounds: Option<ShapeBoundsCommandHandler>, }
 src/types.rs: #[derive(Clone)] pub struct ShapeFillRegion { pub alpha: f32, pub color: u32, pub path: Ref<Path>, }
 src/types.rs: #[derive(Clone)] pub struct ShapeStrokeRegion { pub alpha: f32, pub color: u32, pub path: Ref<Path>, pub style: flight_path::StrokeStyle, }
-src/types.rs: #[derive(Clone, Copy, Debug, Default, PartialEq)] pub struct ShapeScale9Grid { pub x: f32, pub y: f32, pub width: f32, pub height: f32, }
 src/types.rs: #[derive(Clone, Copy, Debug, PartialEq, Eq)] pub enum CapsStyle { None, Round, Square, }
 src/types.rs: #[derive(Clone, Copy, Debug, PartialEq, Eq)] pub enum GradientType { Linear, Radial, }
 src/types.rs: #[derive(Clone, Copy, Debug, PartialEq, Eq)] pub enum InterpolationMethod { LinearRgb, Rgb, }
@@ -275,6 +274,7 @@ src/types.rs: #[derive(Clone, Copy, Debug, PartialEq, Eq)] pub enum ShapeTessell
 src/types.rs: #[derive(Clone, Copy, Debug, PartialEq, Eq)] pub enum ShapeTessellationStatus { NeedsRasterizer, Tessellates, }
 src/types.rs: #[derive(Clone, Copy, Debug, PartialEq, Eq)] pub enum SpreadMethod { Pad, Reflect, Repeat, }
 src/types.rs: #[derive(Clone, Copy, Debug, PartialEq, Eq)] pub enum TriangleCulling { Negative, None, Positive, }
+src/types.rs: #[derive(Clone, Copy, Debug, Default, PartialEq)] pub struct ShapeScale9Grid { pub x: f64, pub y: f64, pub width: f64, pub height: f64, }
 src/types.rs: #[derive(Clone, Copy, Debug, PartialEq, Eq)] pub struct MorphShapeGradientEndpointExplanation { pub end_stop_count: usize, pub reason: MorphShapeGradientEndpointReason, pub start_stop_count: usize, pub supported: bool, }
 src/types.rs: #[derive(Clone, Copy, Debug, PartialEq, Eq)] pub struct ShapeTessellationExplanation { pub blocked_by: ShapeTessellationBlockedBy, pub status: ShapeTessellationStatus, }
 src/types.rs: #[derive(Clone, Debug)] pub enum ShapeCommandToken { Boolean(bool), Matrix(Matrix), Null, Number(f64), Numbers(ShapeCommandNumbers), String(String), Texture(Ref<Texture>), }
@@ -347,7 +347,7 @@ src/types.rs: pub struct ShapeScale9Mapper { pub map_x: Scale9Mapper, pub map_y:
 src/types.rs: pub trait ShapeBoundsContext { fn close_path(&mut self); fn cubic_curve_to(&mut self, control_x1: f64, control_y1: f64, control_x2: f64, control_y2: f64, x: f64, y: f64,); fn draw_circle(&mut self, center_x: f64, center_y: f64, radius: f64); fn draw_ellipse(&mut self, center_x: f64, center_y: f64, radius_x: f64, radius_y: f64); fn draw_rectangle(&mut self, x: f64, y: f64, width: f64, height: f64); fn draw_rounded_rectangle(&mut self, x: f64, y: f64, width: f64, height: f64, radius: f64); fn expand_point(&mut self, x: f64, y: f64); fn flush_path(&mut self); fn line_to(&mut self, x: f64, y: f64); fn move_to(&mut self, x: f64, y: f64); fn quadratic_curve_to(&mut self, control_x: f64, control_y: f64, x: f64, y: f64); fn set_stroke_style(&mut self, width: f64, caps: CapsStyle, joints: JointStyle, miter_limit: f64,); }
 src/types.rs: pub trait ShapeCommandArgumentCursor { fn length(&self) -> usize; fn get_argument(&self, relative_index: usize) -> Option<&ShapeCommandToken>; }
 src/types.rs: pub trait ShapeNode: flight_scene2d::contract::Node2D + Sized { fn shape_commands(&self) -> &Vec<ShapeCommandToken>; fn shape_commands_mut(&mut self) -> &mut Vec<ShapeCommandToken>; fn shape_bounds_state(&self) -> ShapeBoundsStateRef; fn shape_runtime(&self) -> ShapeRuntimeRef; fn clear_shape_paint_bindings(&mut self); }
-src/types.rs: pub type Scale9Mapper = Arc<dyn Fn(f32) -> f32 + Send + Sync>;
+src/types.rs: pub type Scale9Mapper = Arc<dyn Fn(f64) -> f64 + Send + Sync>;
 src/types.rs: pub type ShapeBoundsCommandHandler = Arc<dyn Fn(&mut dyn ShapeBoundsContext, &dyn ShapeCommandArgumentCursor) + Send + Sync>;
 src/types.rs: pub type ShapeBoundsGuard = Arc<dyn Fn(&dyn Node, ShapeBoundsMode, &str) + Send + Sync>;
 src/types.rs: pub type ShapeBoundsStateRef = Ref<ShapeBoundsState>;

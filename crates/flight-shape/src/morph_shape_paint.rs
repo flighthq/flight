@@ -1,7 +1,6 @@
 //! flight-compiler: target-native
 
 //! Morph paint bindings sampled alongside path morphs (TS `morphShapePaint.ts`).
-// flight-lint: allow-file(f64) D1: shape command tokens, path geometry and morph progress use the canonical f64 Path lane; matrices stay f32
 
 use std::sync::Arc;
 
@@ -306,12 +305,12 @@ fn interpolate_rgba(start: u32, end: u32, progress: f64) -> u32 {
 }
 
 fn sample_matrix(out: &mut Matrix, start: &Matrix, end: &Matrix, progress: f64) {
-    out.a = interpolate_number(start.a as f64, end.a as f64, progress) as f32;
-    out.b = interpolate_number(start.b as f64, end.b as f64, progress) as f32;
-    out.c = interpolate_number(start.c as f64, end.c as f64, progress) as f32;
-    out.d = interpolate_number(start.d as f64, end.d as f64, progress) as f32;
-    out.tx = interpolate_number(start.tx as f64, end.tx as f64, progress) as f32;
-    out.ty = interpolate_number(start.ty as f64, end.ty as f64, progress) as f32;
+    out.a = interpolate_number(start.a, end.a, progress);
+    out.b = interpolate_number(start.b, end.b, progress);
+    out.c = interpolate_number(start.c, end.c, progress);
+    out.d = interpolate_number(start.d, end.d, progress);
+    out.tx = interpolate_number(start.tx, end.tx, progress);
+    out.ty = interpolate_number(start.ty, end.ty, progress);
 }
 
 /// Samples every retained paint binding at `progress` (TS `sampleMorphShapePaintBindings`).

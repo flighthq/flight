@@ -214,7 +214,7 @@ pub fn expect_commands<T: ShapeNode + 'static>(shape: &Ref<T>, expected: &[Shape
     assert_eq!(format!("{:?}", tokens(shape)), format!("{:?}", expected));
 }
 
-pub fn matrix(a: f32, b: f32, c: f32, d: f32, tx: f32, ty: f32) -> Matrix {
+pub fn matrix(a: f64, b: f64, c: f64, d: f64, tx: f64, ty: f64) -> Matrix {
     return create_matrix(a, b, c, d, tx, ty);
 }
 
@@ -251,12 +251,7 @@ pub fn empty_rect() -> flight_geometry::Rectangle {
 }
 
 pub fn rect_values(rect: &flight_geometry::Rectangle) -> (f64, f64, f64, f64) {
-    return (
-        rect.x as f64,
-        rect.y as f64,
-        rect.width as f64,
-        rect.height as f64,
-    );
+    return (rect.x, rect.y, rect.width, rect.height);
 }
 
 pub fn shape_with_state(

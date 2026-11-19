@@ -10,6 +10,26 @@ mod map_scale9_shape_commands {
     use super::*;
 
     #[test]
+    fn maps_path_coordinates_without_an_f32_round_trip() {
+        // 0.1 and 0.2 are not f32 values; an identity mapper must hand them back unchanged.
+        let source = vec![
+            ShapeCommandToken::String(String::from("moveTo")),
+            ShapeCommandToken::Number(2.0),
+            ShapeCommandToken::Number(0.1),
+            ShapeCommandToken::Number(0.2),
+        ];
+        let mapper = ShapeScale9Mapper {
+            map_x: Arc::new(|value: f64| value),
+            map_y: Arc::new(|value: f64| value),
+        };
+        let mut out = Vec::new();
+        map_scale9_shape_commands(&mut out, &source, &mapper);
+        assert_ne!(f64::from(0.1_f32), 0.1);
+        assert!(matches!(out[2], ShapeCommandToken::Number(x) if x == 0.1));
+        assert!(matches!(out[3], ShapeCommandToken::Number(y) if y == 0.2));
+    }
+
+    #[test]
     fn maps_coordinates_through_the_mapper() {
         let source = vec![
             ShapeCommandToken::String(String::from("moveTo")),
@@ -18,8 +38,8 @@ mod map_scale9_shape_commands {
             ShapeCommandToken::Number(7.0),
         ];
         let mapper = ShapeScale9Mapper {
-            map_x: Arc::new(|value: f32| value + 1.0),
-            map_y: Arc::new(|value: f32| value * 2.0),
+            map_x: Arc::new(|value: f64| value + 1.0),
+            map_y: Arc::new(|value: f64| value * 2.0),
         };
         let mut out = Vec::new();
         map_scale9_shape_commands(&mut out, &source, &mapper);
@@ -30,10 +50,10 @@ mod map_scale9_shape_commands {
 mod scale9_commands_source_parity {
     use super::*;
 
-    fn mapper(scale_x: f32, scale_y: f32, offset_x: f32, offset_y: f32) -> ShapeScale9Mapper {
+    fn mapper(scale_x: f64, scale_y: f64, offset_x: f64, offset_y: f64) -> ShapeScale9Mapper {
         return ShapeScale9Mapper {
-            map_x: Arc::new(move |value: f32| value * scale_x + offset_x),
-            map_y: Arc::new(move |value: f32| value * scale_y + offset_y),
+            map_x: Arc::new(move |value: f64| value * scale_x + offset_x),
+            map_y: Arc::new(move |value: f64| value * scale_y + offset_y),
         };
     }
 

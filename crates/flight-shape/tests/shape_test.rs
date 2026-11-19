@@ -230,7 +230,7 @@ mod shape_source_parity {
         assert_eq!(out.x, 0.0);
         assert_eq!(out.y, 0.0);
         assert_eq!(out.width, 200.0);
-        assert!(((out.height as f64) - 200.0 / 3.0).abs() < 1e-4);
+        assert!((out.height - 200.0 / 3.0).abs() < 1e-4);
     }
 
     #[test]
@@ -324,7 +324,7 @@ mod shape_source_parity {
         assert_eq!(out.x, 0.0);
         assert_eq!(out.y, 0.0);
         assert_eq!(out.width, 100.0);
-        assert!(((out.height as f64) - 50.0).abs() < 1e-4);
+        assert!((out.height - 50.0).abs() < 1e-4);
     }
 
     #[test]
@@ -335,9 +335,9 @@ mod shape_source_parity {
         let mut out = empty_rect();
         compute_shape_local_bounds_rectangle(&mut out, &*shape.read().unwrap());
         assert_eq!(out.x, 0.0);
-        assert!(((out.y as f64) - 25.0).abs() < 1e-4);
+        assert!((out.y - 25.0).abs() < 1e-4);
         assert_eq!(out.width, 100.0);
-        assert!(((out.height as f64) - 25.0).abs() < 1e-4);
+        assert!((out.height - 25.0).abs() < 1e-4);
     }
 
     #[test]

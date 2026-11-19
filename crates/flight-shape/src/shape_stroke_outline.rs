@@ -1,7 +1,6 @@
 //! flight-compiler: target-native
 
 //! Stroke OUTLINE regions for the direct-fill path (TS `shapeStrokeOutline.ts`).
-// flight-lint: allow-file(f64) D1: shape command tokens, path geometry and morph progress use the canonical f64 Path lane; matrices stay f32
 
 use std::sync::{Arc, RwLock};
 
@@ -17,6 +16,7 @@ use crate::types::*;
 
 const CLOSE_EPSILON: f64 = 1e-6;
 
+// flight-lint: allow(f32) alpha is a normalized opacity factor, not spatial data
 fn flush_outline(
     regions: &mut Vec<ShapeFillRegion>,
     deferred: &mut bool,

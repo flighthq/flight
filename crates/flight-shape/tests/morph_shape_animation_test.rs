@@ -35,7 +35,7 @@ mod animation_source_parity {
 
     fn channel_with(
         shape: &flight_entity::Ref<MorphShape>,
-        values: Vec<f32>,
+        values: Vec<f64>,
         easing: Option<flight_animation::EasingFn>,
     ) -> flight_animation::AnimationChannel {
         let mut target: MorphShapeAnimationTarget = allocate_entity();
@@ -45,7 +45,7 @@ mod animation_source_parity {
 
     fn channel_for_target(
         target: Arc<MorphShapeAnimationTarget>,
-        values: Vec<f32>,
+        values: Vec<f64>,
         easing: Option<flight_animation::EasingFn>,
     ) -> flight_animation::AnimationChannel {
         let track = {
@@ -187,7 +187,7 @@ mod animation_source_parity {
             "sources {}",
             tree.channels[0].sources.len()
         );
-        let mut scratch = [0.0f32];
+        let mut scratch = [0.0f64];
         sample_animation_blend_tree(&mut scratch, &mut tree, &mut |sampled, channel, _index| {
             apply_morph_shape_animation_sample(sampled, channel);
         });

@@ -12,7 +12,6 @@ use crate::shape_bounds_registry::get_shape_bounds_command;
 
 use crate::types::*;
 
-// flight-lint: allow-file(f64) D1: shape command tokens, path geometry and morph progress use the canonical f64 Path lane; matrices stay f32
 use std::sync::Arc;
 
 struct ShapeBoundsLaneState {
@@ -1388,10 +1387,10 @@ fn write_shape_bounds_rectangle(out: &mut Rectangle, accumulator: &ShapeBoundsAc
         out.height = 0.0;
         return;
     }
-    out.x = accumulator.min_x as f32;
-    out.y = accumulator.min_y as f32;
-    out.width = (accumulator.max_x - accumulator.min_x) as f32;
-    out.height = (accumulator.max_y - accumulator.min_y) as f32;
+    out.x = accumulator.min_x;
+    out.y = accumulator.min_y;
+    out.width = accumulator.max_x - accumulator.min_x;
+    out.height = accumulator.max_y - accumulator.min_y;
 }
 
 impl ShapeCommandCursor<'_> {

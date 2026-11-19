@@ -1,7 +1,6 @@
 //! flight-compiler: target-native
 
 //! Morph shape progress animation targets (TS `morphShapeAnimation.ts`).
-// flight-lint: allow-file(f64) D1: shape command tokens, path geometry and morph progress use the canonical f64 Path lane; matrices stay f32
 
 use std::sync::Arc;
 
@@ -31,8 +30,8 @@ pub fn initialize_morph_shape_animation_target(
 /// Samples a clip and applies every MorphShape progress channel (TS
 /// `applyAnimationClipToMorphShape`).
 // flight-lint: allow(f64) D1: the clip time is the canonical animation number lane
-pub fn apply_animation_clip_to_morph_shape(clip: &AnimationClip, time: f32) {
-    let mut scratch: Vec<f32> = vec![0.0];
+pub fn apply_animation_clip_to_morph_shape(clip: &AnimationClip, time: f64) {
+    let mut scratch: Vec<f64> = vec![0.0];
     sample_animation_clip(&mut scratch, clip, time, &mut |sampled, channel, _index| {
         apply_morph_shape_animation_sample(sampled, channel);
     });
@@ -40,7 +39,7 @@ pub fn apply_animation_clip_to_morph_shape(clip: &AnimationClip, time: f32) {
 
 /// Applies one sampled channel to its MorphShape target, returning whether it was recognised (TS
 /// `applyMorphShapeAnimationSample`).
-pub fn apply_morph_shape_animation_sample(sampled: &[f32], channel: &AnimationChannel) -> bool {
+pub fn apply_morph_shape_animation_sample(sampled: &[f64], channel: &AnimationChannel) -> bool {
     let Some(value) = channel.target_ref.as_ref() else {
         return false;
     };
@@ -51,6 +50,6 @@ pub fn apply_morph_shape_animation_sample(sampled: &[f32], channel: &AnimationCh
     if shape.read().unwrap().data.progress.is_nan() {
         return false;
     }
-    set_morph_shape_progress(&shape, sampled[0] as f64);
+    set_morph_shape_progress(&shape, sampled[0]);
     return true;
 }

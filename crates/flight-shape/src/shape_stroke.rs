@@ -1,7 +1,6 @@
 //! flight-compiler: target-native
 
 //! Solid stroke-region resolution (TS `shapeStroke.ts`).
-// flight-lint: allow-file(f64) D1: shape command tokens, path geometry and morph progress use the canonical f64 Path lane; matrices stay f32
 
 use flight_path::{Path, PathCommand, PathWinding, StrokeCap, StrokeJoin, StrokeStyle};
 
@@ -9,6 +8,7 @@ use crate::shape_command_geometry::{ShapeGeometryEnd, write_shape_geometry_comma
 use crate::shape_fill::{append_shape_geometry_command, new_path_ref};
 use crate::types::*;
 
+// flight-lint: allow(f32) alpha is a normalized opacity factor, not spatial data
 fn flush_stroke(
     regions: &mut Vec<ShapeStrokeRegion>,
     style: &mut Option<StrokeStyle>,
