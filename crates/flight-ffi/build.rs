@@ -2304,7 +2304,7 @@ fn collect_ref_owned_signal_owners(crates_dir: &Path) -> BTreeSet<String> {
 // resolve to their defining crate.
 fn collect_crate_defined_type_names(
     crates_dir: &Path,
-) -> BTreeMap<String, signal_identity::CrateTypes> {
+) -> BTreeMap<String, signal_identity::CrateIndex> {
     let mut defined = BTreeMap::new();
     let mut crates: Vec<_> = fs::read_dir(crates_dir)
         .unwrap()
@@ -2325,7 +2325,7 @@ fn collect_crate_defined_type_names(
                 Some((get_source_module_path(&src_dir, path), file))
             })
             .collect();
-        defined.insert(name, signal_identity::collect_crate_types(&files));
+        defined.insert(name, signal_identity::index_crate(&files));
     }
     defined
 }
@@ -2355,7 +2355,7 @@ fn collect_signal_inventory(
     owner: &str,
     src_dir: &Path,
     crates_dir: &Path,
-    defined: &BTreeMap<String, signal_identity::CrateTypes>,
+    defined: &BTreeMap<String, signal_identity::CrateIndex>,
 ) -> Vec<SignalInventoryEntry> {
     let lib_path = src_dir.join("lib.rs");
     if !lib_path.exists() {
@@ -2373,21 +2373,13 @@ fn collect_signal_inventory(
             .unwrap_or(&source)
             .to_path_buf();
         let module = get_source_module_path(src_dir, &source);
-        let (imports, globs) = signal_identity::collect_file_imports(&file, owner, &module);
-        let scope = signal_identity::TypeScope {
-            owner,
-            module: &module,
-            imports: &imports,
-            globs: &globs,
-            defined,
-        };
         let mut record = |item: String,
                           ty: &syn::Type,
                           generics: &BTreeSet<String>,
                           glob_export: bool| {
             for payload in find_signal_payloads(ty) {
                 let (payload_text, identities) =
-                    signal_identity::resolve_payload(&payload, &scope, generics)
+                    signal_identity::resolve_payload(&payload, defined, owner, &module, generics)
                         .unwrap_or_else(|error| panic!("{}: {item}: {error}", relative.display()));
                 if generics.contains(&payload_text) {
                     continue;

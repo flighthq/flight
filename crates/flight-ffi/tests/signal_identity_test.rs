@@ -1,6 +1,6 @@
-//! Pins how build.rs identifies a signal payload type: by the crate and module that define it, so
-//! equal spellings merge, distinct same-named types are rejected, and a path no definition backs
-//! is an error rather than a guess.
+//! Pins how build.rs identifies a signal payload type: by its canonical definition (crate, module
+//! and item). Spellings unify only through real `use`/`pub use` bindings, same-named types stay
+//! distinct, and a path no definition backs is an error rather than a guess.
 
 #[path = "../signal_identity.rs"]
 mod signal_identity;
@@ -8,8 +8,8 @@ mod signal_identity;
 use std::collections::{BTreeMap, BTreeSet};
 
 use signal_identity::{
-    CrateTypes, PayloadIdentity, TypeScope, check_payload_identities, collect_crate_types,
-    collect_file_imports, display_type_text, resolve_payload, type_parameter_names,
+    CrateIndex, PayloadIdentity, check_payload_identities, display_type_text, index_crate,
+    resolve_payload, type_parameter_names,
 };
 
 mod check_payload_identities {
@@ -19,7 +19,11 @@ mod check_payload_identities {
     fn accepts_one_identity_per_payload_name() {
         let payloads = BTreeMap::from([(
             "KeyboardEventData".to_string(),
-            BTreeSet::from([z_identity("flight-interaction", "KeyboardEventData")]),
+            BTreeSet::from([z_identity(
+                "flight-interaction",
+                "types",
+                "KeyboardEventData",
+            )]),
         )]);
         assert_eq!(check_payload_identities(&payloads, z_stem), Ok(()));
     }
@@ -29,8 +33,8 @@ mod check_payload_identities {
         let payloads = BTreeMap::from([(
             "Event".to_string(),
             BTreeSet::from([
-                z_identity("flight-alpha", "Event"),
-                z_identity("flight-beta", "Event"),
+                z_identity("flight-alpha", "", "Event"),
+                z_identity("flight-beta", "", "Event"),
             ]),
         )]);
         let error = check_payload_identities(&payloads, z_stem).unwrap_err();
@@ -48,62 +52,6 @@ mod check_payload_identities {
         ]);
         let error = check_payload_identities(&payloads, z_stem).unwrap_err();
         assert!(error.contains("wrapper stem `event`"), "{error}");
-    }
-}
-
-mod collect_crate_types {
-    use super::*;
-
-    #[test]
-    fn reads_structs_enums_unions_and_aliases_per_module() {
-        let types = collect_crate_types(&[
-            (String::new(), z_parse("pub struct A; fn e() {}")),
-            (
-                "types".to_string(),
-                z_parse("enum B { X } pub union C { x: u8 } pub type D = A;"),
-            ),
-        ]);
-        assert_eq!(types.modules[""], BTreeSet::from(["A".to_string()]));
-        assert_eq!(
-            types.modules["types"],
-            BTreeSet::from(["B", "C", "D"].map(String::from))
-        );
-    }
-}
-
-mod collect_file_imports {
-    use super::*;
-
-    #[test]
-    fn records_absolute_paths_for_named_renamed_relative_and_glob_imports() {
-        let file = z_parse(
-            "use flight_input::{InputPointerData, PointerType as Kind};
-             use crate::types::KeyboardEventData;
-             use super::sibling::Probe;
-             use flight_alpha::*;
-             use crate::types::*;",
-        );
-        let (imports, globs) = collect_file_imports(&file, "flight-interaction", "nested::child");
-        assert_eq!(
-            imports["InputPointerData"],
-            ["flight-input", "InputPointerData"]
-        );
-        assert_eq!(imports["Kind"], ["flight-input", "PointerType"]);
-        assert_eq!(
-            imports["KeyboardEventData"],
-            ["flight-interaction", "types", "KeyboardEventData"]
-        );
-        assert_eq!(
-            imports["Probe"],
-            ["flight-interaction", "nested", "sibling", "Probe"]
-        );
-        assert_eq!(
-            globs,
-            [
-                vec!["flight-alpha".to_string()],
-                vec!["flight-interaction".to_string(), "types".to_string()]
-            ]
-        );
     }
 }
 
@@ -134,116 +82,275 @@ mod display_type_text {
     }
 }
 
+mod index_crate {
+    use super::*;
+
+    #[test]
+    fn records_definitions_children_bindings_and_inline_modules_per_module() {
+        let index = z_index(&[(
+            "flight-probe",
+            &[
+                (
+                    "",
+                    "pub mod types; mod hidden; pub use types::{self, Event as Renamed}; use crate::hidden::*;",
+                ),
+                (
+                    "types",
+                    "pub struct Event; enum Kind { A } pub union Bits { x: u8 } pub type Alias = Event; pub mod inner { pub struct Deep; }",
+                ),
+            ],
+        )]);
+        let krate = &index["flight-probe"];
+        let root = &krate.modules[""];
+        assert_eq!(
+            root.children,
+            BTreeSet::from(["hidden", "types"].map(String::from))
+        );
+        let bindings: Vec<(&str, Vec<&str>, bool)> = root
+            .uses
+            .iter()
+            .map(|binding| {
+                (
+                    binding.name.as_str(),
+                    binding.path.iter().map(String::as_str).collect(),
+                    binding.public,
+                )
+            })
+            .collect();
+        assert_eq!(
+            bindings,
+            [
+                ("types", vec!["types"], true),
+                ("Renamed", vec!["types", "Event"], true),
+            ]
+        );
+        assert_eq!(root.globs.len(), 1);
+        assert!(!root.globs[0].public);
+        assert_eq!(
+            krate.modules["types"].types,
+            BTreeSet::from(["Alias", "Bits", "Event", "Kind"].map(String::from))
+        );
+        assert_eq!(
+            krate.modules["types::inner"].types,
+            BTreeSet::from(["Deep".to_string()])
+        );
+    }
+}
+
 mod resolve_payload {
     use super::*;
 
     #[test]
+    fn a_crate_root_spelling_resolves_only_through_a_real_reexport() {
+        let index = z_fixture();
+        let canonical = z_identity("flight-input", "types", "InputPointerData");
+        assert_eq!(
+            z_resolve(
+                &index,
+                "flight-interaction",
+                "",
+                "flight_input::InputPointerData"
+            ),
+            Ok(BTreeSet::from([canonical.clone()]))
+        );
+        assert_eq!(
+            z_resolve(&index, "flight-input", "", "crate::types::InputPointerData"),
+            Ok(BTreeSet::from([canonical]))
+        );
+        let internal = z_resolve(
+            &index,
+            "flight-interaction",
+            "",
+            "flight_input::InternalOnly",
+        );
+        assert!(
+            internal
+                .unwrap_err()
+                .contains("not defined in, imported into, or re-exported by `flight-input`")
+        );
+    }
+
+    #[test]
     fn distinct_same_named_imports_resolve_to_distinct_identities() {
-        let defined = z_defined();
-        let alpha = z_identities("use flight_alpha::Event;", "Event", &defined).unwrap();
-        let beta = z_identities("use flight_beta::Event;", "Event", &defined).unwrap();
-        assert_eq!(alpha, BTreeSet::from([z_identity("flight-alpha", "Event")]));
-        assert_eq!(beta, BTreeSet::from([z_identity("flight-beta", "Event")]));
+        let index = z_fixture();
+        let alpha = z_resolve(&index, "flight-interaction", "uses_alpha", "Event").unwrap();
+        let beta = z_resolve(&index, "flight-interaction", "uses_beta", "Event").unwrap();
+        assert_eq!(
+            alpha,
+            BTreeSet::from([z_identity("flight-alpha", "", "Event")])
+        );
+        assert_eq!(
+            beta,
+            BTreeSet::from([z_identity("flight-beta", "", "Event")])
+        );
         let merged = BTreeMap::from([("Event".to_string(), alpha.union(&beta).cloned().collect())]);
         assert!(check_payload_identities(&merged, z_stem).is_err());
     }
 
     #[test]
-    fn qualified_and_unqualified_spellings_share_one_identity() {
-        let defined = z_defined();
-        let expected = BTreeSet::from([z_identity("flight-interaction", "KeyboardEventData")]);
-        for (uses, spelling) in [
-            ("use crate::types::*;", "KeyboardEventData"),
-            ("use crate::types::KeyboardEventData;", "KeyboardEventData"),
-            ("", "crate::types::KeyboardEventData"),
-            ("use crate::types;", "types::KeyboardEventData"),
-            ("", "flight_interaction::KeyboardEventData"),
+    fn inline_module_definitions_resolve_to_their_inline_module() {
+        let index = z_fixture();
+        let expected = BTreeSet::from([z_identity("flight-interaction", "host::inner", "Hidden")]);
+        for (module, spelling) in [
+            ("", "crate::host::inner::Hidden"),
+            ("", "host::inner::Hidden"),
+            ("host", "inner::Hidden"),
+            ("host", "self::inner::Hidden"),
         ] {
             assert_eq!(
-                z_identities(uses, spelling, &defined).unwrap(),
-                expected,
+                z_resolve(&index, "flight-interaction", module, spelling),
+                Ok(expected.clone()),
+                "{module}: {spelling}"
+            );
+        }
+    }
+
+    #[test]
+    fn private_imports_are_visible_only_to_their_module_and_its_descendants() {
+        let index = z_fixture();
+        let alpha = Ok(BTreeSet::from([z_identity("flight-alpha", "", "Event")]));
+        assert_eq!(
+            z_resolve(&index, "flight-interaction", "scoped::leaf", "super::Event"),
+            alpha
+        );
+        assert_eq!(
+            z_resolve(
+                &index,
+                "flight-interaction",
+                "scoped::leaf",
+                "crate::scoped::Event"
+            ),
+            alpha
+        );
+        for spelling in [
+            "uses_alpha::Event",
+            "uses_glob::KeyboardEventData",
+            "scoped::Event",
+        ] {
+            assert!(
+                z_resolve(&index, "flight-interaction", "", spelling)
+                    .unwrap_err()
+                    .contains("not defined in, imported into"),
                 "{spelling}"
             );
         }
-        let input = BTreeSet::from([z_identity("flight-input", "InputPointerData")]);
-        for (uses, spelling) in [
-            ("", "flight_input::InputPointerData"),
-            ("use flight_input::InputPointerData;", "InputPointerData"),
-            ("use flight_input::*;", "Ref<InputPointerData>"),
+    }
+
+    #[test]
+    fn qualified_and_unqualified_spellings_share_one_canonical_identity() {
+        let index = z_fixture();
+        let expected = Ok(BTreeSet::from([z_identity(
+            "flight-interaction",
+            "types",
+            "KeyboardEventData",
+        )]));
+        for (module, spelling) in [
+            ("", "KeyboardEventData"),
+            ("", "crate::types::KeyboardEventData"),
+            ("", "types::KeyboardEventData"),
+            ("", "flight_interaction::KeyboardEventData"),
+            ("uses_glob", "KeyboardEventData"),
+            ("uses_named", "KeyboardEventData"),
+            ("uses_self", "types::KeyboardEventData"),
+            ("types", "KeyboardEventData"),
         ] {
             assert_eq!(
-                z_identities(uses, spelling, &defined).unwrap(),
-                input,
-                "{spelling}"
+                z_resolve(&index, "flight-interaction", module, spelling),
+                expected,
+                "{module}: {spelling}"
             );
         }
     }
 
     #[test]
     fn rejects_an_ambiguous_glob_and_a_name_nothing_brings_into_scope() {
-        let defined = z_defined();
-        let ambiguous = z_identities(
-            "use flight_alpha::*; use flight_beta::*;",
-            "Event",
-            &defined,
+        let index = z_fixture();
+        let ambiguous = z_resolve(&index, "flight-interaction", "uses_both", "Event");
+        assert!(ambiguous.unwrap_err().contains("through several globs"));
+        let unscoped = z_resolve(
+            &index,
+            "flight-interaction",
+            "uses_alpha",
+            "InputPointerData",
         );
-        assert!(
-            ambiguous
-                .unwrap_err()
-                .contains("glob-imported from several modules")
-        );
-        let unscoped = z_identities("", "InputPointerData", &defined);
         assert!(
             unscoped
                 .unwrap_err()
-                .contains("not defined there, imported, or glob-imported")
+                .contains("not defined in, imported into")
         );
     }
 
     #[test]
     fn rejects_unknown_flight_crates_and_types() {
-        let defined = z_defined();
-        let crate_error = z_identities("", "flight_nowhere::Event", &defined).unwrap_err();
+        let index = z_fixture();
+        let crate_error = z_resolve(&index, "flight-interaction", "", "flight_nowhere::Event");
         assert!(
-            crate_error.contains("defines no such type"),
-            "{crate_error}"
+            crate_error
+                .unwrap_err()
+                .contains("no Flight crate `flight-nowhere`")
         );
-        let type_error = z_identities("", "flight_input::Missing", &defined).unwrap_err();
-        assert!(type_error.contains("defines no such type"), "{type_error}");
-        let module_error =
-            z_identities("", "flight_input::types::KeyboardEventData", &defined).unwrap_err();
-        assert!(
-            module_error.contains("defines no such type"),
-            "{module_error}"
+        let type_error = z_resolve(&index, "flight-interaction", "", "flight_input::Missing");
+        assert!(type_error.unwrap_err().contains("not defined in"));
+        let module_error = z_resolve(
+            &index,
+            "flight-interaction",
+            "",
+            "flight_input::events::InputPointerData",
         );
+        assert!(module_error.unwrap_err().contains("not a module of"));
     }
 
     #[test]
     fn rejects_unknown_local_qualified_paths() {
-        let defined = z_defined();
+        let index = z_fixture();
         for spelling in [
             "crate::types::Missing",
             "crate::missing::KeyboardEventData",
             "self::types::Missing",
+            "missing::KeyboardEventData",
         ] {
-            let error = z_identities("", spelling, &defined).unwrap_err();
             assert!(
-                error.contains("defines no such type"),
-                "{spelling}: {error}"
+                z_resolve(&index, "flight-interaction", "", spelling).is_err(),
+                "{spelling}"
             );
         }
-        let unrooted = z_identities("", "types::KeyboardEventData", &defined).unwrap_err();
-        assert!(unrooted.contains("not rooted"), "{unrooted}");
+    }
+
+    #[test]
+    fn repeated_super_and_self_normalize_from_the_current_module_and_never_leave_the_crate() {
+        let index = z_fixture();
+        let expected = Ok(BTreeSet::from([z_identity(
+            "flight-interaction",
+            "types",
+            "KeyboardEventData",
+        )]));
+        for spelling in [
+            "super::super::types::KeyboardEventData",
+            "self::super::super::types::KeyboardEventData",
+            "super::self::super::types::KeyboardEventData",
+        ] {
+            assert_eq!(
+                z_resolve(&index, "flight-interaction", "nested::child", spelling),
+                expected,
+                "{spelling}"
+            );
+        }
+        let escaped = z_resolve(
+            &index,
+            "flight-interaction",
+            "nested::child",
+            "super::super::super::types::KeyboardEventData",
+        );
+        assert!(escaped.unwrap_err().contains("leaves the crate root"));
     }
 
     #[test]
     fn resolves_and_rejects_through_every_nested_type_form() {
-        let defined = z_defined();
-        let uses = "use flight_input::InputPointerData; use crate::types::KeyboardEventData;";
-        let both = BTreeSet::from([
-            z_identity("flight-input", "InputPointerData"),
-            z_identity("flight-interaction", "KeyboardEventData"),
-        ]);
+        let index = z_fixture();
+        let both = Ok(BTreeSet::from([
+            z_identity("flight-input", "types", "InputPointerData"),
+            z_identity("flight-interaction", "types", "KeyboardEventData"),
+        ]));
         for spelling in [
             "(KeyboardEventData, [InputPointerData; 2])",
             "Option<(&[KeyboardEventData], *const InputPointerData)>",
@@ -252,7 +359,7 @@ mod resolve_payload {
             "Box<impl Fn(KeyboardEventData, InputPointerData)>",
         ] {
             assert_eq!(
-                z_identities(uses, spelling, &defined).unwrap(),
+                z_resolve(&index, "flight-interaction", "uses_named", spelling),
                 both,
                 "{spelling}"
             );
@@ -267,98 +374,166 @@ mod resolve_payload {
             "Box<impl Fn() -> Missing>",
         ] {
             assert!(
-                z_identities(uses, spelling, &defined).is_err(),
+                z_resolve(&index, "flight-interaction", "uses_named", spelling).is_err(),
                 "{spelling}"
             );
         }
-        let unsupported = z_identities(uses, "<KeyboardEventData as Trait>::Output", &defined);
+        let unsupported = z_resolve(
+            &index,
+            "flight-interaction",
+            "uses_named",
+            "<KeyboardEventData as Trait>::Output",
+        );
         assert!(unsupported.unwrap_err().contains("unsupported type form"));
     }
 
     #[test]
+    fn same_named_types_in_different_modules_of_one_crate_stay_distinct() {
+        let index = z_fixture();
+        let a = z_resolve(&index, "flight-interaction", "", "crate::a::Event").unwrap();
+        let b = z_resolve(&index, "flight-interaction", "", "crate::b::Event").unwrap();
+        assert_eq!(
+            a,
+            BTreeSet::from([z_identity("flight-interaction", "a", "Event")])
+        );
+        assert_eq!(
+            b,
+            BTreeSet::from([z_identity("flight-interaction", "b", "Event")])
+        );
+        let merged = BTreeMap::from([("Event".to_string(), a.union(&b).cloned().collect())]);
+        let error = check_payload_identities(&merged, z_stem).unwrap_err();
+        assert!(
+            error.contains("flight-interaction::a::Event and flight-interaction::b::Event"),
+            "{error}"
+        );
+    }
+
+    #[test]
     fn treats_the_enclosing_item_type_parameters_as_non_nominal() {
-        let defined = z_defined();
+        let index = z_fixture();
         let holder = z_parse("pub struct Holder<T> { pub on: Signal<T> }");
         let syn::Item::Struct(holder) = &holder.items[0] else {
             unreachable!()
         };
         let generics = type_parameter_names(&holder.generics);
         assert_eq!(generics, BTreeSet::from(["T".to_string()]));
-        let imports = BTreeMap::new();
-        let scope = z_scope(&defined, &imports, &[]);
-        let (text, identities) = resolve_payload(&z_type("T"), &scope, &generics).unwrap();
+        let (text, identities) =
+            resolve_payload(&z_type("T"), &index, "flight-interaction", "", &generics).unwrap();
         assert_eq!(text, "T");
         assert!(identities.is_empty());
-        let unbound = resolve_payload(&z_type("T"), &scope, &BTreeSet::new());
+        let unbound = resolve_payload(
+            &z_type("T"),
+            &index,
+            "flight-interaction",
+            "",
+            &BTreeSet::new(),
+        );
         assert!(
             unbound.is_err(),
             "a parameter the item does not declare is not generic"
         );
     }
+
+    #[test]
+    fn use_path_self_binds_the_module_name() {
+        let index = z_fixture();
+        assert_eq!(
+            z_resolve(
+                &index,
+                "flight-interaction",
+                "uses_self",
+                "types::KeyboardEventData"
+            ),
+            Ok(BTreeSet::from([z_identity(
+                "flight-interaction",
+                "types",
+                "KeyboardEventData"
+            )]))
+        );
+        let unbound = z_resolve(&index, "flight-interaction", "uses_self", "self::Missing");
+        assert!(unbound.is_err());
+    }
 }
 
-fn z_defined() -> BTreeMap<String, CrateTypes> {
-    let crate_types = |modules: &[(&str, &[&str])]| CrateTypes {
-        modules: modules
-            .iter()
-            .map(|(module, names)| {
-                (
-                    module.to_string(),
-                    names.iter().map(|name| name.to_string()).collect(),
-                )
-            })
-            .collect(),
-    };
-    return BTreeMap::from([
-        ("flight-alpha".to_string(), crate_types(&[("", &["Event"])])),
-        ("flight-beta".to_string(), crate_types(&[("", &["Event"])])),
+// Two external crates that each define `Event`, an input crate with a root re-export and an
+// internal-only type, and an interaction crate whose modules exercise every resolution rule.
+fn z_fixture() -> BTreeMap<String, CrateIndex> {
+    return z_index(&[
+        ("flight-alpha", &[("", "pub struct Event;")]),
+        ("flight-beta", &[("", "pub struct Event;")]),
         (
-            "flight-input".to_string(),
-            crate_types(&[("", &[]), ("types", &["InputPointerData"])]),
+            "flight-input",
+            &[
+                ("", "mod types; pub use types::InputPointerData;"),
+                (
+                    "types",
+                    "pub struct InputPointerData; pub struct InternalOnly;",
+                ),
+            ],
         ),
         (
-            "flight-interaction".to_string(),
-            crate_types(&[("", &[]), ("types", &["KeyboardEventData"])]),
+            "flight-interaction",
+            &[
+                (
+                    "",
+                    "pub mod types; pub use types::*; mod a; mod b; mod nested; mod host; mod scoped; mod uses_alpha; mod uses_beta; mod uses_both; mod uses_glob; mod uses_named; mod uses_self;",
+                ),
+                ("types", "pub struct KeyboardEventData;"),
+                ("a", "pub struct Event;"),
+                ("b", "pub struct Event;"),
+                ("nested", "pub mod child;"),
+                ("nested::child", ""),
+                ("host", "pub mod inner { pub struct Hidden; }"),
+                ("scoped", "use flight_alpha::Event; mod leaf;"),
+                ("scoped::leaf", ""),
+                ("uses_alpha", "use flight_alpha::Event;"),
+                ("uses_beta", "use flight_beta::*;"),
+                ("uses_both", "use flight_alpha::*; use flight_beta::*;"),
+                ("uses_glob", "use crate::types::*;"),
+                (
+                    "uses_named",
+                    "use crate::types::KeyboardEventData; use flight_input::InputPointerData;",
+                ),
+                ("uses_self", "use crate::types::{self};"),
+            ],
         ),
     ]);
 }
 
-// Resolves `payload` as written in `flight-interaction`'s root module with the given `use` items.
-fn z_identities(
-    uses: &str,
-    payload: &str,
-    defined: &BTreeMap<String, CrateTypes>,
-) -> Result<BTreeSet<PayloadIdentity>, String> {
-    let file = z_parse(uses);
-    let (imports, globs) = collect_file_imports(&file, "flight-interaction", "");
-    let scope = z_scope(defined, &imports, &globs);
-    return resolve_payload(&z_type(payload), &scope, &BTreeSet::new())
-        .map(|(_, identities)| identities);
-}
-
-fn z_identity(krate: &str, name: &str) -> PayloadIdentity {
+fn z_identity(krate: &str, module: &str, name: &str) -> PayloadIdentity {
     return PayloadIdentity {
         krate: krate.to_string(),
+        module: module.to_string(),
         name: name.to_string(),
     };
+}
+
+fn z_index(crates: &[(&str, &[(&str, &str)])]) -> BTreeMap<String, CrateIndex> {
+    return crates
+        .iter()
+        .map(|(krate, files)| {
+            let parsed: Vec<(String, syn::File)> = files
+                .iter()
+                .map(|(module, source)| (module.to_string(), z_parse(source)))
+                .collect();
+            (krate.to_string(), index_crate(&parsed))
+        })
+        .collect();
 }
 
 fn z_parse(source: &str) -> syn::File {
     return syn::parse_file(source).unwrap();
 }
 
-fn z_scope<'a>(
-    defined: &'a BTreeMap<String, CrateTypes>,
-    imports: &'a BTreeMap<String, Vec<String>>,
-    globs: &'a [Vec<String>],
-) -> TypeScope<'a> {
-    return TypeScope {
-        owner: "flight-interaction",
-        module: "",
-        imports,
-        globs,
-        defined,
-    };
+// Resolves `payload` as written in `krate::module`.
+fn z_resolve(
+    index: &BTreeMap<String, CrateIndex>,
+    krate: &str,
+    module: &str,
+    payload: &str,
+) -> Result<BTreeSet<PayloadIdentity>, String> {
+    return resolve_payload(&z_type(payload), index, krate, module, &BTreeSet::new())
+        .map(|(_, identities)| identities);
 }
 
 fn z_stem(payload: &str) -> String {

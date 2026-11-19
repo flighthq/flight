@@ -1,8 +1,8 @@
 // Item C payload identity. A signal payload type is keyed by its bare name in the inventory, so
-// every nominal type a payload names is first resolved to the crate and module that define it:
-// one type spelled `crate::types::KeyboardEventData`, `KeyboardEventData` or through an import is
-// one identity, two distinct types that share a name are rejected rather than merged into one
-// wrapper, and a path no definition backs is an error rather than a guess.
+// every nominal type a payload names is first resolved to its canonical definition: the crate,
+// module and item where it is defined. Spellings unify only through real `use`/`pub use`
+// bindings, same-named types in different modules stay distinct, and a path no definition backs
+// is an error rather than a guess.
 
 use std::collections::{BTreeMap, BTreeSet};
 
@@ -13,36 +13,60 @@ const BUILTIN_TYPE_NAMES: &[&str] = &[
     "u16", "u32", "u64", "usize",
 ];
 
+// Re-export chains longer than this are treated as cycles.
+const MAX_RESOLUTION_DEPTH: usize = 32;
+
 // Paths rooted here name language or std items, never payload identities.
 const STD_CRATES: &[&str] = &["alloc", "core", "std"];
 
-/// The type names one crate defines, by module path (`""` is the crate root, then `types`,
-/// `a::b`).
+/// Every module of one crate, keyed by module path (`""` is the crate root, then `types`, `a::b`).
 #[derive(Clone, Debug, Default)]
-pub struct CrateTypes {
-    pub modules: BTreeMap<String, BTreeSet<String>>,
+pub struct CrateIndex {
+    pub modules: BTreeMap<String, ModuleInfo>,
 }
 
-/// The crate that defines one nominal payload type, written `flight-crate::Name`.
+/// What one module defines and binds: its own type definitions, its child modules, and its
+/// `use` bindings and globs (paths as written, resolved from this module).
+#[derive(Clone, Debug, Default)]
+pub struct ModuleInfo {
+    pub children: BTreeSet<String>,
+    pub globs: Vec<UseGlob>,
+    pub types: BTreeSet<String>,
+    pub uses: Vec<UseBinding>,
+}
+
+/// The canonical definition of one nominal payload type: its crate, defining module and name.
 #[derive(Clone, Debug, Eq, Ord, PartialEq, PartialOrd)]
 pub struct PayloadIdentity {
     pub krate: String,
+    pub module: String,
     pub name: String,
 }
 
-/// What one source file can name: its crate and module, the names its `use` items bind (name ->
-/// absolute path `[crate, modules.., item]`), the absolute module paths it glob-imports, and the
-/// types every crate defines.
-pub struct TypeScope<'a> {
-    pub owner: &'a str,
-    pub module: &'a str,
-    pub imports: &'a BTreeMap<String, Vec<String>>,
-    pub globs: &'a [Vec<String>],
-    pub defined: &'a BTreeMap<String, CrateTypes>,
+/// One name a `use` item binds, with the path it was written with.
+#[derive(Clone, Debug)]
+pub struct UseBinding {
+    pub name: String,
+    pub path: Vec<String>,
+    pub public: bool,
 }
 
-/// Rejects a payload name that resolves to more than one defining type, and two payload names
-/// that would produce one wrapper stem, naming both origins.
+/// One `use path::*` item.
+#[derive(Clone, Debug)]
+pub struct UseGlob {
+    pub path: Vec<String>,
+    pub public: bool,
+}
+
+// A module location: crate directory name and module path segments.
+#[derive(Clone, Debug, Eq, PartialEq)]
+struct Location {
+    krate: String,
+    module: Vec<String>,
+}
+
+/// Rejects a payload name that resolves to more than one canonical definition, and two payload
+/// names that would produce one wrapper stem, naming both origins.
 pub fn check_payload_identities(
     payloads: &BTreeMap<String, BTreeSet<PayloadIdentity>>,
     stem: impl Fn(&str) -> String,
@@ -54,7 +78,7 @@ pub fn check_payload_identities(
             names
                 .entry(identity.name.as_str())
                 .or_default()
-                .push(format!("{}::{}", identity.krate, identity.name));
+                .push(get_identity_path(identity));
         }
         for (name, origins) in names {
             if origins.len() > 1 {
@@ -80,56 +104,6 @@ pub fn check_payload_identities(
     return Err(problems.join("; "));
 }
 
-/// The type names each module of one crate defines, from its parsed source files keyed by module
-/// path. Structs, enums, unions and type aliases count at any visibility.
-pub fn collect_crate_types(files: &[(String, syn::File)]) -> CrateTypes {
-    let mut out = CrateTypes::default();
-    for (module, file) in files {
-        let names = out.modules.entry(module.clone()).or_default();
-        for item in &file.items {
-            match item {
-                syn::Item::Struct(item) => {
-                    names.insert(item.ident.to_string());
-                }
-                syn::Item::Enum(item) => {
-                    names.insert(item.ident.to_string());
-                }
-                syn::Item::Union(item) => {
-                    names.insert(item.ident.to_string());
-                }
-                syn::Item::Type(item) => {
-                    names.insert(item.ident.to_string());
-                }
-                _ => {}
-            }
-        }
-    }
-    return out;
-}
-
-/// The names one file's `use` items bind, as absolute paths, and the modules it glob-imports.
-pub fn collect_file_imports(
-    file: &syn::File,
-    owner: &str,
-    module: &str,
-) -> (BTreeMap<String, Vec<String>>, Vec<Vec<String>>) {
-    let mut imports = BTreeMap::new();
-    let mut globs = Vec::new();
-    for item in &file.items {
-        if let syn::Item::Use(item) = item {
-            collect_use_tree(
-                &item.tree,
-                &mut Vec::new(),
-                owner,
-                module,
-                &mut imports,
-                &mut globs,
-            );
-        }
-    }
-    return (imports, globs);
-}
-
 /// A field's declared type with every path reduced to its final name, for matching field shapes
 /// (`Option<Ref<Signal<T>>>`) against a payload. Display only: payload identity is resolved and
 /// checked by `resolve_payload`. An unsupported type form is an error.
@@ -137,14 +111,49 @@ pub fn display_type_text(ty: &syn::Type) -> Result<String, String> {
     return render_type(ty, &mut |_| Ok(()));
 }
 
-/// Resolves every nominal type `ty` names; `generics` are the enclosing item's own type
-/// parameters, which are not nominal types. Returns the type's display text and the identities it
-/// names. A name no definition backs, and a type form that cannot be resolved, are errors.
+/// `flight-crate::module::Name` (`flight-crate::Name` for a crate-root definition).
+pub fn get_identity_path(identity: &PayloadIdentity) -> String {
+    if identity.module.is_empty() {
+        return format!("{}::{}", identity.krate, identity.name);
+    }
+    return format!("{}::{}::{}", identity.krate, identity.module, identity.name);
+}
+
+/// Indexes one crate from its parsed source files keyed by module path. Inline `mod name { .. }`
+/// blocks are indexed as their own modules; `mod name;` and file paths declare children.
+pub fn index_crate(files: &[(String, syn::File)]) -> CrateIndex {
+    let mut index = CrateIndex::default();
+    for (module, file) in files {
+        index.modules.entry(module.clone()).or_default();
+        let segments: Vec<String> = module_segments(module).collect();
+        for depth in 0..segments.len() {
+            index
+                .modules
+                .entry(segments[..depth].join("::"))
+                .or_default()
+                .children
+                .insert(segments[depth].clone());
+        }
+        index_items(&mut index, module, &file.items);
+    }
+    return index;
+}
+
+/// Resolves every nominal type `ty` names as written in `krate::module`; `generics` are the
+/// enclosing item's own type parameters, which are not nominal types. Returns the type's display
+/// text and the canonical identities it names. An unresolvable name or unsupported type form is
+/// an error.
 pub fn resolve_payload(
     ty: &syn::Type,
-    scope: &TypeScope,
+    index: &BTreeMap<String, CrateIndex>,
+    krate: &str,
+    module: &str,
     generics: &BTreeSet<String>,
 ) -> Result<(String, BTreeSet<PayloadIdentity>), String> {
+    let from = Location {
+        krate: krate.to_string(),
+        module: module_segments(module).collect(),
+    };
     let mut identities = BTreeSet::new();
     let text = render_type(ty, &mut |segments| {
         let name = segments.last().unwrap();
@@ -153,9 +162,23 @@ pub fn resolve_payload(
         {
             return Ok(());
         }
-        if let Some(identity) = resolve_name(segments, scope)? {
-            identities.insert(identity);
+        if STD_CRATES.contains(&segments[0].as_str()) {
+            if BUILTIN_TYPE_NAMES.contains(&name.as_str()) {
+                return Ok(());
+            }
+            return Err(format!(
+                "`{}` is a std type with no payload identity",
+                segments.join("::")
+            ));
         }
+        let identity = resolve_path_item(index, &from, segments, 0).map_err(|error| {
+            format!(
+                "`{}` in {}: {error}",
+                segments.join("::"),
+                get_location_text(&from)
+            )
+        })?;
+        identities.insert(identity);
         return Ok(());
     })?;
     return Ok((text, identities));
@@ -169,84 +192,120 @@ pub fn type_parameter_names(generics: &syn::Generics) -> BTreeSet<String> {
         .collect();
 }
 
-// `[crate, modules..]` for a path written from `crate`, `self`, `super` or a Flight crate inside
-// `owner::module`; `None` for any other root.
-fn absolute_module(owner: &str, module: &str, prefix: &[String]) -> Option<Vec<String>> {
-    let first = prefix.first()?;
-    let mut path: Vec<String> = match first.as_str() {
-        "crate" => vec![owner.to_string()],
-        "self" => std::iter::once(owner.to_string())
-            .chain(module_segments(module))
-            .collect(),
-        "super" => {
-            let mut segments: Vec<String> = module_segments(module).collect();
-            segments.pop()?;
-            std::iter::once(owner.to_string()).chain(segments).collect()
-        }
-        other if other.starts_with("flight_") => vec![other.replace('_', "-")],
-        _ => return None,
-    };
-    path.extend(prefix[1..].iter().cloned());
-    return Some(path);
-}
-
 fn collect_use_tree(
     tree: &syn::UseTree,
     prefix: &mut Vec<String>,
-    owner: &str,
-    module: &str,
-    imports: &mut BTreeMap<String, Vec<String>>,
-    globs: &mut Vec<Vec<String>>,
+    public: bool,
+    info: &mut ModuleInfo,
 ) {
     match tree {
         syn::UseTree::Path(path) => {
             prefix.push(path.ident.to_string());
-            collect_use_tree(&path.tree, prefix, owner, module, imports, globs);
+            collect_use_tree(&path.tree, prefix, public, info);
             prefix.pop();
         }
         syn::UseTree::Name(name) => {
-            prefix.push(name.ident.to_string());
-            if let Some(path) = absolute_module(owner, module, prefix) {
-                imports.insert(name.ident.to_string(), path);
+            // `use a::b::{self}` binds `b` to the module `a::b`.
+            if name.ident == "self" {
+                if let Some(last) = prefix.last() {
+                    info.uses.push(UseBinding {
+                        name: last.clone(),
+                        path: prefix.clone(),
+                        public,
+                    });
+                }
+                return;
             }
-            prefix.pop();
+            let mut path = prefix.clone();
+            path.push(name.ident.to_string());
+            info.uses.push(UseBinding {
+                name: name.ident.to_string(),
+                path,
+                public,
+            });
         }
         syn::UseTree::Rename(rename) => {
-            prefix.push(rename.ident.to_string());
-            if let Some(path) = absolute_module(owner, module, prefix) {
-                imports.insert(rename.rename.to_string(), path);
+            let mut path = prefix.clone();
+            if rename.ident != "self" {
+                path.push(rename.ident.to_string());
             }
-            prefix.pop();
+            info.uses.push(UseBinding {
+                name: rename.rename.to_string(),
+                path,
+                public,
+            });
         }
-        syn::UseTree::Glob(_) => {
-            if let Some(path) = absolute_module(owner, module, prefix) {
-                globs.push(path);
-            }
-        }
+        syn::UseTree::Glob(_) => info.globs.push(UseGlob {
+            path: prefix.clone(),
+            public,
+        }),
         syn::UseTree::Group(group) => {
             for item in &group.items {
-                collect_use_tree(item, prefix, owner, module, imports, globs);
+                collect_use_tree(item, prefix, public, info);
             }
         }
     }
 }
 
-// Whether `path` (`[crate, modules.., name]`) names a type its crate defines. A path straight
-// under the crate (`flight_input::InputPointerData`) is a root re-export of a type the crate
-// defines in some module.
-fn defines(path: &[String], defined: &BTreeMap<String, CrateTypes>) -> bool {
-    let Some(krate) = defined.get(&path[0]) else {
-        return false;
-    };
-    let name = path.last().unwrap();
-    if path.len() == 2 {
-        return krate.modules.values().any(|names| names.contains(name));
+fn get_location_text(location: &Location) -> String {
+    if location.module.is_empty() {
+        return location.krate.clone();
     }
-    let module = path[1..path.len() - 1].join("::");
-    return krate
-        .modules
-        .get(&module)
-        .is_some_and(|names| names.contains(name));
+    return format!("{}::{}", location.krate, location.module.join("::"));
+}
+
+fn get_module<'a>(
+    index: &'a BTreeMap<String, CrateIndex>,
+    location: &Location,
+) -> Result<&'a ModuleInfo, String> {
+    return index
+        .get(&location.krate)
+        .and_then(|krate| krate.modules.get(&location.module.join("::")))
+        .ok_or_else(|| format!("no module `{}`", get_location_text(location)));
+}
+
+fn index_items(index: &mut CrateIndex, module: &str, items: &[syn::Item]) {
+    for item in items {
+        let info = index.modules.entry(module.to_string()).or_default();
+        match item {
+            syn::Item::Struct(item) => {
+                info.types.insert(item.ident.to_string());
+            }
+            syn::Item::Enum(item) => {
+                info.types.insert(item.ident.to_string());
+            }
+            syn::Item::Union(item) => {
+                info.types.insert(item.ident.to_string());
+            }
+            syn::Item::Type(item) => {
+                info.types.insert(item.ident.to_string());
+            }
+            syn::Item::Use(item) => {
+                let public = matches!(item.vis, syn::Visibility::Public(_));
+                collect_use_tree(&item.tree, &mut Vec::new(), public, info);
+            }
+            syn::Item::Mod(item) => {
+                let name = item.ident.to_string();
+                info.children.insert(name.clone());
+                let child = if module.is_empty() {
+                    name
+                } else {
+                    format!("{module}::{name}")
+                };
+                index.modules.entry(child.clone()).or_default();
+                if let Some((_, content)) = &item.content {
+                    index_items(index, &child, content);
+                }
+            }
+            _ => {}
+        }
+    }
+}
+
+// Whether a binding declared in `owner` is visible from `from`: public bindings always are, and
+// private ones to the declaring module and its descendants.
+fn is_visible(public: bool, owner: &Location, from: &Location) -> bool {
+    return public || (owner.krate == from.krate && from.module.starts_with(&owner.module));
 }
 
 fn module_segments(module: &str) -> impl Iterator<Item = String> + '_ {
@@ -399,85 +458,136 @@ fn render_type(
     }
 }
 
-fn resolve_name(segments: &[String], scope: &TypeScope) -> Result<Option<PayloadIdentity>, String> {
-    let spelled = segments.join("::");
-    let name = segments.last().unwrap();
-    if STD_CRATES.contains(&segments[0].as_str()) {
-        if BUILTIN_TYPE_NAMES.contains(&name.as_str()) {
-            return Ok(None);
+// The item `name` names inside the module at `location`, as seen from `from`: a definition there,
+// a visible `use` binding (followed to its canonical definition), or exactly one visible glob.
+fn resolve_item(
+    index: &BTreeMap<String, CrateIndex>,
+    location: &Location,
+    name: &str,
+    from: &Location,
+    depth: usize,
+) -> Result<PayloadIdentity, String> {
+    if depth > MAX_RESOLUTION_DEPTH {
+        return Err(format!("re-exports of `{name}` form a cycle"));
+    }
+    let info = get_module(index, location)?;
+    if info.types.contains(name) {
+        return Ok(PayloadIdentity {
+            krate: location.krate.clone(),
+            module: location.module.join("::"),
+            name: name.to_string(),
+        });
+    }
+    for binding in &info.uses {
+        if binding.name == name && is_visible(binding.public, location, from) {
+            return resolve_path_item(index, location, &binding.path, depth + 1);
         }
-        return Err(format!(
-            "`{spelled}` in {} is a std type with no payload identity",
-            scope.owner
-        ));
     }
-    let path = if let Some(imported) = scope.imports.get(&segments[0]) {
-        imported.iter().chain(&segments[1..]).cloned().collect()
-    } else if segments.len() > 1 {
-        absolute_module(scope.owner, scope.module, segments).ok_or_else(|| {
-            format!(
-                "`{spelled}` in {} is not rooted at an import, `crate`, `self`, `super` or a Flight crate",
-                scope.owner
-            )
-        })?
-    } else {
-        resolve_bare_name(name, scope)?
-    };
-    if !defines(&path, scope.defined) {
-        return Err(format!(
-            "`{spelled}` in {} resolves to `{}`, which defines no such type",
-            scope.owner,
-            path.join("::")
-        ));
+    let mut found: BTreeSet<PayloadIdentity> = BTreeSet::new();
+    for glob in &info.globs {
+        if !is_visible(glob.public, location, from) {
+            continue;
+        }
+        let Ok(target) = resolve_module_path(index, location, &glob.path, depth + 1) else {
+            continue;
+        };
+        if let Ok(identity) = resolve_item(index, &target, name, location, depth + 1) {
+            found.insert(identity);
+        }
     }
-    return Ok(Some(PayloadIdentity {
-        krate: path[0].clone(),
-        name: name.clone(),
-    }));
+    let mut found = found.into_iter();
+    match (found.next(), found.next()) {
+        (Some(identity), None) => return Ok(identity),
+        (None, _) => {
+            return Err(format!(
+                "`{name}` is not defined in, imported into, or re-exported by `{}`",
+                get_location_text(location)
+            ));
+        }
+        (Some(first), Some(second)) => {
+            return Err(format!(
+                "`{name}` reaches `{}` through several globs: {} and {}",
+                get_location_text(location),
+                get_identity_path(&first),
+                get_identity_path(&second)
+            ));
+        }
+    }
 }
 
-// A bare name names a type its own module defines, or the one type exactly one glob import
-// brings in; anything else is unresolved.
-fn resolve_bare_name(name: &str, scope: &TypeScope) -> Result<Vec<String>, String> {
-    let local: Vec<String> = std::iter::once(scope.owner.to_string())
-        .chain(module_segments(scope.module))
-        .chain(std::iter::once(name.to_string()))
-        .collect();
-    let local_defined = scope
-        .defined
-        .get(scope.owner)
-        .and_then(|krate| krate.modules.get(scope.module))
-        .is_some_and(|names| names.contains(name));
-    if local_defined {
-        return Ok(local);
+// The module a path prefix names from `from`: `crate`, `self` and any number of `super` segments
+// are normalized (leaving the crate is an error), a Flight crate name starts at that crate's root,
+// and every other segment is a child module or a visible `use` binding of one.
+fn resolve_module_path(
+    index: &BTreeMap<String, CrateIndex>,
+    from: &Location,
+    segments: &[String],
+    depth: usize,
+) -> Result<Location, String> {
+    if depth > MAX_RESOLUTION_DEPTH {
+        return Err("module re-exports form a cycle".to_string());
     }
-    let matches: Vec<Vec<String>> = scope
-        .globs
-        .iter()
-        .map(|glob| {
-            glob.iter()
-                .cloned()
-                .chain(std::iter::once(name.to_string()))
-                .collect()
-        })
-        .filter(|path: &Vec<String>| defines(path, scope.defined))
-        .collect();
-    match matches.as_slice() {
-        [path] => return Ok(path.clone()),
-        [] => {
-            return Err(format!(
-                "`{name}` in {}::{} is not defined there, imported, or glob-imported",
-                scope.owner, scope.module
-            ));
-        }
-        many => {
-            let origins: Vec<String> = many.iter().map(|path| path.join("::")).collect();
-            return Err(format!(
-                "`{name}` in {}::{} is glob-imported from several modules: {}",
-                scope.owner,
-                scope.module,
-                origins.join(", ")
-            ));
+    let mut location = from.clone();
+    let mut rest = segments;
+    if let Some(first) = segments.first() {
+        if first == "crate" {
+            location.module.clear();
+            rest = &segments[1..];
+        } else if first.starts_with("flight_") {
+            let krate = first.replace('_', "-");
+            if !index.contains_key(&krate) {
+                return Err(format!("no Flight crate `{krate}`"));
+            }
+            location = Location {
+                krate,
+                module: Vec::new(),
+            };
+            rest = &segments[1..];
+        } else if STD_CRATES.contains(&first.as_str()) {
+            return Err(format!("`{first}` paths name no Flight module"));
         }
     }
+    for segment in rest {
+        match segment.as_str() {
+            "self" => continue,
+            "super" => {
+                if location.module.pop().is_none() {
+                    return Err(format!(
+                        "`super` leaves the crate root of {}",
+                        location.krate
+                    ));
+                }
+                continue;
+            }
+            _ => {}
+        }
+        let info = get_module(index, &location)?;
+        if info.children.contains(segment) {
+            location.module.push(segment.clone());
+            continue;
+        }
+        let binding = info.uses.iter().find(|binding| {
+            binding.name == *segment && is_visible(binding.public, &location, from)
+        });
+        let Some(binding) = binding else {
+            return Err(format!(
+                "`{segment}` is not a module of, or a module imported into, `{}`",
+                get_location_text(&location)
+            ));
+        };
+        location = resolve_module_path(index, &location, &binding.path, depth + 1)?;
+    }
+    return Ok(location);
+}
+
+// The canonical definition a path names from `from`.
+fn resolve_path_item(
+    index: &BTreeMap<String, CrateIndex>,
+    from: &Location,
+    segments: &[String],
+    depth: usize,
+) -> Result<PayloadIdentity, String> {
+    let (name, prefix) = segments.split_last().unwrap();
+    let location = resolve_module_path(index, from, prefix, depth)?;
+    return resolve_item(index, &location, name, from, depth);
 }
