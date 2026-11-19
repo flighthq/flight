@@ -191,6 +191,7 @@ fn landed_base_node_consumer_census_has_exact_reviewed_outcomes() {
                 assert!(body.contains("if handle.is_null()"));
                 assert!(!body.contains("as *const Option<"));
                 assert!(header.lines().any(|line| line == "void * flight_create_rive_animation_clips(void * arg0, size_t arg1, void * arg2, const FlightNode * const * arg3, size_t arg4, void * arg5, void * arg6, void * arg7, void * arg8);"));
+                assert!(header.contains("Parameter nodes is a borrowed FlightNode pointer array: nodes_ptr may be NULL only when nodes_len is 0; NULL elements become None; every non-NULL element must provide the Node2D view or the function returns its invalid-parameter sentinel without calling the SDK. The array and every handle remain caller-owned and need only stay alive for this call."));
             }
             _ => panic!("unknown census outcome {expected} for {function}"),
         }
@@ -216,7 +217,7 @@ fn landed_base_node_consumer_census_has_exact_reviewed_outcomes() {
 }
 
 #[test]
-fn node_fields_are_locked_complete_and_never_implicitly_invalidate() {
+fn node_fields_are_locked_complete_and_setter_collisions_preserve_both_semantics() {
     let header = generated("flight_ffi.h");
     let wrappers = generated("ffi_generated.rs");
     assert!(!header.contains("NodeFields *"));
@@ -308,12 +309,27 @@ fn node_fields_are_locked_complete_and_never_implicitly_invalidate() {
 
     for exact in [
         "bool flight_set_node_enabled(FlightNode * arg0, bool arg1);",
+        "bool flight_set_node_enabled_field(FlightNode * arg0, bool arg1);",
         "bool flight_set_node2d_x(FlightNode * arg0, double arg1);",
         "bool flight_set_node2d_clip(FlightNode * arg0, void * arg1);",
+        "bool flight_set_node3d_alpha(FlightNode * arg0, float arg1);",
+        "bool flight_set_node3d_alpha_field(FlightNode * arg0, float arg1);",
         "bool flight_set_node3d_position_x(FlightNode * arg0, double arg1);",
     ] {
         assert!(header.lines().any(|line| line == exact), "missing {exact}");
     }
+
+    let enabled = wrapper(&wrappers, "flight_set_node_enabled");
+    assert!(enabled.contains("flight_sdk::set_node_enabled(&node.node, value)"));
+    let enabled_field = wrapper(&wrappers, "flight_set_node_enabled_field");
+    assert!(enabled_field.contains("node_fields_mut().enabled = value"));
+    assert!(!enabled_field.contains("flight_sdk::set_node_enabled"));
+
+    let alpha = wrapper(&wrappers, "flight_set_node3d_alpha");
+    assert!(alpha.contains("flight_sdk::set_node3d_alpha(&node.node, value)"));
+    let alpha_field = wrapper(&wrappers, "flight_set_node3d_alpha_field");
+    assert!(alpha_field.contains("node3d_fields_mut().alpha = value"));
+    assert!(!alpha_field.contains("flight_sdk::set_node3d_alpha"));
 }
 
 #[test]
@@ -331,6 +347,11 @@ fn generated_node_contracts_pin_ownership_sentinels_and_setter_results() {
         "Releases a non-NULL owned string returned by flight-ffi",
         "Releases only this owned FlightNode handle and its shared reference",
         "Releases this owned FlightNodeArray and its stored shared references",
+        "Calls the SDK set_node_enabled verb, assigning node.enabled and invalidating the node's appearance, local bounds, local content, local transform, parent reference and world bounds",
+        "Assigns node.enabled through the handle's write lock without implicit invalidation",
+        "Calls the SDK set_node3d_alpha verb, assigning node3d.alpha and invalidating node appearance",
+        "Assigns node3d.alpha through the handle's write lock without implicit invalidation",
+        "Calls the SDK set_node2d_clip verb and invalidates node appearance",
     ] {
         assert!(
             header.contains(contract),
@@ -357,6 +378,10 @@ fn aliased_ref_only_borrows_compare_allocations_before_locking() {
         assert!(
             body.contains("std::sync::Arc::ptr_eq("),
             "{name} omits allocation comparison"
+        );
+        assert!(
+            body.contains("std::sync::Arc::as_ptr("),
+            "{name} does not order distinct allocations by identity"
         );
         assert!(
             body.contains(".as_deref().unwrap_or(&*guard_"),

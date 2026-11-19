@@ -1,6 +1,6 @@
 use super::*;
 use std::ffi::{CStr, CString};
-use std::sync::mpsc;
+use std::sync::{Arc, Barrier, mpsc};
 use std::time::Duration;
 
 fn aliased_borrow_watchdog<T: Send + 'static>(operation: impl FnOnce() -> T + Send + 'static) -> T {
@@ -11,6 +11,34 @@ fn aliased_borrow_watchdog<T: Send + 'static>(operation: impl FnOnce() -> T + Se
         .expect("generated FFI wrapper deadlocked while borrowing aliased handles");
     worker.join().unwrap();
     value
+}
+
+fn concurrent_borrow_watchdog(operations: Vec<Box<dyn FnOnce() + Send>>) {
+    let operation_count = operations.len();
+    let barrier = Arc::new(Barrier::new(operation_count + 1));
+    let (sender, receiver) = mpsc::channel();
+    let workers: Vec<_> = operations
+        .into_iter()
+        .map(|operation| {
+            let barrier = barrier.clone();
+            let sender = sender.clone();
+            std::thread::spawn(move || {
+                barrier.wait();
+                operation();
+                sender.send(()).unwrap();
+            })
+        })
+        .collect();
+    drop(sender);
+    barrier.wait();
+    for _ in 0..operation_count {
+        receiver
+            .recv_timeout(Duration::from_secs(10))
+            .expect("generated FFI wrappers deadlocked under opposite-order concurrent borrowing");
+    }
+    for worker in workers {
+        worker.join().unwrap();
+    }
 }
 
 #[test]
@@ -177,6 +205,230 @@ fn node_carriers_watchdog_aliased_ref_only_wrappers_finish_for_identical_cloned_
 }
 
 #[test]
+fn node_carriers_watchdog_concurrent_pairs_share_one_allocation_order() {
+    const ITERATIONS: usize = 25_000;
+    unsafe {
+        let body_a = flight_create_rigid_body2d();
+        let body_b = flight_create_rigid_body2d();
+        let body_a_alias = Box::into_raw(Box::new(
+            (&*body_a.cast::<flight_sdk::Ref<flight_sdk::RigidBody2D>>()).clone(),
+        ))
+        .cast::<std::ffi::c_void>();
+        let (a, b, alias) = (body_a as usize, body_b as usize, body_a_alias as usize);
+
+        // Opposite argument order must converge on the same allocation order for two writers.
+        concurrent_borrow_watchdog(vec![
+            Box::new(move || {
+                for _ in 0..ITERATIONS {
+                    flight_apply_physics2d_impulse(
+                        a as *mut _,
+                        b as *mut _,
+                        0.0,
+                        0.0,
+                        0.0,
+                        0.0,
+                        1.0,
+                        0.0,
+                    );
+                }
+            }),
+            Box::new(move || {
+                for _ in 0..ITERATIONS {
+                    flight_apply_physics2d_impulse(
+                        b as *mut _,
+                        a as *mut _,
+                        0.0,
+                        0.0,
+                        0.0,
+                        0.0,
+                        1.0,
+                        0.0,
+                    );
+                }
+            }),
+        ]);
+
+        // A mutable pair and every shared pair run in opposite argument order. This is the
+        // writer-preference deadlock that parameter-ordered shared locks used to permit.
+        concurrent_borrow_watchdog(vec![
+            Box::new(move || {
+                for _ in 0..ITERATIONS {
+                    flight_apply_physics2d_impulse(
+                        a as *mut _,
+                        b as *mut _,
+                        0.0,
+                        0.0,
+                        0.0,
+                        0.0,
+                        1.0,
+                        0.0,
+                    );
+                }
+            }),
+            Box::new(move || {
+                let point = flight_sdk::Physics2DContactPoint::default();
+                for _ in 0..ITERATIONS {
+                    let _ = flight_is_rigid_body2d_pair_awake(b as *const _, a as *const _);
+                    let _ = flight_relative_normal_velocity(
+                        b as *const _,
+                        a as *const _,
+                        &point,
+                        1.0,
+                        0.0,
+                    );
+                    let _ = flight_is_physics2d_pair_ordered(b as *const _, a as *const _);
+                }
+            }),
+        ]);
+
+        concurrent_borrow_watchdog(vec![
+            Box::new(move || {
+                let point = flight_sdk::Physics2DContactPoint::default();
+                for _ in 0..ITERATIONS {
+                    let _ = flight_is_rigid_body2d_pair_awake(a as *const _, b as *const _);
+                    let _ = flight_relative_normal_velocity(
+                        a as *const _,
+                        b as *const _,
+                        &point,
+                        1.0,
+                        0.0,
+                    );
+                    let _ = flight_is_physics2d_pair_ordered(a as *const _, b as *const _);
+                }
+            }),
+            Box::new(move || {
+                let point = flight_sdk::Physics2DContactPoint::default();
+                for _ in 0..ITERATIONS {
+                    let _ = flight_is_rigid_body2d_pair_awake(b as *const _, a as *const _);
+                    let _ = flight_relative_normal_velocity(
+                        b as *const _,
+                        a as *const _,
+                        &point,
+                        1.0,
+                        0.0,
+                    );
+                    let _ = flight_is_physics2d_pair_ordered(b as *const _, a as *const _);
+                }
+            }),
+        ]);
+
+        // Shared aliases must reuse the first guard. Several waiting writers make a second read of
+        // the same writer-preferring RwLock deadlock deterministically under the BMR3 mutation.
+        let mut alias_operations: Vec<Box<dyn FnOnce() + Send>> = Vec::new();
+        for writer_index in 0..3 {
+            alias_operations.push(Box::new(move || {
+                for _ in 0..ITERATIONS {
+                    if writer_index % 2 == 0 {
+                        flight_apply_physics2d_impulse(
+                            a as *mut _,
+                            b as *mut _,
+                            0.0,
+                            0.0,
+                            0.0,
+                            0.0,
+                            1.0,
+                            0.0,
+                        );
+                    } else {
+                        flight_apply_physics2d_impulse(
+                            b as *mut _,
+                            a as *mut _,
+                            0.0,
+                            0.0,
+                            0.0,
+                            0.0,
+                            1.0,
+                            0.0,
+                        );
+                    }
+                }
+            }));
+        }
+        for reader_index in 0..3 {
+            alias_operations.push(Box::new(move || {
+                let point = flight_sdk::Physics2DContactPoint::default();
+                let (left, right) = if reader_index % 2 == 0 {
+                    (a, alias)
+                } else {
+                    (alias, a)
+                };
+                for _ in 0..ITERATIONS {
+                    let _ = flight_is_rigid_body2d_pair_awake(left as *const _, right as *const _);
+                    let _ = flight_relative_normal_velocity(
+                        left as *const _,
+                        right as *const _,
+                        &point,
+                        1.0,
+                        0.0,
+                    );
+                    let _ = flight_is_physics2d_pair_ordered(left as *const _, right as *const _);
+                }
+            }));
+        }
+        concurrent_borrow_watchdog(alias_operations);
+
+        let node_a = flight_create_sprite();
+        let node_b = flight_create_sprite();
+        let aliases = flight_node_array_create();
+        assert!(flight_node_array_push(aliases, node_a));
+        let node_a_alias = flight_node_array_get(aliases, 0);
+        let (node_a_ptr, node_b_ptr, node_alias_ptr) =
+            (node_a as usize, node_b as usize, node_a_alias as usize);
+        let node_arc_a = (*node_a).node.clone();
+        let node_arc_b = (*node_b).node.clone();
+        concurrent_borrow_watchdog(vec![
+            Box::new(move || {
+                let a_before_b = (Arc::as_ptr(&node_arc_a) as *const () as usize)
+                    < (Arc::as_ptr(&node_arc_b) as *const () as usize);
+                for _ in 0..ITERATIONS {
+                    if a_before_b {
+                        let _first = node_arc_a
+                            .write()
+                            .unwrap_or_else(std::sync::PoisonError::into_inner);
+                        let _second = node_arc_b
+                            .write()
+                            .unwrap_or_else(std::sync::PoisonError::into_inner);
+                    } else {
+                        let _first = node_arc_b
+                            .write()
+                            .unwrap_or_else(std::sync::PoisonError::into_inner);
+                        let _second = node_arc_a
+                            .write()
+                            .unwrap_or_else(std::sync::PoisonError::into_inner);
+                    }
+                }
+            }),
+            Box::new(move || {
+                for _ in 0..ITERATIONS {
+                    let _ = flight_default_node_runtime_can_add_child(
+                        node_b_ptr as *const FlightNode,
+                        node_a_ptr as *const FlightNode,
+                    );
+                }
+            }),
+            Box::new(move || {
+                for _ in 0..ITERATIONS {
+                    let _ = flight_default_node_runtime_can_add_child(
+                        node_a_ptr as *const FlightNode,
+                        node_alias_ptr as *const FlightNode,
+                    );
+                }
+            }),
+        ]);
+
+        flight_free_node_array(aliases);
+        flight_free_node(node_a_alias);
+        flight_free_node(node_a);
+        flight_free_node(node_b);
+        flight_free_rigid_body2_d_ref(
+            body_a_alias.cast::<flight_sdk::Ref<flight_sdk::RigidBody2D>>(),
+        );
+        flight_free_rigid_body2_d_ref(body_a.cast());
+        flight_free_rigid_body2_d_ref(body_b.cast());
+    }
+}
+
+#[test]
 fn node_field_access_recovers_from_a_poisoned_view_lock() {
     unsafe {
         let sprite = flight_create_sprite();
@@ -198,23 +450,54 @@ fn node_field_access_recovers_from_a_poisoned_view_lock() {
 }
 
 #[test]
-fn node_field_malformed_optional_node2d_slice_is_rejected_before_calling_the_sdk() {
+fn node_field_optional_node2d_slice_preserves_null_elements_and_rejects_malformed_inputs() {
     unsafe {
+        let sprite = flight_create_sprite();
         let node3d = flight_create_particle_emitter_3d();
-        let nodes = [node3d as *const FlightNode];
-        let result = flight_create_rive_animation_clips(
+        let artboard = flight_sdk::RiveArtboardGraph::default();
+        let rebuilds: std::collections::HashMap<usize, flight_sdk::RiveRebuild> =
+            Default::default();
+        let range = flight_sdk::RiveObjectRange { end: 0, start: 0 };
+        let call = |ptr: *const *const FlightNode, len: usize| {
+            flight_create_rive_animation_clips(
+                std::ptr::null(),
+                0,
+                &range,
+                ptr,
+                len,
+                &artboard,
+                (&rebuilds as *const std::collections::HashMap<usize, flight_sdk::RiveRebuild>)
+                    .cast(),
+                std::ptr::null(),
+                std::ptr::null_mut(),
+            )
+        };
+
+        let nodes = [
             std::ptr::null(),
-            0,
+            sprite as *const FlightNode,
             std::ptr::null(),
-            nodes.as_ptr(),
-            nodes.len(),
-            std::ptr::null(),
-            std::ptr::null(),
-            std::ptr::null(),
-            std::ptr::null_mut(),
+        ];
+        let result = call(nodes.as_ptr(), nodes.len());
+        assert!(!result.is_null(), "NULL elements lower to None");
+        assert_eq!(flight_create_rive_animation_clips_result_len(result), 0);
+        flight_create_rive_animation_clips_result_free(result.cast());
+
+        let empty = call(std::ptr::null(), 0);
+        assert!(!empty.is_null(), "NULL with zero length is an empty slice");
+        flight_create_rive_animation_clips_result_free(empty.cast());
+        assert!(
+            call(std::ptr::null(), 2).is_null(),
+            "NULL with non-zero length is rejected"
         );
-        assert!(result.is_null());
+        let wrong_kind = [sprite as *const FlightNode, node3d as *const FlightNode];
+        assert!(
+            call(wrong_kind.as_ptr(), wrong_kind.len()).is_null(),
+            "a non-2D element is rejected before the SDK call"
+        );
+
         flight_free_node(node3d);
+        flight_free_node(sprite);
     }
 }
 
@@ -222,22 +505,56 @@ fn node_field_malformed_optional_node2d_slice_is_rejected_before_calling_the_sdk
 fn node_field_mutation_is_locked_explicit_and_kind_safe() {
     unsafe {
         let sprite = flight_create_sprite();
-        let before = flight_get_node_local_transform_revision(sprite);
-        let appearance_before = flight_get_node_appearance_revision(sprite);
+        let before = [
+            flight_get_node_appearance_revision(sprite),
+            flight_get_node_local_bounds_revision(sprite),
+            flight_get_node_local_content_revision(sprite),
+            flight_get_node_local_transform_revision(sprite),
+            flight_get_node_parent_reference_revision(sprite),
+        ];
         assert!(flight_set_node_enabled(sprite, false));
         assert!(!flight_get_node_enabled(sprite));
-        assert_eq!(flight_get_node_local_transform_revision(sprite), before);
         assert_eq!(
+            [
+                flight_get_node_appearance_revision(sprite),
+                flight_get_node_local_bounds_revision(sprite),
+                flight_get_node_local_content_revision(sprite),
+                flight_get_node_local_transform_revision(sprite),
+                flight_get_node_parent_reference_revision(sprite),
+            ],
+            before.map(|revision| revision.wrapping_add(1)),
+            "the canonical SDK setter invalidates every node revision lane"
+        );
+        let after_sdk_enabled = [
             flight_get_node_appearance_revision(sprite),
-            appearance_before
+            flight_get_node_local_bounds_revision(sprite),
+            flight_get_node_local_content_revision(sprite),
+            flight_get_node_local_transform_revision(sprite),
+            flight_get_node_parent_reference_revision(sprite),
+        ];
+        assert!(flight_set_node_enabled_field(sprite, true));
+        assert!(flight_get_node_enabled(sprite));
+        assert_eq!(
+            [
+                flight_get_node_appearance_revision(sprite),
+                flight_get_node_local_bounds_revision(sprite),
+                flight_get_node_local_content_revision(sprite),
+                flight_get_node_local_transform_revision(sprite),
+                flight_get_node_parent_reference_revision(sprite),
+            ],
+            after_sdk_enabled,
+            "the collision-only raw field setter does not invalidate"
         );
         assert!(flight_set_node2d_x(sprite, 12.5));
         assert_eq!(flight_get_node2d_x(sprite), 12.5);
-        assert_eq!(flight_get_node_local_transform_revision(sprite), before);
+        assert_eq!(
+            flight_get_node_local_transform_revision(sprite),
+            after_sdk_enabled[3]
+        );
         flight_invalidate_node_local_transform(sprite);
         assert_eq!(
             flight_get_node_local_transform_revision(sprite),
-            before.wrapping_add(1)
+            after_sdk_enabled[3].wrapping_add(1)
         );
 
         let name = CString::new("sprite-name").unwrap();
@@ -283,10 +600,32 @@ fn node_field_mutation_is_locked_explicit_and_kind_safe() {
         let node3d = flight_create_particle_emitter_3d();
         assert!(flight_set_node3d_position_x(node3d, 7.0));
         assert_eq!(flight_get_node3d_position_x(node3d), 7.0);
+        let node3d_appearance = flight_get_node_appearance_revision(node3d);
+        assert!(flight_set_node3d_alpha(node3d, 0.5));
+        assert_eq!(flight_get_node3d_alpha(node3d), 0.5);
+        assert_eq!(
+            flight_get_node_appearance_revision(node3d),
+            node3d_appearance.wrapping_add(1)
+        );
+        assert!(flight_set_node3d_alpha_field(node3d, 0.25));
+        assert_eq!(flight_get_node3d_alpha(node3d), 0.25);
+        assert_eq!(
+            flight_get_node_appearance_revision(node3d),
+            node3d_appearance.wrapping_add(1),
+            "the node3d alpha field lane does not invalidate"
+        );
+        assert!(!flight_set_node3d_alpha(sprite, 0.5));
+        assert!(!flight_set_node3d_alpha_field(sprite, 0.5));
         assert_eq!(flight_get_node2d_x(node3d), 0.0);
         assert!(!flight_set_node2d_x(node3d, 3.0));
         assert!(!flight_set_node2d_clip(node3d, std::ptr::null()));
+        let clip_appearance = flight_get_node_appearance_revision(sprite);
         assert!(flight_set_node2d_clip(sprite, std::ptr::null()));
+        assert_eq!(
+            flight_get_node_appearance_revision(sprite),
+            clip_appearance.wrapping_add(1),
+            "the SDK clip setter invalidates appearance"
+        );
 
         flight_free_node(node3d);
         flight_free_node(sprite);

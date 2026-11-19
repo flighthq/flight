@@ -3818,7 +3818,13 @@ fn generate_node_field_accessors(
 
     for field in fields {
         let getter_name = format!("flight_get_{stem}_{}", field.name);
-        let setter_name = format!("flight_set_{stem}_{}", field.name);
+        // A raw field write cannot shadow an SDK setter whose canonical verb also invalidates.
+        // These are the two current collisions; non-colliding fields keep their concise B3 names.
+        let setter_name = match (struct_name, field.name.as_str()) {
+            ("NodeFields", "enabled") => "flight_set_node_enabled_field".to_string(),
+            ("Node3DFields", "alpha") => "flight_set_node3d_alpha_field".to_string(),
+            _ => format!("flight_set_{stem}_{}", field.name),
+        };
         let ffi_ty = &field.ty;
         if seen_names.insert(getter_name.clone()) {
             writeln!(
@@ -3930,6 +3936,9 @@ pub unsafe extern "C" fn flight_set_node_name(node: *mut FlightNode, value: *con
                 }
             }
         }
+        if seen_names.insert("flight_set_node3d_alpha".to_string()) {
+            output.push_str(generate_node3d_alpha_setter_wrapper());
+        }
     }
     return output;
 }
@@ -4032,7 +4041,7 @@ pub unsafe extern "C" fn flight_free_material_data_ref(value: *mut flight_sdk::R
 }
 
 fn generate_node2d_clip_setter_wrapper() -> &'static str {
-    r#"#[doc = "flight-ffi contract|Assigns node2d.clip without implicit invalidation. NULL clears it; a non-NULL value is cloned. NULL or wrong-kind node handles return false; true means assigned or cleared."]
+    r#"#[doc = "flight-ffi contract|Calls the SDK set_node2d_clip verb and invalidates node appearance. NULL clears the clip; a non-NULL value is cloned. NULL or wrong-kind node handles return false; true means assigned or cleared."]
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn flight_set_node2d_clip(node: *mut FlightNode, value: *const std::ffi::c_void) -> bool {
     let Some(node) = (unsafe { ffi_node_handle(node) }) else { return false; };
@@ -4044,11 +4053,22 @@ pub unsafe extern "C" fn flight_set_node2d_clip(node: *mut FlightNode, value: *c
 }
 
 fn generate_node_enabled_setter_wrapper() -> &'static str {
-    r#"#[doc = "flight-ffi contract|Assigns node.enabled through the handle's write lock without implicit invalidation. Returns true after assignment; NULL returns false and changes nothing."]
+    r#"#[doc = "flight-ffi contract|Calls the SDK set_node_enabled verb, assigning node.enabled and invalidating the node's appearance, local bounds, local content, local transform, parent reference and world bounds. NULL returns false and changes nothing; true means assigned and invalidated."]
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn flight_set_node_enabled(node: *mut FlightNode, value: bool) -> bool {
     let Some(node) = (unsafe { ffi_node_handle(node) }) else { return false; };
-    node.node.write().unwrap_or_else(std::sync::PoisonError::into_inner).node_fields_mut().enabled = value;
+    flight_sdk::set_node_enabled(&node.node, value);
+    true
+}"#
+}
+
+fn generate_node3d_alpha_setter_wrapper() -> &'static str {
+    r#"#[doc = "flight-ffi contract|Calls the SDK set_node3d_alpha verb, assigning node3d.alpha and invalidating node appearance. NULL or non-3D handles return false and change nothing; true means assigned and invalidated."]
+#[unsafe(no_mangle)]
+pub unsafe extern "C" fn flight_set_node3d_alpha(node: *mut FlightNode, value: f32) -> bool {
+    let Some(node) = (unsafe { ffi_node_handle(node) }) else { return false; };
+    if node.node3d.is_none() { return false; }
+    flight_sdk::set_node3d_alpha(&node.node, value);
     true
 }"#
 }
@@ -4264,6 +4284,9 @@ fn generate_ffi_wrapper(func: &ParsedFn) -> Option<(String, Option<String>)> {
     if func.name == "set_node_enabled" {
         return Some((generate_node_enabled_setter_wrapper().to_string(), None));
     }
+    if func.name == "set_node3d_alpha" {
+        return Some((generate_node3d_alpha_setter_wrapper().to_string(), None));
+    }
     if let Some(wrapper) = generate_task_m_wrapper(func) {
         return Some(wrapper);
     }
@@ -4453,6 +4476,19 @@ fn generate_ffi_wrapper(func: &ParsedFn) -> Option<(String, Option<String>)> {
         notes.push_str(&format!(
             "#[doc = \"{NULLABLE_PARAM_DOC_PREFIX}{param}\"]\n"
         ));
+    }
+    for param in &func.params {
+        if let Some(kind) = optional_node_ref_slice_kind(&param.ty) {
+            let required_view = match kind {
+                NodeKind::Node => "Node",
+                NodeKind::Node2D => "Node2D",
+                NodeKind::Node3D => "Node3D",
+            };
+            notes.push_str(&format!(
+                "#[doc = \"flight-ffi contract|Parameter {name} is a borrowed FlightNode pointer array: {name}_ptr may be NULL only when {name}_len is 0; NULL elements become None; every non-NULL element must provide the {required_view} view or the function returns its invalid-parameter sentinel without calling the SDK. The array and every handle remain caller-owned and need only stay alive for this call.\"]\n",
+                name = param.name
+            ));
+        }
     }
     if !alias_borrow_pairs.is_empty() {
         notes.push_str("#[doc = \"flight-ffi contract|Borrowed handles are compared by allocation before locking. Shared aliases take one read lock; any pair containing a mutable borrow returns this function's ordinary invalid-parameter sentinel when both handles refer to one allocation. Distinct allocations are locked in allocation order.\"]\n");
@@ -7884,10 +7920,7 @@ fn alias_borrow_pair_bindings(pair: &AliasBorrowPair) -> Vec<String> {
     match (pair.first.mutable, pair.second.mutable) {
         (false, false) => {
             bindings.push(format!(
-                "    let guard_{first} = arc_{first}.read().unwrap_or_else(std::sync::PoisonError::into_inner);"
-            ));
-            bindings.push(format!(
-                "    let guard_{second} = if {aliases} {{ None }} else {{ Some(arc_{second}.read().unwrap_or_else(std::sync::PoisonError::into_inner)) }};"
+                "    let (guard_{first}, guard_{second}) = if {aliases} {{ (arc_{first}.read().unwrap_or_else(std::sync::PoisonError::into_inner), None) }} else if (std::sync::Arc::as_ptr(arc_{first}) as *const () as usize) < (std::sync::Arc::as_ptr(arc_{second}) as *const () as usize) {{ (arc_{first}.read().unwrap_or_else(std::sync::PoisonError::into_inner), Some(arc_{second}.read().unwrap_or_else(std::sync::PoisonError::into_inner))) }} else {{ let guard_{second} = arc_{second}.read().unwrap_or_else(std::sync::PoisonError::into_inner); let guard_{first} = arc_{first}.read().unwrap_or_else(std::sync::PoisonError::into_inner); (guard_{first}, Some(guard_{second})) }};"
             ));
         }
         (true, true) => {
@@ -9877,6 +9910,12 @@ fn node_ref_kind(ty: &str) -> Option<NodeKind> {
     let resolved = resolve_type_alias(ty.trim());
     let inner = resolved.strip_prefix("Ref<")?.strip_suffix('>')?;
     return node_return_spec(inner).map(|spec| spec.kind);
+}
+
+fn optional_node_ref_slice_kind(ty: &str) -> Option<NodeKind> {
+    let ty = strip_crate_paths(&strip_lifetimes(ty.trim()));
+    let inner = ty.strip_prefix("&[Option<")?.strip_suffix(">]")?.trim();
+    node_ref_kind(inner)
 }
 
 fn map_return_to_ffi(ty: &str) -> Option<(String, FfiReturn)> {

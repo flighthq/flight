@@ -705,6 +705,9 @@ static void check_node_carriers(void) {
 
   uint32_t revision = flight_get_node_local_transform_revision(sprite);
   uint32_t appearance_revision = flight_get_node_appearance_revision(sprite);
+  uint32_t bounds_revision = flight_get_node_local_bounds_revision(sprite);
+  uint32_t content_revision = flight_get_node_local_content_revision(sprite);
+  uint32_t parent_revision = flight_get_node_parent_reference_revision(sprite);
   expect(flight_set_node2d_x(sprite, 9.5f), "Node2DFields writes through FlightNode");
   expect(near(flight_get_node2d_x(sprite), 9.5f), "Node2DFields reads through FlightNode");
   expect(flight_set_node2d_y(sprite, -4.25) && flight_get_node2d_y(sprite) == -4.25,
@@ -722,12 +725,37 @@ static void check_node_carriers(void) {
   expect(flight_get_node_local_transform_revision(sprite) == revision, "field writes do not implicitly invalidate");
   expect(flight_get_node_appearance_revision(sprite) == appearance_revision,
          "field writes do not implicitly invalidate appearance");
+  expect(flight_set_node_enabled_field(sprite, false) && !flight_get_node_enabled(sprite),
+         "the collision-only node.enabled field setter writes without invalidation");
+  expect(flight_get_node_local_transform_revision(sprite) == revision &&
+             flight_get_node_appearance_revision(sprite) == appearance_revision &&
+             flight_get_node_local_bounds_revision(sprite) == bounds_revision &&
+             flight_get_node_local_content_revision(sprite) == content_revision &&
+             flight_get_node_parent_reference_revision(sprite) == parent_revision,
+         "the node.enabled field setter leaves every revision unchanged");
+  expect(flight_set_node_enabled(sprite, true) && flight_get_node_enabled(sprite),
+         "the canonical node enabled SDK verb remains reachable");
+  revision += 1;
+  appearance_revision += 1;
+  bounds_revision += 1;
+  content_revision += 1;
+  parent_revision += 1;
+  expect(flight_get_node_local_transform_revision(sprite) == revision &&
+             flight_get_node_appearance_revision(sprite) == appearance_revision &&
+             flight_get_node_local_bounds_revision(sprite) == bounds_revision &&
+             flight_get_node_local_content_revision(sprite) == content_revision &&
+             flight_get_node_parent_reference_revision(sprite) == parent_revision,
+         "the canonical node enabled SDK verb invalidates every node revision lane");
   flight_invalidate_node_local_transform(sprite);
   expect(flight_get_node_local_transform_revision(sprite) == revision + 1,
          "explicit node invalidation remains caller controlled");
   flight_invalidate_node_appearance(sprite);
   expect(flight_get_node_appearance_revision(sprite) == appearance_revision + 1,
          "explicit appearance invalidation remains caller controlled");
+  appearance_revision += 1;
+  expect(flight_set_node2d_clip(sprite, NULL), "the canonical clip SDK verb accepts NULL to clear");
+  expect(flight_get_node_appearance_revision(sprite) == appearance_revision + 1,
+         "the canonical clip SDK verb invalidates appearance");
 
   expect(flight_set_node_name(sprite, "c-sprite"), "NodeFields name accepts UTF-8");
   char *name = flight_get_node_name(sprite);
@@ -750,6 +778,15 @@ static void check_node_carriers(void) {
   expect(node3d != NULL, "a 3D node uses the shared FlightNode carrier");
   expect(flight_get_node2d_x(node3d) == 0.0 && !flight_set_node2d_x(node3d, 3.0),
          "a non-2D node returns the documented 2D sentinels");
+  uint32_t node3d_appearance = flight_get_node_appearance_revision(node3d);
+  expect(flight_set_node3d_alpha(node3d, 0.5f) && near(flight_get_node3d_alpha(node3d), 0.5f),
+         "the canonical node3d alpha SDK verb remains reachable");
+  expect(flight_get_node_appearance_revision(node3d) == node3d_appearance + 1,
+         "the canonical node3d alpha SDK verb invalidates appearance");
+  expect(flight_set_node3d_alpha_field(node3d, 0.25f) && near(flight_get_node3d_alpha(node3d), 0.25f),
+         "the collision-only node3d alpha field setter remains reachable");
+  expect(flight_get_node_appearance_revision(node3d) == node3d_appearance + 1,
+         "the node3d alpha field setter does not invalidate");
 
   FlightNode *added = flight_add_node_child(container, sprite);
   expect(flight_node_equals(added, sprite), "add child returns the inserted node identity");
