@@ -4532,7 +4532,41 @@ fn generate_mono_wrappers(func: &ParsedFn) -> Vec<(String, String, Option<String
                 let qualified = qualify_type(concrete_ty);
                 let trait_name = mono_dyn_trait(&ty).unwrap();
                 let name = &param.name;
-                if ty.starts_with("Option<&mut ") {
+                if is_ref_only_borrow_type(concrete_ty) {
+                    let clean = name.trim_start_matches('_');
+                    let mutable = ty.starts_with("&mut ") || ty.starts_with("Option<&mut ");
+                    let optional = ty.starts_with("Option<");
+                    ffi_params.push(format!(
+                        "{name}: {} std::ffi::c_void",
+                        if mutable { "*mut" } else { "*const" }
+                    ));
+                    if optional {
+                        bindings.push(if mutable {
+                            format!("    let mut guard_{clean} = if {name}.is_null() {{ None }} else {{ Some(unsafe {{ &*({name} as *const flight_sdk::Ref<{qualified}>) }}.write().unwrap_or_else(std::sync::PoisonError::into_inner)) }};")
+                        } else {
+                            format!("    let guard_{clean} = if {name}.is_null() {{ None }} else {{ Some(unsafe {{ &*({name} as *const flight_sdk::Ref<{qualified}>) }}.read().unwrap_or_else(std::sync::PoisonError::into_inner)) }};")
+                        });
+                        call_args.push(if mutable {
+                            format!("guard_{clean}.as_deref_mut().map(|value| value as &mut dyn {QUALIFIER}::{trait_name})")
+                        } else {
+                            format!("guard_{clean}.as_deref().map(|value| value as &dyn {QUALIFIER}::{trait_name})")
+                        });
+                    } else {
+                        bindings.push(format!(
+                            "    if {name}.is_null() {{ {INVALID_NODE_RETURN} }}"
+                        ));
+                        bindings.push(if mutable {
+                            format!("    let mut guard_{clean} = unsafe {{ &*({name} as *const flight_sdk::Ref<{qualified}>) }}.write().unwrap_or_else(std::sync::PoisonError::into_inner);")
+                        } else {
+                            format!("    let guard_{clean} = unsafe {{ &*({name} as *const flight_sdk::Ref<{qualified}>) }}.read().unwrap_or_else(std::sync::PoisonError::into_inner);")
+                        });
+                        call_args.push(format!(
+                            "{}*guard_{clean} as {}dyn {QUALIFIER}::{trait_name}",
+                            if mutable { "&mut " } else { "&" },
+                            if mutable { "&mut " } else { "&" }
+                        ));
+                    }
+                } else if ty.starts_with("Option<&mut ") {
                     ffi_params.push(format!("{name}: *mut {qualified}"));
                     call_args.push(format!(
                         "if {name}.is_null() {{ None }} else {{ Some(unsafe {{ &mut *{name} }} as &mut dyn {QUALIFIER}::{trait_name}) }}"
@@ -5797,7 +5831,11 @@ unsafe fn ffi_node_handle<'a>(node: *const FlightNode) -> Option<&'a FlightNode>
     Some(unsafe { &*node })
 }
 fn ffi_node_concrete<T: flight_sdk::Node + 'static>(node: &FlightNode) -> Option<flight_sdk::Ref<T>> {
-    node.concrete.as_ref()?.downcast_ref::<flight_sdk::Ref<T>>().cloned()
+    node.concrete
+        .as_ref()
+        .and_then(|value| value.downcast_ref::<flight_sdk::Ref<T>>())
+        .cloned()
+        .or_else(|| flight_sdk::downcast_node_ref::<T>(&node.node))
 }
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn flight_node_equals(a: *const FlightNode, b: *const FlightNode) -> bool {

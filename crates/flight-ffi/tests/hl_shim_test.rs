@@ -30,7 +30,7 @@ fn opaque_and_scalar_buffer_pointers_stay_bytes_carriers() {
 }
 
 #[test]
-fn random_gaussian_pair_outputs_are_typed_hashlink_references() {
+fn random_gaussian_pair_outputs_are_typed_f64_hashlink_references() {
     let (header, shim) = generated();
     assert_line(
         &header,
@@ -1205,8 +1205,8 @@ fn contract_lane_enums_cross_as_u32_discriminants() {
     let (header, shim) = generated();
     let wrappers = generated_wrappers();
     for line in [
-        "bool flight_append_morph_shape_begin_gradient_fill(void * arg0, uint32_t arg1, void * arg2, void * arg3, int32_t arg4, int32_t arg5);",
-        "bool flight_append_morph_shape_line_gradient_style(void * arg0, uint32_t arg1, void * arg2, void * arg3, int32_t arg4, int32_t arg5);",
+        "bool flight_append_morph_shape_begin_gradient_fill(const FlightNode * arg0, uint32_t arg1, void * arg2, void * arg3, int32_t arg4, int32_t arg5);",
+        "bool flight_append_morph_shape_line_gradient_style(const FlightNode * arg0, uint32_t arg1, void * arg2, void * arg3, int32_t arg4, int32_t arg5);",
     ] {
         assert_line(&header, line);
     }

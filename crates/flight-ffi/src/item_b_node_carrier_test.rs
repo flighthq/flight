@@ -31,6 +31,18 @@ fn node_carriers_preserve_identity_hierarchy_and_free_order() {
         assert!(!flight_node_equals(first, shape));
         flight_free_node(first);
 
+        let recovered_text_label = flight_node_array_get(output, 3);
+        let recovered_text = CString::new("recovered-text").unwrap();
+        flight_set_text_label_string(recovered_text_label, recovered_text.as_ptr());
+        let recovered_text_copy = flight_get_text_label_string(recovered_text_label);
+        assert!(!recovered_text_copy.is_null());
+        assert_eq!(
+            CStr::from_ptr(recovered_text_copy).to_bytes(),
+            b"recovered-text"
+        );
+        flight_free_string(recovered_text_copy);
+        flight_free_node(recovered_text_label);
+
         flight_set_node_child_index(parent, text_label, 0);
         flight_node_array_clear(output);
         flight_get_node_children(output, parent);

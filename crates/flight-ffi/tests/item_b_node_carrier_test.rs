@@ -62,6 +62,7 @@ fn one_node_carrier_covers_concrete_abstract_nullable_array_and_callback_paths()
         "node3d: Option<flight_sdk::Node3DRef>,",
         "concrete: Option<Box<dyn std::any::Any + Send + Sync>>",
         "std::sync::Arc::ptr_eq(&a.node, &b.node)",
+        "flight_sdk::downcast_node_ref::<T>(&node.node)",
         "&ffi_node_from_node_ref(__a0.clone()) as *const FlightNode",
     ] {
         assert!(
@@ -194,6 +195,28 @@ fn ref_only_values_borrow_ref_handles_while_dual_produced_types_stay_pinned() {
             "XmlElement"
         ]
     );
+}
+
+#[test]
+fn monomorphized_ref_only_trait_borrows_lock_the_ref_handle() {
+    let wrappers = generated("ffi_generated.rs");
+    for (name, concrete) in [
+        (
+            "flight_write_physics2d_joint_reaction__physics2_ddistance_joint",
+            "Physics2DDistanceJoint",
+        ),
+        (
+            "flight_write_physics2d_abi_set_joint_command__physics2_dwheel_joint",
+            "Physics2DWheelJoint",
+        ),
+    ] {
+        let body = wrapper(&wrappers, name);
+        assert!(body.contains(&format!(
+            "*const flight_sdk::Ref<flight_sdk::{concrete}>"
+        )));
+        assert!(body.contains(".read()"));
+        assert!(body.contains("as &dyn flight_sdk::Physics2DJoint"));
+    }
 }
 
 #[test]

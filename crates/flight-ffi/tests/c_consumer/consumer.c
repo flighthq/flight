@@ -740,6 +740,14 @@ static void check_node_carriers(void) {
   expect(flight_node_equals(first, sprite), "node array get preserves Arc identity");
   flight_free_node(first);
 
+  FlightNode *recovered_text_label = flight_node_array_get(snapshot, 3);
+  flight_set_text_label_string(recovered_text_label, "recovered-text");
+  char *recovered_text = flight_get_text_label_string(recovered_text_label);
+  expect(recovered_text != NULL && strcmp(recovered_text, "recovered-text") == 0,
+         "an erased array element recovers its concrete node kind");
+  flight_free_string(recovered_text);
+  flight_free_node(recovered_text_label);
+
   flight_set_node_child_index(container, text_label, 0);
   flight_node_array_clear(snapshot);
   flight_get_node_children(snapshot, container);

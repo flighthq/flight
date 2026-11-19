@@ -1,6 +1,6 @@
 format|ffi-reachability-baseline|1
 policy|host_capability|feature-gated native host crates supply borrowed Host*Capability carriers
-summary|policy-exempt|278|unreachable|2364|blocking-carriers|710
+summary|policy-exempt|278|unreachable|2346|blocking-carriers|701
 carrier|1|*const Option<String>
 carrier|1|*const Option<flight_sdk::Ref<dyn flight_sdk::Node2D>>
 carrier|2|*const flight_sdk::AbcInstruction
@@ -156,27 +156,18 @@ carrier|2|*const flight_sdk::ParticleObjectsUpdateOptions
 carrier|1|*const flight_sdk::PerspectiveProjectionOptions
 carrier|3|*const flight_sdk::Physics2DBrokenJoint
 carrier|13|*const flight_sdk::Physics2DContact
-carrier|2|*const flight_sdk::Physics2DDistanceJoint
 carrier|1|*const flight_sdk::Physics2DDistanceJointOptions
-carrier|2|*const flight_sdk::Physics2DGearJoint
 carrier|1|*const flight_sdk::Physics2DGearJointOptions
 carrier|2|*const flight_sdk::Physics2DGuardState
 carrier|16|*const flight_sdk::Physics2DJointFields
 carrier|2|*const flight_sdk::Physics2DJointOptions
 carrier|3|*const flight_sdk::Physics2DJointRef
 carrier|7|*const flight_sdk::Physics2DJointResolution
-carrier|2|*const flight_sdk::Physics2DMouseJoint
 carrier|4|*const flight_sdk::Physics2DMouseJointOptions
-carrier|2|*const flight_sdk::Physics2DPrismaticJoint
-carrier|2|*const flight_sdk::Physics2DPulleyJoint
 carrier|5|*const flight_sdk::Physics2DPulleyJointOptions
 carrier|1|*const flight_sdk::Physics2DQueryHit
 carrier|6|*const flight_sdk::Physics2DRayHit
-carrier|2|*const flight_sdk::Physics2DRevoluteJoint
-carrier|2|*const flight_sdk::Physics2DRopeJoint
 carrier|1|*const flight_sdk::Physics2DRopeJointOptions
-carrier|2|*const flight_sdk::Physics2DWeldJoint
-carrier|2|*const flight_sdk::Physics2DWheelJoint
 carrier|1|*const flight_sdk::Physics3DBallAndSocketJoint
 carrier|2|*const flight_sdk::Physics3DCollider
 carrier|1|*const flight_sdk::Physics3DConeTwistJoint
@@ -3323,25 +3314,7 @@ unreachable|flight_write_collision_distance3d|*const flight_sdk::CollisionRegist
 unreachable|flight_write_dialog_handle_binary_file|Box<flight_sdk::Ref<flight_sdk::FileDialogHandle>>
 unreachable|flight_write_dialog_handle_text_file|Box<flight_sdk::Ref<flight_sdk::FileDialogHandle>>
 unreachable|flight_write_physics2d_abi_set_collider_command|Box<flight_sdk::Ref<flight_sdk::Physics2DCollider>>
-unreachable|flight_write_physics2d_abi_set_joint_command__physics2_ddistance_joint|*const flight_sdk::Physics2DDistanceJoint
-unreachable|flight_write_physics2d_abi_set_joint_command__physics2_dgear_joint|*const flight_sdk::Physics2DGearJoint
-unreachable|flight_write_physics2d_abi_set_joint_command__physics2_dmouse_joint|*const flight_sdk::Physics2DMouseJoint
-unreachable|flight_write_physics2d_abi_set_joint_command__physics2_dprismatic_joint|*const flight_sdk::Physics2DPrismaticJoint
-unreachable|flight_write_physics2d_abi_set_joint_command__physics2_dpulley_joint|*const flight_sdk::Physics2DPulleyJoint
-unreachable|flight_write_physics2d_abi_set_joint_command__physics2_drevolute_joint|*const flight_sdk::Physics2DRevoluteJoint
-unreachable|flight_write_physics2d_abi_set_joint_command__physics2_drope_joint|*const flight_sdk::Physics2DRopeJoint
-unreachable|flight_write_physics2d_abi_set_joint_command__physics2_dweld_joint|*const flight_sdk::Physics2DWeldJoint
-unreachable|flight_write_physics2d_abi_set_joint_command__physics2_dwheel_joint|*const flight_sdk::Physics2DWheelJoint
 unreachable|flight_write_physics2d_collider_bounds|*mut flight_sdk::SpatialAabb2D
-unreachable|flight_write_physics2d_joint_reaction__physics2_ddistance_joint|*const flight_sdk::Physics2DDistanceJoint
-unreachable|flight_write_physics2d_joint_reaction__physics2_dgear_joint|*const flight_sdk::Physics2DGearJoint
-unreachable|flight_write_physics2d_joint_reaction__physics2_dmouse_joint|*const flight_sdk::Physics2DMouseJoint
-unreachable|flight_write_physics2d_joint_reaction__physics2_dprismatic_joint|*const flight_sdk::Physics2DPrismaticJoint
-unreachable|flight_write_physics2d_joint_reaction__physics2_dpulley_joint|*const flight_sdk::Physics2DPulleyJoint
-unreachable|flight_write_physics2d_joint_reaction__physics2_drevolute_joint|*const flight_sdk::Physics2DRevoluteJoint
-unreachable|flight_write_physics2d_joint_reaction__physics2_drope_joint|*const flight_sdk::Physics2DRopeJoint
-unreachable|flight_write_physics2d_joint_reaction__physics2_dweld_joint|*const flight_sdk::Physics2DWeldJoint
-unreachable|flight_write_physics2d_joint_reaction__physics2_dwheel_joint|*const flight_sdk::Physics2DWheelJoint
 unreachable|flight_write_physics3d_abi_set_body_command|*const flight_sdk::RigidBody3D
 unreachable|flight_write_physics3d_abi_set_collider_command|*const flight_sdk::Physics3DCollider
 unreachable|flight_write_physics3d_abi_set_joint_command__physics3_dball_and_socket_joint|*const flight_sdk::Physics3DBallAndSocketJoint
