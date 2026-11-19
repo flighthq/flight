@@ -247,6 +247,7 @@ fn haxe_type_to_hl(ty: &str) -> Option<String> {
         "Int" => "_I32",
         "haxe.Int64" => "_I64",
         "hl.Bytes" => "_BYTES",
+        "hl.NativeArray<Float>" => "_ARR",
         "hl.Ref<Single>" => "_REF(_F32)",
         "hl.Ref<Float>" => "_REF(_F64)",
         "hl.Ref<Int>" => "_REF(_I32)",

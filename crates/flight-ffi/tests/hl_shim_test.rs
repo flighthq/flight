@@ -7,6 +7,129 @@ use std::fs;
 use std::path::Path;
 
 #[test]
+fn hashlink_packs_every_signature_above_six_float_lanes_without_changing_the_c_abi() {
+    let (header, shim) = generated();
+    let mut packed_names: Vec<&str> = shim
+        .lines()
+        .filter_map(|line| {
+            let body = line.strip_prefix("DEFINE_PRIM(")?.strip_suffix(");")?;
+            let mut fields = body.splitn(3, ',').map(str::trim);
+            let _return_carrier = fields.next()?;
+            let name = fields.next()?;
+            let parameters = fields.next()?;
+            return parameters
+                .split_whitespace()
+                .any(|value| value == "_ARR")
+                .then_some(name);
+        })
+        .collect();
+    packed_names.sort_unstable();
+    assert_eq!(
+        packed_names,
+        [
+            "flight_append_path_rounded_rectangle_with_corner_radii",
+            "flight_create_capsule",
+            "flight_create_matrix3_from_values",
+            "flight_create_matrix4_from_values",
+            "flight_create_obb",
+            "flight_create_transform2d",
+            "flight_get_cubic_bezier_curvature",
+            "flight_get_cubic_bezier_point",
+            "flight_get_cubic_bezier_tangent",
+            "flight_get_quadratic_bezier_curvature",
+            "flight_get_quadratic_bezier_point",
+            "flight_get_quadratic_bezier_tangent",
+            "flight_lerp_hsv_direct",
+            "flight_query_physics3d_abi_ray",
+            "flight_query_physics3d_abi_ray_closest",
+            "flight_raycast_collision_heightfield3d",
+            "flight_raycast_collision_shape3d",
+            "flight_raycast_collision_triangle_mesh3d",
+            "flight_set_capsule",
+            "flight_set_matrix3",
+            "flight_set_matrix4",
+            "flight_set_obb",
+            "flight_sweep_collision_shape3d",
+        ]
+    );
+    for name in &packed_names {
+        assert_eq!(
+            header
+                .lines()
+                .filter(|line| line.contains(&format!(" {name}(")))
+                .count(),
+            1,
+            "{name} C ABI declaration"
+        );
+        assert_eq!(
+            shim.matches(&format!("HL_NAME({name})")).count(),
+            1,
+            "{name} HashLink entry"
+        );
+        assert_eq!(
+            shim.lines()
+                .filter(|line| {
+                    line.starts_with("DEFINE_PRIM(") && line.contains(&format!(", {name}, "))
+                })
+                .count(),
+            1,
+            "{name} HashLink registration"
+        );
+    }
+
+    assert_line(
+        &header,
+        "void * flight_create_matrix4_from_values(double arg0, double arg1, double arg2, double arg3, double arg4, double arg5, double arg6, double arg7, double arg8, double arg9, double arg10, double arg11, double arg12, double arg13, double arg14, double arg15);",
+    );
+    assert_line(
+        &shim,
+        "DEFINE_PRIM(_BYTES, flight_create_matrix4_from_values, _ARR);",
+    );
+    assert_line(
+        &shim,
+        "DEFINE_PRIM(_VOID, flight_set_matrix4, _BYTES _ARR);",
+    );
+    assert_line(
+        &shim,
+        "DEFINE_PRIM(_VOID, flight_lerp_hsv_direct, _BYTES _I32 _I32 _ARR);",
+    );
+
+    let matrix_entry = shim
+        .lines()
+        .find(|line| line.contains("HL_NAME(flight_create_matrix4_from_values)"))
+        .unwrap();
+    let mut previous = 0usize;
+    for index in 0..16 {
+        let needle = format!("(double)hl_aptr(flight_values, double)[{index}]");
+        let position = matrix_entry.find(&needle).unwrap_or_else(|| {
+            panic!("matrix lane {index} missing from packed entry:\n{matrix_entry}")
+        });
+        assert!(
+            index == 0 || position > previous,
+            "matrix lane order drifted"
+        );
+        previous = position;
+    }
+
+    // Exactly six lanes remain on the ordinary ABI, pinning the strict `> 6` threshold.
+    assert_line(
+        &shim,
+        "DEFINE_PRIM(_BYTES, flight_create_matrix4_from_2d, _F64 _F64 _F64 _F64 _F64 _F64);",
+    );
+    let packed_registrations: Vec<&str> = shim
+        .lines()
+        .filter(|line| line.starts_with("DEFINE_PRIM(") && line.contains("_ARR"))
+        .collect();
+    assert!(packed_registrations.iter().all(|line| {
+        line.splitn(3, ',').nth(2).is_some_and(|parameters| {
+            !parameters
+                .split_whitespace()
+                .any(|parameter| matches!(parameter, "_F32" | "_F64"))
+        })
+    }));
+}
+
+#[test]
 fn opaque_and_scalar_buffer_pointers_stay_bytes_carriers() {
     let (header, shim) = generated();
     // An SDK handle, a scalar fixed-array output named `out`, and a scalar slice.
@@ -1009,7 +1132,7 @@ fn registered_collectors_return_owned_ref_clones() {
 }
 
 // Approved returned closures cross as callable, independently freeable disposer handles. The
-// callback-retaining frame-rate connection returns a signal connection instead (Item C).
+// callback-retaining frame-rate connection returns a signal connection instead.
 #[test]
 fn returned_disposers_lower_to_callable_handles() {
     let (header, shim) = generated();
@@ -1053,7 +1176,7 @@ fn returned_disposers_lower_to_callable_handles() {
 }
 
 #[test]
-fn task_m_contract_docs_stay_attached_to_native_symbols() {
+fn native_contract_docs_stay_attached_to_native_symbols() {
     let (header, shim) = generated();
     for (comment, ownership, prototype, hl_prim) in [
         (

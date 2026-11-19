@@ -14,6 +14,7 @@ struct Carrier {
 
 const OWNERSHIP_DOC_PREFIX: &str = "flight-ffi ownership|";
 const CONTRACT_DOC_PREFIX: &str = "flight-ffi contract|";
+const HASHLINK_FLOAT_PACK_THRESHOLD: usize = 6;
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 enum OwnershipKind {
@@ -1022,6 +1023,24 @@ typedef struct FlightShapeBoundsContextVTable {\n\
         let mut hl_params = Vec::new();
         let mut call_args = Vec::new();
         let mut signatures = Vec::new();
+        // HashLink's native-call bridge corrupts by-value floating-point arguments after six
+        // lanes. Derive the workaround from the generated ABI signature: both f32 and f64 lanes
+        // count, references do not, and the public C declaration remains unchanged. The HashLink
+        // primitive receives one GC-rooted NativeArray<Float> at the first float position and
+        // restores every value, in order, immediately before the C ABI call.
+        let packed_float_count = function
+            .sig
+            .inputs
+            .iter()
+            .filter(|argument| {
+                let FnArg::Typed(parameter) = argument else {
+                    return false;
+                };
+                return matches!(carrier(&parameter.ty).signature, "_F32" | "_F64");
+            })
+            .count();
+        let pack_floats = packed_float_count > HASHLINK_FLOAT_PACK_THRESHOLD;
+        let mut packed_float_index = 0usize;
         for (index, argument) in function.sig.inputs.iter().enumerate() {
             let FnArg::Typed(parameter) = argument else {
                 panic!("C ABI receiver");
@@ -1037,21 +1056,36 @@ typedef struct FlightShapeBoundsContextVTable {\n\
                     .unwrap_or_else(|| panic!("{name}.{parameter_name} must be a scalar pointer"));
             }
             let arg = format!("arg{index}");
-            if let Some(function) = callback_parameter(&parameter.ty) {
+            let callback = callback_parameter(&parameter.ty);
+            if let Some(function) = callback {
                 let typed_scalar_pointers = name == "flight_build_particle_color_curve";
                 c_params.push(bare_fn_c_type(function, &arg, typed_scalar_pointers));
-                call_args.push(format!(
-                    "({}){arg}",
-                    bare_fn_c_type(function, "", typed_scalar_pointers)
-                ));
             } else {
                 let note = notes
                     .get(&parameter_name)
                     .map(|note| format!(" /* {note} */"))
                     .unwrap_or_default();
                 c_params.push(format!("{} {arg}{note}", ty.c));
-                call_args.push(format!("({}){arg}", ty.c));
             }
+            if pack_floats && matches!(ty.signature, "_F32" | "_F64") {
+                if packed_float_index == 0 {
+                    hl_params.push("varray *flight_values".to_string());
+                    signatures.push("_ARR");
+                }
+                call_args.push(format!(
+                    "({})hl_aptr(flight_values, double)[{packed_float_index}]",
+                    ty.c
+                ));
+                packed_float_index += 1;
+                continue;
+            }
+            let call_carrier = callback.map_or_else(
+                || ty.c.clone(),
+                |function| {
+                    bare_fn_c_type(function, "", name == "flight_build_particle_color_curve")
+                },
+            );
+            call_args.push(format!("({call_carrier}){arg}"));
             hl_params.push(format!("{} {arg}", ty.hl));
             signatures.push(ty.signature);
         }

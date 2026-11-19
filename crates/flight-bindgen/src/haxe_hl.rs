@@ -20,8 +20,158 @@ use crate::parse::{
     to_camel_case,
 };
 
+#[cfg(test)]
+mod packed_float_tests {
+    use super::*;
+    use crate::parse::Param;
+    use std::collections::BTreeMap;
+
+    fn function(name: &str, parameter_types: &[&str], ret: Option<&str>) -> ParsedFn {
+        return ParsedFn {
+            name: name.to_string(),
+            source_name: Some(name.to_string()),
+            params: parameter_types
+                .iter()
+                .enumerate()
+                .map(|(index, ty)| Param {
+                    name: format!("value_{index}"),
+                    ty: (*ty).to_string(),
+                })
+                .collect(),
+            ret: ret.map(str::to_string),
+        };
+    }
+
+    #[test]
+    fn threshold_is_strictly_more_than_six_for_both_single_and_float_lanes() {
+        let six = emit_function(&function(
+            "six_lanes",
+            &["f32", "f64", "f32", "f64", "f32", "f64"],
+            None,
+        ))
+        .unwrap();
+        assert!(!six.contains("__flightPacked"), "{six}");
+
+        let seven = emit_function(&function(
+            "seven_lanes",
+            &["f32", "f64", "f32", "f64", "f32", "f64", "f32"],
+            None,
+        ))
+        .unwrap();
+        assert!(seven.contains("new hl.NativeArray<Float>(7)"), "{seven}");
+    }
+
+    #[test]
+    fn mixed_lanes_keep_the_public_signature_native_symbol_parameter_order_and_values() {
+        let output = emit_function(&function(
+            "mixed_lanes",
+            &[
+                "&mut Matrix4",
+                "f32",
+                "i32",
+                "f64",
+                "f32",
+                "f64",
+                "f32",
+                "f64",
+                "f32",
+            ],
+            Some("f64"),
+        ))
+        .unwrap();
+        assert!(
+            output.contains("@:hlNative(\"flight\", \"flight_mixed_lanes\")"),
+            "{output}"
+        );
+        assert!(
+            output.contains(
+                "private static function __flightPacked_mixedLanes(value0:flight._hl.Matrix4, __flightValues:hl.NativeArray<Float>, value2:Int):Float;"
+            ),
+            "{output}"
+        );
+        assert!(
+            output.contains(
+                "public static inline function mixedLanes(value0:flight._hl.Matrix4, value1:Single, value2:Int, value3:Float, value4:Single, value5:Float, value6:Single, value7:Float, value8:Single):Float"
+            ),
+            "{output}"
+        );
+        for (index, name) in [
+            "value1", "value3", "value4", "value5", "value6", "value7", "value8",
+        ]
+        .iter()
+        .enumerate()
+        {
+            assert!(
+                output.contains(&format!("__flightValues[{index}] = {name};")),
+                "{output}"
+            );
+        }
+        assert!(
+            output.contains("return __flightPacked_mixedLanes(value0, __flightValues, value2);"),
+            "{output}"
+        );
+    }
+
+    #[test]
+    fn production_inventory_is_derived_from_signatures_and_has_23_affected_functions() {
+        let crates_dir = std::path::Path::new(env!("CARGO_MANIFEST_DIR"))
+            .parent()
+            .unwrap();
+        let exports = crate::parse::scan_all_crates(crates_dir);
+        let mut affected = BTreeMap::new();
+        for function in exports.iter().flat_map(|exports| &exports.fns) {
+            let mut singles = 0usize;
+            let mut floats = 0usize;
+            for parameter in &function.params {
+                let Some(kind) = classify_param(&parameter.ty) else {
+                    continue;
+                };
+                match kind {
+                    ParamKind::Scalar(ref ty) if ty == "f32" => singles += 1,
+                    ParamKind::Scalar(ref ty) if ty == "f64" => floats += 1,
+                    ParamKind::OptionF32 => singles += 1,
+                    ParamKind::OptionF64 => floats += 1,
+                    _ => {}
+                }
+            }
+            if singles + floats > HASHLINK_FLOAT_PACK_THRESHOLD {
+                affected.insert(function.name.as_str(), (singles, floats));
+            }
+        }
+        assert_eq!(
+            affected,
+            BTreeMap::from([
+                ("append_path_rounded_rectangle_with_corner_radii", (0, 8)),
+                ("create_capsule", (0, 7)),
+                ("create_matrix3_from_values", (0, 9)),
+                ("create_matrix4_from_values", (0, 16)),
+                ("create_obb", (0, 10)),
+                ("create_transform2d", (0, 9)),
+                ("get_cubic_bezier_curvature", (0, 9)),
+                ("get_cubic_bezier_point", (0, 9)),
+                ("get_cubic_bezier_tangent", (0, 9)),
+                ("get_quadratic_bezier_curvature", (0, 7)),
+                ("get_quadratic_bezier_point", (0, 7)),
+                ("get_quadratic_bezier_tangent", (0, 7)),
+                ("lerp_hsv_direct", (7, 0)),
+                ("query_physics3d_abi_ray", (0, 7)),
+                ("query_physics3d_abi_ray_closest", (0, 7)),
+                ("raycast_collision_heightfield3d", (0, 7)),
+                ("raycast_collision_shape3d", (0, 7)),
+                ("raycast_collision_triangle_mesh3d", (0, 7)),
+                ("set_capsule", (0, 7)),
+                ("set_matrix3", (0, 9)),
+                ("set_matrix4", (0, 16)),
+                ("set_obb", (0, 10)),
+                ("sweep_collision_shape3d", (0, 7)),
+            ])
+        );
+    }
+}
+
 const LIB_NAME: &str = "flight";
 const PKG: &str = "flight._hl";
+const HASHLINK_FLOAT_PACK_THRESHOLD: usize = 6;
 
 pub fn generate(
     crate_exports: &[CrateExports],
@@ -469,9 +619,56 @@ pub(crate) fn emit_function(func: &ParsedFn) -> Option<String> {
     }
 
     let params_str = haxe_params.join(", ");
+    let float_count = haxe_params
+        .iter()
+        .filter(|parameter| is_hashlink_float_parameter(parameter))
+        .count();
+    if float_count > HASHLINK_FLOAT_PACK_THRESHOLD {
+        // HashLink corrupts by-value floating-point arguments after six lanes. Keep the public
+        // Haxe signature intact, but bind its private native through one GC-rooted f64 array. Both
+        // Single and Float lanes count toward the limit and retain their relative order; the C
+        // shim casts each f64 array element back to the original C carrier.
+        let native_name = format!("__flightPacked_{haxe_name}");
+        let mut native_params = Vec::new();
+        let mut native_args = Vec::new();
+        let mut stores = String::new();
+        let mut float_index = 0usize;
+        for parameter in &haxe_params {
+            let (name, _) = parameter
+                .split_once(':')
+                .expect("generated Haxe parameter must be typed");
+            if is_hashlink_float_parameter(parameter) {
+                if float_index == 0 {
+                    native_params.push("__flightValues:hl.NativeArray<Float>".to_string());
+                    native_args.push("__flightValues".to_string());
+                }
+                writeln!(stores, "\t\t__flightValues[{float_index}] = {name};").unwrap();
+                float_index += 1;
+            } else {
+                native_params.push(parameter.clone());
+                native_args.push(name.to_string());
+            }
+        }
+        let return_prefix = if matches!(ret_kind, ReturnKind::Void) {
+            ""
+        } else {
+            "return "
+        };
+        return Some(format!(
+            "\t@:hlNative(\"{LIB_NAME}\", \"{ffi_name}\")\n\tprivate static function {native_name}({}):{haxe_ret};\n\tpublic static inline function {haxe_name}({params_str}):{haxe_ret} {{\n\t\tvar __flightValues = new hl.NativeArray<Float>({float_count});\n{stores}\t\t{return_prefix}{native_name}({});\n\t}}",
+            native_params.join(", "),
+            native_args.join(", ")
+        ));
+    }
     Some(format!(
         "\t@:hlNative(\"{LIB_NAME}\", \"{ffi_name}\")\n\tpublic static function {haxe_name}({params_str}):{haxe_ret};"
     ))
+}
+
+fn is_hashlink_float_parameter(parameter: &str) -> bool {
+    return parameter
+        .rsplit_once(':')
+        .is_some_and(|(_, ty)| matches!(ty, "Single" | "Float"));
 }
 
 fn param_kind_to_haxe(kind: &ParamKind) -> String {

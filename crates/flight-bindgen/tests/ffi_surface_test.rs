@@ -3,7 +3,7 @@
 #[path = "../src/ffi_surface.rs"]
 mod ffi_surface;
 
-use std::collections::BTreeSet;
+use std::collections::{BTreeMap, BTreeSet};
 use std::fs;
 use std::path::{Path, PathBuf};
 
@@ -78,6 +78,16 @@ mod declaration_matches_ffi_surface {
         let surface = fixture_surface();
         let cpp = "\t@:native(\"flight_missing\")\n\tpublic static function missing():Void;";
         assert!(!declaration_matches_ffi_surface(&surface, "_cpp", cpp));
+    }
+    #[test]
+    fn accepts_a_hashlink_packed_float_array_as_the_arr_carrier() {
+        let surface = FfiSurface {
+            c: BTreeMap::new(),
+            hl: parse_hl_primitives("DEFINE_PRIM(_VOID, flight_set_matrix4, _BYTES _ARR);"),
+            native_skips: BTreeSet::new(),
+        };
+        let hl = "\t@:hlNative(\"flight\", \"flight_set_matrix4\")\n\tprivate static function __flightPacked_setMatrix4(out:flight._hl.Matrix4, values:hl.NativeArray<Float>):Void;";
+        assert!(declaration_matches_ffi_surface(&surface, "_hl", hl));
     }
 }
 
