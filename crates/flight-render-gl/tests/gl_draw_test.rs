@@ -193,6 +193,28 @@ mod draw_gl_quad {
     use crate::gl_test_helper::{calls_named, make_state};
     use flight_render_gl::{draw_gl_quad, use_gl_program};
     #[test]
+    fn takes_f64_geometry_with_f32_uvs_and_narrows_each_position_once_into_the_vertex_buffer() {
+        // A mixed-lane API contract: x/y geometry is f64 (TS Number), u/v the declared f32 UV lane.
+        let contract: fn(
+            &flight_render_gl::GlRenderState,
+            f64,
+            f64,
+            f64,
+            f64,
+            f32,
+            f32,
+            f32,
+            f32,
+        ) -> Result<(), String> = draw_gl_quad;
+        let state = make_state();
+        use_gl_program(&state, None).unwrap();
+        contract(&state, 0.1, 100.1, 16_777_217.0, 2.5, 0.3, 0.0, 1.0, 1.0).unwrap();
+        let data = state.gl_runtime.borrow().quad_vertex_data;
+        assert_eq!(&data[0..3], &[0.1_f32, 100.1_f32, 0.3_f32]);
+        assert_eq!(data[4], 16_777_217.0_f64 as f32);
+    }
+
+    #[test]
     fn uploads_interleaved_vertices_and_draws_two_triangles() {
         let state = make_state();
         use_gl_program(&state, None).unwrap();

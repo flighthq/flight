@@ -588,18 +588,22 @@ fn default_gl_blend_modes() -> [(&'static str, GlBlendRealization); 6] {
     ];
 }
 
+// flight-lint: allow(f64) quad geometry and UVs are f64 CPU values (foreman-536d86b7); the f32 vertex buffer is the single narrowing
 #[allow(clippy::too_many_arguments)]
 pub fn draw_gl_quad(
     state: &GlRenderState,
-    x0: f32,
-    y0: f32,
-    x1: f32,
-    y1: f32,
+    x0: f64,
+    y0: f64,
+    x1: f64,
+    y1: f64,
     u0: f32,
     v0: f32,
     u1: f32,
     v1: f32,
 ) -> Result<(), String> {
+    // The f32 vertex buffer is the storage boundary: each f64 position narrows exactly once here;
+    // the UVs are already the declared f32 texture-coordinate lane.
+    let (x0, y0, x1, y1) = (x0 as f32, y0 as f32, x1 as f32, y1 as f32);
     let vertices = [
         x0, y0, u0, v0, x1, y0, u1, v0, x1, y1, u1, v1, x0, y1, u0, v1,
     ];

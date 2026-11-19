@@ -405,6 +405,7 @@ pub fn destroy_gl_texture_render_target(target: &mut GlTextureRenderTarget) {
     target.destroyed = true;
 }
 
+// flight-lint: allow(f64) widens the u32 texel size exactly into the f64 quad geometry (foreman-536d86b7)
 // flight-lint: allow(conform-params) D17 the native pass does not retain an unsafe state pointer
 pub fn draw_gl_texture_render_target_result(
     state: &mut GlRenderState,
@@ -470,8 +471,8 @@ pub fn draw_gl_texture_render_target_result(
         state,
         0.0,
         0.0,
-        target.axes.width as f32,
-        target.axes.height as f32,
+        f64::from(target.axes.width),
+        f64::from(target.axes.height),
         0.0,
         1.0,
         1.0,
