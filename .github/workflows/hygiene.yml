@@ -48,7 +48,8 @@ jobs:
       - uses: Swatinem/rust-cache@v2
       - id: clippy
         continue-on-error: true
-        run: cargo clippy --workspace
+        # SDL is a source-built, native opt-in checked by its dedicated developer gate.
+        run: cargo clippy --workspace --exclude flight-host-sdl
       - name: Report
         if: always()
         env:

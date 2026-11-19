@@ -82,7 +82,8 @@ jobs:
       - uses: Swatinem/rust-cache@v2
       # Compiles every crate (libraries, binaries, tests, examples) before running anything, so a
       # separate `cargo check` or `cargo build` would only repeat that compile.
-      - run: cargo test --workspace
+      # The SDL host is native opt-in and has its own display-backed developer gate.
+      - run: cargo test --workspace --exclude flight-host-sdl
 
   # Two suites, one job: the merged unit run (one shared jsdom environment; the isolated per-package
   # shards and tool-capture's browser contracts run nightly) and the host backends, which run under
@@ -181,7 +182,8 @@ jobs:
       - uses: actions/checkout@v5
       - uses: dtolnay/rust-toolchain@stable
       - uses: Swatinem/rust-cache@v2
-      - run: cargo package --workspace --no-verify
+      # flight-host-sdl is explicitly unpublished and its source build needs native SDK packages.
+      - run: cargo package --workspace --exclude flight-host-sdl --no-verify
 
   # The four wasm npm packages are compiled Rust: wasm-pack builds each crate for the wasm32 target —
   # the only job that compiles these crates for the target they ship to — and their npm builds wrap

@@ -95,7 +95,8 @@ jobs:
         run: bash scripts/version-crates.sh "$VERSION"
 
       - name: Verify workspace builds
-        run: cargo check --workspace
+        # The unpublished SDL host needs CMake and platform SDKs; release validation stays portable.
+        run: cargo check --workspace --exclude flight-host-sdl
 
       - name: Publish crates
         env:
