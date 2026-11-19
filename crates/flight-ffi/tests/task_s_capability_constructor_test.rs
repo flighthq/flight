@@ -899,25 +899,143 @@ fn generated_inventory_is_exhaustive_and_every_decision_is_reasoned() {
     }
 }
 
-fn snake_case(name: &str) -> String {
-    let chars: Vec<char> = name.chars().collect();
-    let mut out = String::new();
-    for (index, value) in chars.iter().copied().enumerate() {
-        if value.is_ascii_uppercase() {
-            let previous_lower = index > 0 && chars[index - 1].is_ascii_lowercase();
-            if previous_lower {
-                out.push('_');
-            }
-            out.push(value.to_ascii_lowercase());
-        } else {
-            out.push(value);
+const WITHDRAWN_PUBLIC_SYMBOLS: &[&str] = &[
+    "flight_call_host_callback_app_memory_pressure",
+    "flight_call_host_callback_bool",
+    "flight_call_host_callback_bool_result",
+    "flight_call_host_callback_f32_f32",
+    "flight_call_host_callback_f32_f32_f32",
+    "flight_call_host_callback_screen_change_event",
+    "flight_call_host_callback_screen_permission_state",
+    "flight_call_host_callback_void",
+    "flight_call_input_ingress_sink_gamepad_axis_move",
+    "flight_call_input_ingress_sink_gamepad_button_down",
+    "flight_call_input_ingress_sink_gamepad_button_up",
+    "flight_call_input_ingress_sink_gamepad_connect",
+    "flight_call_input_ingress_sink_gamepad_disconnect",
+    "flight_call_input_ingress_sink_is_enabled",
+    "flight_call_input_ingress_sink_key_down",
+    "flight_call_input_ingress_sink_key_up",
+    "flight_call_input_ingress_sink_pointer_cancel",
+    "flight_call_input_ingress_sink_pointer_down",
+    "flight_call_input_ingress_sink_pointer_move",
+    "flight_call_input_ingress_sink_pointer_move_relative",
+    "flight_call_input_ingress_sink_pointer_up",
+    "flight_call_input_ingress_sink_text_edit",
+    "flight_call_input_ingress_sink_text_input",
+    "flight_call_input_ingress_sink_wheel",
+    "flight_complete_host_screen_details_request_future",
+    "flight_complete_host_screen_permission_future",
+    "flight_complete_host_wgpu_acquisition_future",
+    "flight_create_disposer",
+    "flight_create_host_canvas_capability",
+    "flight_create_host_device_capability",
+    "flight_create_host_gl_capability",
+    "flight_create_host_input_ingress_capability",
+    "flight_create_host_lifecycle_capability",
+    "flight_create_host_screen_change_capability",
+    "flight_create_host_screen_details_capability",
+    "flight_create_host_screen_permission_change_capability",
+    "flight_create_host_screen_query_capability",
+    "flight_create_host_surface_display_capability",
+    "flight_create_host_surface_resize_capability",
+    "flight_create_host_timer_capability",
+    "flight_create_host_wgpu_capability",
+    "flight_create_host_window_appearance_capability",
+    "flight_create_host_window_attach_capability",
+    "flight_create_host_window_attention_capability",
+    "flight_create_host_window_content_protection_capability",
+    "flight_create_host_window_focus_capability",
+    "flight_create_host_window_fullscreen_capability",
+    "flight_create_host_window_geometry_capability",
+    "flight_create_host_window_hierarchy_capability",
+    "flight_create_host_window_lifecycle_capability",
+    "flight_create_host_window_progress_capability",
+    "flight_create_host_window_shadow_capability",
+    "flight_create_host_window_shell_capability",
+    "flight_create_host_window_size_constraints_capability",
+    "flight_create_host_window_state_capability",
+    "flight_create_host_window_visibility_capability",
+    "flight_create_host_window_zorder_capability",
+    "flight_create_string",
+    "flight_free_host_device_capability",
+    "flight_free_host_gl_capability",
+    "flight_free_host_input_ingress_capability",
+    "flight_free_host_lifecycle_capability",
+    "flight_free_host_screen_change_capability",
+    "flight_free_host_screen_details_capability",
+    "flight_free_host_screen_permission_change_capability",
+    "flight_free_host_screen_query_capability",
+    "flight_free_host_surface_display_capability",
+    "flight_free_host_surface_resize_capability",
+    "flight_free_host_timer_capability",
+    "flight_free_host_wgpu_capability",
+    "flight_free_host_window_appearance_capability",
+    "flight_free_host_window_attach_capability",
+    "flight_free_host_window_attention_capability",
+    "flight_free_host_window_content_protection_capability",
+    "flight_free_host_window_focus_capability",
+    "flight_free_host_window_fullscreen_capability",
+    "flight_free_host_window_geometry_capability",
+    "flight_free_host_window_hierarchy_capability",
+    "flight_free_host_window_lifecycle_capability",
+    "flight_free_host_window_progress_capability",
+    "flight_free_host_window_shadow_capability",
+    "flight_free_host_window_shell_capability",
+    "flight_free_host_window_size_constraints_capability",
+    "flight_free_host_window_state_capability",
+    "flight_free_host_window_visibility_capability",
+    "flight_free_host_window_zorder_capability",
+];
+
+const WITHDRAWN_RUNTIME_TOKENS: &[&str] = &[
+    "FFI_HOST_PROVIDERS",
+    "FfiHostCallback",
+    "FfiHostCallbackLease",
+    "FfiHostFuture",
+    "FfiHostProviderIdentity",
+    "ffi_complete_host_future",
+    "ffi_host_callback_or_abort",
+    "ffi_host_provider",
+    "flight_create_disposer(",
+    "flight_create_string(",
+];
+
+fn generated_symbol_marker(name: &str, symbol: &str) -> String {
+    return match name {
+        "ffi_generated.rs" => format!("fn {symbol}("),
+        "flight_ffi.h" => format!("{symbol}("),
+        "flight_hl.c" => format!("HL_NAME({symbol})"),
+        other => panic!("unknown generated Task S surface {other}"),
+    };
+}
+
+fn withdrawn_surface_violations(name: &str, output: &str) -> Vec<String> {
+    let mut violations = Vec::new();
+    for symbol in WITHDRAWN_PUBLIC_SYMBOLS {
+        let marker = generated_symbol_marker(name, symbol);
+        if output.contains(&marker) {
+            violations.push(format!("public symbol {symbol}"));
         }
     }
-    return out;
+    for token in WITHDRAWN_RUNTIME_TOKENS {
+        if output.contains(token) {
+            violations.push(format!("runtime token {token}"));
+        }
+    }
+    return violations;
+}
+
+fn assert_withdrawn_surface_absent(name: &str, output: &str) {
+    let violations = withdrawn_surface_violations(name, output);
+    assert!(
+        violations.is_empty(),
+        "{name} retained withdrawn Task S surface: {violations:?}"
+    );
 }
 
 #[test]
-fn default_rust_c_and_hashlink_surfaces_exclude_withdrawn_capability_construction() {
+fn default_surfaces_exclude_all_withdrawn_task_s_symbols() {
     let inventory = parse_generated_inventory();
     let wrappers = generated_file("ffi_generated.rs");
     let header = generated_file("flight_ffi.h");
@@ -933,6 +1051,17 @@ fn default_rust_c_and_hashlink_surfaces_exclude_withdrawn_capability_constructio
         ("flight_ffi.h", header.as_str()),
         ("flight_hl.c", shim.as_str()),
     ] {
+        assert_withdrawn_surface_absent(name, output);
+        for retained_symbol in [
+            "flight_create_string_count_map",
+            "flight_call_disposer",
+            "flight_free_disposer",
+        ] {
+            assert!(
+                output.contains(&generated_symbol_marker(name, retained_symbol)),
+                "{name} lost legitimate preexisting symbol {retained_symbol}"
+            );
+        }
         for withdrawn_prefix in [
             "flight_create_host_",
             "flight_complete_host_",
@@ -944,31 +1073,39 @@ fn default_rust_c_and_hashlink_surfaces_exclude_withdrawn_capability_constructio
                 "{name} retained withdrawn symbol prefix {withdrawn_prefix}"
             );
         }
-        for withdrawn_symbol in [
-            "flight_create_disposer",
-            "FfiHostCallback",
-            "FfiHostCallbackLease",
-            "FFI_HOST_PROVIDERS",
-        ] {
-            assert!(
-                !output.contains(withdrawn_symbol),
-                "{name} retained withdrawn runtime symbol {withdrawn_symbol}"
-            );
-        }
-        for (_, capability_name, _) in PRIORITY_CAPABILITIES {
-            let stem = snake_case(capability_name);
-            let free = format!("flight_free_{stem}");
-            if *capability_name != "HostCanvasCapability" {
-                assert!(
-                    !output.contains(&free),
-                    "{name} retained S-only paired free {free}"
-                );
-            }
-        }
     }
-    let exact_removed_symbol_count =
-        PRIORITY_CAPABILITIES.len() + (PRIORITY_CAPABILITIES.len() - 1) + 3 + 8 + 16 + 1;
-    assert_eq!(exact_removed_symbol_count, 85);
+    let unique: BTreeSet<_> = WITHDRAWN_PUBLIC_SYMBOLS.iter().copied().collect();
+    assert_eq!(WITHDRAWN_PUBLIC_SYMBOLS.len(), 86);
+    assert_eq!(unique.len(), 86, "withdrawn public symbols must be unique");
+}
+
+#[test]
+fn withdrawn_surface_oracle_rejects_owned_string_and_host_future_mutations() {
+    let wrappers = generated_file("ffi_generated.rs");
+    assert_withdrawn_surface_absent("ffi_generated.rs", &wrappers);
+
+    let owned_string_mutation = format!(
+        "{wrappers}\npub unsafe extern \"C\" fn flight_create_string(value: *const std::ffi::c_char) -> *mut std::ffi::c_char {{ value.cast_mut() }}\n"
+    );
+    let violations = withdrawn_surface_violations("ffi_generated.rs", &owned_string_mutation);
+    assert!(
+        violations
+            .iter()
+            .any(|violation| violation == "public symbol flight_create_string")
+    );
+    assert!(
+        violations
+            .iter()
+            .any(|violation| violation == "runtime token flight_create_string(")
+    );
+
+    let host_future_mutation = format!("{wrappers}\nstruct FfiHostFuture<T>(T);\n");
+    let violations = withdrawn_surface_violations("ffi_generated.rs", &host_future_mutation);
+    assert!(
+        violations
+            .iter()
+            .any(|violation| violation == "runtime token FfiHostFuture")
+    );
 }
 
 #[test]
@@ -983,6 +1120,7 @@ fn mapping_report_is_pinned_to_the_frozen_inventory() {
         "304 canonical signature families",
         "29 callback-bearing leaf structs",
         "76 callbacks",
+        "86 public symbols",
     ] {
         assert!(
             report.contains(evidence),

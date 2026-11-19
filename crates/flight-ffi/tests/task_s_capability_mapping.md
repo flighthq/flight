@@ -68,8 +68,12 @@ ownership and cancellation protocol before it can return to a later ABI.
 ## Executable and structural coverage
 
 - The unsafe Task S Rust runtime fixture and strict-C constructor round trip are removed.
-- The generated-output oracle requires zero constructors and completion helpers in Rust, C, and
-  HashLink, rejects every S-only callback/runtime symbol, and freezes the exact 85-symbol removal.
+- The generated-output oracle checks an explicit set of 86 public symbols in Rust, C, and HashLink:
+  29 constructors, 28 paired frees, 3 async completions, 8 callback invokers, 16 input-ingress
+  invokers, the disposer constructor, and the owned-string constructor.
+- The same oracle rejects the withdrawn host callback, future, provider, completion, disposer, and
+  owned-string runtime tokens. Mutation cases inject `flight_create_string(` and
+  `struct FfiHostFuture` and require both reintroductions to be detected.
 - The source oracle reparses every workspace crate with `syn`, compares a frozen 1,344-line
   inventory, and independently cross-checks the generated 242-struct/795-field/438-callback report
   and the exact 29 withdrawn priorities.
