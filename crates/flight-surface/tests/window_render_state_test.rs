@@ -29,18 +29,22 @@ mod attach_window_render_state {
 
     #[test]
     fn rounds_the_scaled_size_in_double_precision_like_math_round() {
-        // 5 * 1.3 is 6.5000000000000002 in f64 (TS rounds to 7) but 6.4999998 in f32 (rounds to 6).
+        // 15 * 2.1 is 31.5 in f64 (TS Math.round gives 32) but 31.499998 when multiplied in f32,
+        // which rounds to 31; the fixture asserts that split so it cannot silently stop discriminating.
+        let (width, device_pixel_ratio) = (15.0_f32, 2.1_f64);
+        assert_eq!((f64::from(width) * device_pixel_ratio).round(), 32.0);
+        assert_eq!((width * device_pixel_ratio as f32).round(), 31.0);
         let calls = Arc::new(Mutex::new(Vec::new()));
         let capability = resize_capability(calls.clone());
         let win = create_app_window();
         {
             let mut guard = win.write().unwrap();
-            guard.width = 5.0;
+            guard.width = width;
             guard.height = 10.0;
-            guard.device_pixel_ratio = 1.3;
+            guard.device_pixel_ratio = device_pixel_ratio;
         }
         attach_window_render_state(&capability, &win, &surface());
-        assert_eq!(*calls.lock().unwrap(), vec![(7.0, 13.0)]);
+        assert_eq!(*calls.lock().unwrap(), vec![(32.0, 21.0)]);
     }
 
     #[test]
