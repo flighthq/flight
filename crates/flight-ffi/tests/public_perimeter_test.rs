@@ -249,6 +249,10 @@ mod is_disposer_function {
             "reveal_scene3d_resources_on_resolve",
             &mappable
         ));
+        assert!(is_disposer_function(
+            "connect_input_to_interaction",
+            &["&InteractionInputSource", "Ref<InteractionManager>", "f32"]
+        ));
         // A disposer-shaped return with mappable parameters is not enough on its own.
         assert!(!is_disposer_function("start_fake_watch", &mappable));
         assert!(!is_disposer_function(

@@ -1007,6 +1007,10 @@ const TASK_M_GENERATED_SOURCES: usize = 11;
 // Item D adds one TypeScript-public source, `share_bitmap`, which generates; it widens the total
 // and the generated set without touching Task K's own delta.
 const ITEM_D_GENERATED_SOURCES: usize = 1;
+// Item C scans flight-interaction: 59 new public sources generate and one, `set_node_hit_area`,
+// is an ownership policy skip. Task M's census test pins the names.
+const ITEM_C_INTERACTION_GENERATED_SOURCES: usize = 59;
+const ITEM_C_INTERACTION_SKIPPED_SOURCES: usize = 1;
 
 // The producer fixed point also finds three pre-K wrappers that consumed boxes no public wrapper
 // could produce. They are removals from the baseline generated set, not members of the original
@@ -1354,13 +1358,18 @@ fn task_k_source_decision_delta_from_pre_k_baseline_is_exact() {
     let generated_removals = TASK_K_BASELINE_GENERATED_OWNERSHIP_SKIPS.len();
     let expected_generated = PRE_K_GENERATED_SOURCES + generated_additions - generated_removals
         + TASK_M_GENERATED_SOURCES
-        + ITEM_D_GENERATED_SOURCES;
-    let expected_skipped =
-        PRE_K_SKIPPED_SOURCES - generated_additions + generated_removals - TASK_M_GENERATED_SOURCES;
+        + ITEM_D_GENERATED_SOURCES
+        + ITEM_C_INTERACTION_GENERATED_SOURCES;
+    let expected_skipped = PRE_K_SKIPPED_SOURCES - generated_additions + generated_removals
+        - TASK_M_GENERATED_SOURCES
+        + ITEM_C_INTERACTION_SKIPPED_SOURCES;
     assert_eq!(
         source_census(stats),
         (
-            PRE_K_TOTAL_SOURCES + ITEM_D_GENERATED_SOURCES,
+            PRE_K_TOTAL_SOURCES
+                + ITEM_D_GENERATED_SOURCES
+                + ITEM_C_INTERACTION_GENERATED_SOURCES
+                + ITEM_C_INTERACTION_SKIPPED_SOURCES,
             expected_generated,
             expected_skipped
         ),

@@ -449,6 +449,11 @@ const MONOMORPHIZED_EXTRAS: usize = 97;
 // Item D adds one TypeScript-public source, `share_bitmap`, which generates. It is added to the
 // totals here so the pre-M baseline and Task M's own delta stay exactly as recorded.
 const ITEM_D_GENERATED_SOURCES: usize = 1;
+// Item C scans flight-interaction, adding 60 TypeScript-public sources. 59 generate;
+// `set_node_hit_area` consumes an owned `HitArea` that no wrapper produces, so it is an ownership
+// policy skip.
+const ITEM_C_INTERACTION_GENERATED_SOURCES: usize = 59;
+const ITEM_C_INTERACTION_OWNERSHIP_POLICY_SKIPS: &[&str] = &["set_node_hit_area"];
 
 fn outcome(candidate: &Candidate) -> Outcome {
     if candidate.function == "enable_scene3d_resource_failure_guards" {
@@ -564,6 +569,10 @@ fn baseline_policy_decisions() -> BTreeSet<String> {
     for (category, names) in [
         ("extension_policy_skip", EXTENSION_POLICY_SKIPS),
         ("ownership_policy_skip", OWNERSHIP_POLICY_SKIPS),
+        (
+            "ownership_policy_skip",
+            ITEM_C_INTERACTION_OWNERSHIP_POLICY_SKIPS,
+        ),
         ("safety_policy_skip", SAFETY_POLICY_SKIPS),
     ] {
         for name in names {
@@ -669,8 +678,8 @@ fn task_m_inventory_is_exact_unique_and_complete() {
     assert_eq!(EXTENSION_POLICY_SKIPS.len(), 30);
     assert_eq!(OWNERSHIP_POLICY_SKIPS.len(), 27);
     assert_eq!(SAFETY_POLICY_SKIPS.len(), 3);
-    assert_eq!(baseline_policy_decisions().len(), 60);
-    assert_eq!(final_policy_decisions().len(), 101);
+    assert_eq!(baseline_policy_decisions().len(), 61);
+    assert_eq!(final_policy_decisions().len(), 102);
 
     let mut names = BTreeSet::new();
     for candidate in TASK_M_CANDIDATES {
@@ -731,19 +740,32 @@ fn task_m_pre_m_census_has_no_undocumented_public_gap() {
         .iter()
         .filter(|candidate| outcome(candidate) == Outcome::Generated)
         .count();
-    let total = PRE_M_TOTAL_SOURCES + ITEM_D_GENERATED_SOURCES;
-    let baseline_generated = PRE_M_GENERATED_SOURCES + ITEM_D_GENERATED_SOURCES;
+    let item_c_skipped = ITEM_C_INTERACTION_OWNERSHIP_POLICY_SKIPS.len();
+    let total = PRE_M_TOTAL_SOURCES
+        + ITEM_D_GENERATED_SOURCES
+        + ITEM_C_INTERACTION_GENERATED_SOURCES
+        + item_c_skipped;
+    let baseline_generated =
+        PRE_M_GENERATED_SOURCES + ITEM_D_GENERATED_SOURCES + ITEM_C_INTERACTION_GENERATED_SOURCES;
     let final_generated = baseline_generated + generated_additions;
-    let final_skipped = PRE_M_SKIPPED_SOURCES - generated_additions;
+    let final_skipped = PRE_M_SKIPPED_SOURCES + item_c_skipped - generated_additions;
     assert!(
-        source == (total, baseline_generated, PRE_M_SKIPPED_SOURCES)
+        source
+            == (
+                total,
+                baseline_generated,
+                PRE_M_SKIPPED_SOURCES + item_c_skipped
+            )
             || source == (total, final_generated, final_skipped),
         "Task M census drifted to an undeclared intermediate state: {source:?}"
     );
     assert_eq!(
         public_census(stats),
         (
-            PRE_M_PUBLIC_SOURCES + ITEM_D_GENERATED_SOURCES,
+            PRE_M_PUBLIC_SOURCES
+                + ITEM_D_GENERATED_SOURCES
+                + ITEM_C_INTERACTION_GENERATED_SOURCES
+                + item_c_skipped,
             PRE_M_NON_PUBLIC_SOURCES
         )
     );
@@ -788,13 +810,19 @@ fn task_m_final_public_skip_set_is_only_named_policy() {
         .iter()
         .filter(|candidate| outcome(candidate) == Outcome::Generated)
         .count();
-    let expected_generated =
-        PRE_M_GENERATED_SOURCES + ITEM_D_GENERATED_SOURCES + generated_additions;
-    let expected_skipped = PRE_M_SKIPPED_SOURCES - generated_additions;
+    let item_c_skipped = ITEM_C_INTERACTION_OWNERSHIP_POLICY_SKIPS.len();
+    let expected_generated = PRE_M_GENERATED_SOURCES
+        + ITEM_D_GENERATED_SOURCES
+        + ITEM_C_INTERACTION_GENERATED_SOURCES
+        + generated_additions;
+    let expected_skipped = PRE_M_SKIPPED_SOURCES + item_c_skipped - generated_additions;
     assert_eq!(
         source_census(stats),
         (
-            PRE_M_TOTAL_SOURCES + ITEM_D_GENERATED_SOURCES,
+            PRE_M_TOTAL_SOURCES
+                + ITEM_D_GENERATED_SOURCES
+                + ITEM_C_INTERACTION_GENERATED_SOURCES
+                + item_c_skipped,
             expected_generated,
             expected_skipped
         ),

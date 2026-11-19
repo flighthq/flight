@@ -149,6 +149,7 @@ const SCAN_CRATES: &[&str] = &[
     "flight-image-codec",
     "flight-importdiagnostics",
     "flight-input",
+    "flight-interaction",
     "flight-intl",
     "flight-ipc",
     "flight-keyboard",
@@ -538,6 +539,7 @@ const SIGNAL_PAYLOAD_POLICIES: &[(&str, &str)] = &[
     ("AppMemoryPressure", "connect"),
     ("ConnectivityConnectionType", "connect"),
     ("ConnectivityStatus", "connect"),
+    ("FocusEventData", "connect"),
     ("FrameTick", "connect"),
     ("InputGamepadAxisData", "connect"),
     ("InputGamepadButtonData", "connect"),
@@ -546,6 +548,7 @@ const SIGNAL_PAYLOAD_POLICIES: &[(&str, &str)] = &[
     ("InputPointerData", "connect"),
     ("InputTextData", "connect"),
     ("InstancedMeshInstanceRemoved", "connect"),
+    ("KeyboardEventData", "connect"),
     ("LogEntry", "connect"),
     ("MediaSessionActionDetails", "connect"),
     ("MidiInputMessage", "connect"),
@@ -575,6 +578,7 @@ const SIGNAL_PAYLOAD_POLICIES: &[(&str, &str)] = &[
     ("OrientationReading", "connect"),
     ("ParticleDeathEvent", "connect"),
     ("ParticleSpawnEvent", "connect"),
+    ("PointerEventData", "connect"),
     ("PowerStatus", "connect"),
     ("PowerThermalState", "connect"),
     ("PressureReading", "connect"),
@@ -706,9 +710,11 @@ const CONTRACT_LANE_TYPES: &[(&str, &str)] = &[
     ("Bone2D", "skeleton2d"),
     ("BoundingBoxAttachment2D", "skeleton2d"),
     ("ClippingAttachment2D", "skeleton2d"),
+    ("HitTestContext", "interaction"),
     ("MarkupTagHandler", "text_markup"),
     ("MarkupTagRegistry", "text_markup"),
     ("MeshAttachment2D", "skeleton2d"),
+    ("NodeInteractionStateRef", "interaction"),
     ("PathAttachment2D", "skeleton2d"),
     ("PathMeshPool", "path"),
     ("PathMorphBuildResult", "path"),
@@ -2264,22 +2270,24 @@ fn collect_signal_inventory(
             .strip_prefix(crates_dir)
             .unwrap_or(&source)
             .to_path_buf();
-        let mut record =
-            |item: String, ty: &syn::Type, generics: &BTreeSet<String>, glob_export: bool| {
-                for payload in find_signal_payloads(ty) {
-                    if generics.contains(&payload) {
-                        continue;
-                    }
-                    inventory.push(SignalInventoryEntry {
-                        owner: owner.to_string(),
-                        source: relative.clone(),
-                        item: item.clone(),
-                        declared: compact_type_text(&rust_type_text(ty)),
-                        payload: compact_type_text(&payload),
-                        glob_export,
-                    });
+        let mut record = |item: String,
+                          ty: &syn::Type,
+                          generics: &BTreeSet<String>,
+                          glob_export: bool| {
+            for payload in find_signal_payloads(ty) {
+                if generics.contains(&payload) {
+                    continue;
                 }
-            };
+                inventory.push(SignalInventoryEntry {
+                    owner: owner.to_string(),
+                    source: relative.clone(),
+                    item: item.clone(),
+                    declared: strip_type_path_qualifiers(&compact_type_text(&rust_type_text(ty))),
+                    payload: strip_type_path_qualifiers(&compact_type_text(&payload)),
+                    glob_export,
+                });
+            }
+        };
         for item in &file.items {
             match item {
                 syn::Item::Struct(item) => {
@@ -2417,6 +2425,30 @@ fn get_signal_payload_class(payload: &str) -> Option<&'static str> {
         return Some("borrowed-struct");
     }
     None
+}
+
+// `Signal<crate::types::KeyboardEventData>` -> `Signal<KeyboardEventData>`: drops every
+// `module::` qualifier so one payload type is one inventory row however its owner spells the path.
+fn strip_type_path_qualifiers(text: &str) -> String {
+    let mut out = String::new();
+    let mut ident = String::new();
+    let mut chars = text.chars().peekable();
+    while let Some(character) = chars.next() {
+        if character.is_alphanumeric() || character == '_' {
+            ident.push(character);
+            continue;
+        }
+        if character == ':' && chars.peek() == Some(&':') {
+            chars.next();
+            ident.clear();
+            continue;
+        }
+        out.push_str(&ident);
+        ident.clear();
+        out.push(character);
+    }
+    out.push_str(&ident);
+    out
 }
 
 // The wrapper stem for a connectable payload: `()` -> `unit`, `Ref<NetProgress>` ->

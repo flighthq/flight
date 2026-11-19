@@ -1044,7 +1044,11 @@ fn returned_disposers_lower_to_callable_handles() {
         .collect();
     assert_eq!(
         disposer_wrappers,
-        ["pub unsafe extern \"C\" fn flight_reveal_scene3d_resources_on_resolve"]
+        [
+            "pub unsafe extern \"C\" fn flight_connect_focus_navigation",
+            "pub unsafe extern \"C\" fn flight_connect_input_to_interaction",
+            "pub unsafe extern \"C\" fn flight_reveal_scene3d_resources_on_resolve",
+        ]
     );
 }
 

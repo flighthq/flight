@@ -22,10 +22,16 @@ use std::collections::{BTreeMap, BTreeSet};
 use std::fs;
 use std::path::{Path, PathBuf};
 
-// The only function whose `Arc<dyn Fn() + Send + Sync>` return lowers to a callable disposer
-// handle. A matching type alone is not consent, and callback-retaining connections remain outside
-// this pre-M carrier.
-pub const DISPOSER_FUNCTIONS: &[&str] = &["reveal_scene3d_resources_on_resolve"];
+// The functions whose `Arc<dyn Fn() + Send + Sync>` return lowers to a callable disposer handle.
+// A matching type alone is not consent. Each listed function takes no caller callback: the
+// interaction connectors wire SDK input signals to an SDK manager, so the disposer only
+// disconnects Rust slots and there is no C context to release. Connections that retain a C
+// callback use the signal connection contract instead.
+pub const DISPOSER_FUNCTIONS: &[&str] = &[
+    "connect_focus_navigation",
+    "connect_input_to_interaction",
+    "reveal_scene3d_resources_on_resolve",
+];
 
 // The value names `entry` exports, and every module file read while resolving them.
 pub fn collect_ts_module_exports(entry: &Path) -> (BTreeSet<String>, Vec<PathBuf>) {
