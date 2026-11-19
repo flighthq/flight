@@ -218,8 +218,9 @@ pub fn read_joints(
     })
 }
 
+// flight-lint: allow(f64) dt is a JavaScript Number and the physics3d ABI steps in f64
 #[wasm_bindgen]
-pub fn step(abi: u32, world: u32, dt: f32, _has_hooks: bool) -> u32 {
+pub fn step(abi: u32, world: u32, dt: f64, _has_hooks: bool) -> u32 {
     with_abi(abi, |a| {
         let status = step_physics3d_abi_world(a, world, dt, None);
         step_status_code(status)
