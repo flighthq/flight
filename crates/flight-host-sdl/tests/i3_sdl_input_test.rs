@@ -312,7 +312,9 @@ fn test_virtual_gamepad(host: &mut SdlHost, recorded: &Arc<Mutex<RecordedInput>>
             4,
             "trigger threshold edges: {trigger_events:?}"
         );
-        for (events, (_, expected)) in trigger_events.chunks_exact(2).zip(triggers) {
+        let (trigger_pairs, remainder) = trigger_events.as_chunks::<2>();
+        assert!(remainder.is_empty());
+        for (events, (_, expected)) in trigger_pairs.iter().zip(triggers) {
             assert_eq!(
                 get_gamepad_button_name(GamepadMapping::Standard, events[0].1.button),
                 Some(expected)
