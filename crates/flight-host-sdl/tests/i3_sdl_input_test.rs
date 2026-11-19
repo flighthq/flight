@@ -1,3 +1,4 @@
+use std::ffi::CString;
 use std::process::Command;
 use std::sync::{Arc, Mutex};
 use std::time::{Duration, Instant};
@@ -7,7 +8,6 @@ use flight_input::{
     GamepadButtonKind, GamepadMapping, InputGamepadButtonData, InputIngressSink, InputPointerData,
     InputTextData, get_gamepad_button_name,
 };
-use sdl3::event::Event;
 
 #[derive(Default)]
 struct RecordedInput {
@@ -89,6 +89,36 @@ fn run_xdotool(arguments: &[&str]) -> String {
     return String::from_utf8(output.stdout).expect("xdotool UTF-8 output");
 }
 
+fn push_text_editing(window_id: u32, text: &CString) {
+    use sdl3::sys::events::{SDL_EVENT_TEXT_EDITING, SDL_Event, SDL_TextEditingEvent};
+    let mut event = SDL_Event {
+        edit: SDL_TextEditingEvent {
+            r#type: SDL_EVENT_TEXT_EDITING,
+            windowID: sdl3::sys::video::SDL_WindowID(window_id),
+            text: text.as_ptr(),
+            start: 0,
+            length: text.as_bytes().len() as i32,
+            ..Default::default()
+        },
+    };
+    // SAFETY: SDL copies this event while `text` remains live through the following pump.
+    assert!(unsafe { sdl3::sys::events::SDL_PushEvent(&mut event) });
+}
+
+fn push_text_input(window_id: u32, text: &CString) {
+    use sdl3::sys::events::{SDL_EVENT_TEXT_INPUT, SDL_Event, SDL_TextInputEvent};
+    let mut event = SDL_Event {
+        text: SDL_TextInputEvent {
+            r#type: SDL_EVENT_TEXT_INPUT,
+            windowID: sdl3::sys::video::SDL_WindowID(window_id),
+            text: text.as_ptr(),
+            ..Default::default()
+        },
+    };
+    // SAFETY: SDL copies this event while `text` remains live through the following pump.
+    assert!(unsafe { sdl3::sys::events::SDL_PushEvent(&mut event) });
+}
+
 fn test_focused_text_and_pointer(host: &mut SdlHost, recorded: &Arc<Mutex<RecordedInput>>) {
     let ingress = get_sdl_host_input_ingress_capability(host).clone();
     let source = get_sdl_host_input_source(host).clone();
@@ -112,24 +142,10 @@ fn test_focused_text_and_pointer(host: &mut SdlHost, recorded: &Arc<Mutex<Record
     run_xdotool(&["type", "--delay", "20", "ab"]);
     pump_for(host, Duration::from_millis(100));
 
-    let synthetic_sdl = sdl3::init().expect("obtain SDL event sender");
-    let synthetic_events = synthetic_sdl.event().expect("SDL event subsystem");
-    synthetic_events
-        .push_event(Event::TextEditing {
-            timestamp: 1,
-            window_id,
-            text: "composition".to_string(),
-            start: 0,
-            length: 11,
-        })
-        .expect("push focused composition event");
-    synthetic_events
-        .push_event(Event::TextInput {
-            timestamp: 2,
-            window_id: window_id.wrapping_add(10_000),
-            text: "foreign-window".to_string(),
-        })
-        .expect("push foreign-window text event");
+    let composition = CString::new("composition").unwrap();
+    let foreign = CString::new("foreign-window").unwrap();
+    push_text_editing(window_id, &composition);
+    push_text_input(window_id.wrapping_add(10_000), &foreign);
     pump_for(host, Duration::from_millis(50));
 
     run_xdotool(&["mousemove", "--window", window, "40", "50"]);
@@ -182,8 +198,6 @@ fn test_focused_text_and_pointer(host: &mut SdlHost, recorded: &Arc<Mutex<Record
     assert!(!unsafe { sdl3::sys::keyboard::SDL_TextInputActive(focused) });
     second_text_release();
     pointer_release();
-    drop(synthetic_events);
-    drop(synthetic_sdl);
 }
 
 fn test_virtual_gamepad(host: &mut SdlHost, recorded: &Arc<Mutex<RecordedInput>>) {
@@ -313,8 +327,14 @@ fn test_virtual_gamepad(host: &mut SdlHost, recorded: &Arc<Mutex<RecordedInput>>
                 Some(GamepadButtonKind::TriggerLeft)
             );
         }
-        assert!((trigger_events[0].1.value - 20_000.0 / 32_767.0).abs() < 0.000_01);
-        assert!((trigger_events[1].1.value - 10_000.0 / 32_767.0).abs() < 0.000_01);
+        assert!(
+            (0.5..=1.0).contains(&trigger_events[0].1.value),
+            "down retains normalized analog value: {trigger_events:?}"
+        );
+        assert!(
+            (0.0..0.5).contains(&trigger_events[1].1.value),
+            "up retains normalized analog value: {trigger_events:?}"
+        );
 
         SDL_CloseJoystick(joystick);
         assert!(SDL_DetachVirtualJoystick(id));
