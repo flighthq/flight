@@ -161,17 +161,19 @@ fn build_glyph_rasterizer_backend_from_glyph_outline_source(
     };
 }
 
-fn checked_ceil_i32(value: f32) -> Option<i32> {
+// flight-lint: allow(f64) pixel-grid edges are taken from the canonical f64 Path bounds
+fn checked_ceil_i32(value: f64) -> Option<i32> {
     let value = value.ceil();
-    if !value.is_finite() || value < i32::MIN as f32 || value > i32::MAX as f32 {
+    if !value.is_finite() || value < f64::from(i32::MIN) || value > f64::from(i32::MAX) {
         return None;
     }
     return Some(value as i32);
 }
 
-fn checked_floor_i32(value: f32) -> Option<i32> {
+// flight-lint: allow(f64) pixel-grid edges are taken from the canonical f64 Path bounds
+fn checked_floor_i32(value: f64) -> Option<i32> {
     let value = value.floor();
-    if !value.is_finite() || value < i32::MIN as f32 || value > i32::MAX as f32 {
+    if !value.is_finite() || value < f64::from(i32::MIN) || value > f64::from(i32::MAX) {
         return None;
     }
     return Some(value as i32);
@@ -245,10 +247,14 @@ fn rasterize_glyph_outline_source(
         });
     }
 
-    let left = checked_floor_i32(bounds.x * scale)?.checked_sub(RASTER_GUARD)?;
-    let top = checked_floor_i32(bounds.y * scale)?.checked_sub(RASTER_GUARD)?;
-    let right = checked_ceil_i32((bounds.x + bounds.width) * scale)?.checked_add(RASTER_GUARD)?;
-    let bottom = checked_ceil_i32((bounds.y + bounds.height) * scale)?.checked_add(RASTER_GUARD)?;
+    // The f32 em scale widens once; the pixel grid is derived from the f64 Path bounds.
+    let grid_scale = f64::from(scale);
+    let left = checked_floor_i32(bounds.x * grid_scale)?.checked_sub(RASTER_GUARD)?;
+    let top = checked_floor_i32(bounds.y * grid_scale)?.checked_sub(RASTER_GUARD)?;
+    let right =
+        checked_ceil_i32((bounds.x + bounds.width) * grid_scale)?.checked_add(RASTER_GUARD)?;
+    let bottom =
+        checked_ceil_i32((bounds.y + bounds.height) * grid_scale)?.checked_add(RASTER_GUARD)?;
     let width = right.checked_sub(left)?;
     let height = bottom.checked_sub(top)?;
     if width <= 0 || height <= 0 {

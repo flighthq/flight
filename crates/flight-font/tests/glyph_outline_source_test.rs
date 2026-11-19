@@ -92,6 +92,38 @@ mod allocate_glyph_rasterizer_backend_from_glyph_outline_source {
     }
 
     #[test]
+    fn places_the_pixel_grid_from_exact_design_unit_bounds_past_two_to_the_24() {
+        // 2^24 + 1 has no f32 form: narrowed bounds would floor to 2^24 and shift the bearing by one.
+        let edge = 16_777_217.0_f64;
+        assert_ne!(edge as f32 as f64, edge);
+        let source = Arc::new(create_glyph_outline_source(
+            Arc::new(move |out, _glyph_index| {
+                append_path_move_to(out, edge, 0.0);
+                append_path_line_to(out, edge + 2.0, 0.0);
+                append_path_line_to(out, edge + 2.0, 2.0);
+                append_path_line_to(out, edge, 2.0);
+                append_path_close(out);
+                return true;
+            }),
+            Arc::new(|_glyph_index| 1.0),
+            Arc::new(|_code_point| 0),
+            {
+                let metrics = Arc::new(GlyphOutlineMetrics {
+                    ascent: 1.0,
+                    descent: 0.0,
+                    line_gap: 0.0,
+                    units_per_em: 1.0,
+                });
+                Arc::new(move || Arc::clone(&metrics))
+            },
+        ));
+        let backend = allocate_glyph_rasterizer_backend_from_glyph_outline_source(source);
+        let raster = (backend.rasterize)(0x41, &create_test_glyph_rasterize_options(1.0)).unwrap();
+        assert_eq!(raster.bearing_x, 16_777_216);
+        assert_eq!(raster.width, 4);
+    }
+
+    #[test]
     fn rasterizes_fractional_coverage_with_the_four_by_four_rounding_rule() {
         let source = Arc::new(create_glyph_outline_source(
             Arc::new(|out, _glyph_index| {
