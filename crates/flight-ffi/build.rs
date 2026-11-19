@@ -1,5 +1,6 @@
 mod native_bindings;
 mod public_perimeter;
+mod reachability;
 use std::collections::{BTreeMap, BTreeSet};
 use std::env;
 use std::fmt::Write as _;
@@ -937,6 +938,11 @@ fn main() {
     boxed_types.extend(REGISTERED_HANDLE_REFS.iter().map(|ty| ty.to_string()));
     all_output.push_str(generate_storage_set_items_result_support());
 
+    // `seen_names` is the exact generated SDK-wrapper surface (including field accessors). The
+    // support functions appended below participate in the carrier graph, but are not themselves
+    // census rows in the committed usability baseline.
+    let reachability_surface = seen_names.clone();
+
     writeln!(all_output, "// free functions").unwrap();
     writeln!(
         all_output,
@@ -973,7 +979,13 @@ fn main() {
         .unwrap();
     }
 
-    native_bindings::emit(&all_output, &out_dir);
+    let caller_producible = collect_caller_producible_value_types(crates_dir);
+    native_bindings::emit(
+        &all_output,
+        &out_dir,
+        &caller_producible,
+        &reachability_surface,
+    );
     fs::write(out_dir.join("ffi_generated.rs"), all_output).unwrap();
 
     let mut offsets_src = String::new();
@@ -1956,6 +1968,129 @@ fn return_type_text(output: &syn::ReturnType) -> String {
 
 fn rust_type_text(ty: &syn::Type) -> String {
     ty.to_token_stream().to_string()
+}
+
+// Plain `#[repr(C)]` value structs whose entire layout is public and recursively composed from
+// scalars, generated enums, arrays, or other such structs can be declared by a C caller. They are
+// roots of the reachability graph rather than opaque handles. A private field, generic argument,
+// duplicate SDK name, or non-C representation keeps the type opaque and in need of a producer.
+fn collect_caller_producible_value_types(crates_dir: &Path) -> BTreeSet<String> {
+    let mut candidates = BTreeMap::<String, Option<BTreeSet<String>>>::new();
+    for dir_name in SCAN_CRATES {
+        let src_dir = crates_dir.join(dir_name).join("src");
+        if !src_dir.exists() {
+            continue;
+        }
+        let mut entries: Vec<_> = fs::read_dir(&src_dir)
+            .unwrap()
+            .filter_map(|entry| entry.ok())
+            .filter(|entry| {
+                entry
+                    .path()
+                    .extension()
+                    .is_some_and(|extension| extension == "rs")
+                    && !entry.file_name().to_string_lossy().contains("test")
+            })
+            .collect();
+        entries.sort_by_key(|entry| entry.file_name());
+        for entry in entries {
+            let file_name = entry.file_name().to_string_lossy().to_string();
+            if file_name == "contract.rs" || file_name == "lib.rs" {
+                continue;
+            }
+            let content = fs::read_to_string(entry.path()).unwrap();
+            let file = syn::parse_file(&content).unwrap_or_else(|error| {
+                panic!(
+                    "failed to parse {} for C value layouts: {error}",
+                    entry.path().display()
+                )
+            });
+            for item in file.items {
+                let syn::Item::Struct(item) = item else {
+                    continue;
+                };
+                let name = item.ident.to_string();
+                let dependencies = caller_value_struct_dependencies(&item);
+                match candidates.entry(name) {
+                    std::collections::btree_map::Entry::Vacant(entry) => {
+                        entry.insert(dependencies);
+                    }
+                    std::collections::btree_map::Entry::Occupied(mut entry) => {
+                        entry.insert(None);
+                    }
+                }
+            }
+        }
+    }
+
+    let mut producible = BTreeSet::new();
+    loop {
+        let discovered: Vec<_> = candidates
+            .iter()
+            .filter(|(name, dependencies)| {
+                !producible.contains(*name)
+                    && dependencies
+                        .as_ref()
+                        .is_some_and(|dependencies| dependencies.is_subset(&producible))
+            })
+            .map(|(name, _)| name.clone())
+            .collect();
+        if discovered.is_empty() {
+            return producible;
+        }
+        producible.extend(discovered);
+    }
+}
+
+fn caller_value_struct_dependencies(item: &syn::ItemStruct) -> Option<BTreeSet<String>> {
+    if !matches!(item.vis, syn::Visibility::Public(_))
+        || !item.generics.params.is_empty()
+        || !item.attrs.iter().any(|attribute| {
+            attribute.path().is_ident("repr")
+                && attribute.meta.require_list().is_ok_and(|list| {
+                    list.tokens
+                        .to_string()
+                        .split(',')
+                        .any(|part| part.trim() == "C")
+                })
+        })
+    {
+        return None;
+    }
+    let syn::Fields::Named(fields) = &item.fields else {
+        return None;
+    };
+    if fields.named.is_empty()
+        || fields
+            .named
+            .iter()
+            .any(|field| !matches!(field.vis, syn::Visibility::Public(_)))
+    {
+        return None;
+    }
+    let mut dependencies = BTreeSet::new();
+    for field in &fields.named {
+        dependencies.extend(caller_value_type_dependencies(&field.ty)?);
+    }
+    Some(dependencies)
+}
+
+fn caller_value_type_dependencies(ty: &syn::Type) -> Option<BTreeSet<String>> {
+    match ty {
+        syn::Type::Array(array) => caller_value_type_dependencies(&array.elem),
+        syn::Type::Path(path) if path.qself.is_none() => {
+            let segment = path.path.segments.last()?;
+            if !matches!(segment.arguments, syn::PathArguments::None) {
+                return None;
+            }
+            let name = segment.ident.to_string();
+            if is_scalar(&name) || is_known_enum(&name) {
+                return Some(BTreeSet::new());
+            }
+            Some([name].into_iter().collect())
+        }
+        _ => None,
+    }
 }
 
 // Records each `pub struct` / `pub enum` with whether its `#[derive(...)]` list (across any
