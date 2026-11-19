@@ -1,5 +1,5 @@
-use std::sync::Arc;
 use std::sync::atomic::{AtomicUsize, Ordering};
+use std::sync::{Arc, Mutex};
 
 use flight_host_sdl::*;
 
@@ -156,6 +156,42 @@ fn display_available() -> bool {
     return std::env::var_os("DISPLAY").is_some() || std::env::var_os("WAYLAND_DISPLAY").is_some();
 }
 
+fn only_sdl_window_id() -> u32 {
+    let mut count = 0;
+    // SAFETY: SDL owns the live host window; SDL_GetWindows returns an SDL-allocated pointer array.
+    let windows = unsafe { sdl3::sys::video::SDL_GetWindows(&mut count) };
+    assert_eq!(count, 1);
+    assert!(!windows.is_null());
+    // SAFETY: `count == 1`, so the first returned pointer is initialized and remains SDL-owned.
+    let id = unsafe { sdl3::sys::video::SDL_GetWindowID(*windows) }.0;
+    // SAFETY: SDL_GetWindows documents this pointer array must be released with SDL_free.
+    unsafe { sdl3::sys::stdinc::SDL_free(windows.cast()) };
+    return id;
+}
+
+fn pointer_mask_sink(masks: &Arc<Mutex<Vec<u32>>>) -> flight_input::InputIngressSink {
+    let down = masks.clone();
+    let up = masks.clone();
+    return flight_input::InputIngressSink {
+        gamepad_axis_move: Arc::new(|_| {}),
+        gamepad_button_down: Arc::new(|_| {}),
+        gamepad_button_up: Arc::new(|_| {}),
+        gamepad_connect: Arc::new(|_| {}),
+        gamepad_disconnect: Arc::new(|_| {}),
+        is_enabled: Arc::new(|| true),
+        key_down: Arc::new(|_| {}),
+        key_up: Arc::new(|_| {}),
+        pointer_cancel: Arc::new(|_| {}),
+        pointer_down: Arc::new(move |data| down.lock().unwrap().push(data.buttons)),
+        pointer_move: Arc::new(|_| {}),
+        pointer_move_relative: Arc::new(|_| {}),
+        pointer_up: Arc::new(move |data| up.lock().unwrap().push(data.buttons)),
+        text_edit: Arc::new(|_| {}),
+        text_input: Arc::new(|_| {}),
+        wheel: Arc::new(|_| {}),
+    };
+}
+
 fn main() {
     assert!(
         include_str!("../examples/pump_wgpu.rs")
@@ -224,6 +260,55 @@ fn main() {
     (app_loop.cancel_frame)(handle);
     let synthetic_sdl = sdl3::init().expect("obtain a ref-counted SDL event sender");
     let synthetic_events = synthetic_sdl.event().expect("obtain SDL event subsystem");
+    let pointer_masks = Arc::new(Mutex::new(Vec::new()));
+    let pointer_release = (get_sdl_host_input_ingress_capability(&host).attach_pointer)(
+        get_sdl_host_input_source(&host),
+        pointer_mask_sink(&pointer_masks),
+        None,
+    );
+    let window_id = only_sdl_window_id();
+    for event in [
+        sdl3::event::Event::MouseButtonDown {
+            timestamp: 1,
+            window_id,
+            which: 0,
+            mouse_btn: sdl3::mouse::MouseButton::Left,
+            clicks: 1,
+            x: 10.0,
+            y: 20.0,
+        },
+        sdl3::event::Event::MouseButtonDown {
+            timestamp: 2,
+            window_id,
+            which: 0,
+            mouse_btn: sdl3::mouse::MouseButton::Right,
+            clicks: 1,
+            x: 10.0,
+            y: 20.0,
+        },
+        sdl3::event::Event::MouseButtonUp {
+            timestamp: 3,
+            window_id,
+            which: 0,
+            mouse_btn: sdl3::mouse::MouseButton::Left,
+            clicks: 1,
+            x: 10.0,
+            y: 20.0,
+        },
+        sdl3::event::Event::MouseButtonUp {
+            timestamp: 4,
+            window_id,
+            which: 0,
+            mouse_btn: sdl3::mouse::MouseButton::Right,
+            clicks: 1,
+            x: 10.0,
+            y: 20.0,
+        },
+    ] {
+        synthetic_events
+            .push_event(event)
+            .expect("push pointer-mask event");
+    }
     synthetic_events
         .push_event(sdl3::event::Event::Window {
             timestamp: 1,
@@ -237,6 +322,8 @@ fn main() {
     );
     assert_eq!(frame_count.load(Ordering::Acquire), 1);
     assert_eq!(cancelled_count.load(Ordering::Acquire), 0);
+    assert_eq!(*pointer_masks.lock().unwrap(), [1, 3, 2, 0]);
+    pointer_release();
     drop(synthetic_events);
     drop(synthetic_sdl);
 
