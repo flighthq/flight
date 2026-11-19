@@ -184,6 +184,7 @@ carrier|1|*const flight_sdk::InputTextData
 carrier|1|*const flight_sdk::InteractionConnectGuard
 carrier|1|*const flight_sdk::InteractionDispatchLayer
 carrier|1|*const flight_sdk::InteractionInputSource
+carrier|8|*const flight_sdk::InteractionManager
 carrier|1|*const flight_sdk::InteractionManagerOptions
 carrier|6|*const flight_sdk::InteractionPointerOptions
 carrier|5|*const flight_sdk::InteractionPointerState
@@ -513,7 +514,6 @@ carrier|2|*const flight_sdk::ViewportAlign
 carrier|1|*const flight_sdk::VoxelGrid
 carrier|4|*const flight_sdk::WindowBounds
 carrier|1|*const flight_sdk::WindowOptions
-carrier|1|*const flight_sdk::interaction::contract::HitTestContext
 carrier|1|*const flight_sdk::node::contract::AdjustmentRef
 carrier|1|*const flight_sdk::shape_formats::contract::ShapeJsonParseOptions
 carrier|1|*const flight_sdk::skeleton2d::contract::Attachment2DRef
@@ -598,6 +598,7 @@ carrier|1|*mut flight_sdk::InputGamepadConnectData
 carrier|11|*mut flight_sdk::InputKeyboardData
 carrier|1|*mut flight_sdk::InputManager
 carrier|1|*mut flight_sdk::InputTextData
+carrier|9|*mut flight_sdk::InteractionManager
 carrier|5|*mut flight_sdk::InteractionPointerState
 carrier|5|*mut flight_sdk::KeyboardEventData
 carrier|1|*mut flight_sdk::LayoutNode
@@ -792,7 +793,7 @@ carrier|1|Box<Vec<flight_sdk::CommandRef>>
 carrier|1|Box<Vec<flight_sdk::CurveKeyframe>>
 carrier|1|Box<Vec<flight_sdk::ModifierKind>>
 carrier|1|Box<Vec<flight_sdk::ParticleConfigIssue>>
-carrier|8|Box<Vec<flight_sdk::Ref<dyn flight_sdk::Node>>>
+carrier|7|Box<Vec<flight_sdk::Ref<dyn flight_sdk::Node>>>
 carrier|2|Box<Vec<flight_sdk::RequirementCatalogEntryRef>>
 carrier|1|Box<Vec<flight_sdk::ScreenInfo>>
 carrier|1|Box<Vec<flight_sdk::ShortcutModifier>>
@@ -844,7 +845,6 @@ carrier|6|Box<flight_sdk::GrayscaleAdjustment>
 carrier|10|Box<flight_sdk::HueSaturationAdjustment>
 carrier|2|Box<flight_sdk::ImageResourceReferenceResolutionExplanation>
 carrier|4|Box<flight_sdk::InteractionHitEligibility>
-carrier|15|Box<flight_sdk::InteractionManager>
 carrier|6|Box<flight_sdk::InvertAdjustment>
 carrier|8|Box<flight_sdk::LayoutResolutionExplanation>
 carrier|10|Box<flight_sdk::LiftGammaGainAdjustment>
@@ -1286,7 +1286,7 @@ unreachable|flight_build_texture_atlas_region_index|*const flight_sdk::TextureAt
 unreachable|flight_can_lerp_effects|*const flight_sdk::EffectRef
 unreachable|flight_can_redo_text_input|Box<flight_sdk::Ref<flight_sdk::RichText>>
 unreachable|flight_can_undo_text_input|Box<flight_sdk::Ref<flight_sdk::RichText>>
-unreachable|flight_capture_interaction_pointer|Box<flight_sdk::InteractionManager>
+unreachable|flight_capture_interaction_pointer|*mut flight_sdk::InteractionManager
 unreachable|flight_capture_snapshot|*const flight_sdk::SnapshotGuardState
 unreachable|flight_clear_audio_channel_loop_region|Box<flight_sdk::Ref<flight_sdk::AudioChannel>>
 unreachable|flight_clear_collision_pair_tests3d|*mut flight_sdk::CollisionRegistry3D
@@ -1690,7 +1690,7 @@ unreachable|flight_find_node_by_name|Box<flight_sdk::Ref<dyn flight_sdk::Node>>
 unreachable|flight_find_nodes_in_lasso_selection|Box<Vec<flight_sdk::Ref<dyn flight_sdk::Node>>>
 unreachable|flight_find_nodes_in_marquee_selection|Box<Vec<flight_sdk::Ref<dyn flight_sdk::Node>>>
 unreachable|flight_find_requirement_catalog_entries|Box<Vec<flight_sdk::RequirementCatalogEntryRef>>
-unreachable|flight_find_spatial_interaction_target|*const flight_sdk::interaction::contract::HitTestContext
+unreachable|flight_find_spatial_interaction_target|*const flight_sdk::InteractionManager
 unreachable|flight_find_timeline_label|Box<flight_sdk::Ref<flight_sdk::Timeline>>
 unreachable|flight_fire_statechart_trigger|Box<flight_sdk::Ref<flight_sdk::StatechartInstanceRaw>>
 unreachable|flight_flush_log_sink|Box<flight_sdk::BufferedLogSink>
@@ -2099,12 +2099,12 @@ unreachable|flight_get_input_manager_enabled|*const flight_sdk::InputManager
 unreachable|flight_get_input_text_data_is_composing|*const flight_sdk::InputTextData
 unreachable|flight_get_interaction_hit_eligibility_eligible|Box<flight_sdk::InteractionHitEligibility>
 unreachable|flight_get_interaction_hit_eligibility_has_eligible_in_subtree|Box<flight_sdk::InteractionHitEligibility>
-unreachable|flight_get_interaction_manager_double_click_delay|Box<flight_sdk::InteractionManager>
-unreachable|flight_get_interaction_manager_double_click_distance|Box<flight_sdk::InteractionManager>
-unreachable|flight_get_interaction_manager_enabled|Box<flight_sdk::InteractionManager>
-unreachable|flight_get_interaction_manager_precise|Box<flight_sdk::InteractionManager>
-unreachable|flight_get_interaction_manager_suppress_touch_hover|Box<flight_sdk::InteractionManager>
-unreachable|flight_get_interaction_manager_tracked_subscribers_only|Box<flight_sdk::InteractionManager>
+unreachable|flight_get_interaction_manager_double_click_delay|*const flight_sdk::InteractionManager
+unreachable|flight_get_interaction_manager_double_click_distance|*const flight_sdk::InteractionManager
+unreachable|flight_get_interaction_manager_enabled|*const flight_sdk::InteractionManager
+unreachable|flight_get_interaction_manager_precise|*const flight_sdk::InteractionManager
+unreachable|flight_get_interaction_manager_suppress_touch_hover|*const flight_sdk::InteractionManager
+unreachable|flight_get_interaction_manager_tracked_subscribers_only|*const flight_sdk::InteractionManager
 unreachable|flight_get_interaction_pointer_state_last_click_time|*const flight_sdk::InteractionPointerState
 unreachable|flight_get_interaction_pointer_state_last_pointer_click_button|*const flight_sdk::InteractionPointerState
 unreachable|flight_get_interaction_pointer_state_last_pointer_click_time|*const flight_sdk::InteractionPointerState
@@ -3090,7 +3090,7 @@ unreachable|flight_interpolate_snapshots|*const flight_sdk::SnapshotSchema
 unreachable|flight_intersect_paths|*const flight_sdk::PathBooleanOptions
 unreachable|flight_invalidate_content|Box<flight_sdk::Ref<dyn flight_sdk::Node>>
 unreachable|flight_invalidate_image_resource|*const flight_sdk::ImageResolverState
-unreachable|flight_invalidate_interaction_cursor|Box<flight_sdk::InteractionManager>
+unreachable|flight_invalidate_interaction_cursor|*mut flight_sdk::InteractionManager
 unreachable|flight_invalidate_node|Box<flight_sdk::Ref<dyn flight_sdk::Node>>
 unreachable|flight_invalidate_node_appearance|Box<flight_sdk::Ref<dyn flight_sdk::Node>>
 unreachable|flight_invalidate_node_local_bounds|Box<flight_sdk::Ref<dyn flight_sdk::Node>>
@@ -3284,7 +3284,7 @@ unreachable|flight_read_text_file|*const flight_sdk::AbortSignal
 unreachable|flight_read_texture_atlas_scale|*const flight_sdk::TextureAtlasScale
 unreachable|flight_redo_text_input|Box<flight_sdk::Ref<flight_sdk::RichText>>
 unreachable|flight_refresh_bitmap_text_glyph_layout|*const flight_sdk::BitmapTextGuardState
-unreachable|flight_refresh_interaction_spatial_index|Box<Vec<flight_sdk::Ref<dyn flight_sdk::Node>>>
+unreachable|flight_refresh_interaction_spatial_index|*const flight_sdk::InteractionManager
 unreachable|flight_register_built_in_collision_face_queries3d|*mut flight_sdk::CollisionRegistry3D
 unreachable|flight_register_built_in_collision_supports2d|*mut flight_sdk::CollisionRegistry2D
 unreachable|flight_register_built_in_collision_supports3d|*mut flight_sdk::CollisionRegistry3D
@@ -3320,7 +3320,7 @@ unreachable|flight_register_svg_clip_handler|Box<flight_sdk::SvgClipHandler>
 unreachable|flight_register_svg_element_handler|Box<flight_sdk::SvgElementHandler>
 unreachable|flight_register_texture_atlas_format|*mut flight_sdk::TextureAtlasFormatRegistry
 unreachable|flight_relative_normal_velocity|*const flight_sdk::RigidBody2D
-unreachable|flight_release_interaction_pointer|Box<flight_sdk::InteractionManager>
+unreachable|flight_release_interaction_pointer|*mut flight_sdk::InteractionManager
 unreachable|flight_release_path_mesh|*mut flight_sdk::path::contract::PathMeshPool
 unreachable|flight_release_path_mesh_typed|*mut flight_sdk::path::contract::PathMeshPool
 unreachable|flight_release_spritesheet_player|*mut flight_sdk::SpritesheetPlayerPool
@@ -3733,12 +3733,12 @@ unreachable|flight_set_input_text_data_is_composing|*mut flight_sdk::InputTextDa
 unreachable|flight_set_interaction_connect_guard|*const flight_sdk::InteractionConnectGuard
 unreachable|flight_set_interaction_hit_eligibility_eligible|Box<flight_sdk::InteractionHitEligibility>
 unreachable|flight_set_interaction_hit_eligibility_has_eligible_in_subtree|Box<flight_sdk::InteractionHitEligibility>
-unreachable|flight_set_interaction_manager_double_click_delay|Box<flight_sdk::InteractionManager>
-unreachable|flight_set_interaction_manager_double_click_distance|Box<flight_sdk::InteractionManager>
-unreachable|flight_set_interaction_manager_enabled|Box<flight_sdk::InteractionManager>
-unreachable|flight_set_interaction_manager_precise|Box<flight_sdk::InteractionManager>
-unreachable|flight_set_interaction_manager_suppress_touch_hover|Box<flight_sdk::InteractionManager>
-unreachable|flight_set_interaction_manager_tracked_subscribers_only|Box<flight_sdk::InteractionManager>
+unreachable|flight_set_interaction_manager_double_click_delay|*mut flight_sdk::InteractionManager
+unreachable|flight_set_interaction_manager_double_click_distance|*mut flight_sdk::InteractionManager
+unreachable|flight_set_interaction_manager_enabled|*mut flight_sdk::InteractionManager
+unreachable|flight_set_interaction_manager_precise|*mut flight_sdk::InteractionManager
+unreachable|flight_set_interaction_manager_suppress_touch_hover|*mut flight_sdk::InteractionManager
+unreachable|flight_set_interaction_manager_tracked_subscribers_only|*mut flight_sdk::InteractionManager
 unreachable|flight_set_interaction_pointer_state_last_click_time|*mut flight_sdk::InteractionPointerState
 unreachable|flight_set_interaction_pointer_state_last_pointer_click_button|*mut flight_sdk::InteractionPointerState
 unreachable|flight_set_interaction_pointer_state_last_pointer_click_time|*mut flight_sdk::InteractionPointerState
