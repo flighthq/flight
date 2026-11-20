@@ -33,7 +33,7 @@ flight-signals = { workspace = true }
 flight-texture = { workspace = true }
 
 [[test]]
-name = "g3_winit_test"
+name = "presented_scene_test"
 harness = false
 
 [[test]]

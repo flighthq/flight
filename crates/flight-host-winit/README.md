@@ -95,32 +95,15 @@ stopped between pumps. The blocking `run_winit_host` path is therefore the porta
 the OS must own the loop or live-resize behavior matters. Pump and run both execute scheduled
 `HostAppLoopCapability::request_frame` callbacks at the host frame point.
 
-## Example and G3
+## Example
 
-The Rust pump example is:
+The Rust pump example opens a window with two rectangles and a sprite:
 
 ```sh
 cargo run -p flight-host-winit --example pump
 ```
 
-Set `FLIGHT_WINIT_EXAMPLE_FRAMES` to a positive frame count for an unattended smoke run; otherwise
-the example closes on Escape. Pointer motion drags the red rectangle. The Rust render path picks up a
-moved node only after `invalidate_node_local_transform`, so the example's `scene.rs` invalidates
-each move explicitly; the G3 test shares that module.
-
-The display-backed G3 test draws the example scene and checks captured pixels exactly; on X11 with
-`xdotool`, `xwd` and ImageMagick `convert` it also checks presented pixels, a skipped zero-extent
-frame, a real pointer drag and that destroy removes the window, and reports those gates skipped
-otherwise. The whole test reports a skip when neither `DISPLAY` nor `WAYLAND_DISPLAY` is present. On Linux it can run under a virtual
-display:
-
-```sh
-env -u WAYLAND_DISPLAY xvfb-run -a cargo test -p flight-host-winit --test g3_winit_test -- --nocapture
-```
-
-CI can run the same gate when its Linux image supplies Xvfb, `libxkbcommon-x11`, and a wgpu
-adapter such as Mesa lavapipe. Runners without those display/GPU packages should keep G3 as an
-explicit manual gate rather than treating the no-display skip as a presentation pass.
-
-The later Item G FFI half owns the `flight-ffi` feature, header section, reachability report, and C
-example; none of those are part of this crate.
+Pointer motion drags the red rectangle and Escape closes the window. Set
+`FLIGHT_WINIT_EXAMPLE_FRAMES` to a positive frame count for an unattended run. The Rust render path
+picks up a moved node only after `invalidate_node_local_transform`, so the example's `scene.rs`
+invalidates each move explicitly.

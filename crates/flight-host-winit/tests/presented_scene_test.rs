@@ -27,7 +27,7 @@ const BACKGROUND: [u8; 3] = [8, 10, 18];
 const MOVABLE: [u8; 3] = [255, 90, 90];
 const SECOND: [u8; 3] = [66, 200, 245];
 const SPRITE: [u8; 3] = [247, 201, 72];
-const TITLE: &str = "Flight G3 smoke";
+const TITLE: &str = "Flight presented scene";
 
 struct Frame<'a> {
     host: &'a mut WinitHost,
@@ -102,7 +102,7 @@ fn x11_window() -> Option<String> {
 // target deliberately uses Cargo's custom-test-harness mode instead of the standard test harness.
 fn main() {
     if !display_available() {
-        eprintln!("SKIP G3: no DISPLAY or WAYLAND_DISPLAY; run under xvfb-run -a");
+        eprintln!("SKIP presented scene: no DISPLAY or WAYLAND_DISPLAY; run under xvfb-run -a");
         return;
     }
 
@@ -201,7 +201,7 @@ fn main() {
             assert_eq!(presented_pixel(300, 400), Some(MOVABLE));
             assert_eq!(presented_pixel(600, 300), Some(BACKGROUND));
         } else {
-            eprintln!("SKIP G3 presented-pixel gates: needs X11 with xdotool, xwd and convert");
+            eprintln!("SKIP presented-pixel checks: needs X11 with xdotool, xwd and convert");
         }
 
         // Captured frames: exact scene content, and a moved shape moves.
