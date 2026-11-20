@@ -1,0 +1,32 @@
+[package]
+name = "flight-host-image-codecs"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+repository.workspace = true
+homepage.workspace = true
+authors.workspace = true
+description = "Rust-native PNG and JPEG capability provider for Flight image codecs"
+publish = false
+autotests = false
+
+[features]
+default = ["jpeg", "png"]
+jpeg = ["dep:jpeg-decoder", "dep:jpeg-encoder"]
+png = ["dep:png"]
+
+[lib]
+doctest = false
+
+[[test]]
+name = "tests"
+path = "tests/main.rs"
+
+[dependencies]
+flight-image-codec = { workspace = true }
+jpeg-decoder = { version = "=0.3.1", default-features = false, optional = true }
+jpeg-encoder = { version = "=0.6.1", optional = true }
+png = { version = "=0.17.16", optional = true }
+
+[lints]
+workspace = true
