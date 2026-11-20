@@ -424,6 +424,27 @@ mod flight_render_wgpu_scene2d {
     }
 
     #[test]
+    fn refuses_draw_end_and_free_while_another_call_holds_the_state() {
+        let scene = create_scene();
+        let pass = scene_begin(&scene);
+        set_probe(Probe::Count);
+        let held = ffi_claim_wgpu_render_state(scene.state, false).expect("an unclaimed state");
+        let before = scene_snapshot(&scene);
+        assert!(!scene_render_2d(&scene, pass));
+        assert!(!unsafe { flight_end_wgpu_render_pass(pass) });
+        unsafe { flight_free_wgpu_render_pass_handle(pass) };
+        assert_eq!(take_probe_calls(), 0);
+        assert_eq!(scene_snapshot(&scene), before);
+        assert_eq!(pass_entry(pass).phase, FfiWgpuRenderPassPhase::Open);
+        drop(held);
+        assert!(scene_render_2d(&scene, pass));
+        assert_eq!(take_probe_calls(), 1);
+        assert!(unsafe { flight_end_wgpu_render_pass(pass) });
+        unsafe { flight_free_wgpu_render_pass_handle(pass) };
+        assert_eq!(inspect_wgpu_render_pass(pass), None);
+    }
+
+    #[test]
     fn returns_false_for_a_null_required_argument_without_changing_the_pass() {
         let scene = create_scene();
         let pass = scene_begin(&scene);
