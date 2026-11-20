@@ -384,7 +384,7 @@ pub fn is_winit_committed_key_text(text: &str, modifiers: ModifiersState) -> boo
     if modifiers.super_key() {
         return false;
     }
-    return !(modifiers.control_key() && !modifiers.alt_key());
+    return !modifiers.control_key() || modifiers.alt_key();
 }
 
 /// Returns whether an element-state transition is a press.
