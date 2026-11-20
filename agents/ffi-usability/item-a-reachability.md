@@ -22,7 +22,7 @@ The record's opening table was read from `crates/flight-ffi/build.rs` (current) 
 3. **Report.** Emit a deterministic, committed baseline next to the existing census outputs: one row per unreachable function with the first unproducible carrier, plus a summary by carrier (count of functions blocked by each). Sort stably.
 4. **Check.** A test or script that fails when a function not in the baseline becomes unreachable, and fails when the baseline lists a function that is now reachable (so the baseline can only shrink deliberately). Wire it wherever the existing census pins run.
 5. **Policies.** Allow a named policy to exempt a carrier with a one-line reason, in the same style as the existing skip policies. Expect at least one: host capability carriers are produced only by host crates behind features (items F, G, I), so in the default build they are exempt under a policy that names that.
-6. **Confirmation report.** On a fresh build, state for each row of the design record's opening table whether it holds, with the generated function and line as evidence. Write this report to `agents/ffi-usability-reports.md`; if any row is wrong, say so plainly, because later items are scoped on it.
+6. **Confirmation report.** On a fresh build, state for each row of the design record's opening table whether it holds, with the generated function and line as evidence. Note this in status; if any row is wrong, say so plainly, because later items are scoped on it.
 
 ## Not in scope
 

@@ -60,7 +60,7 @@ When `flight-ffi` is built with a host feature (Items F, G), bindgen can generat
 
 - Generator unit tests pass and generated output is reviewed as text. Executing G6 on HashLink and the C++ compile check are flight-hx's, per [pass 2](pass-2.md); the Tests section above is not a gate here.
 - No `Dynamic` return remains for byte results or signals.
-- A short note for flight-hx, written to `agents/ffi-usability-reports.md`: for each patch 0004–0014, "superseded by upstream, delete" or "keep, because".
+- A short note for flight-hx, kept in status: for each patch 0004–0014, "superseded by upstream, delete" or "keep, because".
 - Deterministic generation; `cargo fmt`, lint.
 
 ## Dependencies

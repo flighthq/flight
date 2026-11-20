@@ -58,7 +58,7 @@ Using Item A's graph, assume a `WgpuDevice`, a render-target carrier and a surfa
 
 create render state → register standard material, texture resolvers and the scene2d renderers → create proxies → `prepare_scene_2d_render` → begin pass → `render_wgpu_scene2d` → end pass → `submit_wgpu_frame` → end target frame; plus resize sync, render-state destroy, and the offscreen render-state path (`create_wgpu_offscreen_render_state`).
 
-List exactly which carriers remain for a host to produce. That list is the contract Items F and G implement; record it in `agents/ffi-usability-reports.md`.
+List exactly which carriers remain for a host to produce. That list is the contract Items F and G implement; note it in status.
 
 ## Tests
 

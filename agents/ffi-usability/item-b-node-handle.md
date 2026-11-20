@@ -41,7 +41,7 @@ Classify each struct type by how the surface produces it, using Item A's carrier
 
 - **Ref-only** (only ever produced inside `Ref<T>`): `&T` and `&mut T` parameters take the handle. The wrapper locks for the call — read for `&T`, write for `&mut T` — and recovers from poisoning the way the existing `_ref` buffer accessors do. If one call borrows the same handle both ways, take the write lock once and do not deadlock.
 - **Owned-only**: raw pointer, unchanged.
-- **Both** (`Bitmap` is one): do not design this here. Report the list of such types and the number of functions affected in `agents/ffi-usability-reports.md`. Leave their lowering unchanged.
+- **Both** (`Bitmap` is one): do not design this here. Report the list of such types and the number of functions affected in status. Leave their lowering unchanged.
 
 For node kinds, the handle is the `FlightNode*` from B1.
 

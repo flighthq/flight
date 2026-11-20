@@ -200,3 +200,8 @@ A parcel note that names N commits is prose written by the sender; nothing in th
 - **The receiver verifies content before integrating**, never the count in the prose.
 - **Carry a distinctive-phrase list through every relay hop** — one greppable phrase per commit, in the note body. It makes a relayed parcel checkable in seconds at any hop without reconstructing provenance or resolving SHAs that do not exist in the receiver's clone.
 - **A test count is a weak instrument**: it catches only a commit that happens to carry a test. Treat it as the alarm, never as the diagnosis — the content check is what confirms and repairs.
+
+## No workflow codes
+
+A commit subject says what changed in the code. It never carries the bookkeeping of how the work was organised: task or item letters, pass and batch numbers, scenario ids, review round names (`G4 repair`, `H14 variants`, `Task Q batch 12`). The same holds for code comments, file names, test names and identifiers. A reader a year from now has the code and the log, not the plan. Agents report progress in status, not in commits.
+
