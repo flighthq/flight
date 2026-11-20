@@ -14,8 +14,8 @@ pub struct NetHost {
     pub(crate) capabilities: HostNetCapabilities,
     pub(crate) http: HostNetCapability,
     pub(crate) provider: ProviderRef,
-    /// Shared with the capability closure. `None` once the host is destroyed; requests already in
-    /// flight hold their own reference and finish on it.
+    /// Shared with the capability closure. `None` once the host is destroyed. Requests in flight
+    /// hold a clone of the same pool, which destroy shuts down, so they end as `host destroyed`.
     pub(crate) transport: Arc<RwLock<Option<NetTransport>>>,
 }
 
@@ -37,7 +37,8 @@ pub enum NetHostResponseExplanationReason {
     Aborted = 0,
     /// `timeout`: the request's `timeout_ms` elapsed, counting redirects and the response body.
     Timeout = 1,
-    /// `host destroyed`: the request was sent after `destroy_net_host`.
+    /// `host destroyed`: the request was sent after `destroy_net_host`, or was in flight when
+    /// `destroy_net_host` shut the pool down.
     HostDestroyed = 2,
     /// `invalid request`: the method, URL or a header is malformed, or a GET or HEAD carries a body.
     InvalidRequest = 3,

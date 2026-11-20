@@ -44,8 +44,9 @@ pub fn create_net_host_options() -> NetHostOptions {
     };
 }
 
-/// Closes the host's idle pooled connections now. Requests already in flight finish on their own
-/// connection; requests sent afterwards resolve to the `host destroyed` sentinel. Repeat calls are
+/// Shuts the host's connection pool down now, closing every pooled connection, idle or in use. A
+/// request in flight is interrupted and resolves promptly to the `host destroyed` sentinel, as does
+/// every request sent afterwards, without touching the network. Repeat calls are
 /// no-ops.
 pub fn destroy_net_host(host: &mut NetHost) {
     let transport = host.transport.write().unwrap().take();
