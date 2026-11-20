@@ -25,7 +25,7 @@ Required:
 3. **A borrowed handle for every exported renderer constant,** 2D and 3D, GL and wgpu, so C can name the renderer it wants to bind — including binding a built-in renderer to a custom kind.
 4. **Presets through the C ABI on both backends,** 2D and 3D. wgpu has `register_wgpu_scene2d_render_preset`; GL builds its preset as render-state options (`gl_scene2d_render_preset`), which must be reachable too.
 5. **The other kind-keyed registries follow the same rule** where they exist (quad material renderers, shape rasterisers, texture resolvers, effects): kind as an argument, reachable from C on both backends.
-6. **The existing `register_wgpu_*_renderer` functions are left as they are.** They predate this work and the C surface already uses them. Whether they stay alongside the kind-taking form is the owner's decision, not part of this pass.
+6. **Remove the fixed-kind `register_wgpu_*_renderer` functions.** The owner wants the backends aligned on the kind-taking form. Every function that takes only the state and binds one built-in renderer to one fixed kind goes, from Rust and therefore from TypeScript and the C surface; call sites and tests move to `register_node_renderer` / `registerNodeRenderer` with the renderer constant. Functions that take a kind, and the preset functions, stay. Do this only after items 2 and 3 are callable from C on wgpu, so the C surface never loses its only working registration path.
 7. **Custom renderers written in C are not in this pass.** `NodeRenderer` holds plain function pointers with no context, and its functions receive the backend render state; a sound way to supply one from C needs design first. Note in status what would be required. Binding built-in renderers to custom kinds is in scope and must work.
 8. The usual checkpoints apply for anything exported: colocated test, `exports:check`, `order`, `api:check`, `reachability:check`, `size`.
 
@@ -65,12 +65,24 @@ Then the general rule, since these four were found by a consumer and not by the 
 - Re-examine every skip currently classed by design against that rule. Each one ends as generated, or keeps a reason that meets it.
 - A public function in the TypeScript root lane with no generated counterpart and no such reason fails the census.
 
+## Part 5 — Haxe externs for the TypeScript-only packages
+
+openfl-flight on the JavaScript target links the ES modules, where the SDK is complete. The gap there is bindings, not the SDK: bindgen derives externs from the Rust crates, and these packages exist only in TypeScript, so no externs are generated for them — `scene2d-canvas`, `scene2d-dom`, `effects-canvas`, `textshaper-canvas`, `host-web`, `host-electron`, `host-tauri`, `host-capacitor`, `application`, `application-gl`, `storage`, `mesh`. flight-hx carries hand-written patches for the host seam today.
+
+Required:
+
+1. Confirm the list above against the package and crate directories and against what `haxe_js` emits.
+2. Generate JavaScript-target externs for the public lane of each such package from the TypeScript side — default source: the same API data `npm run api` reads — in the same style and with the same type mapping as the Rust-derived externs, so one Haxe program can use both.
+3. A Haxe JavaScript program can create a web host, register Canvas or DOM renderers through the kind-taking function, and render, with no hand-written externs. The fleet has the Haxe toolchain installed; compile and run this.
+4. Note in status which flight-hx host-seam patches this makes unnecessary.
+
 ## Acceptance
 
 - Part 1: from C, on GL and on wgpu, a built-in renderer is bound to a standard kind and to a custom kind through the kind-taking function, and the preset path works; a test shows a node of the custom kind drawn.
 - Part 2: the GL render sequence is reachable through the C ABI with the SDL host feature on.
 - Part 3: the six-path comparison runs and passes; paths that cannot run in the environment report skipped, not passed.
 - Part 4: the four gaps are callable from C; the by-design skip list has been re-examined and the census enforces the rule.
+- Part 5: the Haxe JavaScript program above compiles and runs against generated externs only.
 - Independent review for the GL pass bracket, as for the wgpu one. One review for the rest.
 
 ## Defaults
