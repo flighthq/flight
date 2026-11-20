@@ -1387,6 +1387,15 @@ fn main() {
     all_output.push_str(&declared.output);
     writeln!(all_output).unwrap();
 
+    // Every wrapper outside the bracket that takes a bracket's state claims it per call and is
+    // refused while that state's pass is open.
+    let mut bracket_state_wrappers = Vec::new();
+    for bracket in render_pass_bracket::BORROW_ERASED_BRACKETS {
+        let (guarded, names) =
+            render_pass_bracket::guard_bracket_state_wrappers(&all_output, bracket);
+        all_output = guarded;
+        bracket_state_wrappers.extend(names);
+    }
     let brackets = generate_borrow_erased_brackets(crates_dir, &mut seen_names);
     writeln!(all_output, "// borrow-erased brackets").unwrap();
     all_output.push_str(&brackets.output);
@@ -1487,6 +1496,9 @@ fn main() {
             .sum::<usize>()
     )
     .unwrap();
+    for name in &bracket_state_wrappers {
+        writeln!(stats_file, "  bracket state claim: {name}").unwrap();
+    }
     for line in &brackets.report {
         writeln!(stats_file, "  bracket: {line}").unwrap();
     }

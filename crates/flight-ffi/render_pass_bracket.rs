@@ -1,10 +1,12 @@
 //! Borrow-erased `begin`/`end` brackets. A bracket's `begin` returns a value borrowing its
-//! state; C cannot hold that borrow, so the generator emits an opaque lifecycle token instead: the
-//! state's stable address and entity identity, the pushed record's index (location only) and entity
-//! identity, and a phase. Every operation re-validates the token, in a fixed order, before it
-//! rebuilds one short-lived borrow for the duration of a single wrapper call. The table is exact:
-//! no other function is lowered this way, and a signature that drifts from the table fails the
-//! build.
+//! state; C cannot hold that borrow, so the generator emits an opaque lifecycle token instead. The
+//! token is a key into one process-wide registry that records the state's address and entity
+//! identity, the pushed record's index (location only) and entity identity, and a phase. The token
+//! is never a pointer to memory and is never reissued, so a stale, freed, foreign or forged handle
+//! is only ever looked up. Every call claims its state in the registry for the call's duration,
+//! re-validates the token in a fixed order, rebuilds one short-lived borrow for the SDK call, and
+//! contains a panic from it. The table is exact: no other function is lowered this way, and a
+//! signature that drifts from the table fails the build.
 
 /// One function a bracket's open borrow is passed to, with its exact source signature and the
 /// bool-returning FFI wrapper the generator emits for it.
@@ -110,8 +112,9 @@ pub fn check_bracket_free_link(
     return Ok(());
 }
 
-/// The bool wrapper for one consumer: required arguments are checked first, then the handle's
-/// phase and relation, and only an Open handle on the exact top record reaches the SDK call.
+/// The bool wrapper for one consumer: required arguments are checked first, then the call claims
+/// the handle and its state, then the relation is validated, and only an Open handle on the exact
+/// top record reaches the SDK call, inside a panic boundary.
 pub fn generate_bracket_consumer(
     bracket: &BorrowErasedBracket,
     consumer: &BracketConsumer,
@@ -131,33 +134,26 @@ pub fn generate_bracket_consumer(
         bindings.extend(param.bindings.iter().cloned());
         call_args.push(param.call_expr.clone());
     }
-    let null_check = required
-        .iter()
-        .map(|name| format!("{name}.is_null()"))
-        .collect::<Vec<_>>()
-        .join(" || ");
-    let notes: String = nullable
-        .iter()
-        .map(|name| format!("#[doc = \"flight-ffi nullable|{name}\"]\n"))
-        .collect();
     let bindings: String = bindings
         .iter()
         .map(|binding| format!("{binding}\n"))
         .collect();
-    return format!(
-        "{notes}#[doc = \"flight-ffi contract|{contract}\"]\n#[unsafe(no_mangle)]\npub unsafe extern \"C\" fn {ffi}({params}) -> bool {{\n    if {null_check} {{\n        return false;\n    }}\n    if unsafe {{ (*pass).phase }} != FfiWgpuRenderPassPhase::Open {{\n        return false;\n    }}\n    if unsafe {{ ffi_classify_wgpu_render_pass(pass) }} != FfiWgpuRenderPassRelation::ExactTop {{\n        return false;\n    }}\n    let (state, index) = unsafe {{ ((*pass).state, (*pass).index) }};\n    {{\n{bindings}        unsafe {{ (*pass).phase = FfiWgpuRenderPassPhase::Busy }};\n        let mut ffi_pass = {qualifier}::render_wgpu::contract::{borrowed} {{ state: unsafe {{ &mut *state.as_ptr() }}, index }};\n        {qualifier}::{function}({args});\n    }}\n    unsafe {{ (*pass).phase = FfiWgpuRenderPassPhase::Open }};\n    return true;\n}}\n",
-        contract = CONSUMER_CONTRACT,
-        ffi = consumer.ffi_name,
-        params = ffi_params.join(", "),
-        qualifier = QUALIFIER,
-        borrowed = bracket.borrowed,
-        function = consumer.function,
-        args = call_args.join(", "),
-    );
+    return CONSUMER_TEMPLATE
+        .replace("{notes}", &get_nullable_notes(&nullable))
+        .replace("{contract}", CONSUMER_CONTRACT)
+        .replace("{ffi}", consumer.ffi_name)
+        .replace("{params}", &ffi_params.join(", "))
+        .replace("{null_check}", &get_null_check(&required))
+        .replace("{bindings}", &bindings)
+        .replace("{function}", consumer.function)
+        .replace("{args}", &call_args.join(", "))
+        .replace("{borrowed}", bracket.borrowed)
+        .replace("{state}", bracket.state)
+        .replace("{qualifier}", QUALIFIER);
 }
 
-/// The handle, phase, validator, begin, end and free for one bracket. `target` and `clear` are the
-/// begin's ordinarily lowered borrowed arguments.
+/// The handle, registry, claims, validator, begin, end and free for one bracket. `target` and
+/// `clear` are the begin's ordinarily lowered borrowed arguments.
 pub fn generate_bracket_support(
     bracket: &BorrowErasedBracket,
     target: &LoweredParam,
@@ -175,59 +171,105 @@ pub fn generate_bracket_support(
         nullable.extend(param.nullable.iter().cloned());
         bindings.extend(param.bindings.iter().cloned());
     }
-    let null_check = required
-        .iter()
-        .map(|name| format!("{name}.is_null()"))
-        .collect::<Vec<_>>()
-        .join(" || ");
-    let notes: String = nullable
-        .iter()
-        .map(|name| format!("#[doc = \"flight-ffi nullable|{name}\"]\n"))
-        .collect();
     let bindings: String = bindings
         .iter()
         .map(|binding| format!("{binding}\n"))
         .collect();
-    let contract = |text: &str| format!("#[doc = \"flight-ffi contract|{text}\"]\n");
-    let mut out = String::new();
-    out.push_str(&format!(
-        "// Borrow-erased bracket {begin}/{end}: the handle carries identities, never a borrow.\n",
-        begin = bracket.begin,
-        end = bracket.end
-    ));
-    out.push_str(
-        SUPPORT
-            .replace("{handle}", bracket.handle)
-            .replace("{qualifier}", QUALIFIER)
-            .replace("{state}", bracket.state)
-            .as_str(),
+    let mut out = format!(
+        "// Borrow-erased bracket {}/{}: the handle is a registry token, never a borrow.\n",
+        bracket.begin, bracket.end
     );
-    out.push_str(&format!(
-        "{notes}{contract}#[doc = \"flight-ffi ownership|owned-return|{free}|{handle}\"]\n#[unsafe(no_mangle)]\npub unsafe extern \"C\" fn {ffi_begin}({params}) -> *mut {handle} {{\n    if {null_check} {{\n        return std::ptr::null_mut();\n    }}\n    if {qualifier}::render_wgpu::contract::get_wgpu_active_render_pass(unsafe {{ &*state }}).is_some() {{\n        return std::ptr::null_mut();\n    }}\n{bindings}    let {qualifier}::render_wgpu::contract::{borrowed} {{ state: begun, index }} = {qualifier}::render_wgpu::contract::{begin}(unsafe {{ &mut *state }}, {target}, {clear});\n    let state_id = {qualifier}::entity::contract::get_entity_id(&*begun);\n    let record_id = {qualifier}::entity::contract::get_entity_id(&{qualifier}::render_wgpu::contract::get_wgpu_render_state_runtime(begun).pass_stack[index]);\n    let handle = {handle} {{\n        state: std::ptr::NonNull::from(begun),\n        state_id,\n        index,\n        record_id,\n        phase: FfiWgpuRenderPassPhase::Open,\n        _thread_bound: std::marker::PhantomData,\n    }};\n    return Box::into_raw(Box::new(handle));\n}}\n",
-        contract = contract(BEGIN_CONTRACT),
-        free = bracket.ffi_free,
-        handle = bracket.handle,
-        ffi_begin = bracket.ffi_begin,
-        params = begin_params.join(", "),
-        qualifier = QUALIFIER,
-        borrowed = bracket.borrowed,
-        begin = bracket.begin,
-        target = target.call_expr,
-        clear = clear.call_expr,
-    ));
-    out.push_str(&format!(
-        "{contract}#[unsafe(no_mangle)]\npub unsafe extern \"C\" fn {ffi_end}(pass: *mut {handle}) -> bool {{\n    if pass.is_null() || unsafe {{ (*pass).phase }} != FfiWgpuRenderPassPhase::Open {{\n        return false;\n    }}\n    if unsafe {{ ffi_classify_wgpu_render_pass(pass) }} != FfiWgpuRenderPassRelation::ExactTop {{\n        return false;\n    }}\n    unsafe {{ ffi_end_exact_wgpu_render_pass(pass) }};\n    return true;\n}}\n",
-        contract = contract(END_CONTRACT),
-        ffi_end = bracket.ffi_end,
-        handle = bracket.handle,
-    ));
-    out.push_str(&format!(
-        "{contract}#[unsafe(no_mangle)]\npub unsafe extern \"C\" fn {ffi_free}(pass: *mut {handle}) {{\n    if pass.is_null() {{\n        return;\n    }}\n    match unsafe {{ (*pass).phase }} {{\n        FfiWgpuRenderPassPhase::Busy => return,\n        FfiWgpuRenderPassPhase::Ended | FfiWgpuRenderPassPhase::Stale => {{}}\n        FfiWgpuRenderPassPhase::Open => match unsafe {{ ffi_classify_wgpu_render_pass(pass) }} {{\n            FfiWgpuRenderPassRelation::ExactBelowTop => return,\n            FfiWgpuRenderPassRelation::Stale => {{}}\n            FfiWgpuRenderPassRelation::ExactTop => unsafe {{ ffi_end_exact_wgpu_render_pass(pass) }},\n        }},\n    }}\n    unsafe {{ drop(Box::from_raw(pass)) }};\n}}\n",
-        contract = contract(FREE_CONTRACT),
-        ffi_free = bracket.ffi_free,
-        handle = bracket.handle,
-    ));
-    return out;
+    out.push_str(SUPPORT_TEMPLATE);
+    out.push_str(
+        &BEGIN_TEMPLATE
+            .replace("{notes}", &get_nullable_notes(&nullable))
+            .replace("{contract}", BEGIN_CONTRACT)
+            .replace("{free}", bracket.ffi_free)
+            .replace("{ffi_begin}", bracket.ffi_begin)
+            .replace("{params}", &begin_params.join(", "))
+            .replace("{null_check}", &get_null_check(&required))
+            .replace("{bindings}", &bindings)
+            .replace("{begin}", bracket.begin)
+            .replace("{target}", &target.call_expr)
+            .replace("{clear}", &clear.call_expr),
+    );
+    out.push_str(
+        &END_TEMPLATE
+            .replace("{contract}", END_CONTRACT)
+            .replace("{ffi_end}", bracket.ffi_end),
+    );
+    out.push_str(
+        &FREE_TEMPLATE
+            .replace("{contract}", FREE_CONTRACT)
+            .replace("{ffi_free}", bracket.ffi_free),
+    );
+    return out
+        .replace("{handle}", bracket.handle)
+        .replace("{borrowed}", bracket.borrowed)
+        .replace("{state}", bracket.state)
+        .replace("{qualifier}", QUALIFIER);
+}
+
+/// Every wrapper in `generated` that takes the bracket's state outside the bracket, with a state
+/// claim inserted at the top of its body and the state contract added to its documentation. A
+/// guarded wrapper refuses a NULL state, a state inside another call and a state an open pass
+/// borrows, returning its failure value. Returns the guarded text and the guarded wrapper names.
+pub fn guard_bracket_state_wrappers(
+    generated: &str,
+    bracket: &BorrowErasedBracket,
+) -> (String, Vec<String>) {
+    let state_types = [
+        format!("*mut {QUALIFIER}::{}", bracket.state),
+        format!("*const {QUALIFIER}::{}", bracket.state),
+    ];
+    let mut out = String::with_capacity(generated.len());
+    let mut guarded = Vec::new();
+    for line in generated.split_inclusive('\n') {
+        let Some(signature) = line.strip_prefix("pub unsafe extern \"C\" fn ") else {
+            out.push_str(line);
+            continue;
+        };
+        let Some(open) = signature.find('(') else {
+            out.push_str(line);
+            continue;
+        };
+        let Some(close) = signature.rfind(')') else {
+            out.push_str(line);
+            continue;
+        };
+        let name = &signature[..open];
+        let state_param = signature[open + 1..close]
+            .split(", ")
+            .filter_map(|param| param.split_once(": "))
+            .find(|(_, ty)| state_types.iter().any(|state_type| ty == state_type))
+            .map(|(param, _)| param.to_string());
+        let Some(state_param) = state_param else {
+            out.push_str(line);
+            continue;
+        };
+        let returns = signature[close + 1..].trim().trim_end_matches('{').trim();
+        let failure = match returns.strip_prefix("-> ").map(str::trim) {
+            None => "return;".to_string(),
+            Some("bool") => "return false;".to_string(),
+            Some(ty) if ty.starts_with("*mut ") => "return std::ptr::null_mut();".to_string(),
+            Some(ty) if ty.starts_with("*const ") => "return std::ptr::null();".to_string(),
+            Some(_) => "return Default::default();".to_string(),
+        };
+        let attribute = "#[unsafe(no_mangle)]\n";
+        if out.ends_with(attribute) {
+            out.truncate(out.len() - attribute.len());
+            out.push_str(&format!(
+                "#[doc = \"flight-ffi contract|{STATE_CONTRACT}\"]\n"
+            ));
+            out.push_str(attribute);
+        }
+        out.push_str(line);
+        out.push_str(&format!(
+            "    let Some(_bracket_state_claim) = ffi_claim_wgpu_render_state({state_param}, true) else {{ {failure} }};\n"
+        ));
+        guarded.push(name.to_string());
+    }
+    return (out, guarded);
 }
 
 /// `signature` on one line with single spaces and no padding inside brackets, cut at its body.
@@ -245,6 +287,21 @@ pub fn normalize_signature(signature: &str) -> String {
         out.pop();
     }
     return out;
+}
+
+fn get_null_check(required: &[String]) -> String {
+    return required
+        .iter()
+        .map(|name| format!("{name}.is_null()"))
+        .collect::<Vec<_>>()
+        .join(" || ");
+}
+
+fn get_nullable_notes(nullable: &[String]) -> String {
+    return nullable
+        .iter()
+        .map(|name| format!("#[doc = \"flight-ffi nullable|{name}\"]\n"))
+        .collect();
 }
 
 /// The one bracket the generator lowers: the WGPU render pass and its three draw consumers.
@@ -283,22 +340,26 @@ pub const BORROW_ERASED_BRACKETS: &[BorrowErasedBracket] = &[BorrowErasedBracket
 }];
 
 /// The header contract the begin wrapper carries.
-pub const BEGIN_CONTRACT: &str = "Opens a render pass on state into target and returns an owned opaque pass handle; release it with flight_free_wgpu_render_pass_handle. NULL state or target, or a pass already open on state, returns NULL without changing state; NULL clear loads every aspect. target and clear are borrowed for this call only. The handle holds the open bracket and its own allocation, never the state. Until the pass is ended or freed, state must stay alive at the same address, and no alias may read, mutate, submit, replace, destroy, move or free it except through this handle. All calls on the handle and state are serialized on one thread; nothing enforces this for C. A non-local jump or foreign exception must not cross any call, and a Rust panic aborts the process rather than returning.";
+pub const BEGIN_CONTRACT: &str = "Opens a render pass on state into target and returns an owned opaque pass handle; release it with flight_free_wgpu_render_pass_handle. NULL state or target, a pass already open on state, or a state another call holds returns NULL without changing state; NULL clear loads every aspect. target and clear are borrowed for this call only. The handle is a registry token, never a pointer to memory, and holds the open bracket, never the state. Until the pass is ended or freed, state must stay alive at the same address, and nothing may read, mutate, submit, replace, destroy, move or free it except through this handle. Calls may come from any thread: each call on a state claims the state for its duration, and a call that finds the state claimed returns its failure value at once instead of waiting. A Rust panic inside the SDK begin is contained and returns NULL; the state may then keep a partially opened pass, which refuses later begins. A non-local jump or foreign exception must not cross any call.";
 
 /// The header contract each consumer wrapper carries.
-pub const CONSUMER_CONTRACT: &str = "Draws through an open pass handle and returns true. Returns false without drawing or changing the pass when pass or a required argument is NULL, the handle is ended, stale or already inside a call on this handle (same-handle reentry), its original pass was replaced, or a pass opened natively on the same state is still open above it. Re-entering through a separately retained state pointer is forbidden. Every other argument keeps its ordinary borrow contract.";
+pub const CONSUMER_CONTRACT: &str = "Draws through an open pass handle and returns true. Returns false without drawing or changing the pass when pass or a required argument is NULL, the handle is unknown, freed, ended or stale, another call holds the handle's state (including a call on the same handle from inside a draw), its original pass was replaced, or a pass opened natively on the same state is still open above it. A Rust panic inside the draw is contained: the call returns false and the pass stays open, so it can be drawn through again or ended. Every other argument keeps its ordinary borrow contract.";
 
 /// The header contract the end wrapper carries.
-pub const END_CONTRACT: &str = "Ends the open pass, restoring the state and submitting the frame the pass opened, and returns true. The handle becomes an ended tombstone that still needs exactly one flight_free_wgpu_render_pass_handle. Returns false and changes nothing for NULL, an ended or stale handle, a call on the same handle that is still running, or a pass opened natively above this one; an absent or replaced original pass marks the handle stale and is never ended.";
+pub const END_CONTRACT: &str = "Ends the open pass, restoring the state and submitting the frame the pass opened, and returns true. The handle becomes an ended tombstone that still needs exactly one flight_free_wgpu_render_pass_handle. Returns false and changes nothing for NULL, an unknown, freed, ended or stale handle, a state another call holds, or a pass opened natively above this one; an absent or replaced original pass marks the handle stale and is never ended. A Rust panic inside the SDK end is contained: the call returns false and the handle becomes stale.";
 
 /// The header contract the free wrapper carries.
-pub const FREE_CONTRACT: &str = "Releases a pass handle; NULL is a no-op. An open handle whose original pass is the innermost is ended first. Freeing is a no-op, and the handle stays open, while a call on the same handle is running or while a pass opened natively is still open above it. An absent or replaced original pass is never ended; only the handle is released. After a successful free every copy of the pointer is invalid: a second free or any later call is undefined behaviour.";
+pub const FREE_CONTRACT: &str = "Releases a pass handle. NULL, an unknown or already released handle, or a pointer that is not a pass handle is a no-op: handles are registry tokens that are never reissued and never dereferenced. An open handle whose original pass is the innermost is ended first. Freeing is a no-op, and the handle stays open, while another call holds its state (including a call on the same handle from inside a draw) or while a pass opened natively is still open above it. An absent or replaced original pass is never ended; only the handle is released. A Rust panic inside the SDK end is contained and the handle is still released.";
+
+/// The header contract every other wrapper that takes the bracket's state carries.
+pub const STATE_CONTRACT: &str = "Returns without touching state, with its failure value where it returns one, when state is NULL, another call on any thread holds state, or an open render pass handle borrows state.";
 
 const QUALIFIER: &str = "flight_sdk";
 
-// The phase, relation and validator shared by every wrapper of the bracket. The validation trace
-// records each inspection step in test builds only, so tests can observe the validator's order.
-const SUPPORT: &str = "#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+// The phase, relation, handle type, registry, claims and validator shared by every wrapper of the
+// bracket. The validation trace, the fault points and the registry probes exist in test builds
+// only, so tests can observe the validator's order and drive panics and poisoning.
+const SUPPORT_TEMPLATE: &str = r#"#[derive(Clone, Copy, Debug, PartialEq, Eq)]
 enum FfiWgpuRenderPassPhase {
     Open,
     Busy,
@@ -311,17 +372,142 @@ enum FfiWgpuRenderPassRelation {
     ExactBelowTop,
     Stale,
 }
+// The C-visible pass handle type. No value of it is ever allocated or dereferenced: a handle
+// pointer is a registry token, odd and never reissued.
 pub struct {handle} {
-    state: std::ptr::NonNull<{qualifier}::{state}>,
+    _token_only: [u8; 0],
+}
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+struct FfiWgpuRenderPassEntry {
+    state: usize,
     state_id: u64,
     index: usize,
     record_id: u64,
     phase: FfiWgpuRenderPassPhase,
-    _thread_bound: std::marker::PhantomData<std::rc::Rc<()>>,
+}
+// Every live handle by token, every state address inside a call, and each state's open bracket.
+// The one lock makes each check-and-transition indivisible; SDK calls run outside it under a state
+// claim. A critical section only inserts, removes or assigns plain values, so a lock poisoned by a
+// panic elsewhere still guards a consistent registry and is recovered.
+struct FfiWgpuRenderPassRegistry {
+    issued: usize,
+    entries: std::collections::BTreeMap<usize, FfiWgpuRenderPassEntry>,
+    claimed: std::collections::BTreeSet<usize>,
+    open: std::collections::BTreeMap<usize, usize>,
+}
+static FFI_WGPU_RENDER_PASSES: std::sync::Mutex<FfiWgpuRenderPassRegistry> = std::sync::Mutex::new(FfiWgpuRenderPassRegistry {
+    issued: 0,
+    entries: std::collections::BTreeMap::new(),
+    claimed: std::collections::BTreeSet::new(),
+    open: std::collections::BTreeMap::new(),
+});
+fn ffi_wgpu_render_passes() -> std::sync::MutexGuard<'static, FfiWgpuRenderPassRegistry> {
+    return FFI_WGPU_RENDER_PASSES.lock().unwrap_or_else(std::sync::PoisonError::into_inner);
+}
+// A state held by one call. Dropping it, also while unwinding, releases the state.
+struct FfiWgpuRenderStateClaim(usize);
+impl Drop for FfiWgpuRenderStateClaim {
+    fn drop(&mut self) {
+        ffi_wgpu_render_passes().claimed.remove(&self.0);
+    }
+}
+// Claims a state no other call holds. With `require_closed`, a state an open pass borrows is
+// refused too: outside the bracket nothing may touch a state while its pass is open.
+fn ffi_claim_wgpu_render_state(state: *const {qualifier}::{state}, require_closed: bool) -> Option<FfiWgpuRenderStateClaim> {
+    if state.is_null() {
+        return None;
+    }
+    let address = state.addr();
+    let mut registry = ffi_wgpu_render_passes();
+    if require_closed && registry.open.contains_key(&address) {
+        return None;
+    }
+    if !registry.claimed.insert(address) {
+        return None;
+    }
+    return Some(FfiWgpuRenderStateClaim(address));
+}
+// One call through an Open handle: the handle is Busy and its state claimed until the call drops.
+// Dropping it, on return or while unwinding, settles the handle to `settle`, and for a terminal
+// phase releases the state's open bracket, before the state claim is released.
+struct FfiWgpuRenderPassCall {
+    token: usize,
+    entry: FfiWgpuRenderPassEntry,
+    settle: FfiWgpuRenderPassPhase,
+    _claim: FfiWgpuRenderStateClaim,
+}
+impl Drop for FfiWgpuRenderPassCall {
+    fn drop(&mut self) {
+        let mut registry = ffi_wgpu_render_passes();
+        if let Some(entry) = registry.entries.get_mut(&self.token) {
+            entry.phase = self.settle;
+        }
+        let terminal = matches!(self.settle, FfiWgpuRenderPassPhase::Ended | FfiWgpuRenderPassPhase::Stale);
+        if terminal && registry.open.get(&self.entry.state) == Some(&self.token) {
+            registry.open.remove(&self.entry.state);
+        }
+    }
+}
+// Starts a call on `pass`: the token must name a live Open handle whose state no other call holds.
+// The check, the claim and the Busy transition happen under one lock.
+fn ffi_start_wgpu_render_pass_call(pass: *mut {handle}) -> Option<FfiWgpuRenderPassCall> {
+    let token = pass.addr();
+    let mut registry = ffi_wgpu_render_passes();
+    let entry = *registry.entries.get(&token)?;
+    if entry.phase != FfiWgpuRenderPassPhase::Open {
+        return None;
+    }
+    if !registry.claimed.insert(entry.state) {
+        return None;
+    }
+    if let Some(live) = registry.entries.get_mut(&token) {
+        live.phase = FfiWgpuRenderPassPhase::Busy;
+    }
+    return Some(FfiWgpuRenderPassCall {
+        token,
+        entry,
+        settle: FfiWgpuRenderPassPhase::Open,
+        _claim: FfiWgpuRenderStateClaim(entry.state),
+    });
+}
+// Issues the next token for a newly opened pass and records it as its state's open bracket.
+// Tokens are odd and never reissued; when the token space is exhausted none is issued.
+fn ffi_register_wgpu_render_pass(entry: FfiWgpuRenderPassEntry) -> Option<usize> {
+    let mut registry = ffi_wgpu_render_passes();
+    let issued = registry.issued.checked_add(1)?;
+    let token = issued.checked_mul(2)?.checked_add(1)?;
+    registry.issued = issued;
+    registry.entries.insert(token, entry);
+    registry.open.insert(entry.state, token);
+    return Some(token);
+}
+// Before a begin on a state the caller has claimed: the open bracket recorded at this address is
+// released when its state or record no longer matches, and keeps the state refused when it does.
+// Returns whether the state is free of an open bracket.
+unsafe fn ffi_settle_wgpu_render_state_bracket(state: usize) -> bool {
+    let open = {
+        let registry = ffi_wgpu_render_passes();
+        registry.open.get(&state).map(|token| (*token, registry.entries.get(token).copied()))
+    };
+    let Some((token, entry)) = open else {
+        return true;
+    };
+    if let Some(entry) = entry
+        && unsafe { ffi_classify_wgpu_render_pass(&entry) } != FfiWgpuRenderPassRelation::Stale
+    {
+        return false;
+    }
+    let mut registry = ffi_wgpu_render_passes();
+    if let Some(live) = registry.entries.get_mut(&token) {
+        live.phase = FfiWgpuRenderPassPhase::Stale;
+    }
+    registry.open.remove(&state);
+    return true;
 }
 #[cfg(test)]
 std::thread_local! {
     static FFI_WGPU_RENDER_PASS_TRACE: std::cell::RefCell<Vec<&'static str>> = const { std::cell::RefCell::new(Vec::new()) };
+    static FFI_WGPU_RENDER_PASS_FAULT: std::cell::Cell<Option<&'static str>> = const { std::cell::Cell::new(None) };
 }
 #[cfg(test)]
 fn trace_wgpu_render_pass_validation(step: &'static str) {
@@ -333,37 +519,207 @@ fn trace_wgpu_render_pass_validation(_step: &'static str) {}
 fn take_wgpu_render_pass_validation_trace() -> Vec<&'static str> {
     return FFI_WGPU_RENDER_PASS_TRACE.with(|trace| std::mem::take(&mut *trace.borrow_mut()));
 }
-// Classifies an Open handle in a fixed order: the state's identity first, then the original
+#[cfg(test)]
+fn inject_wgpu_render_pass_fault(point: &'static str) {
+    if FFI_WGPU_RENDER_PASS_FAULT.with(|fault| fault.get()) == Some(point) {
+        FFI_WGPU_RENDER_PASS_FAULT.with(|fault| fault.set(None));
+        panic!("injected {point} fault");
+    }
+}
+#[cfg(not(test))]
+fn inject_wgpu_render_pass_fault(_point: &'static str) {}
+#[cfg(test)]
+fn set_wgpu_render_pass_fault(point: Option<&'static str>) {
+    FFI_WGPU_RENDER_PASS_FAULT.with(|fault| fault.set(point));
+}
+#[cfg(test)]
+fn inspect_wgpu_render_pass(pass: *mut {handle}) -> Option<FfiWgpuRenderPassEntry> {
+    return ffi_wgpu_render_passes().entries.get(&pass.addr()).copied();
+}
+#[cfg(test)]
+fn is_wgpu_render_state_claimed(state: *const {qualifier}::{state}) -> bool {
+    return ffi_wgpu_render_passes().claimed.contains(&state.addr());
+}
+#[cfg(test)]
+fn get_wgpu_render_state_open_pass(state: *const {qualifier}::{state}) -> Option<usize> {
+    return ffi_wgpu_render_passes().open.get(&state.addr()).copied();
+}
+#[cfg(test)]
+fn poison_wgpu_render_passes() {
+    let poisoner = std::thread::spawn(|| {
+        let _registry = FFI_WGPU_RENDER_PASSES.lock();
+        panic!("poison the render pass registry");
+    });
+    let _ = poisoner.join();
+}
+#[cfg(test)]
+fn is_wgpu_render_pass_registry_poisoned() -> bool {
+    return FFI_WGPU_RENDER_PASSES.is_poisoned();
+}
+// Classifies a handle's entry in a fixed order: the state's identity first, then the original
 // record at the captured index, then whether it is the innermost pass. Nothing past a failed step
-// is read. A failed identity marks the handle Stale. No reference outlives the call.
-unsafe fn ffi_classify_wgpu_render_pass(pass: *mut {handle}) -> FfiWgpuRenderPassRelation {
-    let (state, state_id, index, record_id) = unsafe { ((*pass).state, (*pass).state_id, (*pass).index, (*pass).record_id) };
-    let state: &{qualifier}::{state} = unsafe { state.as_ref() };
-    trace_wgpu_render_pass_validation(\"state_id\");
-    if {qualifier}::entity::contract::get_entity_id(state) != state_id {
-        unsafe { (*pass).phase = FfiWgpuRenderPassPhase::Stale };
+// is read. The caller holds the state's claim, so no FFI call mutates the state meanwhile.
+unsafe fn ffi_classify_wgpu_render_pass(entry: &FfiWgpuRenderPassEntry) -> FfiWgpuRenderPassRelation {
+    let state: &{qualifier}::{state} = unsafe { &*std::ptr::with_exposed_provenance::<{qualifier}::{state}>(entry.state) };
+    trace_wgpu_render_pass_validation("state_id");
+    if {qualifier}::entity::contract::get_entity_id(state) != entry.state_id {
         return FfiWgpuRenderPassRelation::Stale;
     }
-    trace_wgpu_render_pass_validation(\"pass_stack\");
+    trace_wgpu_render_pass_validation("pass_stack");
     let pass_stack = &{qualifier}::render_wgpu::contract::get_wgpu_render_state_runtime(state).pass_stack;
-    trace_wgpu_render_pass_validation(\"record_id\");
-    let is_original = pass_stack.get(index).is_some_and(|record| {qualifier}::entity::contract::get_entity_id(record) == record_id);
+    trace_wgpu_render_pass_validation("record_id");
+    let is_original = pass_stack.get(entry.index).is_some_and(|record| {qualifier}::entity::contract::get_entity_id(record) == entry.record_id);
     if !is_original {
-        unsafe { (*pass).phase = FfiWgpuRenderPassPhase::Stale };
         return FfiWgpuRenderPassRelation::Stale;
     }
-    trace_wgpu_render_pass_validation(\"top\");
-    if index + 1 == pass_stack.len() {
+    trace_wgpu_render_pass_validation("top");
+    if entry.index + 1 == pass_stack.len() {
         return FfiWgpuRenderPassRelation::ExactTop;
     }
     return FfiWgpuRenderPassRelation::ExactBelowTop;
 }
-// Ends the exact top record of a validated Open handle through the ordinary end: Busy while the
-// SDK runs, Ended after it returns. The pass borrow lives only for this call.
-unsafe fn ffi_end_exact_wgpu_render_pass(pass: *mut {handle}) {
-    let (state, index) = unsafe { ((*pass).state, (*pass).index) };
-    unsafe { (*pass).phase = FfiWgpuRenderPassPhase::Busy };
-    {qualifier}::render_wgpu::contract::end_wgpu_render_pass({qualifier}::render_wgpu::contract::WgpuRenderPass { state: unsafe { &mut *state.as_ptr() }, index });
-    unsafe { (*pass).phase = FfiWgpuRenderPassPhase::Ended };
+// Ends the exact top record of a call's pass through the ordinary end, inside a panic boundary.
+// The call settles Ended after a completed end and Stale after a contained panic.
+unsafe fn ffi_end_exact_wgpu_render_pass(call: &mut FfiWgpuRenderPassCall) -> bool {
+    let state = std::ptr::with_exposed_provenance_mut::<{qualifier}::{state}>(call.entry.state);
+    let index = call.entry.index;
+    call.settle = FfiWgpuRenderPassPhase::Stale;
+    let ended = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
+        inject_wgpu_render_pass_fault("end");
+        {qualifier}::render_wgpu::contract::end_wgpu_render_pass({qualifier}::render_wgpu::contract::{borrowed} { state: unsafe { &mut *state }, index });
+    }));
+    if ended.is_err() {
+        return false;
+    }
+    call.settle = FfiWgpuRenderPassPhase::Ended;
+    return true;
 }
-";
+"#;
+
+const BEGIN_TEMPLATE: &str = r#"{notes}#[doc = "flight-ffi contract|{contract}"]
+#[doc = "flight-ffi ownership|owned-return|{free}|{handle}"]
+#[unsafe(no_mangle)]
+pub unsafe extern "C" fn {ffi_begin}({params}) -> *mut {handle} {
+    if {null_check} {
+        return std::ptr::null_mut();
+    }
+    let Some(claim) = ffi_claim_wgpu_render_state(state, false) else {
+        return std::ptr::null_mut();
+    };
+    if !unsafe { ffi_settle_wgpu_render_state_bracket(state.addr()) } {
+        return std::ptr::null_mut();
+    }
+    if {qualifier}::render_wgpu::contract::get_wgpu_active_render_pass(unsafe { &*state }).is_some() {
+        return std::ptr::null_mut();
+    }
+{bindings}    let opened = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
+        let {qualifier}::render_wgpu::contract::{borrowed} { state: begun, index } = {qualifier}::render_wgpu::contract::{begin}(unsafe { &mut *state }, {target}, {clear});
+        inject_wgpu_render_pass_fault("begin");
+        let state_id = {qualifier}::entity::contract::get_entity_id(&*begun);
+        let record_id = {qualifier}::entity::contract::get_entity_id(&{qualifier}::render_wgpu::contract::get_wgpu_render_state_runtime(begun).pass_stack[index]);
+        (state_id, index, record_id)
+    }));
+    let Ok((state_id, index, record_id)) = opened else {
+        return std::ptr::null_mut();
+    };
+    let entry = FfiWgpuRenderPassEntry {
+        state: state.expose_provenance(),
+        state_id,
+        index,
+        record_id,
+        phase: FfiWgpuRenderPassPhase::Open,
+    };
+    let Some(token) = ffi_register_wgpu_render_pass(entry) else {
+        let _ = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
+            {qualifier}::render_wgpu::contract::end_wgpu_render_pass({qualifier}::render_wgpu::contract::{borrowed} { state: unsafe { &mut *state }, index });
+        }));
+        return std::ptr::null_mut();
+    };
+    drop(claim);
+    return std::ptr::without_provenance_mut(token);
+}
+"#;
+
+const END_TEMPLATE: &str = r#"#[doc = "flight-ffi contract|{contract}"]
+#[unsafe(no_mangle)]
+pub unsafe extern "C" fn {ffi_end}(pass: *mut {handle}) -> bool {
+    if pass.is_null() {
+        return false;
+    }
+    let Some(mut call) = ffi_start_wgpu_render_pass_call(pass) else {
+        return false;
+    };
+    match unsafe { ffi_classify_wgpu_render_pass(&call.entry) } {
+        FfiWgpuRenderPassRelation::ExactTop => {}
+        FfiWgpuRenderPassRelation::ExactBelowTop => return false,
+        FfiWgpuRenderPassRelation::Stale => {
+            call.settle = FfiWgpuRenderPassPhase::Stale;
+            return false;
+        }
+    }
+    return unsafe { ffi_end_exact_wgpu_render_pass(&mut call) };
+}
+"#;
+
+const FREE_TEMPLATE: &str = r#"#[doc = "flight-ffi contract|{contract}"]
+#[unsafe(no_mangle)]
+pub unsafe extern "C" fn {ffi_free}(pass: *mut {handle}) {
+    if pass.is_null() {
+        return;
+    }
+    let token = pass.addr();
+    {
+        let mut registry = ffi_wgpu_render_passes();
+        let Some(entry) = registry.entries.get(&token).copied() else {
+            return;
+        };
+        match entry.phase {
+            FfiWgpuRenderPassPhase::Busy => return,
+            FfiWgpuRenderPassPhase::Ended | FfiWgpuRenderPassPhase::Stale => {
+                registry.entries.remove(&token);
+                return;
+            }
+            FfiWgpuRenderPassPhase::Open => {}
+        }
+    }
+    let Some(mut call) = ffi_start_wgpu_render_pass_call(pass) else {
+        return;
+    };
+    match unsafe { ffi_classify_wgpu_render_pass(&call.entry) } {
+        FfiWgpuRenderPassRelation::ExactBelowTop => return,
+        FfiWgpuRenderPassRelation::Stale => call.settle = FfiWgpuRenderPassPhase::Stale,
+        FfiWgpuRenderPassRelation::ExactTop => {
+            unsafe { ffi_end_exact_wgpu_render_pass(&mut call) };
+        }
+    }
+    drop(call);
+    ffi_wgpu_render_passes().entries.remove(&token);
+}
+"#;
+
+const CONSUMER_TEMPLATE: &str = r#"{notes}#[doc = "flight-ffi contract|{contract}"]
+#[unsafe(no_mangle)]
+pub unsafe extern "C" fn {ffi}({params}) -> bool {
+    if {null_check} {
+        return false;
+    }
+    let Some(mut call) = ffi_start_wgpu_render_pass_call(pass) else {
+        return false;
+    };
+    match unsafe { ffi_classify_wgpu_render_pass(&call.entry) } {
+        FfiWgpuRenderPassRelation::ExactTop => {}
+        FfiWgpuRenderPassRelation::ExactBelowTop => return false,
+        FfiWgpuRenderPassRelation::Stale => {
+            call.settle = FfiWgpuRenderPassPhase::Stale;
+            return false;
+        }
+    }
+    let state = std::ptr::with_exposed_provenance_mut::<{qualifier}::{state}>(call.entry.state);
+    let index = call.entry.index;
+{bindings}    let drawn = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
+        let mut ffi_pass = {qualifier}::render_wgpu::contract::{borrowed} { state: unsafe { &mut *state }, index };
+        {qualifier}::{function}({args});
+    }));
+    return drawn.is_ok();
+}
+"#;

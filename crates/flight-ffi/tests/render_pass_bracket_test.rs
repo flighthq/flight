@@ -8,7 +8,7 @@ mod render_pass_bracket;
 
 use render_pass_bracket::{
     BORROW_ERASED_BRACKETS, BorrowErasedBracket, check_bracket_free_link, check_bracket_signature,
-    normalize_signature,
+    guard_bracket_state_wrappers, normalize_signature,
 };
 
 const GENERATED: &str = include_str!(concat!(env!("OUT_DIR"), "/ffi_generated.rs"));
@@ -266,31 +266,38 @@ mod generated_bracket {
     use super::*;
 
     #[test]
-    fn carries_identities_and_a_phase_never_a_borrow_or_a_native_pass() {
+    fn keeps_identities_in_a_token_registry_never_a_borrow_or_a_native_pass() {
         let section = z_bracket_section();
         for banned in [
             "transmute",
             "WgpuRenderPass<'static>",
             "&'static mut",
-            "catch_unwind",
             "wgpu::RenderPass",
             "static mut",
             "Box::leak",
+            "Box::into_raw",
+            "Box::from_raw",
+            "(*pass)",
             "OnceLock",
-            "Mutex",
         ] {
             assert!(
                 !section.contains(banned),
                 "bracket support contains {banned}"
             );
         }
-        // The only `'static` is the test-only validation trace's step names.
+        // The only `'static` lifetimes are the test-only trace's step names and the guard of the
+        // process-wide registry.
         assert!(
-            !section.replace("&'static str", "").contains("'static"),
+            !section
+                .replace("&'static str", "")
+                .replace("MutexGuard<'static, FfiWgpuRenderPassRegistry>", "")
+                .contains("'static"),
             "bracket support names a 'static borrow"
         );
         let handle = z_between(section, "pub struct FfiWgpuRenderPassHandle {", "\n}");
-        let fields: Vec<_> = handle
+        assert_eq!(handle.trim(), "_token_only: [u8; 0],");
+        let entry = z_between(section, "struct FfiWgpuRenderPassEntry {", "\n}");
+        let fields: Vec<_> = entry
             .lines()
             .map(str::trim)
             .filter(|line| !line.is_empty())
@@ -298,16 +305,34 @@ mod generated_bracket {
         assert_eq!(
             fields,
             [
-                "state: std::ptr::NonNull<flight_sdk::WgpuRenderState>,",
+                "state: usize,",
                 "state_id: u64,",
                 "index: usize,",
                 "record_id: u64,",
                 "phase: FfiWgpuRenderPassPhase,",
-                "_thread_bound: std::marker::PhantomData<std::rc::Rc<()>>,",
             ]
         );
-        assert_eq!(section.matches("Box::into_raw").count(), 1);
-        assert_eq!(section.matches("Box::from_raw").count(), 1);
+        assert_eq!(
+            section
+                .matches(
+                    "static FFI_WGPU_RENDER_PASSES: std::sync::Mutex<FfiWgpuRenderPassRegistry>"
+                )
+                .count(),
+            1
+        );
+        let begin = z_function("flight_begin_wgpu_render_pass");
+        assert_eq!(
+            begin
+                .matches("return std::ptr::without_provenance_mut(token);")
+                .count(),
+            1
+        );
+        let register = z_between(section, "fn ffi_register_wgpu_render_pass(", "\n}");
+        assert!(
+            register.contains("issued.checked_mul(2)?.checked_add(1)?"),
+            "{register}"
+        );
+        assert!(register.contains("registry.issued = issued;"), "{register}");
     }
 
     #[test]
@@ -318,11 +343,11 @@ mod generated_bracket {
             "\n}",
         );
         let order = [
-            "get_entity_id(state) != state_id",
+            "get_entity_id(state) != entry.state_id",
             "get_wgpu_render_state_runtime(state)",
-            "pass_stack.get(index)",
-            "get_entity_id(record) == record_id",
-            "index + 1 == pass_stack.len()",
+            "pass_stack.get(entry.index)",
+            "get_entity_id(record) == entry.record_id",
+            "entry.index + 1 == pass_stack.len()",
         ];
         let positions: Vec<usize> = order
             .iter()
@@ -340,51 +365,110 @@ mod generated_bracket {
     }
 
     #[test]
-    fn reaches_the_sdk_only_after_null_phase_and_relation_checks() {
-        for name in z_bracket_symbols().into_iter().skip(1) {
-            if name == "flight_free_wgpu_render_pass_handle" {
-                continue;
-            }
-            let body = z_function(name);
-            let null = body.find("pass.is_null()").unwrap();
-            let phase = body.find("!= FfiWgpuRenderPassPhase::Open").unwrap();
-            let relation = body.find("!= FfiWgpuRenderPassRelation::ExactTop").unwrap();
-            let call = body
-                .find("flight_sdk::render_wgpu")
-                .or_else(|| body.find("ffi_end_exact_wgpu_render_pass(pass)"))
-                .unwrap();
-            assert!(
-                null < phase && phase < relation && relation < call,
-                "{name}:\n{body}"
-            );
-        }
+    fn claims_the_handle_and_its_state_under_one_lock_and_settles_them_on_drop() {
+        let section = z_bracket_section();
+        let start = z_between(section, "fn ffi_start_wgpu_render_pass_call(", "\n}");
+        let order = [
+            "let mut registry = ffi_wgpu_render_passes();",
+            "entry.phase != FfiWgpuRenderPassPhase::Open",
+            "registry.claimed.insert(entry.state)",
+            "live.phase = FfiWgpuRenderPassPhase::Busy;",
+        ];
+        let positions: Vec<usize> = order
+            .iter()
+            .map(|step| {
+                start
+                    .find(step)
+                    .unwrap_or_else(|| panic!("{step}\n{start}"))
+            })
+            .collect();
+        assert!(
+            positions.windows(2).all(|pair| pair[0] < pair[1]),
+            "{start}"
+        );
+        assert_eq!(
+            start.matches("ffi_wgpu_render_passes()").count(),
+            1,
+            "{start}"
+        );
+        let settle = z_between(section, "impl Drop for FfiWgpuRenderPassCall {", "\n}\n");
+        assert!(settle.contains("entry.phase = self.settle;"), "{settle}");
+        assert!(
+            settle.contains("registry.open.remove(&self.entry.state);"),
+            "{settle}"
+        );
+        let release = z_between(section, "impl Drop for FfiWgpuRenderStateClaim {", "\n}\n");
+        assert!(release.contains("claimed.remove(&self.0)"), "{release}");
+        assert!(section.contains(
+            "FFI_WGPU_RENDER_PASSES.lock().unwrap_or_else(std::sync::PoisonError::into_inner)"
+        ));
     }
 
     #[test]
-    fn writes_busy_around_each_sdk_call_and_restores_after_it_returns() {
+    fn contains_every_sdk_call_in_a_panic_boundary() {
         for consumer in BORROW_ERASED_BRACKETS[0].consumers {
             let body = z_function(consumer.ffi_name);
-            let busy = body
-                .find("(*pass).phase = FfiWgpuRenderPassPhase::Busy")
-                .unwrap();
+            let boundary = body.find("std::panic::catch_unwind(").unwrap();
             let call = body
                 .find(&format!("flight_sdk::{}(&mut ffi_pass", consumer.function))
                 .unwrap();
-            let open = body
-                .find("(*pass).phase = FfiWgpuRenderPassPhase::Open")
-                .unwrap();
-            assert!(busy < call && call < open, "{body}");
-            assert!(!body.contains("&mut *pass"), "{body}");
+            assert!(boundary < call, "{body}");
+            assert_eq!(body.matches("catch_unwind").count(), 1, "{body}");
+            assert!(body.ends_with("return drawn.is_ok();"), "{body}");
         }
+        let begin = z_function("flight_begin_wgpu_render_pass");
+        let boundary = begin.find("std::panic::catch_unwind(").unwrap();
+        let call = begin
+            .find("render_wgpu::contract::begin_wgpu_render_pass(")
+            .unwrap();
+        assert!(boundary < call, "{begin}");
         let end = z_between(
             z_bracket_section(),
             "unsafe fn ffi_end_exact_wgpu_render_pass(",
             "\n}",
         );
-        let busy = end.find("FfiWgpuRenderPassPhase::Busy").unwrap();
-        let call = end.find("end_wgpu_render_pass(").unwrap();
-        let ended = end.find("FfiWgpuRenderPassPhase::Ended").unwrap();
-        assert!(busy < call && call < ended, "{end}");
+        let stale = end
+            .find("call.settle = FfiWgpuRenderPassPhase::Stale;")
+            .unwrap();
+        let boundary = end.find("std::panic::catch_unwind(").unwrap();
+        let call = end
+            .find("render_wgpu::contract::end_wgpu_render_pass(")
+            .unwrap();
+        let ended = end
+            .find("call.settle = FfiWgpuRenderPassPhase::Ended;")
+            .unwrap();
+        assert!(stale < boundary && boundary < call && call < ended, "{end}");
+    }
+
+    #[test]
+    fn reaches_the_sdk_only_after_null_claim_and_relation_checks() {
+        for name in z_bracket_symbols().into_iter().skip(1) {
+            let body = z_function(name);
+            let null = body.find("pass.is_null()").unwrap();
+            let claim = body.find("ffi_start_wgpu_render_pass_call(pass)").unwrap();
+            let relation = body
+                .find("ffi_classify_wgpu_render_pass(&call.entry)")
+                .unwrap();
+            let call = body
+                .find("std::panic::catch_unwind(")
+                .or_else(|| body.find("ffi_end_exact_wgpu_render_pass(&mut call)"))
+                .unwrap();
+            assert!(
+                null < claim && claim < relation && relation < call,
+                "{name}:\n{body}"
+            );
+        }
+        let begin = z_function("flight_begin_wgpu_render_pass");
+        let claim = begin
+            .find("ffi_claim_wgpu_render_state(state, false)")
+            .unwrap();
+        let settle = begin.find("ffi_settle_wgpu_render_state_bracket(").unwrap();
+        let native = begin.find("get_wgpu_active_render_pass(").unwrap();
+        let call = begin.find("std::panic::catch_unwind(").unwrap();
+        assert!(
+            claim < settle && settle < native && native < call,
+            "{begin}"
+        );
     }
 
     #[test]
@@ -403,6 +487,78 @@ mod generated_bracket {
         let mut expected = z_bracket_symbols();
         expected.sort();
         assert_eq!(takes_handle, expected);
+    }
+}
+
+mod guard_bracket_state_wrappers {
+    use super::*;
+
+    #[test]
+    fn claims_the_state_first_in_every_other_wrapper_that_takes_it() {
+        let outside = &GENERATED[..GENERATED.find("// borrow-erased brackets\n").unwrap()];
+        let mut guarded = Vec::new();
+        let lines: Vec<&str> = outside.lines().collect();
+        for (at, line) in lines.iter().enumerate() {
+            let Some(signature) = line.strip_prefix("pub unsafe extern \"C\" fn ") else {
+                continue;
+            };
+            if !signature.contains("flight_sdk::WgpuRenderState,")
+                && !signature.contains("flight_sdk::WgpuRenderState)")
+            {
+                continue;
+            }
+            if !signature.contains(": *mut flight_sdk::WgpuRenderState")
+                && !signature.contains(": *const flight_sdk::WgpuRenderState")
+            {
+                continue;
+            }
+            assert!(
+                lines[at + 1].starts_with(
+                    "    let Some(_bracket_state_claim) = ffi_claim_wgpu_render_state(state, true) else {"
+                ),
+                "{line}\n{}",
+                lines[at + 1]
+            );
+            guarded.push(&signature[..signature.find('(').unwrap()]);
+        }
+        guarded.sort();
+        let mut reported: Vec<&str> = STATS
+            .lines()
+            .filter_map(|line| line.strip_prefix("  bracket state claim: "))
+            .collect();
+        reported.sort();
+        assert_eq!(guarded, reported);
+        assert_eq!(
+            reported,
+            [
+                "flight_destroy_wgpu_scene_2d_render",
+                "flight_prepare_wgpu_scene_2d_render"
+            ]
+        );
+    }
+
+    #[test]
+    fn returns_each_wrapper_failure_value_and_leaves_other_wrappers_alone() {
+        let generated = "#[unsafe(no_mangle)]\npub unsafe extern \"C\" fn a(state: *mut flight_sdk::WgpuRenderState) -> bool {\n}\n#[unsafe(no_mangle)]\npub unsafe extern \"C\" fn b(x: i32, state: *const flight_sdk::WgpuRenderState) {\n}\n#[unsafe(no_mangle)]\npub unsafe extern \"C\" fn c(state: *mut flight_sdk::WgpuRenderState) -> *mut u8 {\n}\n#[unsafe(no_mangle)]\npub unsafe extern \"C\" fn d(state: *mut flight_sdk::WgpuRenderState) -> *const u8 {\n}\n#[unsafe(no_mangle)]\npub unsafe extern \"C\" fn e(state: *mut flight_sdk::WgpuRenderState) -> f32 {\n}\n#[unsafe(no_mangle)]\npub unsafe extern \"C\" fn f(state: *mut flight_sdk::WgpuRenderStateRuntime) -> bool {\n}\n";
+        let (guarded, names) = guard_bracket_state_wrappers(generated, &BORROW_ERASED_BRACKETS[0]);
+        assert_eq!(names, ["a", "b", "c", "d", "e"]);
+        for (name, failure) in [
+            ("a", "return false;"),
+            ("b", "return;"),
+            ("c", "return std::ptr::null_mut();"),
+            ("d", "return std::ptr::null();"),
+            ("e", "return Default::default();"),
+        ] {
+            let body = z_between(&guarded, &format!("fn {name}("), "\n}");
+            assert!(
+                body.contains(&format!(
+                    "ffi_claim_wgpu_render_state(state, true) else {{ {failure} }};"
+                )),
+                "{name}: {body}"
+            );
+        }
+        assert!(!z_between(&guarded, "fn f(", "\n}").contains("ffi_claim"));
+        assert_eq!(guarded.matches("#[doc = \"flight-ffi contract|").count(), 5);
     }
 }
 
@@ -435,17 +591,19 @@ mod header {
     }
 
     #[test]
-    fn documents_ownership_lifetime_alias_thread_reentry_and_tombstones() {
+    fn documents_ownership_lifetime_alias_thread_reentry_panics_and_tombstones() {
         let begin = z_header_comments("flight_begin_wgpu_render_pass(");
         for phrase in [
             "release it with flight_free_wgpu_render_pass_handle",
+            "registry token, never a pointer to memory",
             "never the state",
             "stay alive at the same address",
-            "no alias may read, mutate, submit, replace, destroy, move or free it",
-            "serialized on one thread",
+            "nothing may read, mutate, submit, replace, destroy, move or free it",
+            "Calls may come from any thread",
+            "returns its failure value at once instead of waiting",
             "borrowed for this call only",
             "non-local jump or foreign exception",
-            "a Rust panic aborts",
+            "A Rust panic inside the SDK begin is contained and returns NULL",
             "Caller owns the return value; call flight_free_wgpu_render_pass_handle when done.",
         ] {
             assert!(begin.contains(phrase), "begin: {phrase}");
@@ -456,29 +614,42 @@ mod header {
             "exactly one flight_free_wgpu_render_pass_handle",
             "marks the handle stale and is never ended",
             "opened natively above this one",
+            "the handle becomes stale",
         ] {
             assert!(end.contains(phrase), "end: {phrase}");
         }
         let free = z_header_comments("flight_free_wgpu_render_pass_handle(");
         for phrase in [
-            "NULL is a no-op",
+            "NULL, an unknown or already released handle, or a pointer that is not a pass handle is a no-op",
+            "never reissued and never dereferenced",
             "is ended first",
-            "a call on the same handle is running",
+            "another call holds its state",
             "opened natively is still open above it",
-            "second free or any later call is undefined behaviour",
+            "the handle is still released",
         ] {
             assert!(free.contains(phrase), "free: {phrase}");
         }
         for consumer in BORROW_ERASED_BRACKETS[0].consumers {
             let comments = z_header_comments(&format!("{}(", consumer.ffi_name));
             for phrase in [
-                "same-handle reentry",
-                "separately retained state pointer is forbidden",
+                "another call holds the handle's state",
+                "a call on the same handle from inside a draw",
                 "replaced",
                 "natively on the same state",
+                "the pass stays open",
             ] {
                 assert!(comments.contains(phrase), "{}: {phrase}", consumer.ffi_name);
             }
+        }
+        for name in [
+            "flight_destroy_wgpu_scene_2d_render(",
+            "flight_prepare_wgpu_scene_2d_render(",
+        ] {
+            let comments = z_header_comments(name);
+            assert!(
+                comments.contains("an open render pass handle borrows state"),
+                "{name}: {comments}"
+            );
         }
     }
 }
