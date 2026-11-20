@@ -12,17 +12,22 @@ Adds to [pass 2](pass-2.md) and [pass 3](pass-3.md). Reporting and naming rules 
 
 Parts 1 and 2 rank with the remaining pass 2 work and ahead of pass 3: rendering is the largest gap downstream reports.
 
-## Part 1 — every backend registers renderers the same way
+## Part 1 — registration takes the kind as an argument
 
-Today (2D): wgpu has a `register_wgpu_*_renderer(state)` function for each of its renderers in Rust, emitted to TypeScript as `registerWgpu*Renderer`. GL has the renderer statics and no register functions. Canvas and DOM have the renderer constants and no register functions. 3D has one register function on each of GL and wgpu against fifteen or sixteen renderers.
+The SDK's registration pattern is one function that takes the kind: `registerNodeRenderer(state, kind, renderer)` in TypeScript, `register_node_renderer(state, kind, renderer)` in Rust (named `registerRenderer` until 2026-09). The state's type selects the backend; the renderer is one of the backend's exported constants (`glSpriteRenderer`, `GL_SPRITE_RENDERER`); the kind may be any kind, including a caller's own. That is how a custom kind is bound to a renderer, and it must stay possible on every path.
+
+This already works on all four TypeScript backends and both Rust backends. What is missing is the C ABI: `register_node_renderer` is generic over the render state, so nothing is generated, and a renderer static cannot cross the boundary.
 
 Required:
 
-1. **One register function per renderer, on every backend, 2D and 3D.** `register_gl_sprite_renderer(state)`, `registerCanvasSpriteRenderer(state)`, `registerDomSpriteRenderer(state)`, and so on, for every renderer constant the backend exports. Each binds the backend's renderer to its kind, as the wgpu ones do.
-2. **One preset register function per backend and dimension,** matching `register_wgpu_scene2d_render_preset`: GL 2D and 3D, wgpu 3D if missing, Canvas 2D, DOM 2D.
-3. **The renderer constants and presets stay.** `registerRenderer(state, Kind, renderer)` with a constant remains valid; the function is the second, symmetric form and the only one that crosses the C ABI.
-4. **Rust is the source for GL and wgpu;** TypeScript for those is emitted. Canvas and DOM are written in TypeScript directly, to the same names and shape.
-5. The usual checkpoints apply: colocated test per export, `exports:check`, `order`, `api:check`, `backend-prefix:check`, `reachability:check`, `size`. A register function must not pull in a renderer the caller did not name.
+1. **Do not add a function per renderer per backend.** An earlier draft of this pass asked for that; it is withdrawn. A per-kind function cannot bind a custom kind.
+2. **Kind-taking registration through the C ABI, per backend.** Declared instantiations of `register_node_renderer` for the GL and wgpu render states, taking the state, a kind and a renderer handle.
+3. **A borrowed handle for every exported renderer constant,** 2D and 3D, GL and wgpu, so C can name the renderer it wants to bind — including binding a built-in renderer to a custom kind.
+4. **Presets through the C ABI on both backends,** 2D and 3D. wgpu has `register_wgpu_scene2d_render_preset`; GL builds its preset as render-state options (`gl_scene2d_render_preset`), which must be reachable too.
+5. **The other kind-keyed registries follow the same rule** where they exist (quad material renderers, shape rasterisers, texture resolvers, effects): kind as an argument, reachable from C on both backends.
+6. **The existing `register_wgpu_*_renderer` functions are left as they are.** They predate this work and the C surface already uses them. Whether they stay alongside the kind-taking form is the owner's decision, not part of this pass.
+7. **Custom renderers written in C are not in this pass.** `NodeRenderer` holds plain function pointers with no context, and its functions receive the backend render state; a sound way to supply one from C needs design first. Note in status what would be required. Binding built-in renderers to custom kinds is in scope and must work.
+8. The usual checkpoints apply for anything exported: colocated test, `exports:check`, `order`, `api:check`, `reachability:check`, `size`.
 
 ## Part 2 — GL through the C ABI
 
@@ -62,7 +67,7 @@ Then the general rule, since these four were found by a consumer and not by the 
 
 ## Acceptance
 
-- Part 1: the register and preset functions exist on all four TypeScript backends and both Rust backends, with tests; the API reports show the symmetry.
+- Part 1: from C, on GL and on wgpu, a built-in renderer is bound to a standard kind and to a custom kind through the kind-taking function, and the preset path works; a test shows a node of the custom kind drawn.
 - Part 2: the GL render sequence is reachable through the C ABI with the SDL host feature on.
 - Part 3: the six-path comparison runs and passes; paths that cannot run in the environment report skipped, not passed.
 - Part 4: the four gaps are callable from C; the by-design skip list has been re-examined and the census enforces the rule.
