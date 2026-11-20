@@ -126,6 +126,43 @@ fn render_pass_bracket_links_static_library_and_runs() {
 }
 
 #[test]
+fn render_pass_live_sequence_matches_the_native_reference_under_sanitizers() {
+    if let Some(output) = z_compile_link_and_run_against(
+        Library::StandInWgpuHost,
+        "render_pass_live.c",
+        "render_pass_live",
+        true,
+        false,
+    ) {
+        assert_eq!(
+            String::from_utf8_lossy(&output.stdout).trim(),
+            "flight-ffi render pass live: ok"
+        );
+    }
+}
+
+#[test]
+fn render_pass_live_sanitizer_probe_detects_a_leaked_scene_root() {
+    if let Some(output) = z_compile_link_and_run_against(
+        Library::StandInWgpuHost,
+        "render_pass_live.c",
+        "render_pass_live-leak-probe",
+        true,
+        true,
+    ) {
+        let diagnostics = String::from_utf8_lossy(&output.stderr);
+        assert!(
+            !output.status.success(),
+            "LeakSanitizer accepted a deliberately leaked scene root"
+        );
+        assert!(
+            diagnostics.contains("LeakSanitizer") && diagnostics.contains("detected memory leaks"),
+            "deliberate scene root leak did not produce a live LeakSanitizer report:\n{diagnostics}"
+        );
+    }
+}
+
+#[test]
 fn render_pass_bracket_sanitizer_probe_detects_a_leaked_scene_source() {
     if let Some(output) = z_compile_link_and_run(
         "render_pass_bracket.c",
@@ -148,13 +185,26 @@ fn render_pass_bracket_sanitizer_probe_detects_a_leaked_scene_source() {
 // `cargo test` compiles the library only as a test harness, never as its declared `staticlib`, so
 // the archive is built here with the outer Cargo and located through its artifact messages. The
 // test only runs when the target is the host, so a host build matches the consumer's target.
-fn build_static_library() -> PathBuf {
+// The stand-in build adds the `stand-in-wgpu-host` producers and keeps its own target directory,
+// so it never replaces the default archive another consumer links.
+fn build_static_library(library: Library) -> PathBuf {
     let cargo = env::var_os("CARGO").unwrap_or_else(|| "cargo".into());
     let mut command = Command::new(cargo);
     command
         .args(["build", "--package", "flight-ffi", "--lib"])
         .arg("--message-format=json-render-diagnostics")
         .current_dir(env!("CARGO_MANIFEST_DIR"));
+    if library == Library::StandInWgpuHost {
+        let profile_dir = Path::new(env!("OUT_DIR"))
+            .ancestors()
+            .find(|dir| dir.file_name().is_some_and(|name| name == "build"))
+            .and_then(Path::parent)
+            .expect("OUT_DIR sits inside the profile's build directory");
+        let target_dir = profile_dir.join("flight-ffi-stand-in-wgpu-host");
+        command
+            .args(["--features", "stand-in-wgpu-host", "--target-dir"])
+            .arg(target_dir);
+    }
     if !cfg!(debug_assertions) {
         command.arg("--release");
     }
@@ -198,6 +248,22 @@ fn z_compile_link_and_run(
     sanitizers: bool,
     deliberate_leak: bool,
 ) -> Option<std::process::Output> {
+    return z_compile_link_and_run_against(
+        Library::Default,
+        source_name,
+        stem,
+        sanitizers,
+        deliberate_leak,
+    );
+}
+
+fn z_compile_link_and_run_against(
+    library: Library,
+    source_name: &str,
+    stem: &str,
+    sanitizers: bool,
+    deliberate_leak: bool,
+) -> Option<std::process::Output> {
     if env!("FLIGHT_FFI_TARGET") != env!("FLIGHT_FFI_HOST") {
         eprintln!(
             "skipping the flight-ffi C consumer: it is built for {} and cannot run on host {}",
@@ -207,7 +273,7 @@ fn z_compile_link_and_run(
         return None;
     }
 
-    let library = build_static_library();
+    let library = build_static_library(library);
     let work_dir = library
         .parent()
         .unwrap()
@@ -293,4 +359,10 @@ fn z_compile_link_and_run(
         return Some(executable_command.output().unwrap());
     }
     return Some(run(&mut executable_command, "run the C consumer"));
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+enum Library {
+    Default,
+    StandInWgpuHost,
 }

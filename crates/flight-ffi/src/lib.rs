@@ -6,6 +6,8 @@ mod async_callback;
 #[macro_use]
 mod enum_conversion;
 mod import_diagnostic_list;
+#[cfg(feature = "stand-in-wgpu-host")]
+mod stand_in_wgpu_host;
 
 #[cfg(test)]
 mod by_value_ownership_test;

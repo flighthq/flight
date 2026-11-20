@@ -1,7 +1,8 @@
-/* Linked C coverage for the borrow-erased WGPU pass bracket. No C producer exists yet for a render
- * state or render target, so this pins the exact typed prototypes and the NULL sentinels: every NULL
- * handle or required argument is rejected before anything else is read, including a live FlightNode
- * scene source, which stays caller-owned and is released normally afterwards. */
+/* Linked C coverage for the borrow-erased WGPU pass bracket against the default library. Production
+ * C has no producer for a render state or render target, so this pins the exact typed prototypes and
+ * the NULL sentinels: every NULL handle or required argument is rejected before anything else is
+ * read, including a live FlightNode scene source, which stays caller-owned and is released normally
+ * afterwards. render_pass_live.c drives the bracket live against stand-in carriers. */
 
 #include <stdbool.h>
 #include <stdint.h>

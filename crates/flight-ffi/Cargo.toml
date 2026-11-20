@@ -22,9 +22,15 @@ path = "tests/main.rs"
 name = "flight-offsets"
 path = "src/bin/offsets.rs"
 
+[features]
+# Noop-backend WGPU state and target producers standing in for the host seam that supplies them,
+# for live C tests of the render pass bracket. Never part of the default library or header.
+stand-in-wgpu-host = ["dep:wgpu"]
+
 [dependencies]
 flight-sdk = { workspace = true }
 serde_json = { version = "1", default-features = false, features = ["std"] }
+wgpu = { version = "30.0.1", default-features = false, features = ["std", "wgsl", "noop"], optional = true }
 
 [dev-dependencies]
 cc = "1.11.2"
