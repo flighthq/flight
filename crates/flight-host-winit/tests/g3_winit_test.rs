@@ -8,8 +8,9 @@ use std::time::{Duration, Instant};
 use flight_host_winit::{
     WinitHost, WinitPumpStatus, create_winit_host, create_winit_host_options,
     create_winit_host_surface, destroy_winit_host, get_winit_host_input_ingress_capability,
-    get_winit_host_input_source, get_winit_host_surface_resize_capability,
-    get_winit_host_wgpu_capability, get_winit_host_wgpu_device, pump_winit_host,
+    get_winit_host_input_source, get_winit_host_surface_display_capability,
+    get_winit_host_surface_resize_capability, get_winit_host_wgpu_capability,
+    get_winit_host_wgpu_device, pump_winit_host,
 };
 use flight_input::{attach_pointer_input, create_input_manager, detach_pointer_input};
 use flight_render::RenderProxies2D;
@@ -171,6 +172,18 @@ fn main() {
             draw(&mut frame, 4);
             assert_eq!(presented_pixel(600, 300), Some(MOVABLE));
             assert_eq!(presented_pixel(150, 145), Some(BACKGROUND));
+
+            // A display resize reconfigures the presentation surface: content drawn beyond the
+            // original 800x600 extent reaches the screen.
+            let display = get_winit_host_surface_display_capability(frame.host)
+                .unwrap()
+                .clone();
+            (display.set_display_size)(&surface, 900.0, 700.0);
+            move_pump_scene_shape(frame.scene, 850.0, 650.0);
+            draw(&mut frame, 20);
+            assert_eq!(presented_pixel(850, 650), Some(MOVABLE));
+            (display.set_display_size)(&surface, 800.0, 600.0);
+            draw(&mut frame, 20);
 
             // Pointer input attaches only now: the display's initial pointer position would otherwise
             // drag the shape before the static presented-pixel checks above.
