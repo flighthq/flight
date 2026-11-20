@@ -130,20 +130,20 @@ mod draw_wgpu_sprite {
     }
 }
 
-mod register_wgpu_sprite_renderer {
+mod wgpu_sprite_renderer {
     use super::*;
 
     #[test]
     fn registers_the_sprite_renderer_under_sprite_kind() {
         let mut state = create_wgpu_render_state_for_test(None);
-        register_wgpu_sprite_renderer(&mut state);
+        flight_render::register_node_renderer(
+            &mut state,
+            flight_scene2d::SPRITE_KIND.to_string(),
+            &flight_scene2d_wgpu::WGPU_SPRITE_RENDERER,
+        );
         let registered = get_registered_node_renderer(&state, SPRITE_KIND).unwrap();
         assert!(std::ptr::eq(registered, &WGPU_SPRITE_RENDERER));
     }
-}
-
-mod wgpu_sprite_renderer {
-    use super::*;
 
     #[test]
     fn has_create_data_is_dirty_and_submit_functions() {

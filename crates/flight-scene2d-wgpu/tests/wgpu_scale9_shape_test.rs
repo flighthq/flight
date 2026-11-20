@@ -341,20 +341,20 @@ mod get_wgpu_scale9_shape_data {
     }
 }
 
-mod register_wgpu_scale9_shape_renderer {
+mod wgpu_scale9_shape_renderer {
     use super::*;
 
     #[test]
     fn registers_the_scale9_shape_renderer_under_scale9_shape_kind() {
         let mut state = create_wgpu_render_state_for_test(None);
-        register_wgpu_scale9_shape_renderer(&mut state);
+        flight_render::register_node_renderer(
+            &mut state,
+            flight_shape::contract::SCALE9_SHAPE_KIND.to_string(),
+            &flight_scene2d_wgpu::WGPU_SCALE9_SHAPE_RENDERER,
+        );
         let registered = get_registered_node_renderer(&state, SCALE9_SHAPE_KIND).unwrap();
         assert!(std::ptr::eq(registered, &WGPU_SCALE9_SHAPE_RENDERER));
     }
-}
-
-mod wgpu_scale9_shape_renderer {
-    use super::*;
 
     #[test]
     fn wires_create_data_destroy_data_and_submit() {

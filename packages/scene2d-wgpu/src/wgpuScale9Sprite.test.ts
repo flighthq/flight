@@ -18,7 +18,7 @@ import type {
   WgpuDevice,
   WgpuRenderState,
 } from '@flighthq/render-wgpu/contract';
-import { getRenderStateRuntime } from '@flighthq/render/contract';
+import { getRenderStateRuntime, registerNodeRenderer } from '@flighthq/render/contract';
 import type { RenderProxy2D } from '@flighthq/render/contract';
 import type { Scale9Sprite } from '@flighthq/scene2d/contract';
 import { Scale9SpriteKind } from '@flighthq/scene2d/contract';
@@ -29,11 +29,7 @@ import { describe, expect, it } from 'vitest';
 import { wgpuScene2DRenderPreset } from './scene2DWgpuPipeline.ts';
 import { registerWgpuColorAdjustmentMaterialFeature } from './wgpuColorAdjustmentMaterialFeature.ts';
 import { prepareWgpuQuadBatchWrite, QUAD_BATCH_INSTANCE_FLOATS } from './wgpuQuadBatchWriter.ts';
-import {
-  wgpuScale9SpriteRenderer,
-  drawWgpuScale9Sprite,
-  registerWgpuScale9SpriteRenderer,
-} from './wgpuScale9Sprite.ts';
+import { wgpuScale9SpriteRenderer, drawWgpuScale9Sprite } from './wgpuScale9Sprite.ts';
 import { registerWgpuStandardMaterial, standardWgpuQuadMaterialRenderer } from './wgpuStandardMaterial.ts';
 
 beforeAll(() => installWgpuMock());
@@ -94,14 +90,6 @@ describe('drawWgpuScale9Sprite', () => {
   });
 });
 
-describe('registerWgpuScale9SpriteRenderer', () => {
-  it('registers wgpuScale9SpriteRenderer under Scale9SpriteKind', () => {
-    const state = createRegistrationTestState();
-    registerWgpuScale9SpriteRenderer(state);
-    expect(getRenderStateRuntime(state).registries.nodeRenderers.get(Scale9SpriteKind)).toBe(wgpuScale9SpriteRenderer);
-  });
-});
-
 function createResolvedRenderTexture(state: Parameters<typeof renderIntoWgpuRenderTexture>[0]): Texture2D {
   const texture = createRenderTexture({ height: 60, width: 90 });
   renderIntoWgpuRenderTexture(state, texture, () => {}, { color: [0, 0, 0, 0], depth: 1.0, stencil: 0 });
@@ -155,6 +143,12 @@ function createTint(): ColorScaleBias {
 }
 
 describe('wgpuScale9SpriteRenderer', () => {
+  it('registers wgpuScale9SpriteRenderer under Scale9SpriteKind', () => {
+    const state = createRegistrationTestState();
+    registerNodeRenderer(state, Scale9SpriteKind, wgpuScale9SpriteRenderer);
+    expect(getRenderStateRuntime(state).registries.nodeRenderers.get(Scale9SpriteKind)).toBe(wgpuScale9SpriteRenderer);
+  });
+
   it('is registered separately under Scale9SpriteKind', () => {
     expect(typeof wgpuScale9SpriteRenderer.createData).toBe('function');
     expect(typeof wgpuScale9SpriteRenderer.isDirty).toBe('function');

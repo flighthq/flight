@@ -76,8 +76,16 @@ pub fn create_known_scene_render_state(device: &flight_host::WgpuDevice) -> Wgpu
     );
     register_wgpu_standard_material(&mut state);
     register_wgpu_bitmap_texture_resolver(&mut state);
-    register_wgpu_scene2d_renderer(&mut state);
-    register_wgpu_sprite_renderer(&mut state);
+    flight_render::register_node_renderer(
+        &mut state,
+        flight_scene2d::DISPLAY_OBJECT_KIND.to_string(),
+        &flight_scene2d_wgpu::WGPU_SCENE2D_RENDERER,
+    );
+    flight_render::register_node_renderer(
+        &mut state,
+        flight_scene2d::SPRITE_KIND.to_string(),
+        &flight_scene2d_wgpu::WGPU_SPRITE_RENDERER,
+    );
     return state;
 }
 

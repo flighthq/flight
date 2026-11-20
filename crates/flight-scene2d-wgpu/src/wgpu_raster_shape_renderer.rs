@@ -7,7 +7,6 @@
 
 use flight_geometry::create_matrix;
 use flight_node::{get_node_local_bounds_rectangle, get_node_local_content_revision};
-use flight_render::register_node_renderer;
 use flight_render::{
     BatchFormat, NodeRenderer, RenderProxy2D, RenderRegistryTable, RenderState,
     create_canvas_host_surface, destroy_canvas_host_surface, emit_render_registry_miss,
@@ -217,11 +216,4 @@ pub fn draw_wgpu_raster_shape(
         start_instance,
     );
     get_wgpu_render_state_runtime_mut(state).quad_batch_writer_count += 1;
-}
-
-/// Registers `WGPU_RASTER_SHAPE_RENDERER` for `SHAPE_KIND` on this state (TS
-/// `registerWgpuRasterShapeRenderer`). It pins the canvas-replay raster strategy for `SHAPE_KIND`,
-/// replacing whichever shape renderer was registered.
-pub fn register_wgpu_raster_shape_renderer(state: &mut WgpuRenderState) {
-    register_node_renderer(state, SHAPE_KIND.to_string(), &WGPU_RASTER_SHAPE_RENDERER);
 }

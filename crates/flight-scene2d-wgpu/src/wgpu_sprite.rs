@@ -8,13 +8,11 @@ use std::sync::{Arc, RwLock};
 
 use flight_geometry::{create_matrix3, create_vector2};
 use flight_node::{NodeRef, RendererData, RendererDataRef};
-use flight_render::register_node_renderer;
 use flight_render::{BatchFormat, NodeRenderer, RenderProxy2D, SCENE2D_WORKING_COLOR_SPACE};
 use flight_render_wgpu::{
     WgpuRenderState, get_wgpu_render_state_runtime, get_wgpu_render_state_runtime_mut,
     resolve_wgpu_apply_blend_mode, resolve_wgpu_shader, resolve_wgpu_texture,
 };
-use flight_scene2d::SPRITE_KIND;
 use flight_scene2d::{Sprite, create_sprite_renderer_data, is_sprite_renderer_dirty};
 use flight_texture::{
     Texture, TextureUvTransform, get_texture_uv_matrix, get_texture_view_size, has_texture_source,
@@ -165,10 +163,4 @@ pub(crate) fn is_wgpu_sprite_renderer_dirty(
     let mut guard = renderer_data.write().unwrap();
     let data: &mut dyn RendererData = &mut *guard;
     return is_sprite_renderer_dirty(&*source.read().unwrap(), Some(data));
-}
-
-/// Registers `WGPU_SPRITE_RENDERER` for `SPRITE_KIND` on this state (TS
-/// `registerWgpuSpriteRenderer`).
-pub fn register_wgpu_sprite_renderer(state: &mut WgpuRenderState) {
-    register_node_renderer(state, SPRITE_KIND.to_string(), &WGPU_SPRITE_RENDERER);
 }

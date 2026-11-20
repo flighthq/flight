@@ -158,20 +158,20 @@ mod draw_wgpu_scale9_sprite {
     }
 }
 
-mod register_wgpu_scale9_sprite_renderer {
+mod wgpu_scale9_sprite_renderer {
     use super::*;
 
     #[test]
     fn registers_the_scale9_sprite_renderer_under_scale9_sprite_kind() {
         let mut state = create_wgpu_render_state_for_test(None);
-        register_wgpu_scale9_sprite_renderer(&mut state);
+        flight_render::register_node_renderer(
+            &mut state,
+            flight_scene2d::SCALE9_SPRITE_KIND.to_string(),
+            &flight_scene2d_wgpu::WGPU_SCALE9_SPRITE_RENDERER,
+        );
         let registered = get_registered_node_renderer(&state, SCALE9_SPRITE_KIND).unwrap();
         assert!(std::ptr::eq(registered, &WGPU_SCALE9_SPRITE_RENDERER));
     }
-}
-
-mod wgpu_scale9_sprite_renderer {
-    use super::*;
 
     #[test]
     fn is_registered_separately_under_scale9_sprite_kind() {

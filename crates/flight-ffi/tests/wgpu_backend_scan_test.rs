@@ -84,22 +84,7 @@ fn backend_policy_partition_is_named_reasoned_and_closed() {
 #[test]
 fn renderer_registrations_are_non_generic_generated_externs() {
     let scene2d = [
-        "flight_register_wgpu_bitmap_text_renderer",
-        "flight_register_wgpu_render_cache_renderer",
-        "flight_register_wgpu_mesh_shape_renderer",
-        "flight_register_wgpu_scene2d_renderer",
-        "flight_register_wgpu_particle_emitter2d_renderer",
-        "flight_register_wgpu_quad_batch_renderer",
-        "flight_register_wgpu_raster_shape_renderer",
-        "flight_register_wgpu_rich_text_renderer",
-        "flight_register_wgpu_scale9_shape_renderer",
-        "flight_register_wgpu_scale9_sprite_renderer",
-        "flight_register_wgpu_morph_shape_renderer",
-        "flight_register_wgpu_shape_renderer",
-        "flight_register_wgpu_sprite_renderer",
         "flight_register_wgpu_standard_material",
-        "flight_register_wgpu_text_label_renderer",
-        "flight_register_wgpu_tilemap_renderer",
         "flight_register_wgpu_scene2d_render_preset",
     ];
     let scene3d = [
@@ -121,7 +106,7 @@ fn renderer_registrations_are_non_generic_generated_externs() {
         "flight_register_wgpu_scene3d_render_preset",
     ];
     let expected = scene2d.into_iter().chain(scene3d).collect::<BTreeSet<_>>();
-    assert_eq!(expected.len(), 33);
+    assert_eq!(expected.len(), 18);
     for symbol in expected {
         assert_eq!(GENERATED.matches(&format!("fn {symbol}(")).count(), 1);
         assert_eq!(HEADER.matches(&format!(" {symbol}(")).count(), 1);

@@ -11,13 +11,18 @@ import {
   createWgpuDeviceState,
   createWgpuRenderStateRuntime,
 } from '@flighthq/render-wgpu/contract';
-import { getOrCreateRenderProxy2D, prepareScene2DRender, getRenderStateRuntime } from '@flighthq/render/contract';
+import {
+  getOrCreateRenderProxy2D,
+  prepareScene2DRender,
+  getRenderStateRuntime,
+  registerNodeRenderer,
+} from '@flighthq/render/contract';
 import { createSprite, SpriteKind } from '@flighthq/scene2d/contract';
 import { createRenderTexture, setTextureUvFromPixelRect } from '@flighthq/texture/contract';
 import { describe, expect, it } from 'vitest';
 
 import { registerWgpuColorAdjustmentMaterialFeature } from './wgpuColorAdjustmentMaterialFeature.ts';
-import { wgpuSpriteRenderer, drawWgpuSprite, registerWgpuSpriteRenderer } from './wgpuSprite.ts';
+import { wgpuSpriteRenderer, drawWgpuSprite } from './wgpuSprite.ts';
 import { registerWgpuStandardMaterial } from './wgpuStandardMaterial.ts';
 
 const CT_MODE_UNIFORM = 1;
@@ -141,15 +146,13 @@ describe('drawWgpuSprite', () => {
   });
 });
 
-describe('registerWgpuSpriteRenderer', () => {
+describe('wgpuSpriteRenderer', () => {
   it('registers wgpuSpriteRenderer under SpriteKind', () => {
     const state = createRegistrationTestState();
-    registerWgpuSpriteRenderer(state);
+    registerNodeRenderer(state, SpriteKind, wgpuSpriteRenderer);
     expect(getRenderStateRuntime(state).registries.nodeRenderers.get(SpriteKind)).toBe(wgpuSpriteRenderer);
   });
-});
 
-describe('wgpuSpriteRenderer', () => {
   it('has createData and submit functions', () => {
     expect(typeof wgpuSpriteRenderer.createData).toBe('function');
     expect(typeof wgpuSpriteRenderer.isDirty).toBe('function');

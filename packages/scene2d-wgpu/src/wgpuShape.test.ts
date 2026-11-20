@@ -16,7 +16,7 @@ import {
 import { getWgpuRenderStateRuntime } from '@flighthq/render-wgpu/contract';
 import { createWgpuRenderStateForTest, installWgpuMock } from '@flighthq/render-wgpu/contract';
 import type { WgpuRenderPassEncoder, WgpuDevice, WgpuRenderState } from '@flighthq/render-wgpu/contract';
-import { BatchFormat, getRenderStateRuntime } from '@flighthq/render/contract';
+import { BatchFormat, getRenderStateRuntime, registerNodeRenderer } from '@flighthq/render/contract';
 import type { RenderProxy2D } from '@flighthq/render/contract';
 import {
   appendShapeBeginFill,
@@ -34,13 +34,7 @@ import type { CanvasSurface, HostCanvasCapability } from '@flighthq/surface/cont
 import { describe, expect, it } from 'vitest';
 
 import { enableWgpuStrokePathTessellation } from './enableWgpuStrokePathTessellation.ts';
-import {
-  wgpuMorphShapeRenderer,
-  wgpuShapeRenderer,
-  drawWgpuShape,
-  registerWgpuShapeRenderer,
-  registerWgpuMorphShapeRenderer,
-} from './wgpuShape.ts';
+import { wgpuMorphShapeRenderer, wgpuShapeRenderer, drawWgpuShape } from './wgpuShape.ts';
 import { registerWgpuShapeRasterizer } from './wgpuShapeRasterizer.ts';
 import { registerWgpuStandardMaterial } from './wgpuStandardMaterial.ts';
 
@@ -320,23 +314,27 @@ describe('drawWgpuShape', () => {
   });
 });
 
-describe('registerWgpuMorphShapeRenderer', () => {
+describe('wgpuMorphShapeRenderer', () => {
   it('registers wgpuMorphShapeRenderer under MorphShapeKind', () => {
     const state = createRegistrationTestState();
-    registerWgpuMorphShapeRenderer(state);
+    registerNodeRenderer(state, MorphShapeKind, wgpuMorphShapeRenderer);
     expect(getRenderStateRuntime(state).registries.nodeRenderers.get(MorphShapeKind)).toBe(wgpuMorphShapeRenderer);
   });
 });
 
-describe('registerWgpuShapeRenderer', () => {
-  it('registers wgpuShapeRenderer under ShapeKind', () => {
-    const state = createRegistrationTestState();
-    registerWgpuShapeRenderer(state);
-    expect(getRenderStateRuntime(state).registries.nodeRenderers.get(ShapeKind)).toBe(wgpuShapeRenderer);
-  });
-});
+function createRegistrationTestState(): WgpuRenderState {
+  const state = {} as WgpuRenderState;
+  state[EntityRuntimeKey] = createWgpuRenderStateRuntime(createWgpuDeviceState({} as WgpuDevice));
+  return state;
+}
 
 describe('wgpuShapeRenderer', () => {
+  it('registers wgpuShapeRenderer under ShapeKind', () => {
+    const state = createRegistrationTestState();
+    registerNodeRenderer(state, ShapeKind, wgpuShapeRenderer);
+    expect(getRenderStateRuntime(state).registries.nodeRenderers.get(ShapeKind)).toBe(wgpuShapeRenderer);
+  });
+
   it('provides the MorphShape renderer alias', () => {
     expect(wgpuMorphShapeRenderer).toBe(wgpuShapeRenderer);
   });
@@ -350,9 +348,3 @@ describe('wgpuShapeRenderer', () => {
     expect(typeof wgpuShapeRenderer.submit).toBe('function');
   });
 });
-
-function createRegistrationTestState(): WgpuRenderState {
-  const state = {} as WgpuRenderState;
-  state[EntityRuntimeKey] = createWgpuRenderStateRuntime(createWgpuDeviceState({} as WgpuDevice));
-  return state;
-}

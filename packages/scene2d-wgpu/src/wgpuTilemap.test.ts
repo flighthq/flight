@@ -7,26 +7,29 @@ import {
   createWgpuRenderStateRuntime,
 } from '@flighthq/render-wgpu/contract';
 import { createWgpuRenderStateForTest, installWgpuMock } from '@flighthq/render-wgpu/contract';
-import { getRenderProxy2D, prepareScene2DRender, getRenderStateRuntime } from '@flighthq/render/contract';
+import {
+  getRenderProxy2D,
+  prepareScene2DRender,
+  getRenderStateRuntime,
+  registerNodeRenderer,
+} from '@flighthq/render/contract';
 import { createTilemap, TilemapKind } from '@flighthq/tilemap/contract';
 import { describe, expect, it } from 'vitest';
 
 import { flushWgpuQuadBatchWriter } from './wgpuQuadBatchWriter.ts';
-import { wgpuTilemapRenderer, registerWgpuTilemapRenderer } from './wgpuTilemap.ts';
+import { wgpuTilemapRenderer } from './wgpuTilemap.ts';
 
 beforeAll(() => {
   installWgpuMock();
 });
 
-describe('registerWgpuTilemapRenderer', () => {
+describe('wgpuTilemapRenderer', () => {
   it('registers wgpuTilemapRenderer under TilemapKind', () => {
     const state = createRegistrationTestState();
-    registerWgpuTilemapRenderer(state);
+    registerNodeRenderer(state, TilemapKind, wgpuTilemapRenderer);
     expect(getRenderStateRuntime(state).registries.nodeRenderers.get(TilemapKind)).toBe(wgpuTilemapRenderer);
   });
-});
 
-describe('wgpuTilemapRenderer', () => {
   it('has a createData function', () => {
     expect(typeof wgpuTilemapRenderer.createData).toBe('function');
   });

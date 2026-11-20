@@ -14,7 +14,6 @@ use flight_color::compute_rgba_css_string;
 use flight_entity::allocate_entity;
 use flight_host::CanvasRenderingContext2D;
 use flight_node::{NodeRef, RendererDataRef, downcast_node_ref};
-use flight_render::register_node_renderer;
 use flight_render::{
     NodeRenderer, RenderProxy2D, RenderState, create_canvas_host_surface,
     destroy_canvas_host_surface,
@@ -25,7 +24,6 @@ use flight_render_wgpu::{
     resolve_wgpu_apply_blend_mode,
 };
 use flight_surface::CanvasSurface;
-use flight_text::contract::RICH_TEXT_KIND;
 use flight_text::contract::{
     RichText, RichTextData, compute_rich_text_content, compute_text_format_font_string,
     get_rich_text_content, get_rich_text_password_character, get_rich_text_runtime,
@@ -447,12 +445,6 @@ fn layout_rich_text(
             word_wrap: Some(data.word_wrap),
         },
     );
-}
-
-/// Registers `WGPU_RICH_TEXT_RENDERER` for `RICH_TEXT_KIND` on this state (TS
-/// `registerWgpuRichTextRenderer`).
-pub fn register_wgpu_rich_text_renderer(state: &mut WgpuRenderState) {
-    register_node_renderer(state, RICH_TEXT_KIND.to_string(), &WGPU_RICH_TEXT_RENDERER);
 }
 
 /// Installs the editable-input overlay the RichText renderer rasterizes onto fields with an input

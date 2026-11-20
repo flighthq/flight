@@ -5,13 +5,11 @@
 //! keep their texel size while the center stretches.
 
 use flight_geometry::{create_matrix, create_matrix3, create_rectangle, create_vector2};
-use flight_render::register_node_renderer;
 use flight_render::{BatchFormat, NodeRenderer, RenderProxy2D, SCENE2D_WORKING_COLOR_SPACE};
 use flight_render_wgpu::{
     WgpuRenderState, get_wgpu_render_state_runtime, get_wgpu_render_state_runtime_mut,
     resolve_wgpu_texture,
 };
-use flight_scene2d::SCALE9_SPRITE_KIND;
 use flight_scene2d::Scale9Sprite;
 use flight_texture::{
     Texture, TextureUvTransform, get_texture_uv_matrix, get_texture_view_size, has_texture_source,
@@ -178,14 +176,4 @@ pub fn draw_wgpu_scale9_sprite(
         }
     }
     get_wgpu_render_state_runtime_mut(state).quad_batch_writer_count += SLICE_COUNT;
-}
-
-/// Registers `WGPU_SCALE9_SPRITE_RENDERER` for `SCALE9_SPRITE_KIND` on this state (TS
-/// `registerWgpuScale9SpriteRenderer`).
-pub fn register_wgpu_scale9_sprite_renderer(state: &mut WgpuRenderState) {
-    register_node_renderer(
-        state,
-        SCALE9_SPRITE_KIND.to_string(),
-        &WGPU_SCALE9_SPRITE_RENDERER,
-    );
 }

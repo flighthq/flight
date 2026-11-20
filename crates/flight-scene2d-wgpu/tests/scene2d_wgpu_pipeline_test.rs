@@ -117,7 +117,18 @@ mod register_wgpu_render_preset {
     fn node_renderers_replace_preset_kinds_and_keep_other_kinds() {
         let mut state = create_wgpu_render_state_for_test(None);
         register_node_renderer(&mut state, "Custom".to_string(), &WGPU_SPRITE_RENDERER);
-        register_wgpu_shape_renderer(&mut state);
+        flight_render::register_node_renderer(
+            &mut state,
+            flight_shape::contract::SHAPE_KIND.to_string(),
+            &flight_scene2d_wgpu::WGPU_SHAPE_RENDERER,
+        );
+        // The shape kind holds the shape renderer the registration bound, and no other kind took it,
+        // before the preset replaces it.
+        assert!(std::ptr::eq(
+            get_registered_node_renderer(&state, SHAPE_KIND).unwrap(),
+            &flight_scene2d_wgpu::WGPU_SHAPE_RENDERER
+        ));
+        assert!(get_registered_node_renderer(&state, MORPH_SHAPE_KIND).is_none());
         let preset = WgpuScene2DRenderPreset {
             node_renderers: kind_map(&[(SHAPE_KIND, &WGPU_MESH_SHAPE_RENDERER)]),
             registries: build_wgpu_render_registries(&test_default()),

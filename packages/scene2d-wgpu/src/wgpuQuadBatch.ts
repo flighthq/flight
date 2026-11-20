@@ -1,11 +1,10 @@
 import type { ColorScaleBias } from '@flighthq/adjustments/contract';
 import type { TintMaterialData } from '@flighthq/materials/contract';
 import type { QuadBatch } from '@flighthq/quadbatch/contract';
-import { QuadBatchKind } from '@flighthq/quadbatch/contract';
 import { resolveWgpuQuadMaterialRenderer, resolveWgpuTexture } from '@flighthq/render-wgpu/contract';
 import { getWgpuRenderStateRuntime } from '@flighthq/render-wgpu/contract';
 import type { WgpuRenderState } from '@flighthq/render-wgpu/contract';
-import { SCENE2D_WORKING_COLOR_SPACE, BatchFormat, registerNodeRenderer } from '@flighthq/render/contract';
+import { SCENE2D_WORKING_COLOR_SPACE, BatchFormat } from '@flighthq/render/contract';
 import { noopRendererData } from '@flighthq/render/contract';
 import type { RenderProxy2D } from '@flighthq/render/contract';
 import type { SpriteRenderer } from '@flighthq/render/contract';
@@ -165,8 +164,3 @@ function writeAtlasRegionInstance(
 }
 
 const quadTransform = { a: 1, b: 0, c: 0, d: 1, tx: 0, ty: 0 };
-
-/** Registers wgpuQuadBatchRenderer for QuadBatchKind on this state. */
-export function registerWgpuQuadBatchRenderer(state: WgpuRenderState): void {
-  registerNodeRenderer(state, QuadBatchKind, wgpuQuadBatchRenderer);
-}

@@ -10,7 +10,6 @@ use std::sync::{Arc, PoisonError, RwLock};
 use flight_color::compute_rgba_css_string;
 use flight_entity::allocate_entity;
 use flight_node::{NodeRef, RendererDataRef, get_node_local_content_revision};
-use flight_render::register_node_renderer;
 use flight_render::{
     BatchFormat, NodeRenderer, RenderProxy2D, RenderState, create_canvas_host_surface,
     destroy_canvas_host_surface,
@@ -20,7 +19,6 @@ use flight_render_wgpu::{
     get_wgpu_render_state_runtime, get_wgpu_render_state_runtime_mut,
 };
 use flight_surface::CanvasSurface;
-use flight_text::contract::TEXT_LABEL_KIND;
 use flight_text::contract::{
     TextLabel, compute_text_format_font_string, get_text_label_runtime, get_text_layout_result,
 };
@@ -345,16 +343,6 @@ fn ensure_wgpu_text_label_surface(
     data.alloc_w = pw;
     data.alloc_h = ph;
     return Some(surface);
-}
-
-/// Registers `WGPU_TEXT_LABEL_RENDERER` for `TEXT_LABEL_KIND` on this state (TS
-/// `registerWgpuTextLabelRenderer`).
-pub fn register_wgpu_text_label_renderer(state: &mut WgpuRenderState) {
-    register_node_renderer(
-        state,
-        TEXT_LABEL_KIND.to_string(),
-        &WGPU_TEXT_LABEL_RENDERER,
-    );
 }
 
 // TS `text.length`: the UTF-16 length the layout indexes in.

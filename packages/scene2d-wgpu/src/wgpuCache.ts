@@ -28,8 +28,6 @@ import {
   noopRendererData,
   prepareScene2DRender,
   registerRenderCacheNodeRenderer,
-  RenderCacheKind,
-  registerNodeRenderer,
 } from '@flighthq/render/contract';
 import type { RenderProxy2D, Scene2DRenderer } from '@flighthq/render/contract';
 import type { RenderCache, RenderCacheRefreshOptions } from '@flighthq/render/contract';
@@ -133,11 +131,6 @@ export function refreshWgpuRenderCache(
       endWgpuRenderPass(pass);
     }
   });
-}
-
-/** Registers wgpuRenderCacheRenderer for RenderCacheKind on this state. */
-export function registerWgpuRenderCacheRenderer(state: WgpuRenderState): void {
-  registerNodeRenderer(state, RenderCacheKind, wgpuRenderCacheRenderer);
 }
 
 function drawWgpuRenderCache(state: WgpuRenderState, renderProxy: RenderProxy2D): void {

@@ -2,7 +2,7 @@ import { getNodeLocalContentRevision } from '@flighthq/node/contract';
 import { tessellatePath } from '@flighthq/path/contract';
 import { getWgpuRenderStateRuntime } from '@flighthq/render-wgpu/contract';
 import type { WgpuRenderState } from '@flighthq/render-wgpu/contract';
-import { RenderRegistryTable, BatchFormat, registerNodeRenderer } from '@flighthq/render/contract';
+import { RenderRegistryTable, BatchFormat } from '@flighthq/render/contract';
 import type { RenderProxy2D, Scene2DRenderer } from '@flighthq/render/contract';
 import {
   getShapeFillRegions,
@@ -104,9 +104,4 @@ function resolveWgpuShapeMeshRegions(
 
 function isShapeStrokeRegion(region: ShapeFillRegion | ShapeStrokeRegion): region is ShapeStrokeRegion {
   return 'style' in region;
-}
-
-/** Registers wgpuMeshShapeRenderer for ShapeKind on this state. It pins the tessellated-mesh strategy for ShapeKind, replacing whichever shape renderer was registered. */
-export function registerWgpuMeshShapeRenderer(state: WgpuRenderState): void {
-  registerNodeRenderer(state, ShapeKind, wgpuMeshShapeRenderer);
 }

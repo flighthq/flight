@@ -6,9 +6,7 @@
 
 use std::collections::HashMap;
 
-use flight_particleemitter::PARTICLE_EMITTER_2D_KIND;
 use flight_particleemitter::ParticleEmitter2D;
-use flight_render::register_node_renderer;
 use flight_render::{NodeRenderer, RenderProxy2D, SCENE2D_WORKING_COLOR_SPACE, noop_renderer_data};
 use flight_render_wgpu::{
     WgpuParticleResources, WgpuRenderState, get_wgpu_render_pass_viewport,
@@ -522,16 +520,6 @@ fn get_particle_pipeline(
         .pipelines
         .insert(format, pipeline.clone());
     return pipeline;
-}
-
-/// Registers `WGPU_PARTICLE_EMITTER2D_RENDERER` for `PARTICLE_EMITTER_2D_KIND` on this state (TS
-/// `registerWgpuParticleEmitter2DRenderer`).
-pub fn register_wgpu_particle_emitter2d_renderer(state: &mut WgpuRenderState) {
-    register_node_renderer(
-        state,
-        PARTICLE_EMITTER_2D_KIND.to_string(),
-        &WGPU_PARTICLE_EMITTER2D_RENDERER,
-    );
 }
 
 // The emitter renderer's submit: flush the batch, then draw immediately.

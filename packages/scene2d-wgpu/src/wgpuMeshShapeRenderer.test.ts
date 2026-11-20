@@ -14,6 +14,7 @@ import {
   explainRenderRegistriesMisses,
   BatchFormat,
   getRenderStateRuntime,
+  registerNodeRenderer,
 } from '@flighthq/render/contract';
 import { RenderRegistryTable } from '@flighthq/render/contract';
 import type { RenderProxy2D } from '@flighthq/render/contract';
@@ -27,9 +28,9 @@ import {
 } from '@flighthq/shape/contract';
 import { describe, expect, it } from 'vitest';
 
-import { wgpuMeshShapeRenderer, drawWgpuMeshShape, registerWgpuMeshShapeRenderer } from './wgpuMeshShapeRenderer.ts';
+import { wgpuMeshShapeRenderer, drawWgpuMeshShape } from './wgpuMeshShapeRenderer.ts';
 import { wgpuRasterShapeRenderer } from './wgpuRasterShapeRenderer.ts';
-import { registerWgpuShapeRenderer, wgpuShapeRenderer } from './wgpuShape.ts';
+import { wgpuShapeRenderer } from './wgpuShape.ts';
 import { registerWgpuShapeRasterizer } from './wgpuShapeRasterizer.ts';
 
 beforeAll(() => installWgpuMock());
@@ -143,19 +144,17 @@ describe('drawWgpuMeshShape', () => {
   });
 });
 
-describe('registerWgpuMeshShapeRenderer', () => {
+describe('wgpuMeshShapeRenderer', () => {
   it('pins its strategy under ShapeKind, replacing the hybrid shape renderer', () => {
     const state = createRegistrationTestState();
-    registerWgpuShapeRenderer(state);
-    registerWgpuMeshShapeRenderer(state);
+    registerNodeRenderer(state, ShapeKind, wgpuShapeRenderer);
+    registerNodeRenderer(state, ShapeKind, wgpuMeshShapeRenderer);
     const registered = getRenderStateRuntime(state).registries.nodeRenderers.get(ShapeKind);
     expect(registered).toBe(wgpuMeshShapeRenderer);
     expect(registered).not.toBe(wgpuShapeRenderer);
     expect(registered).not.toBe(wgpuRasterShapeRenderer);
   });
-});
 
-describe('wgpuMeshShapeRenderer', () => {
   it('declares BatchFormat.Quad and the shared shape data lifecycle', () => {
     expect(wgpuMeshShapeRenderer.format).toBe(BatchFormat.Quad);
     expect(typeof wgpuMeshShapeRenderer.createData).toBe('function');

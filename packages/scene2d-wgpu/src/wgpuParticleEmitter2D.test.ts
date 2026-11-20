@@ -18,18 +18,19 @@ import {
   createWgpuRenderStateRuntime,
 } from '@flighthq/render-wgpu/contract';
 import { createWgpuRenderStateForTest, installWgpuMock } from '@flighthq/render-wgpu/contract';
-import { getRenderProxy2D, prepareScene2DRender, getRenderStateRuntime } from '@flighthq/render/contract';
+import {
+  getRenderProxy2D,
+  prepareScene2DRender,
+  getRenderStateRuntime,
+  registerNodeRenderer,
+} from '@flighthq/render/contract';
 import type { RenderProxy2D } from '@flighthq/render/contract';
 import { createTexture } from '@flighthq/texture/contract';
 import { CompressedImageTextureSourceKind } from '@flighthq/texture/contract';
 import { TextureAtlasRotation } from '@flighthq/textureatlas/contract';
 import { describe, expect, it } from 'vitest';
 
-import {
-  wgpuParticleEmitter2DRenderer,
-  drawWgpuParticleEmitter2D,
-  registerWgpuParticleEmitter2DRenderer,
-} from './wgpuParticleEmitter2D.ts';
+import { wgpuParticleEmitter2DRenderer, drawWgpuParticleEmitter2D } from './wgpuParticleEmitter2D.ts';
 
 // A test that wraps a host handle supplies the host: the resource measures through the registered
 // resolver, and clearing after each test keeps this file from covering for another's missing one.
@@ -160,17 +161,15 @@ describe('drawWgpuParticleEmitter2D', () => {
   });
 });
 
-describe('registerWgpuParticleEmitter2DRenderer', () => {
+describe('wgpuParticleEmitter2DRenderer', () => {
   it('registers wgpuParticleEmitter2DRenderer under ParticleEmitter2DKind', () => {
     const state = createRegistrationTestState();
-    registerWgpuParticleEmitter2DRenderer(state);
+    registerNodeRenderer(state, ParticleEmitter2DKind, wgpuParticleEmitter2DRenderer);
     expect(getRenderStateRuntime(state).registries.nodeRenderers.get(ParticleEmitter2DKind)).toBe(
       wgpuParticleEmitter2DRenderer,
     );
   });
-});
 
-describe('wgpuParticleEmitter2DRenderer', () => {
   it('has a createData function', () => {
     expect(typeof wgpuParticleEmitter2DRenderer.createData).toBe('function');
   });

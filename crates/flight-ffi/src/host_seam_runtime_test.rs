@@ -11,7 +11,7 @@ use flight_sdk::render_wgpu::contract::{
     register_wgpu_bitmap_texture_resolver, register_wgpu_render_state_teardown, submit_wgpu_frame,
 };
 use flight_sdk::scene2d_wgpu::contract::{
-    register_wgpu_scene2d_renderer, register_wgpu_sprite_renderer, register_wgpu_standard_material,
+    WGPU_SCENE2D_RENDERER, WGPU_SPRITE_RENDERER, register_wgpu_standard_material,
     render_wgpu_scene2d,
 };
 
@@ -1084,7 +1084,12 @@ fn create_c_scene(device: *const flight_sdk::WgpuDevice, root: flight_sdk::NodeR
         register_wgpu_standard_material(state);
         register_wgpu_bitmap_texture_resolver(state);
         flight_sdk::scene2d_wgpu::contract::register_wgpu_scene2d_render_preset(state);
-        register_wgpu_sprite_renderer(state);
+        flight_sdk::register_node_renderer(
+            state,
+            flight_sdk::SPRITE_KIND.to_string(),
+            &WGPU_SPRITE_RENDERER,
+        );
+        assert_known_scene_renderers(state);
         flight_sdk::prepare_scene_2d_render(state, unsafe { &mut *proxies }, &root);
     }
     return CScene {
@@ -1160,6 +1165,25 @@ fn create_test_host(test: &str) -> Option<*mut FfiHeadlessHostHandle> {
         return None;
     }
     return Some(host);
+}
+
+// The known scene's kinds are bound to exactly the built-in renderers it is drawn with. The scene's
+// root draws nothing of its own, so binding another renderer to its kind leaves the frame unchanged;
+// only the registry itself shows which renderer each kind resolves to.
+fn assert_known_scene_renderers(state: &flight_sdk::WgpuRenderState) {
+    let renderers = &flight_sdk::RenderState::render_registries(state).node_renderers;
+    let scene2d: &flight_sdk::NodeRenderer<flight_sdk::WgpuRenderState> = &WGPU_SCENE2D_RENDERER;
+    let sprite: &flight_sdk::NodeRenderer<flight_sdk::WgpuRenderState> = &WGPU_SPRITE_RENDERER;
+    for (kind, expected) in [
+        (flight_sdk::DISPLAY_OBJECT_KIND, scene2d),
+        (flight_sdk::SPRITE_KIND, sprite),
+    ] {
+        let bound = renderers.entries.get(kind).copied();
+        assert!(
+            bound.is_some_and(|bound| std::ptr::eq(bound, expected)),
+            "{kind} is not bound to its built-in renderer"
+        );
+    }
 }
 
 fn block_on<F: Future>(future: F) -> F::Output {
@@ -1284,8 +1308,17 @@ fn render_known_scene(device: &flight_sdk::WgpuDevice, target: &WgpuRenderTarget
     );
     register_wgpu_standard_material(&mut state);
     register_wgpu_bitmap_texture_resolver(&mut state);
-    register_wgpu_scene2d_renderer(&mut state);
-    register_wgpu_sprite_renderer(&mut state);
+    flight_sdk::register_node_renderer(
+        &mut state,
+        flight_sdk::DISPLAY_OBJECT_KIND.to_string(),
+        &WGPU_SCENE2D_RENDERER,
+    );
+    flight_sdk::register_node_renderer(
+        &mut state,
+        flight_sdk::SPRITE_KIND.to_string(),
+        &WGPU_SPRITE_RENDERER,
+    );
+    assert_known_scene_renderers(&state);
     let root: flight_sdk::NodeRef = flight_sdk::create_display_object();
     for (color, x, y, width, height) in SCENE_SPRITES {
         let sprite = flight_sdk::create_sprite();

@@ -14,7 +14,12 @@ import {
   createWgpuRenderStateRuntime,
 } from '@flighthq/render-wgpu/contract';
 import { createWgpuRenderStateForTest, installWgpuMock } from '@flighthq/render-wgpu/contract';
-import { getOrCreateRenderProxy2D, prepareScene2DRender, getRenderStateRuntime } from '@flighthq/render/contract';
+import {
+  getOrCreateRenderProxy2D,
+  prepareScene2DRender,
+  getRenderStateRuntime,
+  registerNodeRenderer,
+} from '@flighthq/render/contract';
 import type { CanvasSurface, HostCanvasCapability } from '@flighthq/surface/contract';
 import { createRichText, RichTextKind } from '@flighthq/text/contract';
 import { enableTextInput } from '@flighthq/textinput/contract';
@@ -28,7 +33,6 @@ import {
   drawWgpuRichText,
   drawWgpuRichTextWithOverlay,
   registerWgpuTextInputOverlay,
-  registerWgpuRichTextRenderer,
 } from './wgpuRichText.ts';
 
 // A test that wraps a host handle supplies the host: the resource measures through the registered
@@ -214,14 +218,6 @@ describe('drawWgpuRichTextWithOverlay', () => {
   });
 });
 
-describe('registerWgpuRichTextRenderer', () => {
-  it('registers wgpuRichTextRenderer under RichTextKind', () => {
-    const state = createRegistrationTestState();
-    registerWgpuRichTextRenderer(state);
-    expect(getRenderStateRuntime(state).registries.nodeRenderers.get(RichTextKind)).toBe(wgpuRichTextRenderer);
-  });
-});
-
 describe('registerWgpuTextInputOverlay', () => {
   it('invokes the registered overlay only for a RichText with an input slot', async () => {
     const overlay = vi.fn();
@@ -255,6 +251,12 @@ describe('registerWgpuTextInputOverlay', () => {
 });
 
 describe('wgpuRichTextRenderer', () => {
+  it('registers wgpuRichTextRenderer under RichTextKind', () => {
+    const state = createRegistrationTestState();
+    registerNodeRenderer(state, RichTextKind, wgpuRichTextRenderer);
+    expect(getRenderStateRuntime(state).registries.nodeRenderers.get(RichTextKind)).toBe(wgpuRichTextRenderer);
+  });
+
   it('has createData and draw functions', () => {
     expect(typeof wgpuRichTextRenderer.createData).toBe('function');
     expect(typeof wgpuRichTextRenderer.submit).toBe('function');

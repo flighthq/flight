@@ -8,25 +8,28 @@ import {
   createWgpuRenderStateRuntime,
 } from '@flighthq/render-wgpu/contract';
 import { createWgpuRenderStateForTest, installWgpuMock } from '@flighthq/render-wgpu/contract';
-import { getRenderProxy2D, prepareScene2DRender, getRenderStateRuntime } from '@flighthq/render/contract';
+import {
+  getRenderProxy2D,
+  prepareScene2DRender,
+  getRenderStateRuntime,
+  registerNodeRenderer,
+} from '@flighthq/render/contract';
 import { describe, expect, it } from 'vitest';
 
-import { wgpuBitmapTextRenderer, registerWgpuBitmapTextRenderer } from './wgpuBitmapText.ts';
+import { wgpuBitmapTextRenderer } from './wgpuBitmapText.ts';
 import { flushWgpuQuadBatchWriter } from './wgpuQuadBatchWriter.ts';
 
 beforeAll(() => {
   installWgpuMock();
 });
 
-describe('registerWgpuBitmapTextRenderer', () => {
+describe('wgpuBitmapTextRenderer', () => {
   it('registers wgpuBitmapTextRenderer under BitmapTextKind', () => {
     const state = createRegistrationTestState();
-    registerWgpuBitmapTextRenderer(state);
+    registerNodeRenderer(state, BitmapTextKind, wgpuBitmapTextRenderer);
     expect(getRenderStateRuntime(state).registries.nodeRenderers.get(BitmapTextKind)).toBe(wgpuBitmapTextRenderer);
   });
-});
 
-describe('wgpuBitmapTextRenderer', () => {
   it('has createData and submit functions', () => {
     expect(typeof wgpuBitmapTextRenderer.createData).toBe('function');
     expect(typeof wgpuBitmapTextRenderer.submit).toBe('function');

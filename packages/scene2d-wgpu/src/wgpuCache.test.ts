@@ -22,6 +22,7 @@ import {
   RenderCacheKind,
   useRenderCache,
   getRenderStateRuntime,
+  registerNodeRenderer,
 } from '@flighthq/render/contract';
 import type { RenderRootGuard } from '@flighthq/render/contract';
 import { createDisplayObject } from '@flighthq/scene2d/contract';
@@ -39,7 +40,6 @@ import {
   getWgpuRenderCacheTarget,
   refreshWgpuRenderCache,
   releaseWgpuRenderCache,
-  registerWgpuRenderCacheRenderer,
 } from './wgpuCache.ts';
 import * as wgpuNode2D from './wgpuNode2D.ts';
 import * as wgpuQuadBatchWriter from './wgpuQuadBatchWriter.ts';
@@ -422,14 +422,6 @@ describe('refreshWgpuRenderCache', () => {
   });
 });
 
-describe('registerWgpuRenderCacheRenderer', () => {
-  it('registers wgpuRenderCacheRenderer under RenderCacheKind', () => {
-    const state = createRegistrationTestState();
-    registerWgpuRenderCacheRenderer(state);
-    expect(getRenderStateRuntime(state).registries.nodeRenderers.get(RenderCacheKind)).toBe(wgpuRenderCacheRenderer);
-  });
-});
-
 describe('releaseWgpuRenderCache', () => {
   it('destroys and drops the target for the cache', () => {
     const state = fakeScreen();
@@ -442,6 +434,12 @@ describe('releaseWgpuRenderCache', () => {
 });
 
 describe('wgpuRenderCacheRenderer', () => {
+  it('registers wgpuRenderCacheRenderer under RenderCacheKind', () => {
+    const state = createRegistrationTestState();
+    registerNodeRenderer(state, RenderCacheKind, wgpuRenderCacheRenderer);
+    expect(getRenderStateRuntime(state).registries.nodeRenderers.get(RenderCacheKind)).toBe(wgpuRenderCacheRenderer);
+  });
+
   it('does nothing when no cache is attached to the source', () => {
     const state = fakeScreen();
     wgpuRenderCacheRenderer.submit(state, makeCacheNode(createDisplayObject()));

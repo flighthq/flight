@@ -8,20 +8,20 @@ use flight_scene2d_wgpu::contract::*;
 use crate::support::*;
 use flight_bitmaptext::BITMAP_TEXT_KIND;
 
-mod register_wgpu_bitmap_text_renderer {
+mod wgpu_bitmap_text_renderer {
     use super::*;
 
     #[test]
     fn registers_the_bitmap_text_renderer_under_bitmap_text_kind() {
         let mut state = create_wgpu_render_state_for_test(None);
-        register_wgpu_bitmap_text_renderer(&mut state);
+        flight_render::register_node_renderer(
+            &mut state,
+            flight_bitmaptext::BITMAP_TEXT_KIND.to_string(),
+            &flight_scene2d_wgpu::WGPU_BITMAP_TEXT_RENDERER,
+        );
         let registered = get_registered_node_renderer(&state, BITMAP_TEXT_KIND).unwrap();
         assert!(std::ptr::eq(registered, &WGPU_BITMAP_TEXT_RENDERER));
     }
-}
-
-mod wgpu_bitmap_text_renderer {
-    use super::*;
 
     #[test]
     fn has_create_data_and_submit_functions() {

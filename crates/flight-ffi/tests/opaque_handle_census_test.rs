@@ -132,10 +132,10 @@ macro_rules! unmapped_carrier {
     };
 }
 
-// This is the ratified Task K baseline inventory. Its group counts are part of the acceptance
+// This is the ratified the opaque handle work baseline inventory. Its group counts are part of the acceptance
 // contract: 37 + 29 + 20 + 8 + 6 + 6 + 8 + 6 = 120 source functions. Each entry records the
-// foreman-ratified decision, including policy exclusions and the pre-M closure/disposer deferral.
-const TASK_K_CANDIDATES: &[Candidate] = &[
+// foreman-ratified decision, including policy exclusions and the pre-residual-skip closure/disposer deferral.
+const OPAQUE_HANDLE_CANDIDATES: &[Candidate] = &[
     // Borrowed refs, borrowed returns, and the three by-design runtime method tables (37).
     generated!(
         "explain_bidi_class_kernel",
@@ -1001,21 +1001,24 @@ const TASK_K_CANDIDATES: &[Candidate] = &[
     ),
 ];
 
-const PRE_K_GENERATED_SOURCES: usize = 3278;
-const PRE_K_SKIPPED_SOURCES: usize = 805;
-const PRE_K_TOTAL_SOURCES: usize = 4083;
-// Task M promotes eleven of the residual pre-M skips. Its own census test pins the exact names;
-// this keeps Task K's historical delta additive when the suites run together.
-const TASK_M_GENERATED_SOURCES: usize = 11;
-// Item D adds one TypeScript-public source, `share_bitmap`, which generates; it widens the total
-// and the generated set without touching Task K's own delta.
-const ITEM_D_GENERATED_SOURCES: usize = 1;
-// Item C scans flight-interaction: 59 new public sources generate and one, `set_node_hit_area`,
-// is an ownership policy skip. Task M's census test pins the names.
-const ITEM_C_INTERACTION_GENERATED_SOURCES: usize = 59;
-const ITEM_C_INTERACTION_SKIPPED_SOURCES: usize = 1;
-const BACKEND_SCAN_TOTAL_SOURCES: usize = 232;
-const BACKEND_SCAN_GENERATED_SOURCES: usize = 167;
+const PRE_OPAQUE_HANDLE_GENERATED_SOURCES: usize = 3278;
+const PRE_OPAQUE_HANDLE_SKIPPED_SOURCES: usize = 805;
+const PRE_OPAQUE_HANDLE_TOTAL_SOURCES: usize = 4083;
+// the residual skip work promotes eleven of the residual pre-residual-skip skips. Its own census test pins the exact names;
+// this keeps the opaque handle work's historical delta additive when the suites run together.
+const RESIDUAL_SKIP_GENERATED_SOURCES: usize = 11;
+// the bitmap region work adds one TypeScript-public source, `share_bitmap`, which generates; it widens the total
+// and the generated set without touching the opaque handle work's own delta.
+const BITMAP_REGION_GENERATED_SOURCES: usize = 1;
+// the interaction signal work scans flight-interaction: 59 new public sources generate and one, `set_node_hit_area`,
+// is an ownership policy skip. the residual skip work's census test pins the names.
+const INTERACTION_SIGNAL_GENERATED_SOURCES: usize = 59;
+const INTERACTION_SIGNAL_SKIPPED_SOURCES: usize = 1;
+const BACKEND_SCAN_TOTAL_SOURCES: usize =
+    BACKEND_SCAN_GENERATED_SOURCES + BACKEND_SCAN_SKIPPED_SOURCES;
+// The wgpu backend scan's generated sources, less the fixed-kind wgpu node renderer registrars that
+// the kind-taking registrar with a borrowed built-in renderer handle replaced.
+const BACKEND_SCAN_GENERATED_SOURCES: usize = 167 - REMOVED_FIXED_KIND_RENDERER_REGISTRARS;
 const BACKEND_SCAN_SKIPPED_SOURCES: usize = 65;
 const BACKEND_SCAN_MONOMORPHIZED_EXTRAS: usize = 8;
 // The TypeScript-root census fixed scanner discovery (braced, globbed and renamed crate-root
@@ -1044,18 +1047,18 @@ const ROOT_DISCOVERY_PUBLIC_POLICY_SKIPS: usize = 8;
 #[allow(dead_code)]
 const ROOT_DISCOVERY_PUBLIC_ACTIONABLE_SKIPS: usize = 17 + CANONICAL_CARRIER_SKIPPED_SOURCES;
 
-// The producer fixed point also finds three pre-K wrappers that consumed boxes no public wrapper
+// The producer fixed point also finds three pre-opaque-handle wrappers that consumed boxes no public wrapper
 // could produce. They are removals from the baseline generated set, not members of the original
 // opaque-fallback skip inventory.
-const TASK_K_BASELINE_GENERATED_OWNERSHIP_SKIPS: &[&str] = &[
+const OPAQUE_HANDLE_BASELINE_GENERATED_OWNERSHIP_SKIPS: &[&str] = &[
     "create_animation_clip",
     "create_skin_2d",
     "explain_host_capability_slot",
 ];
 
-// These LogDataOrProvider functions were already skipped before Task K. The producer audit changes
+// These LogDataOrProvider functions were already skipped before the opaque handle work. The producer audit changes
 // their reason from an incidental unmapped type to the durable ownership policy.
-const TASK_K_ADDITIONAL_OWNERSHIP_RECLASSIFICATIONS: &[&str] = &[
+const OPAQUE_HANDLE_ADDITIONAL_OWNERSHIP_RECLASSIFICATIONS: &[&str] = &[
     "log",
     "log_assert",
     "log_debug",
@@ -1072,7 +1075,7 @@ const TASK_K_ADDITIONAL_OWNERSHIP_RECLASSIFICATIONS: &[&str] = &[
     "log_with",
 ];
 
-const PRE_K_EXTENSION_POLICY_SKIPS: &[&str] = &[
+const PRE_OPAQUE_HANDLE_EXTENSION_POLICY_SKIPS: &[&str] = &[
     "create_filter_log_sink",
     "enable_log_signals",
     "register_dragon_bones_section_handler",
@@ -1084,14 +1087,14 @@ const PRE_K_EXTENSION_POLICY_SKIPS: &[&str] = &[
     "register_spine_json_timeline_handler",
     "register_spine_skeleton_binary_parser",
 ];
-const PRE_K_OWNERSHIP_POLICY_SKIPS: &[&str] =
+const PRE_OPAQUE_HANDLE_OWNERSHIP_POLICY_SKIPS: &[&str] =
     &["create_fanout_log_sink", "get_memory_log_sink_entries"];
-const PRE_K_SAFETY_POLICY_SKIPS: &[&str] = &[
+const PRE_OPAQUE_HANDLE_SAFETY_POLICY_SKIPS: &[&str] = &[
     "enable_clip_guards",
     "enable_statechart_guards",
     "get_connectivity_online",
 ];
-const TASK_L_EXTENSION_POLICY_SKIPS: &[&str] = &[
+const HANDLER_EXTENSION_POLICY_SKIPS: &[&str] = &[
     "default_shape_bounds_cubic_curve_to",
     "default_shape_bounds_draw_circle",
     "default_shape_bounds_draw_ellipse",
@@ -1194,17 +1197,17 @@ fn generator_source() -> &'static str {
     include_str!("../build.rs")
 }
 
-fn task_k_failure_heading(source: &str, stats: &str) -> &'static str {
+fn opaque_handle_failure_heading(source: &str, stats: &str) -> &'static str {
     if source.contains("const SKIP_TYPES:")
         || stats.contains("skip_type_param(")
         || stats.contains("skip_type_return(")
     {
-        return "EXPECTED PRE-K TASK K ACCEPTANCE FAILURE";
+        return "EXPECTED PRE-OPAQUE-HANDLE ACCEPTANCE FAILURE";
     }
     if !source.contains("static PRODUCIBLE_TYPES:") {
-        return "EXPECTED TASK K SAFETY REPAIR FAILURE";
+        return "EXPECTED OPAQUE HANDLE CENSUS SAFETY REPAIR FAILURE";
     }
-    return "TASK K ACCEPTANCE FAILURE";
+    return "OPAQUE HANDLE CENSUS ACCEPTANCE FAILURE";
 }
 
 fn wrapper_block<'a>(wrappers: &'a str, symbol: &str) -> Option<&'a str> {
@@ -1309,21 +1312,25 @@ fn assert_result_accessors(function: &str, require_key: bool, errors: &mut Vec<S
 }
 
 #[test]
-fn task_k_inventory_is_exact_unique_and_complete() {
-    assert_eq!(TASK_K_CANDIDATES.len(), 120, "Task K inventory omission");
+fn opaque_handle_inventory_is_exact_unique_and_complete() {
+    assert_eq!(
+        OPAQUE_HANDLE_CANDIDATES.len(),
+        120,
+        "the opaque handle work inventory omission"
+    );
 
     let mut names = BTreeSet::new();
-    for candidate in TASK_K_CANDIDATES {
+    for candidate in OPAQUE_HANDLE_CANDIDATES {
         assert!(
             names.insert(candidate.function),
-            "duplicate Task K inventory entry {}",
+            "duplicate the opaque handle work inventory entry {}",
             candidate.function
         );
         assert!(!candidate.carrier.is_empty());
     }
 
     let counts: BTreeMap<Group, usize> =
-        TASK_K_CANDIDATES
+        OPAQUE_HANDLE_CANDIDATES
             .iter()
             .fold(BTreeMap::new(), |mut counts, candidate| {
                 *counts.entry(candidate.group).or_default() += 1;
@@ -1343,35 +1350,35 @@ fn task_k_inventory_is_exact_unique_and_complete() {
         ])
     );
     assert_eq!(
-        TASK_K_CANDIDATES
+        OPAQUE_HANDLE_CANDIDATES
             .iter()
             .filter(|candidate| candidate.outcome == Outcome::Generated)
             .count(),
         101
     );
     assert_eq!(
-        TASK_K_CANDIDATES
+        OPAQUE_HANDLE_CANDIDATES
             .iter()
             .filter(|candidate| candidate.outcome == Outcome::ExtensionPolicySkip)
             .count(),
         9
     );
     assert_eq!(
-        TASK_K_CANDIDATES
+        OPAQUE_HANDLE_CANDIDATES
             .iter()
             .filter(|candidate| candidate.outcome == Outcome::OwnershipPolicySkip)
             .count(),
         8
     );
     assert_eq!(
-        TASK_K_CANDIDATES
+        OPAQUE_HANDLE_CANDIDATES
             .iter()
             .filter(|candidate| candidate.outcome == Outcome::ClosureDeferred)
             .count(),
         1
     );
     assert_eq!(
-        TASK_K_CANDIDATES
+        OPAQUE_HANDLE_CANDIDATES
             .iter()
             .filter(|candidate| candidate.outcome == Outcome::UnmappedCarrier)
             .count(),
@@ -1380,32 +1387,32 @@ fn task_k_inventory_is_exact_unique_and_complete() {
 }
 
 #[test]
-fn task_k_source_decision_delta_from_pre_k_baseline_is_exact() {
+fn opaque_handle_source_decision_delta_from_its_baseline_is_exact() {
     let stats = generated_stats();
-    let heading = task_k_failure_heading(generator_source(), stats);
-    let generated_additions = TASK_K_CANDIDATES
+    let heading = opaque_handle_failure_heading(generator_source(), stats);
+    let generated_additions = OPAQUE_HANDLE_CANDIDATES
         .iter()
         .filter(|candidate| candidate.outcome == Outcome::Generated)
         .count();
-    let generated_removals = TASK_K_BASELINE_GENERATED_OWNERSHIP_SKIPS.len();
-    let expected_generated = PRE_K_GENERATED_SOURCES + generated_additions - generated_removals
-        + TASK_M_GENERATED_SOURCES
-        + ITEM_D_GENERATED_SOURCES
-        + ITEM_C_INTERACTION_GENERATED_SOURCES
+    let generated_removals = OPAQUE_HANDLE_BASELINE_GENERATED_OWNERSHIP_SKIPS.len();
+    let expected_generated = PRE_OPAQUE_HANDLE_GENERATED_SOURCES + generated_additions - generated_removals
+        + RESIDUAL_SKIP_GENERATED_SOURCES
+        + BITMAP_REGION_GENERATED_SOURCES
+        + INTERACTION_SIGNAL_GENERATED_SOURCES
         + BACKEND_SCAN_GENERATED_SOURCES
         + ROOT_DISCOVERY_GENERATED_SOURCES;
-    let expected_skipped = PRE_K_SKIPPED_SOURCES - generated_additions + generated_removals
-        - TASK_M_GENERATED_SOURCES
-        + ITEM_C_INTERACTION_SKIPPED_SOURCES
+    let expected_skipped = PRE_OPAQUE_HANDLE_SKIPPED_SOURCES - generated_additions + generated_removals
+        - RESIDUAL_SKIP_GENERATED_SOURCES
+        + INTERACTION_SIGNAL_SKIPPED_SOURCES
         + BACKEND_SCAN_SKIPPED_SOURCES
         + ROOT_DISCOVERY_SKIPPED_SOURCES;
     assert_eq!(
         source_census(stats),
         (
-            PRE_K_TOTAL_SOURCES
-                + ITEM_D_GENERATED_SOURCES
-                + ITEM_C_INTERACTION_GENERATED_SOURCES
-                + ITEM_C_INTERACTION_SKIPPED_SOURCES
+            PRE_OPAQUE_HANDLE_TOTAL_SOURCES
+                + BITMAP_REGION_GENERATED_SOURCES
+                + INTERACTION_SIGNAL_GENERATED_SOURCES
+                + INTERACTION_SIGNAL_SKIPPED_SOURCES
                 + BACKEND_SCAN_TOTAL_SOURCES
                 + ROOT_DISCOVERY_TOTAL_SOURCES,
             expected_generated,
@@ -1423,57 +1430,57 @@ fn task_k_source_decision_delta_from_pre_k_baseline_is_exact() {
             expected_generated,
             97 + BACKEND_SCAN_MONOMORPHIZED_EXTRAS + ROOT_DISCOVERY_MONOMORPHIZED_EXTRAS
         ),
-        "{heading}: Task K must not change the pre-K monomorphized wrapper extras"
+        "{heading}: the opaque handle work must not change the pre-opaque-handle monomorphized wrapper extras"
     );
 
     let mut changed_names = BTreeSet::new();
-    for candidate in TASK_K_CANDIDATES
+    for candidate in OPAQUE_HANDLE_CANDIDATES
         .iter()
         .filter(|candidate| candidate.outcome != Outcome::ClosureDeferred)
     {
         assert!(
             changed_names.insert(candidate.function),
-            "duplicate Task K changed source {}",
+            "duplicate the opaque handle work changed source {}",
             candidate.function
         );
     }
-    for name in TASK_K_BASELINE_GENERATED_OWNERSHIP_SKIPS
+    for name in OPAQUE_HANDLE_BASELINE_GENERATED_OWNERSHIP_SKIPS
         .iter()
-        .chain(TASK_K_ADDITIONAL_OWNERSHIP_RECLASSIFICATIONS)
+        .chain(OPAQUE_HANDLE_ADDITIONAL_OWNERSHIP_RECLASSIFICATIONS)
     {
         assert!(
             changed_names.insert(name),
-            "duplicate Task K changed source {name}"
+            "duplicate the opaque handle work changed source {name}"
         );
     }
     assert_eq!(
         changed_names.len(),
         136,
-        "complete Task K changed-source inventory"
+        "complete the opaque handle work changed-source inventory"
     );
 
     let mut expected_policy = BTreeSet::new();
     insert_policy(
         &mut expected_policy,
         "extension_policy_skip",
-        PRE_K_EXTENSION_POLICY_SKIPS,
+        PRE_OPAQUE_HANDLE_EXTENSION_POLICY_SKIPS,
     );
     insert_policy(
         &mut expected_policy,
         "ownership_policy_skip",
-        PRE_K_OWNERSHIP_POLICY_SKIPS,
+        PRE_OPAQUE_HANDLE_OWNERSHIP_POLICY_SKIPS,
     );
     insert_policy(
         &mut expected_policy,
         "safety_policy_skip",
-        PRE_K_SAFETY_POLICY_SKIPS,
+        PRE_OPAQUE_HANDLE_SAFETY_POLICY_SKIPS,
     );
     insert_policy(
         &mut expected_policy,
         "extension_policy_skip",
-        TASK_L_EXTENSION_POLICY_SKIPS,
+        HANDLER_EXTENSION_POLICY_SKIPS,
     );
-    for candidate in TASK_K_CANDIDATES {
+    for candidate in OPAQUE_HANDLE_CANDIDATES {
         match candidate.outcome {
             Outcome::ExtensionPolicySkip => insert_policy(
                 &mut expected_policy,
@@ -1491,12 +1498,12 @@ fn task_k_source_decision_delta_from_pre_k_baseline_is_exact() {
     insert_policy(
         &mut expected_policy,
         "ownership_policy_skip",
-        TASK_K_BASELINE_GENERATED_OWNERSHIP_SKIPS,
+        OPAQUE_HANDLE_BASELINE_GENERATED_OWNERSHIP_SKIPS,
     );
     insert_policy(
         &mut expected_policy,
         "ownership_policy_skip",
-        TASK_K_ADDITIONAL_OWNERSHIP_RECLASSIFICATIONS,
+        OPAQUE_HANDLE_ADDITIONAL_OWNERSHIP_RECLASSIFICATIONS,
     );
 
     let actual_policy = policy_decisions(stats);
@@ -1508,27 +1515,27 @@ fn task_k_source_decision_delta_from_pre_k_baseline_is_exact() {
     );
     assert!(
         expected_policy.is_subset(&actual_unique),
-        "{heading}: every Task K policy decision must remain in the final policy set"
+        "{heading}: every the opaque handle work policy decision must remain in the final policy set"
     );
 
     let wrappers = generated_wrappers();
     let header = generated_header();
-    for function in TASK_K_BASELINE_GENERATED_OWNERSHIP_SKIPS {
+    for function in OPAQUE_HANDLE_BASELINE_GENERATED_OWNERSHIP_SKIPS {
         let symbol = format!("flight_{function}");
         assert!(wrapper_block(wrappers, &symbol).is_none());
         assert!(header_entry(header, &symbol).is_none());
         assert!(stats.contains(&format!("ownership_policy_skip({function})")));
     }
-    for function in TASK_K_ADDITIONAL_OWNERSHIP_RECLASSIFICATIONS {
+    for function in OPAQUE_HANDLE_ADDITIONAL_OWNERSHIP_RECLASSIFICATIONS {
         assert!(stats.contains(&format!("ownership_policy_skip({function})")));
     }
 }
 
-// Before Task K lands this test intentionally fails with an "expected pre-K" prefix. Inventory
-// defects are separate failures in `task_k_inventory_is_exact_unique_and_complete`; once SKIP_TYPES
+// Before the opaque handle work lands this test intentionally fails with an "expected pre-opaque-handle" prefix. Inventory
+// defects are separate failures in `opaque_handle_inventory_is_exact_unique_and_complete`; once SKIP_TYPES
 // disappears, every diagnostic below is a genuine generated-contract regression.
 #[test]
-fn task_k_generated_surface_satisfies_every_inventory_contract() {
+fn opaque_handle_generated_surface_satisfies_every_inventory_contract() {
     let wrappers = generated_wrappers();
     let header = generated_header();
     let stats = generated_stats();
@@ -1545,15 +1552,15 @@ fn task_k_generated_surface_satisfies_every_inventory_contract() {
         "stats still contain skip_type_return".to_string()
     });
 
-    for candidate in TASK_K_CANDIDATES {
+    for candidate in OPAQUE_HANDLE_CANDIDATES {
         let symbol = format!("flight_{}", candidate.function);
         let marker = format!("fn {symbol}(");
-        let promoted_by_task_m = matches!(
+        let promoted_by_residual_skip = matches!(
             candidate.function,
             "connect_signal_at_frame_rate" | "create_child_log_context"
         );
         let expected_occurrences =
-            usize::from(candidate.outcome == Outcome::Generated || promoted_by_task_m);
+            usize::from(candidate.outcome == Outcome::Generated || promoted_by_residual_skip);
         push_error(
             &mut errors,
             wrappers.matches(&marker).count() == expected_occurrences,
@@ -1564,10 +1571,10 @@ fn task_k_generated_surface_satisfies_every_inventory_contract() {
                 )
             },
         );
-        if promoted_by_task_m {
+        if promoted_by_residual_skip {
             push_error(&mut errors, header_entry(header, &symbol).is_some(), || {
                 format!(
-                    "{} was promoted by Task M but lacks a C header entry",
+                    "{} was promoted by the residual skip work but lacks a C header entry",
                     candidate.function
                 )
             });
@@ -1577,7 +1584,12 @@ fn task_k_generated_surface_satisfies_every_inventory_contract() {
             push_error(
                 &mut errors,
                 wrapper_block(wrappers, &symbol).is_none(),
-                || format!("{} must remain a by-design Task K skip", candidate.function),
+                || {
+                    format!(
+                        "{} must remain a by-design the opaque handle work skip",
+                        candidate.function
+                    )
+                },
             );
             push_error(&mut errors, header_entry(header, &symbol).is_none(), || {
                 format!("{} leaked into the C header", candidate.function)
@@ -1608,7 +1620,7 @@ fn task_k_generated_surface_satisfies_every_inventory_contract() {
                     stats.contains("closure_return(Arc<dyn Fn() + Send + Sync>)"),
                     || {
                         format!(
-                            "{} is not deferred to the ordinary pre-M closure-return skip",
+                            "{} is not deferred to the ordinary pre-residual-skip closure-return skip",
                             candidate.function
                         )
                     },
@@ -1853,7 +1865,7 @@ fn task_k_generated_surface_satisfies_every_inventory_contract() {
     }
 
     if !errors.is_empty() {
-        let heading = task_k_failure_heading(source, stats);
+        let heading = opaque_handle_failure_heading(source, stats);
         panic!(
             "{heading} ({} issue(s)):\n{}",
             errors.len(),
@@ -1861,3 +1873,5 @@ fn task_k_generated_surface_satisfies_every_inventory_contract() {
         );
     }
 }
+
+const REMOVED_FIXED_KIND_RENDERER_REGISTRARS: usize = 15;

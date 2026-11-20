@@ -7,9 +7,7 @@
 use flight_entity::Ref;
 use flight_geometry::{Matrix, create_matrix};
 use flight_materials::{ColorScaleBias, MaterialData, TintMaterialData};
-use flight_quadbatch::QUAD_BATCH_KIND;
 use flight_quadbatch::{QuadBatch, QuadTransformType};
-use flight_render::register_node_renderer;
 use flight_render::{
     BatchFormat, NodeRenderer, RenderProxy2D, SCENE2D_WORKING_COLOR_SPACE, noop_renderer_data,
 };
@@ -41,16 +39,6 @@ pub static WGPU_QUAD_BATCH_RENDERER: NodeRenderer<WgpuRenderState> = NodeRendere
     is_dirty: None,
     submit: submit_wgpu_quad_batch,
 };
-
-/// Registers `WGPU_QUAD_BATCH_RENDERER` for `QUAD_BATCH_KIND` on this state (TS
-/// `registerWgpuQuadBatchRenderer`).
-pub fn register_wgpu_quad_batch_renderer(state: &mut WgpuRenderState) {
-    register_node_renderer(
-        state,
-        QUAD_BATCH_KIND.to_string(),
-        &WGPU_QUAD_BATCH_RENDERER,
-    );
-}
 
 // flight-lint: allow(f64) 2D geometry, logical sizes and the device pixel ratio are f64 CPU values (Task Q); they narrow once into f32 WGPU uniforms, instance floats, scissor and the f32 canvas-host and text-layout lanes
 fn submit_wgpu_quad_batch(

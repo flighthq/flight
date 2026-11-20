@@ -22,18 +22,6 @@ mod draw_wgpu_scene2d {
     }
 }
 
-mod register_wgpu_scene2d_renderer {
-    use super::*;
-
-    #[test]
-    fn registers_the_scene2d_renderer_under_display_object_kind() {
-        let mut state = create_wgpu_render_state_for_test(None);
-        register_wgpu_scene2d_renderer(&mut state);
-        let registered = get_registered_node_renderer(&state, DISPLAY_OBJECT_KIND).unwrap();
-        assert!(std::ptr::eq(registered, &WGPU_SCENE2D_RENDERER));
-    }
-}
-
 mod render_wgpu_scene2d {
     use super::*;
 
@@ -89,6 +77,18 @@ mod render_wgpu_scene2d {
 
 mod wgpu_scene2d_renderer {
     use super::*;
+
+    #[test]
+    fn registers_the_scene2d_renderer_under_display_object_kind() {
+        let mut state = create_wgpu_render_state_for_test(None);
+        flight_render::register_node_renderer(
+            &mut state,
+            flight_scene2d::DISPLAY_OBJECT_KIND.to_string(),
+            &flight_scene2d_wgpu::WGPU_SCENE2D_RENDERER,
+        );
+        let registered = get_registered_node_renderer(&state, DISPLAY_OBJECT_KIND).unwrap();
+        assert!(std::ptr::eq(registered, &WGPU_SCENE2D_RENDERER));
+    }
 
     #[test]
     fn has_create_data_and_submit_functions() {

@@ -155,32 +155,36 @@ mod draw_wgpu_shape {
     }
 }
 
-mod register_wgpu_morph_shape_renderer {
+mod wgpu_morph_shape_renderer {
     use super::*;
 
     #[test]
     fn registers_the_morph_shape_renderer_under_morph_shape_kind() {
         let mut state = create_wgpu_render_state_for_test(None);
-        register_wgpu_morph_shape_renderer(&mut state);
+        flight_render::register_node_renderer(
+            &mut state,
+            flight_shape::contract::MORPH_SHAPE_KIND.to_string(),
+            flight_scene2d_wgpu::WGPU_MORPH_SHAPE_RENDERER,
+        );
         let registered = get_registered_node_renderer(&state, MORPH_SHAPE_KIND).unwrap();
         assert!(std::ptr::eq(registered, WGPU_MORPH_SHAPE_RENDERER));
     }
 }
 
-mod register_wgpu_shape_renderer {
+mod wgpu_shape_renderer {
     use super::*;
 
     #[test]
     fn registers_the_hybrid_shape_renderer_under_shape_kind() {
         let mut state = create_wgpu_render_state_for_test(None);
-        register_wgpu_shape_renderer(&mut state);
+        flight_render::register_node_renderer(
+            &mut state,
+            flight_shape::contract::SHAPE_KIND.to_string(),
+            &flight_scene2d_wgpu::WGPU_SHAPE_RENDERER,
+        );
         let registered = get_registered_node_renderer(&state, SHAPE_KIND).unwrap();
         assert!(std::ptr::eq(registered, &WGPU_SHAPE_RENDERER));
     }
-}
-
-mod wgpu_shape_renderer {
-    use super::*;
 
     #[test]
     fn provides_the_morph_shape_renderer_alias() {

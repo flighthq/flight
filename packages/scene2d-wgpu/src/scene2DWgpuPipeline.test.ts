@@ -23,13 +23,14 @@ import { RichTextKind, TextLabelKind } from '@flighthq/text/contract';
 import { TilemapKind } from '@flighthq/tilemap/contract';
 import { describe, expect, it } from 'vitest';
 
+import * as wgpuPackage from './contract.ts';
 import {
   wgpuScene2DRenderPreset,
   registerWgpuRenderPreset,
   registerWgpuScene2DRenderPreset,
 } from './scene2DWgpuPipeline.ts';
 import { wgpuMeshShapeRenderer } from './wgpuMeshShapeRenderer.ts';
-import { registerWgpuShapeRenderer } from './wgpuShape.ts';
+import { wgpuShapeRenderer } from './wgpuShape.ts';
 import { wgpuSpriteRenderer } from './wgpuSprite.ts';
 import { registerWgpuStandardMaterial, standardWgpuQuadMaterialRenderer } from './wgpuStandardMaterial.ts';
 
@@ -67,7 +68,7 @@ describe('registerWgpuRenderPreset', () => {
   it('replaces preset node-renderer kinds and keeps other kinds', () => {
     const state = createRegistrationTestState();
     registerNodeRenderer(state, 'Custom', wgpuSpriteRenderer);
-    registerWgpuShapeRenderer(state);
+    registerNodeRenderer(state, ShapeKind, wgpuShapeRenderer);
     registerWgpuRenderPreset(state, {
       ...buildWgpuRenderRegistries({}),
       nodeRenderers: new Map([[ShapeKind, wgpuMeshShapeRenderer]]),
@@ -115,6 +116,18 @@ describe('registerWgpuRenderPreset', () => {
 });
 
 describe('registerWgpuScene2DRenderPreset', () => {
+  // A node renderer is bound by kind: registerNodeRenderer with one of the exported constants, for a
+  // standard kind or a caller's own. No fixed-kind registrar that takes only the state remains, and
+  // every renderer constant the preset binds is still exported alongside the preset registrars.
+  it('leaves registerNodeRenderer with an exported constant as the only per-renderer registration', () => {
+    const exports = Object.entries(wgpuPackage) as [string, unknown][];
+    expect(exports.filter(([name]) => /^registerWgpu\w*Renderer$/.test(name)).map(([name]) => name)).toEqual([]);
+    const constants = new Set(exports.map(([, value]) => value));
+    for (const renderer of wgpuScene2DRenderPreset.nodeRenderers.values()) expect(constants.has(renderer)).toBe(true);
+    expect(typeof wgpuPackage.registerWgpuScene2DRenderPreset).toBe('function');
+    expect(typeof wgpuPackage.registerWgpuRenderPreset).toBe('function');
+  });
+
   it('registers every preset node renderer and the standard material', () => {
     const state = createRegistrationTestState();
     registerWgpuScene2DRenderPreset(state);

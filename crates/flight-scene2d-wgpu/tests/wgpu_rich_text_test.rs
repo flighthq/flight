@@ -208,18 +208,6 @@ mod draw_wgpu_rich_text_with_overlay {
     }
 }
 
-mod register_wgpu_rich_text_renderer {
-    use super::*;
-
-    #[test]
-    fn registers_the_rich_text_renderer_under_rich_text_kind() {
-        let mut state = create_wgpu_render_state_for_test(None);
-        register_wgpu_rich_text_renderer(&mut state);
-        let registered = get_registered_node_renderer(&state, RICH_TEXT_KIND).unwrap();
-        assert!(std::ptr::eq(registered, &WGPU_RICH_TEXT_RENDERER));
-    }
-}
-
 mod register_wgpu_text_input_overlay {
     use super::*;
 
@@ -245,6 +233,18 @@ mod register_wgpu_text_input_overlay {
 
 mod wgpu_rich_text_renderer {
     use super::*;
+
+    #[test]
+    fn registers_the_rich_text_renderer_under_rich_text_kind() {
+        let mut state = create_wgpu_render_state_for_test(None);
+        flight_render::register_node_renderer(
+            &mut state,
+            flight_text::contract::RICH_TEXT_KIND.to_string(),
+            &flight_scene2d_wgpu::WGPU_RICH_TEXT_RENDERER,
+        );
+        let registered = get_registered_node_renderer(&state, RICH_TEXT_KIND).unwrap();
+        assert!(std::ptr::eq(registered, &WGPU_RICH_TEXT_RENDERER));
+    }
 
     #[test]
     fn has_create_data_destroy_data_and_submit_functions() {

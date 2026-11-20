@@ -454,18 +454,6 @@ mod refresh_wgpu_render_cache {
     }
 }
 
-mod register_wgpu_render_cache_renderer {
-    use super::*;
-
-    #[test]
-    fn registers_the_render_cache_renderer_under_render_cache_kind() {
-        let mut state = create_wgpu_render_state_for_test(None);
-        register_wgpu_render_cache_renderer(&mut state);
-        let registered = get_registered_node_renderer(&state, RENDER_CACHE_KIND).unwrap();
-        assert!(std::ptr::eq(registered, &WGPU_RENDER_CACHE_RENDERER));
-    }
-}
-
 mod release_wgpu_render_cache {
     use super::*;
 
@@ -486,6 +474,18 @@ mod release_wgpu_render_cache {
 
 mod wgpu_render_cache_renderer {
     use super::*;
+
+    #[test]
+    fn registers_the_render_cache_renderer_under_render_cache_kind() {
+        let mut state = create_wgpu_render_state_for_test(None);
+        flight_render::register_node_renderer(
+            &mut state,
+            flight_render::RENDER_CACHE_KIND.to_string(),
+            &flight_scene2d_wgpu::WGPU_RENDER_CACHE_RENDERER,
+        );
+        let registered = get_registered_node_renderer(&state, RENDER_CACHE_KIND).unwrap();
+        assert!(std::ptr::eq(registered, &WGPU_RENDER_CACHE_RENDERER));
+    }
 
     #[test]
     fn does_nothing_when_no_cache_is_attached_to_the_source() {

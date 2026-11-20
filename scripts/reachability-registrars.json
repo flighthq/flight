@@ -1055,55 +1055,11 @@
     },
     {
       "packageName": "scene2d-wgpu",
-      "registrar": "registerWgpuBitmapTextRenderer"
-    },
-    {
-      "packageName": "scene2d-wgpu",
       "registrar": "registerWgpuColorAdjustmentMaterialFeature"
     },
     {
       "packageName": "scene2d-wgpu",
-      "registrar": "registerWgpuMeshShapeRenderer"
-    },
-    {
-      "packageName": "scene2d-wgpu",
-      "registrar": "registerWgpuMorphShapeRenderer"
-    },
-    {
-      "packageName": "scene2d-wgpu",
-      "registrar": "registerWgpuParticleEmitter2DRenderer"
-    },
-    {
-      "packageName": "scene2d-wgpu",
-      "registrar": "registerWgpuQuadBatchRenderer"
-    },
-    {
-      "packageName": "scene2d-wgpu",
-      "registrar": "registerWgpuRasterShapeRenderer"
-    },
-    {
-      "packageName": "scene2d-wgpu",
-      "registrar": "registerWgpuRenderCacheRenderer"
-    },
-    {
-      "packageName": "scene2d-wgpu",
       "registrar": "registerWgpuRenderPreset"
-    },
-    {
-      "packageName": "scene2d-wgpu",
-      "registrar": "registerWgpuRichTextRenderer"
-    },
-    {
-      "packageName": "scene2d-wgpu",
-      "registrar": "registerWgpuScale9ShapeRenderer"
-    },
-    {
-      "packageName": "scene2d-wgpu",
-      "registrar": "registerWgpuScale9SpriteRenderer"
-    },
-    {
-      "packageName": "scene2d-wgpu",
-      "registrar": "registerWgpuScene2DRenderer"
     },
     {
       "packageName": "scene2d-wgpu",
@@ -1115,27 +1071,11 @@
     },
     {
       "packageName": "scene2d-wgpu",
-      "registrar": "registerWgpuShapeRenderer"
-    },
-    {
-      "packageName": "scene2d-wgpu",
-      "registrar": "registerWgpuSpriteRenderer"
-    },
-    {
-      "packageName": "scene2d-wgpu",
       "registrar": "registerWgpuStandardMaterial"
     },
     {
       "packageName": "scene2d-wgpu",
       "registrar": "registerWgpuTextInputOverlay"
-    },
-    {
-      "packageName": "scene2d-wgpu",
-      "registrar": "registerWgpuTextLabelRenderer"
-    },
-    {
-      "packageName": "scene2d-wgpu",
-      "registrar": "registerWgpuTilemapRenderer"
     },
     {
       "packageName": "scene2d-wgpu",

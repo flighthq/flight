@@ -6,20 +6,10 @@ import type { NodeAny, RendererData } from '@flighthq/node/contract';
 import { bindWgpuImageResourceTexture, resolveWgpuQuadMaterialRenderer } from '@flighthq/render-wgpu/contract';
 import { getWgpuRenderStateRuntime } from '@flighthq/render-wgpu/contract';
 import type { WgpuRenderState } from '@flighthq/render-wgpu/contract';
-import {
-  createCanvasHostSurface,
-  destroyCanvasHostSurface,
-  BatchFormat,
-  registerNodeRenderer,
-} from '@flighthq/render/contract';
+import { createCanvasHostSurface, destroyCanvasHostSurface, BatchFormat } from '@flighthq/render/contract';
 import type { RenderProxy2D, RenderState, Scene2DRenderer } from '@flighthq/render/contract';
 import type { CanvasSurface } from '@flighthq/surface/contract';
-import {
-  computeTextFormatFontString,
-  getTextLabelRuntime,
-  getTextLayoutResult,
-  TextLabelKind,
-} from '@flighthq/text/contract';
+import { computeTextFormatFontString, getTextLabelRuntime, getTextLayoutResult } from '@flighthq/text/contract';
 import type { TextLabel, TextLabelRuntime } from '@flighthq/text/contract';
 import { createTextFormatRange } from '@flighthq/textformat/contract';
 import type { TextFormat } from '@flighthq/textformat/contract';
@@ -229,9 +219,4 @@ function _ensureWgpuTextLabelSurface(
   data.allocW = pw;
   data.allocH = ph;
   return surface;
-}
-
-/** Registers wgpuTextLabelRenderer for TextLabelKind on this state. */
-export function registerWgpuTextLabelRenderer(state: WgpuRenderState): void {
-  registerNodeRenderer(state, TextLabelKind, wgpuTextLabelRenderer);
 }

@@ -5,7 +5,7 @@ import type { NodeAny, RendererData } from '@flighthq/node/contract';
 import { bindWgpuImageResourceTexture, drawWgpuQuadWithTransform } from '@flighthq/render-wgpu/contract';
 import { getWgpuRenderStateRuntime } from '@flighthq/render-wgpu/contract';
 import type { WgpuRenderState } from '@flighthq/render-wgpu/contract';
-import { createCanvasHostSurface, destroyCanvasHostSurface, registerNodeRenderer } from '@flighthq/render/contract';
+import { createCanvasHostSurface, destroyCanvasHostSurface } from '@flighthq/render/contract';
 import { RenderRegistryTable } from '@flighthq/render/contract';
 import type { RenderProxy2D, RenderState, Scene2DRenderer } from '@flighthq/render/contract';
 import { mapScale9ShapeCommands, Scale9ShapeKind } from '@flighthq/shape/contract';
@@ -187,8 +187,3 @@ export function getWgpuScale9ShapeData(data: RendererData): WgpuScale9ShapeData 
 }
 
 const _remappedCommands: ShapeCommandToken[] = [];
-
-/** Registers wgpuScale9ShapeRenderer for Scale9ShapeKind on this state. */
-export function registerWgpuScale9ShapeRenderer(state: WgpuRenderState): void {
-  registerNodeRenderer(state, Scale9ShapeKind, wgpuScale9ShapeRenderer);
-}

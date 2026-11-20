@@ -13,6 +13,8 @@ mod flight_ffi_hl_shim_test;
 mod flight_ffi_host_seam_test;
 #[path = "node_handle_test.rs"]
 mod flight_ffi_node_handle_test;
+#[path = "opaque_handle_census_test.rs"]
+mod flight_ffi_opaque_handle_census_test;
 #[path = "out_alias_test.rs"]
 mod flight_ffi_out_alias_test;
 #[path = "public_perimeter_test.rs"]
@@ -27,16 +29,14 @@ mod flight_ffi_registry_tokens_test;
 mod flight_ffi_render_pass_bracket_test;
 #[path = "renderer_handles_test.rs"]
 mod flight_ffi_renderer_handles_test;
+#[path = "residual_skip_census_test.rs"]
+mod flight_ffi_residual_skip_census_test;
 #[path = "root_census_test.rs"]
 mod flight_ffi_root_census_test;
 #[path = "signal_identity_test.rs"]
 mod flight_ffi_signal_identity_test;
 #[path = "signal_ref_connect_test.rs"]
 mod flight_ffi_signal_ref_connect_test;
-#[path = "task_k_opaque_handle_test.rs"]
-mod flight_ffi_task_k_opaque_handle_test;
-#[path = "task_m_residual_skip_test.rs"]
-mod flight_ffi_task_m_residual_skip_test;
 #[path = "task_s_capability_constructor_test.rs"]
 mod flight_ffi_task_s_capability_constructor_test;
 #[path = "wgpu_backend_scan_test.rs"]

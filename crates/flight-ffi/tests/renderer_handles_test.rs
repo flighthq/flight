@@ -831,6 +831,82 @@ mod guard_node_renderer_instantiation {
     }
 }
 
+// The state-only helpers that each bound one built-in node renderer to one fixed kind. They are gone
+// from the Rust crate and so from the C surface: the kind-taking registrar with a built-in handle is
+// the one way to bind a node renderer, for a standard kind and a caller's own alike.
+const REMOVED_FIXED_KIND_REGISTRARS: &[&str] = &[
+    "register_wgpu_bitmap_text_renderer",
+    "register_wgpu_mesh_shape_renderer",
+    "register_wgpu_morph_shape_renderer",
+    "register_wgpu_particle_emitter2d_renderer",
+    "register_wgpu_quad_batch_renderer",
+    "register_wgpu_raster_shape_renderer",
+    "register_wgpu_render_cache_renderer",
+    "register_wgpu_rich_text_renderer",
+    "register_wgpu_scale9_shape_renderer",
+    "register_wgpu_scale9_sprite_renderer",
+    "register_wgpu_scene2d_renderer",
+    "register_wgpu_shape_renderer",
+    "register_wgpu_sprite_renderer",
+    "register_wgpu_text_label_renderer",
+    "register_wgpu_tilemap_renderer",
+];
+
+mod fixed_kind_registrars {
+    use super::*;
+
+    #[test]
+    fn are_absent_from_the_crate_the_wrappers_and_the_header() {
+        let src = Path::new(env!("CARGO_MANIFEST_DIR")).join("../flight-scene2d-wgpu/src");
+        let mut sources = String::new();
+        for entry in std::fs::read_dir(src).unwrap() {
+            sources.push_str(&std::fs::read_to_string(entry.unwrap().path()).unwrap());
+        }
+        for name in REMOVED_FIXED_KIND_REGISTRARS {
+            assert!(
+                !sources.contains(&format!("fn {name}(")),
+                "{name} is still defined"
+            );
+            assert!(
+                !GENERATED.contains(&format!("fn flight_{name}(")),
+                "{name} is still generated"
+            );
+            assert!(
+                !HEADER.contains(&format!(" flight_{name}(")),
+                "{name} is still declared"
+            );
+        }
+    }
+
+    // What replaces them stays: the generic registrar per backend, the kind-taking material
+    // registrars, the preset registrars and every renderer static.
+    #[test]
+    fn leave_the_kind_taking_preset_and_constant_surface_in_place() {
+        for symbol in [
+            "flight_register_gl_node_renderer",
+            "flight_register_wgpu_node_renderer",
+            "flight_register_wgpu_mesh_material_renderer",
+            "flight_register_wgpu_quad_material_renderer",
+            "flight_register_wgpu_render_preset",
+            "flight_register_wgpu_scene2d_render_preset",
+            "flight_register_wgpu_scene3d_render_preset",
+            "flight_register_wgpu_standard_material",
+        ] {
+            assert_eq!(
+                HEADER.matches(&format!(" {symbol}(")).count(),
+                1,
+                "{symbol}"
+            );
+        }
+        for (name, _, _) in INVENTORY {
+            assert!(
+                GENERATED.contains(&format!("fn flight_get_{}()", name.to_lowercase())),
+                "{name}"
+            );
+        }
+    }
+}
+
 // The parameter and return signature codes of a primitive the HashLink shim defines.
 fn z_hashlink_primitive(name: &str) -> (Vec<String>, String) {
     let line = SHIM

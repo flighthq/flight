@@ -56,7 +56,7 @@ macro_rules! candidate {
     };
 }
 
-const TASK_M_CANDIDATES: &[Candidate] = &[
+const RESIDUAL_SKIP_CANDIDATES: &[Candidate] = &[
     candidate!(
         "lottie_ellipse_shape_item_handler",
         "unmapped_param(&mut LottieShapeItemContext<'_, '_>)",
@@ -440,16 +440,20 @@ const SAFETY_POLICY_SKIPS: &[&str] = &[
     "get_connectivity_online",
 ];
 
-const PRE_M_TOTAL_SOURCES: usize = 4083;
-const PRE_M_GENERATED_SOURCES: usize = 3376;
-const PRE_M_SKIPPED_SOURCES: usize = 707;
-const PRE_M_PUBLIC_SOURCES: usize = 3488;
-const PRE_M_NON_PUBLIC_SOURCES: usize = 595;
+const PRE_RESIDUAL_SKIP_TOTAL_SOURCES: usize = 4083;
+const PRE_RESIDUAL_SKIP_GENERATED_SOURCES: usize = 3376;
+const PRE_RESIDUAL_SKIP_SKIPPED_SOURCES: usize = 707;
+const PRE_RESIDUAL_SKIP_PUBLIC_SOURCES: usize = 3488;
+const PRE_RESIDUAL_SKIP_NON_PUBLIC_SOURCES: usize = 595;
 const MONOMORPHIZED_EXTRAS: usize = 97;
-const BACKEND_SCAN_TOTAL_SOURCES: usize = 232;
-const BACKEND_SCAN_GENERATED_SOURCES: usize = 167;
+const BACKEND_SCAN_TOTAL_SOURCES: usize =
+    BACKEND_SCAN_GENERATED_SOURCES + BACKEND_SCAN_SKIPPED_SOURCES;
+// The wgpu backend scan's generated sources, less the fixed-kind wgpu node renderer registrars that
+// the kind-taking registrar with a borrowed built-in renderer handle replaced.
+const BACKEND_SCAN_GENERATED_SOURCES: usize = 167 - REMOVED_FIXED_KIND_RENDERER_REGISTRARS;
 const BACKEND_SCAN_SKIPPED_SOURCES: usize = 65;
-const BACKEND_SCAN_PUBLIC_SOURCES: usize = 230;
+const BACKEND_SCAN_PUBLIC_SOURCES: usize =
+    BACKEND_SCAN_TOTAL_SOURCES - BACKEND_SCAN_NON_PUBLIC_SOURCES;
 const BACKEND_SCAN_NON_PUBLIC_SOURCES: usize = 2;
 const BACKEND_SCAN_MONOMORPHIZED_EXTRAS: usize = 8;
 // The TypeScript-root census fixed scanner discovery (braced, globbed and renamed crate-root
@@ -479,14 +483,14 @@ const ROOT_DISCOVERY_PUBLIC_POLICY_SKIPS: usize = 8;
 const ROOT_DISCOVERY_PUBLIC_ACTIONABLE_SKIPS: usize = 17 + CANONICAL_CARRIER_SKIPPED_SOURCES;
 const BACKEND_SCAN_PUBLIC_POLICY_SKIPS: usize =
     BACKEND_SCAN_SKIPPED_SOURCES - BACKEND_SCAN_NON_PUBLIC_SOURCES;
-// Item D adds one TypeScript-public source, `share_bitmap`, which generates. It is added to the
-// totals here so the pre-M baseline and Task M's own delta stay exactly as recorded.
-const ITEM_D_GENERATED_SOURCES: usize = 1;
-// Item C scans flight-interaction, adding 60 TypeScript-public sources. 59 generate;
+// the bitmap region work adds one TypeScript-public source, `share_bitmap`, which generates. It is added to the
+// totals here so the pre-residual-skip baseline and the residual skip work's own delta stay exactly as recorded.
+const BITMAP_REGION_GENERATED_SOURCES: usize = 1;
+// the interaction signal work scans flight-interaction, adding 60 TypeScript-public sources. 59 generate;
 // `set_node_hit_area` consumes an owned `HitArea` that no wrapper produces, so it is an ownership
 // policy skip.
-const ITEM_C_INTERACTION_GENERATED_SOURCES: usize = 59;
-const ITEM_C_INTERACTION_OWNERSHIP_POLICY_SKIPS: &[&str] = &["set_node_hit_area"];
+const INTERACTION_SIGNAL_GENERATED_SOURCES: usize = 59;
+const INTERACTION_SIGNAL_OWNERSHIP_POLICY_SKIPS: &[&str] = &["set_node_hit_area"];
 
 fn outcome(candidate: &Candidate) -> Outcome {
     if candidate.function == "enable_scene3d_resource_failure_guards" {
@@ -605,7 +609,7 @@ fn baseline_policy_decisions() -> BTreeSet<String> {
         ("ownership_policy_skip", OWNERSHIP_POLICY_SKIPS),
         (
             "ownership_policy_skip",
-            ITEM_C_INTERACTION_OWNERSHIP_POLICY_SKIPS,
+            INTERACTION_SIGNAL_OWNERSHIP_POLICY_SKIPS,
         ),
         ("safety_policy_skip", SAFETY_POLICY_SKIPS),
     ] {
@@ -618,7 +622,7 @@ fn baseline_policy_decisions() -> BTreeSet<String> {
 
 fn final_policy_decisions() -> BTreeSet<String> {
     let mut expected = baseline_policy_decisions();
-    for candidate in TASK_M_CANDIDATES {
+    for candidate in RESIDUAL_SKIP_CANDIDATES {
         let category = match outcome(candidate) {
             Outcome::Generated => continue,
             Outcome::ExtensionPolicySkip => "extension_policy_skip",
@@ -631,7 +635,7 @@ fn final_policy_decisions() -> BTreeSet<String> {
 
 fn expected_actionable_reasons() -> BTreeMap<String, usize> {
     let mut expected = BTreeMap::new();
-    for candidate in TASK_M_CANDIDATES {
+    for candidate in RESIDUAL_SKIP_CANDIDATES {
         *expected.entry(candidate.reason.to_string()).or_default() += 1;
     }
     return expected;
@@ -742,8 +746,12 @@ fn assert_callback_contract(
 }
 
 #[test]
-fn task_m_inventory_is_exact_unique_and_complete() {
-    assert_eq!(TASK_M_CANDIDATES.len(), 52, "Task M inventory omission");
+fn residual_skip_inventory_is_exact_unique_and_complete() {
+    assert_eq!(
+        RESIDUAL_SKIP_CANDIDATES.len(),
+        52,
+        "the residual skip work inventory omission"
+    );
     assert_eq!(EXTENSION_POLICY_SKIPS.len(), 30);
     assert_eq!(OWNERSHIP_POLICY_SKIPS.len(), 27);
     assert_eq!(SAFETY_POLICY_SKIPS.len(), 3);
@@ -751,21 +759,21 @@ fn task_m_inventory_is_exact_unique_and_complete() {
     assert_eq!(final_policy_decisions().len(), 102);
 
     let mut names = BTreeSet::new();
-    for candidate in TASK_M_CANDIDATES {
+    for candidate in RESIDUAL_SKIP_CANDIDATES {
         assert!(
             names.insert(candidate.function),
-            "duplicate Task M inventory entry {}",
+            "duplicate the residual skip work inventory entry {}",
             candidate.function
         );
         assert!(!candidate.reason.is_empty());
     }
-    let counts =
-        TASK_M_CANDIDATES
-            .iter()
-            .fold(BTreeMap::<Group, usize>::new(), |mut counts, candidate| {
-                *counts.entry(candidate.group).or_default() += 1;
-                counts
-            });
+    let counts = RESIDUAL_SKIP_CANDIDATES.iter().fold(
+        BTreeMap::<Group, usize>::new(),
+        |mut counts, candidate| {
+            *counts.entry(candidate.group).or_default() += 1;
+            counts
+        },
+    );
     assert_eq!(
         counts,
         BTreeMap::from([
@@ -779,21 +787,21 @@ fn task_m_inventory_is_exact_unique_and_complete() {
         ])
     );
     assert_eq!(
-        TASK_M_CANDIDATES
+        RESIDUAL_SKIP_CANDIDATES
             .iter()
             .filter(|candidate| outcome(candidate) == Outcome::Generated)
             .count(),
         11
     );
     assert_eq!(
-        TASK_M_CANDIDATES
+        RESIDUAL_SKIP_CANDIDATES
             .iter()
             .filter(|candidate| outcome(candidate) == Outcome::ExtensionPolicySkip)
             .count(),
         40
     );
     assert_eq!(
-        TASK_M_CANDIDATES
+        RESIDUAL_SKIP_CANDIDATES
             .iter()
             .filter(|candidate| outcome(candidate) == Outcome::SafetyPolicySkip)
             .count(),
@@ -802,27 +810,27 @@ fn task_m_inventory_is_exact_unique_and_complete() {
 }
 
 #[test]
-fn task_m_pre_m_census_has_no_undocumented_public_gap() {
+fn residual_skip_baseline_census_has_no_undocumented_public_gap() {
     let stats = generated_stats();
     let source = source_census(stats);
-    let generated_additions = TASK_M_CANDIDATES
+    let generated_additions = RESIDUAL_SKIP_CANDIDATES
         .iter()
         .filter(|candidate| outcome(candidate) == Outcome::Generated)
         .count();
-    let item_c_skipped = ITEM_C_INTERACTION_OWNERSHIP_POLICY_SKIPS.len();
-    let total = PRE_M_TOTAL_SOURCES
-        + ITEM_D_GENERATED_SOURCES
-        + ITEM_C_INTERACTION_GENERATED_SOURCES
-        + item_c_skipped
+    let interaction_signal_skipped = INTERACTION_SIGNAL_OWNERSHIP_POLICY_SKIPS.len();
+    let total = PRE_RESIDUAL_SKIP_TOTAL_SOURCES
+        + BITMAP_REGION_GENERATED_SOURCES
+        + INTERACTION_SIGNAL_GENERATED_SOURCES
+        + interaction_signal_skipped
         + BACKEND_SCAN_TOTAL_SOURCES
         + ROOT_DISCOVERY_TOTAL_SOURCES;
-    let baseline_generated = PRE_M_GENERATED_SOURCES
-        + ITEM_D_GENERATED_SOURCES
-        + ITEM_C_INTERACTION_GENERATED_SOURCES
+    let baseline_generated = PRE_RESIDUAL_SKIP_GENERATED_SOURCES
+        + BITMAP_REGION_GENERATED_SOURCES
+        + INTERACTION_SIGNAL_GENERATED_SOURCES
         + BACKEND_SCAN_GENERATED_SOURCES
         + ROOT_DISCOVERY_GENERATED_SOURCES;
     let final_generated = baseline_generated + generated_additions;
-    let final_skipped = PRE_M_SKIPPED_SOURCES + item_c_skipped - generated_additions
+    let final_skipped = PRE_RESIDUAL_SKIP_SKIPPED_SOURCES + interaction_signal_skipped - generated_additions
         + BACKEND_SCAN_SKIPPED_SOURCES
         + ROOT_DISCOVERY_SKIPPED_SOURCES;
     assert!(
@@ -830,24 +838,24 @@ fn task_m_pre_m_census_has_no_undocumented_public_gap() {
             == (
                 total,
                 baseline_generated,
-                PRE_M_SKIPPED_SOURCES
-                    + item_c_skipped
+                PRE_RESIDUAL_SKIP_SKIPPED_SOURCES
+                    + interaction_signal_skipped
                     + BACKEND_SCAN_SKIPPED_SOURCES
                     + ROOT_DISCOVERY_SKIPPED_SOURCES
             )
             || source == (total, final_generated, final_skipped),
-        "Task M census drifted to an undeclared intermediate state: {source:?}"
+        "the residual skip work census drifted to an undeclared intermediate state: {source:?}"
     );
     assert_eq!(
         public_census(stats),
         (
-            PRE_M_PUBLIC_SOURCES
-                + ITEM_D_GENERATED_SOURCES
-                + ITEM_C_INTERACTION_GENERATED_SOURCES
-                + item_c_skipped
+            PRE_RESIDUAL_SKIP_PUBLIC_SOURCES
+                + BITMAP_REGION_GENERATED_SOURCES
+                + INTERACTION_SIGNAL_GENERATED_SOURCES
+                + interaction_signal_skipped
                 + BACKEND_SCAN_PUBLIC_SOURCES
                 + ROOT_DISCOVERY_PUBLIC_SOURCES,
-            PRE_M_NON_PUBLIC_SOURCES
+            PRE_RESIDUAL_SKIP_NON_PUBLIC_SOURCES
                 + BACKEND_SCAN_NON_PUBLIC_SOURCES
                 + ROOT_DISCOVERY_NON_PUBLIC_SOURCES
                 + ROOT_DISCOVERY_NON_PUBLIC_GENERATED
@@ -882,47 +890,47 @@ fn task_m_pre_m_census_has_no_undocumented_public_gap() {
     }
     assert_eq!(
         source.2
-            - PRE_M_NON_PUBLIC_SOURCES
+            - PRE_RESIDUAL_SKIP_NON_PUBLIC_SOURCES
             - BACKEND_SCAN_NON_PUBLIC_SOURCES
             - ROOT_DISCOVERY_NON_PUBLIC_SOURCES,
         policy_decisions(stats).len()
             + actionable.values().sum::<usize>()
             + BACKEND_SCAN_PUBLIC_POLICY_SKIPS
             + ROOT_DISCOVERY_PUBLIC_POLICY_SKIPS,
-        "every TypeScript-public skip must be named policy or Task M actionable"
+        "every TypeScript-public skip must be named policy or residual-skip actionable"
     );
 }
 
 #[test]
-fn task_m_final_public_skip_set_is_only_named_policy() {
+fn residual_skip_final_public_skip_set_is_only_named_policy() {
     let stats = generated_stats();
-    let generated_additions = TASK_M_CANDIDATES
+    let generated_additions = RESIDUAL_SKIP_CANDIDATES
         .iter()
         .filter(|candidate| outcome(candidate) == Outcome::Generated)
         .count();
-    let item_c_skipped = ITEM_C_INTERACTION_OWNERSHIP_POLICY_SKIPS.len();
-    let expected_generated = PRE_M_GENERATED_SOURCES
-        + ITEM_D_GENERATED_SOURCES
-        + ITEM_C_INTERACTION_GENERATED_SOURCES
+    let interaction_signal_skipped = INTERACTION_SIGNAL_OWNERSHIP_POLICY_SKIPS.len();
+    let expected_generated = PRE_RESIDUAL_SKIP_GENERATED_SOURCES
+        + BITMAP_REGION_GENERATED_SOURCES
+        + INTERACTION_SIGNAL_GENERATED_SOURCES
         + generated_additions
         + BACKEND_SCAN_GENERATED_SOURCES
         + ROOT_DISCOVERY_GENERATED_SOURCES;
-    let expected_skipped = PRE_M_SKIPPED_SOURCES + item_c_skipped - generated_additions
+    let expected_skipped = PRE_RESIDUAL_SKIP_SKIPPED_SOURCES + interaction_signal_skipped - generated_additions
         + BACKEND_SCAN_SKIPPED_SOURCES
         + ROOT_DISCOVERY_SKIPPED_SOURCES;
     assert_eq!(
         source_census(stats),
         (
-            PRE_M_TOTAL_SOURCES
-                + ITEM_D_GENERATED_SOURCES
-                + ITEM_C_INTERACTION_GENERATED_SOURCES
-                + item_c_skipped
+            PRE_RESIDUAL_SKIP_TOTAL_SOURCES
+                + BITMAP_REGION_GENERATED_SOURCES
+                + INTERACTION_SIGNAL_GENERATED_SOURCES
+                + interaction_signal_skipped
                 + BACKEND_SCAN_TOTAL_SOURCES
                 + ROOT_DISCOVERY_TOTAL_SOURCES,
             expected_generated,
             expected_skipped
         ),
-        "EXPECTED PRE-M TASK M ACCEPTANCE FAILURE: all 11 actionable carriers must generate"
+        "EXPECTED PRE-RESIDUAL-SKIP ACCEPTANCE FAILURE: all 11 actionable carriers must generate"
     );
     assert_eq!(
         wrapper_census(stats),
@@ -936,13 +944,13 @@ fn task_m_final_public_skip_set_is_only_named_policy() {
                 + BACKEND_SCAN_MONOMORPHIZED_EXTRAS
                 + ROOT_DISCOVERY_MONOMORPHIZED_EXTRAS,
         ),
-        "Task M must not change the monomorphized wrapper extras"
+        "the residual skip work must not change the monomorphized wrapper extras"
     );
     assert_eq!(policy_decisions(stats), final_policy_decisions());
     assert_public_skips_are_census_residual(stats);
     assert_eq!(
         expected_skipped
-            - PRE_M_NON_PUBLIC_SOURCES
+            - PRE_RESIDUAL_SKIP_NON_PUBLIC_SOURCES
             - BACKEND_SCAN_NON_PUBLIC_SOURCES
             - ROOT_DISCOVERY_NON_PUBLIC_SOURCES,
         final_policy_decisions().len()
@@ -954,12 +962,12 @@ fn task_m_final_public_skip_set_is_only_named_policy() {
 }
 
 #[test]
-fn task_m_generated_surface_satisfies_every_carrier_contract() {
+fn residual_skip_generated_surface_satisfies_every_carrier_contract() {
     let wrappers = generated_wrappers();
     let header = generated_header();
     let mut errors = Vec::new();
 
-    for candidate in TASK_M_CANDIDATES {
+    for candidate in RESIDUAL_SKIP_CANDIDATES {
         let symbol = format!("flight_{}", candidate.function);
         let marker = format!("fn {symbol}(");
         if outcome(candidate) != Outcome::Generated {
@@ -1232,7 +1240,7 @@ fn task_m_generated_surface_satisfies_every_carrier_contract() {
                     },
                 );
             }
-            // Item C: the frame-rate connection shares the signal connection teardown contract.
+            // the interaction signal work: the frame-rate connection shares the signal connection teardown contract.
             Contract::SignalConnectionReturn => {
                 push_error(
                     &mut errors,
@@ -1285,9 +1293,11 @@ fn task_m_generated_surface_satisfies_every_carrier_contract() {
     );
     if !errors.is_empty() {
         panic!(
-            "EXPECTED PRE-M TASK M ACCEPTANCE FAILURE ({} issue(s)):\n{}",
+            "EXPECTED PRE-RESIDUAL-SKIP ACCEPTANCE FAILURE ({} issue(s)):\n{}",
             errors.len(),
             errors.join("\n")
         );
     }
 }
+
+const REMOVED_FIXED_KIND_RENDERER_REGISTRARS: usize = 15;

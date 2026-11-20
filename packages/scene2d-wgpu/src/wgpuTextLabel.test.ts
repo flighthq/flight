@@ -14,7 +14,7 @@ import {
 } from '@flighthq/render-wgpu/contract';
 import { getWgpuRenderStateRuntime } from '@flighthq/render-wgpu/contract';
 import { createWgpuRenderStateForTest, installWgpuMock } from '@flighthq/render-wgpu/contract';
-import { BatchFormat, getRenderStateRuntime } from '@flighthq/render/contract';
+import { BatchFormat, getRenderStateRuntime, registerNodeRenderer } from '@flighthq/render/contract';
 import type { RenderProxy2D } from '@flighthq/render/contract';
 import type { CanvasSurface, HostCanvasCapability } from '@flighthq/surface/contract';
 import { createTextLabel, TextLabelKind } from '@flighthq/text/contract';
@@ -22,7 +22,7 @@ import * as textlayout from '@flighthq/textlayout/contract';
 import { describe, expect, it } from 'vitest';
 
 import { registerWgpuStandardMaterial } from './wgpuStandardMaterial.ts';
-import { wgpuTextLabelRenderer, drawWgpuTextLabel, registerWgpuTextLabelRenderer } from './wgpuTextLabel.ts';
+import { wgpuTextLabelRenderer, drawWgpuTextLabel } from './wgpuTextLabel.ts';
 
 // A test that wraps a host handle supplies the host: the resource measures through the registered
 // resolver, and clearing after each test keeps this file from covering for another's missing one.
@@ -233,15 +233,13 @@ describe('drawWgpuTextLabel', () => {
   });
 });
 
-describe('registerWgpuTextLabelRenderer', () => {
+describe('wgpuTextLabelRenderer', () => {
   it('registers wgpuTextLabelRenderer under TextLabelKind', () => {
     const state = createRegistrationTestState();
-    registerWgpuTextLabelRenderer(state);
+    registerNodeRenderer(state, TextLabelKind, wgpuTextLabelRenderer);
     expect(getRenderStateRuntime(state).registries.nodeRenderers.get(TextLabelKind)).toBe(wgpuTextLabelRenderer);
   });
-});
 
-describe('wgpuTextLabelRenderer', () => {
   it('declares BatchFormat.Quad', () => {
     expect(wgpuTextLabelRenderer.format).toBe(BatchFormat.Quad);
   });

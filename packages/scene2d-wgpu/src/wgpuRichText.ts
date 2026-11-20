@@ -5,7 +5,7 @@ import type { NodeAny, RendererData } from '@flighthq/node/contract';
 import { bindWgpuImageResourceTexture, drawWgpuQuad } from '@flighthq/render-wgpu/contract';
 import { getWgpuRenderStateRuntime, resolveWgpuApplyBlendMode } from '@flighthq/render-wgpu/contract';
 import type { WgpuRenderState } from '@flighthq/render-wgpu/contract';
-import { createCanvasHostSurface, destroyCanvasHostSurface, registerNodeRenderer } from '@flighthq/render/contract';
+import { createCanvasHostSurface, destroyCanvasHostSurface } from '@flighthq/render/contract';
 import type { RenderProxy2D, RenderState, Scene2DRenderer } from '@flighthq/render/contract';
 import type { CanvasSurface } from '@flighthq/surface/contract';
 import {
@@ -16,7 +16,6 @@ import {
   getRichTextRuntime,
   getRichTextScrollYOffset,
   getTextLayoutResult,
-  RichTextKind,
 } from '@flighthq/text/contract';
 import type { RichText, RichTextRuntime, TextLabelRuntime } from '@flighthq/text/contract';
 import type { TextFormat } from '@flighthq/textformat/contract';
@@ -134,11 +133,6 @@ export function drawWgpuRichTextWithOverlay(
   // bounds (computeRichTextLocalBoundsRectangle applies the same offset). Zero for 'none'/'left'.
   const offsetX = computeTextBoundsOffsetX(data, result);
   drawWgpuQuad(state, renderProxy, entry, offsetX, 0, offsetX + fieldW, fieldH, 0, 0, 1, 1);
-}
-
-/** Registers wgpuRichTextRenderer for RichTextKind on this state. */
-export function registerWgpuRichTextRenderer(state: WgpuRenderState): void {
-  registerNodeRenderer(state, RichTextKind, wgpuRichTextRenderer);
 }
 
 export const wgpuRichTextRenderer: Scene2DRenderer = {

@@ -2,25 +2,15 @@ import { acquireMatrix, multiplyMatrix, releaseMatrix } from '@flighthq/geometry
 import type { Matrix } from '@flighthq/geometry/contract';
 import { getWgpuRenderStateRuntime } from '@flighthq/render-wgpu/contract';
 import type { WgpuRenderPass, WgpuRenderState } from '@flighthq/render-wgpu/contract';
-import {
-  getRenderProxy2D,
-  isRenderProxyVisible,
-  noopRendererData,
-  registerNodeRenderer,
-} from '@flighthq/render/contract';
+import { getRenderProxy2D, isRenderProxyVisible, noopRendererData } from '@flighthq/render/contract';
 import type { RenderProxy2D, Scene2DRenderer } from '@flighthq/render/contract';
-import { getNode2DRuntime, DisplayObjectKind } from '@flighthq/scene2d/contract';
+import { getNode2DRuntime } from '@flighthq/scene2d/contract';
 import type { Node2D } from '@flighthq/scene2d/contract';
 
 import { flushWgpuQuadBatchWriter } from './wgpuQuadBatchWriter.ts';
 
 export function drawWgpuScene2D(_state: WgpuRenderState, _renderProxy: RenderProxy2D): void {
   // Plain display objects have no visual geometry of their own.
-}
-
-/** Registers wgpuScene2DRenderer for DisplayObjectKind on this state. */
-export function registerWgpuScene2DRenderer(state: WgpuRenderState): void {
-  registerNodeRenderer(state, DisplayObjectKind, wgpuScene2DRenderer);
 }
 
 export const wgpuScene2DRenderer: Scene2DRenderer = {

@@ -7,11 +7,11 @@ import {
   createWgpuRenderStateRuntime,
 } from '@flighthq/render-wgpu/contract';
 import { createWgpuRenderStateForTest, installWgpuMock } from '@flighthq/render-wgpu/contract';
-import { getRenderStateRuntime } from '@flighthq/render/contract';
+import { getRenderStateRuntime, registerNodeRenderer } from '@flighthq/render/contract';
 import { createDisplayObject, DisplayObjectKind } from '@flighthq/scene2d/contract';
 import { describe, expect, it } from 'vitest';
 
-import { wgpuScene2DRenderer, drawWgpuScene2D, renderWgpuScene2D, registerWgpuScene2DRenderer } from './wgpuNode2D.ts';
+import { wgpuScene2DRenderer, drawWgpuScene2D, renderWgpuScene2D } from './wgpuNode2D.ts';
 
 beforeAll(() => {
   installWgpuMock();
@@ -27,14 +27,6 @@ describe('drawWgpuScene2D', () => {
   });
 });
 
-describe('registerWgpuScene2DRenderer', () => {
-  it('registers wgpuScene2DRenderer under DisplayObjectKind', () => {
-    const state = createRegistrationTestState();
-    registerWgpuScene2DRenderer(state);
-    expect(getRenderStateRuntime(state).registries.nodeRenderers.get(DisplayObjectKind)).toBe(wgpuScene2DRenderer);
-  });
-});
-
 describe('renderWgpuScene2D', () => {
   it('traverses a display object without error', async () => {
     const state = await createWgpuRenderStateForTest();
@@ -46,6 +38,12 @@ describe('renderWgpuScene2D', () => {
 });
 
 describe('wgpuScene2DRenderer', () => {
+  it('registers wgpuScene2DRenderer under DisplayObjectKind', () => {
+    const state = createRegistrationTestState();
+    registerNodeRenderer(state, DisplayObjectKind, wgpuScene2DRenderer);
+    expect(getRenderStateRuntime(state).registries.nodeRenderers.get(DisplayObjectKind)).toBe(wgpuScene2DRenderer);
+  });
+
   it('has createData and draw functions', () => {
     expect(typeof wgpuScene2DRenderer.createData).toBe('function');
     expect(typeof wgpuScene2DRenderer.submit).toBe('function');

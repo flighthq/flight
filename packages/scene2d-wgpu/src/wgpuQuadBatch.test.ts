@@ -16,18 +16,14 @@ import {
   getRenderProxy2D,
   prepareScene2DRender,
   getRenderStateRuntime,
+  registerNodeRenderer,
 } from '@flighthq/render/contract';
 import { createRenderTexture } from '@flighthq/texture/contract';
 import { createTextureAtlas, createTextureAtlasRegion } from '@flighthq/textureatlas/contract';
 import { TextureAtlasRotation } from '@flighthq/textureatlas/contract';
 import { describe, expect, it } from 'vitest';
 
-import {
-  wgpuQuadBatchRenderer,
-  ensureWgpuQuadBatchResources,
-  getWgpuQuadBatchPipeline,
-  registerWgpuQuadBatchRenderer,
-} from './wgpuQuadBatch.ts';
+import { wgpuQuadBatchRenderer, ensureWgpuQuadBatchResources, getWgpuQuadBatchPipeline } from './wgpuQuadBatch.ts';
 import { flushWgpuQuadBatchWriter } from './wgpuQuadBatchWriter.ts';
 import { registerWgpuStandardMaterial } from './wgpuStandardMaterial.ts';
 
@@ -66,15 +62,13 @@ describe('getWgpuQuadBatchPipeline', () => {
   });
 });
 
-describe('registerWgpuQuadBatchRenderer', () => {
+describe('wgpuQuadBatchRenderer', () => {
   it('registers wgpuQuadBatchRenderer under QuadBatchKind', () => {
     const state = createRegistrationTestState();
-    registerWgpuQuadBatchRenderer(state);
+    registerNodeRenderer(state, QuadBatchKind, wgpuQuadBatchRenderer);
     expect(getRenderStateRuntime(state).registries.nodeRenderers.get(QuadBatchKind)).toBe(wgpuQuadBatchRenderer);
   });
-});
 
-describe('wgpuQuadBatchRenderer', () => {
   it('has a createData function', () => {
     expect(typeof wgpuQuadBatchRenderer.createData).toBe('function');
   });

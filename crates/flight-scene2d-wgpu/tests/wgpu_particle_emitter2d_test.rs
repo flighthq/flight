@@ -106,20 +106,20 @@ mod draw_wgpu_particle_emitter2d {
     }
 }
 
-mod register_wgpu_particle_emitter2d_renderer {
+mod wgpu_particle_emitter2d_renderer {
     use super::*;
 
     #[test]
     fn registers_the_particle_emitter_renderer_under_particle_emitter_2d_kind() {
         let mut state = create_wgpu_render_state_for_test(None);
-        register_wgpu_particle_emitter2d_renderer(&mut state);
+        flight_render::register_node_renderer(
+            &mut state,
+            flight_particleemitter::PARTICLE_EMITTER_2D_KIND.to_string(),
+            &flight_scene2d_wgpu::WGPU_PARTICLE_EMITTER2D_RENDERER,
+        );
         let registered = get_registered_node_renderer(&state, PARTICLE_EMITTER_2D_KIND).unwrap();
         assert!(std::ptr::eq(registered, &WGPU_PARTICLE_EMITTER2D_RENDERER));
     }
-}
-
-mod wgpu_particle_emitter2d_renderer {
-    use super::*;
 
     #[test]
     fn has_create_data_and_submit_functions() {

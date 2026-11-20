@@ -63,23 +63,27 @@ mod draw_wgpu_mesh_shape {
     }
 }
 
-mod register_wgpu_mesh_shape_renderer {
+mod wgpu_mesh_shape_renderer {
     use super::*;
 
     #[test]
     fn pins_the_mesh_strategy_under_shape_kind_replacing_the_hybrid() {
         let mut state = create_wgpu_render_state_for_test(None);
-        register_wgpu_shape_renderer(&mut state);
-        register_wgpu_mesh_shape_renderer(&mut state);
+        flight_render::register_node_renderer(
+            &mut state,
+            flight_shape::contract::SHAPE_KIND.to_string(),
+            &flight_scene2d_wgpu::WGPU_SHAPE_RENDERER,
+        );
+        flight_render::register_node_renderer(
+            &mut state,
+            flight_shape::contract::SHAPE_KIND.to_string(),
+            &flight_scene2d_wgpu::WGPU_MESH_SHAPE_RENDERER,
+        );
         let registered = get_registered_node_renderer(&state, SHAPE_KIND).unwrap();
         assert!(std::ptr::eq(registered, &WGPU_MESH_SHAPE_RENDERER));
         assert!(!std::ptr::eq(registered, &WGPU_SHAPE_RENDERER));
         assert!(!std::ptr::eq(registered, &WGPU_RASTER_SHAPE_RENDERER));
     }
-}
-
-mod wgpu_mesh_shape_renderer {
-    use super::*;
 
     #[test]
     fn declares_batch_format_quad_and_the_shared_shape_data_lifecycle() {

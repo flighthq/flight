@@ -11,8 +11,6 @@ use std::sync::{Arc, PoisonError, RwLock};
 use flight_entity::{Ref, get_entity_id};
 use flight_geometry::{Matrix, create_matrix, create_rectangle, multiply_matrix};
 use flight_node::{NodeRef, compute_node_bounds_rectangle};
-use flight_render::RENDER_CACHE_KIND;
-use flight_render::register_node_renderer;
 use flight_render::{
     NodeRenderer, RenderCache, RenderCacheRefreshOptions, RenderProxies2D, RenderProxy2D,
     RenderTargetPadding, RenderTargetSize, compute_render_cache_transform,
@@ -293,16 +291,6 @@ pub fn refresh_wgpu_render_cache(
         end_wgpu_render_pass(pass);
         return dirty || resized;
     });
-}
-
-/// Registers `WGPU_RENDER_CACHE_RENDERER` for `RENDER_CACHE_KIND` on this state (TS
-/// `registerWgpuRenderCacheRenderer`).
-pub fn register_wgpu_render_cache_renderer(state: &mut WgpuRenderState) {
-    register_node_renderer(
-        state,
-        RENDER_CACHE_KIND.to_string(),
-        &WGPU_RENDER_CACHE_RENDERER,
-    );
 }
 
 /// Destroys the target `state` holds for `cache` (TS `releaseWgpuRenderCache`): a texture target

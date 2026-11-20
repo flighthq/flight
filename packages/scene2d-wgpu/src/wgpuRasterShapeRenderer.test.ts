@@ -20,6 +20,7 @@ import {
   explainRenderRegistriesMisses,
   BatchFormat,
   getRenderStateRuntime,
+  registerNodeRenderer,
 } from '@flighthq/render/contract';
 import { RenderRegistryTable } from '@flighthq/render/contract';
 import type { RenderProxy2D } from '@flighthq/render/contract';
@@ -34,12 +35,8 @@ import type { CanvasSurface, HostCanvasCapability } from '@flighthq/surface/cont
 import { describe, expect, it } from 'vitest';
 
 import { wgpuMeshShapeRenderer } from './wgpuMeshShapeRenderer.ts';
-import {
-  wgpuRasterShapeRenderer,
-  drawWgpuRasterShape,
-  registerWgpuRasterShapeRenderer,
-} from './wgpuRasterShapeRenderer.ts';
-import { registerWgpuShapeRenderer, wgpuShapeRenderer } from './wgpuShape.ts';
+import { wgpuRasterShapeRenderer, drawWgpuRasterShape } from './wgpuRasterShapeRenderer.ts';
+import { wgpuShapeRenderer } from './wgpuShape.ts';
 import { registerWgpuShapeRasterizer } from './wgpuShapeRasterizer.ts';
 import { registerWgpuStandardMaterial } from './wgpuStandardMaterial.ts';
 
@@ -256,19 +253,17 @@ describe('drawWgpuRasterShape', () => {
   });
 });
 
-describe('registerWgpuRasterShapeRenderer', () => {
+describe('wgpuRasterShapeRenderer', () => {
   it('pins its strategy under ShapeKind, replacing the hybrid shape renderer', () => {
     const state = createRegistrationTestState();
-    registerWgpuShapeRenderer(state);
-    registerWgpuRasterShapeRenderer(state);
+    registerNodeRenderer(state, ShapeKind, wgpuShapeRenderer);
+    registerNodeRenderer(state, ShapeKind, wgpuRasterShapeRenderer);
     const registered = getRenderStateRuntime(state).registries.nodeRenderers.get(ShapeKind);
     expect(registered).toBe(wgpuRasterShapeRenderer);
     expect(registered).not.toBe(wgpuShapeRenderer);
     expect(registered).not.toBe(wgpuMeshShapeRenderer);
   });
-});
 
-describe('wgpuRasterShapeRenderer', () => {
   it('declares BatchFormat.Quad and the shared shape data lifecycle', () => {
     expect(wgpuRasterShapeRenderer.format).toBe(BatchFormat.Quad);
     expect(typeof wgpuRasterShapeRenderer.createData).toBe('function');
