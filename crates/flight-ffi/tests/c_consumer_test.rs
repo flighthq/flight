@@ -113,6 +113,104 @@ fn interaction_signal_rejection_links_static_library_and_runs() {
     }
 }
 
+#[cfg(feature = "host-headless")]
+#[test]
+fn headless_host_section_links_and_runs_under_sanitizers() {
+    if let Some(output) = z_compile_link_and_run_against(
+        Library::HostHeadless,
+        "headless_host.c",
+        "headless_host",
+        true,
+        false,
+    ) {
+        let stdout = String::from_utf8_lossy(&output.stdout);
+        if stdout.contains("skipped") {
+            eprintln!("SKIPPED headless_host_section_links_and_runs_under_sanitizers: {stdout}");
+            return;
+        }
+        assert_eq!(stdout.trim(), "flight-ffi headless host: ok");
+    }
+}
+
+#[cfg(feature = "host-headless")]
+#[test]
+fn headless_host_sanitizer_probe_detects_a_leaked_adapter_name() {
+    if let Some(output) = z_compile_link_and_run_against(
+        Library::HostHeadless,
+        "headless_host.c",
+        "headless_host-leak-probe",
+        true,
+        true,
+    ) {
+        let stdout = String::from_utf8_lossy(&output.stdout);
+        if stdout.contains("skipped") {
+            eprintln!(
+                "SKIPPED headless_host_sanitizer_probe_detects_a_leaked_adapter_name: {stdout}"
+            );
+            return;
+        }
+        let diagnostics = String::from_utf8_lossy(&output.stderr);
+        assert!(
+            !output.status.success(),
+            "LeakSanitizer accepted a deliberately leaked adapter name"
+        );
+        assert!(
+            diagnostics.contains("LeakSanitizer") && diagnostics.contains("detected memory leaks"),
+            "deliberate adapter name leak did not produce a live LeakSanitizer report:\n{diagnostics}"
+        );
+    }
+}
+
+// The host section's declarations exist only for a consumer that defines the guard macro: the
+// same header compiled without it must leave every host name free.
+#[cfg(feature = "host-headless")]
+#[test]
+fn headless_host_section_stays_hidden_without_its_guard_macro() {
+    let header = fs::read_to_string(Path::new(env!("OUT_DIR")).join("flight_ffi.h")).unwrap();
+    assert!(header.contains(
+        "#ifdef FLIGHT_HOST_HEADLESS\ntypedef struct FlightHeadlessHost FlightHeadlessHost;\n"
+    ));
+    let work_dir = Path::new(env!("OUT_DIR")).join("flight-ffi-c-host-section-guard");
+    fs::create_dir_all(&work_dir).unwrap();
+    let compiler = cc::Build::new()
+        .cargo_metadata(false)
+        .target(env!("FLIGHT_FFI_TARGET"))
+        .host(env!("FLIGHT_FFI_HOST"))
+        .opt_level(0)
+        .debug(false)
+        .out_dir(&work_dir)
+        .get_compiler();
+    let source = Path::new(env!("CARGO_MANIFEST_DIR"))
+        .join("tests")
+        .join("c_consumer")
+        .join("host_section_guard.c");
+    let mut compile = compiler.to_command();
+    compile
+        .args([
+            "-std=c11",
+            "-Wall",
+            "-Wextra",
+            "-Wpedantic",
+            "-Werror",
+            "-fsyntax-only",
+        ])
+        .arg(format!("-I{}", env!("OUT_DIR")))
+        .arg(&source);
+    run(
+        &mut compile,
+        "compile the guard probe without FLIGHT_HOST_HEADLESS",
+    );
+    let mut guarded = compiler.to_command();
+    guarded
+        .args(["-std=c11", "-fsyntax-only", "-DFLIGHT_HOST_HEADLESS"])
+        .arg(format!("-I{}", env!("OUT_DIR")))
+        .arg(&source);
+    assert!(
+        !guarded.output().unwrap().status.success(),
+        "the guard probe compiled with FLIGHT_HOST_HEADLESS defined"
+    );
+}
+
 #[test]
 fn render_pass_bracket_links_static_library_and_runs() {
     if let Some(output) =
@@ -185,8 +283,8 @@ fn render_pass_bracket_sanitizer_probe_detects_a_leaked_scene_source() {
 // `cargo test` compiles the library only as a test harness, never as its declared `staticlib`, so
 // the archive is built here with the outer Cargo and located through its artifact messages. The
 // test only runs when the target is the host, so a host build matches the consumer's target.
-// The stand-in build adds the `stand-in-wgpu-host` producers and keeps its own target directory,
-// so it never replaces the default archive another consumer links.
+// The stand-in and host builds add their feature's producers and keep their own target
+// directories, so they never replace the default archive another consumer links.
 fn build_static_library(library: Library) -> PathBuf {
     let cargo = env::var_os("CARGO").unwrap_or_else(|| "cargo".into());
     let mut command = Command::new(cargo);
@@ -194,15 +292,19 @@ fn build_static_library(library: Library) -> PathBuf {
         .args(["build", "--package", "flight-ffi", "--lib"])
         .arg("--message-format=json-render-diagnostics")
         .current_dir(env!("CARGO_MANIFEST_DIR"));
-    if library == Library::StandInWgpuHost {
+    if library != Library::Default {
+        let (feature, directory) = match library {
+            Library::HostHeadless => ("host-headless", "flight-ffi-host-headless"),
+            _ => ("stand-in-wgpu-host", "flight-ffi-stand-in-wgpu-host"),
+        };
         let profile_dir = Path::new(env!("OUT_DIR"))
             .ancestors()
             .find(|dir| dir.file_name().is_some_and(|name| name == "build"))
             .and_then(Path::parent)
             .expect("OUT_DIR sits inside the profile's build directory");
-        let target_dir = profile_dir.join("flight-ffi-stand-in-wgpu-host");
+        let target_dir = profile_dir.join(directory);
         command
-            .args(["--features", "stand-in-wgpu-host", "--target-dir"])
+            .args(["--features", feature, "--target-dir"])
             .arg(target_dir);
     }
     if !cfg!(debug_assertions) {
@@ -273,6 +375,7 @@ fn z_compile_link_and_run_against(
         return None;
     }
 
+    let host_section = library == Library::HostHeadless;
     let library = build_static_library(library);
     let work_dir = library
         .parent()
@@ -322,6 +425,9 @@ fn z_compile_link_and_run_against(
     if deliberate_leak {
         compile.arg("-DFLIGHT_FFI_DELIBERATE_LEAK=1");
     }
+    if host_section {
+        compile.arg("-DFLIGHT_HOST_HEADLESS");
+    }
     compile.arg("-c").arg(&source).arg("-o").arg(&object);
     let compiled = run(&mut compile, "compile the C consumer");
     let diagnostics = String::from_utf8_lossy(&compiled.stderr);
@@ -364,5 +470,6 @@ fn z_compile_link_and_run_against(
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 enum Library {
     Default,
+    HostHeadless,
     StandInWgpuHost,
 }

@@ -845,6 +845,7 @@ name = "flight-ffi"
 version = "0.6.0"
 dependencies = [
  "cc",
+ "flight-host-headless",
  "flight-sdk",
  "quote",
  "serde_json",

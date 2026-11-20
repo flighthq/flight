@@ -1,4 +1,5 @@
 mod callback_alias;
+mod host_seam;
 mod native_bindings;
 mod public_perimeter;
 mod reachability;
@@ -1732,6 +1733,10 @@ fn main() {
     all_output.push_str(&brackets.output);
     writeln!(all_output).unwrap();
 
+    // Each enabled host feature scans its crate exactly and lowers it into a guarded section that
+    // is appended last, so the header can wrap it whole. A disabled feature contributes nothing.
+    let host_sections = generate_host_sections(crates_dir);
+
     assert_eq!(
         shape_bounds_handlers_seen.len(),
         SHAPE_BOUNDS_HANDLER_FNS.len(),
@@ -1849,6 +1854,19 @@ fn main() {
     for line in &brackets.report {
         writeln!(stats_file, "  bracket: {line}").unwrap();
     }
+    for (feature, section) in &host_sections {
+        writeln!(
+            stats_file,
+            "FFI host feature {}: {} crate functions lowered from {}",
+            feature.feature,
+            feature.lowerings.len(),
+            feature.crate_dir
+        )
+        .unwrap();
+        for line in &section.report {
+            writeln!(stats_file, "  host: {line}").unwrap();
+        }
+    }
     let mut sorted_skips: Vec<_> = stats_skipped.iter().collect();
     sorted_skips.sort_by(|a, b| b.1.cmp(a.1));
     for (reason, count) in &sorted_skips {
@@ -1879,7 +1897,10 @@ fn main() {
     // `seen_names` is the exact generated SDK-wrapper surface (including field accessors). The
     // support functions appended below participate in the carrier graph, but are not themselves
     // census rows in the committed usability baseline.
-    let reachability_surface = seen_names.clone();
+    let mut reachability_surface = seen_names.clone();
+    for (_, section) in &host_sections {
+        reachability_surface.extend(section.surface.iter().cloned());
+    }
 
     writeln!(all_output, "// free functions").unwrap();
     writeln!(
@@ -1922,6 +1943,10 @@ fn main() {
             "{contract}#[unsafe(no_mangle)]\npub unsafe extern \"C\" fn flight_free_{snake}(ptr: *mut {boxed_ty}) {{\n    if !ptr.is_null() {{\n        unsafe {{ drop(Box::from_raw(ptr)); }}\n    }}\n}}"
         )
         .unwrap();
+    }
+
+    for (_, section) in &host_sections {
+        all_output.push_str(&section.output);
     }
 
     let caller_producible = collect_caller_producible_value_types(crates_dir);
@@ -3070,6 +3095,30 @@ fn collect_host_capability_inventory(
         }
     }
     inventory
+}
+
+// The sections of every enabled host feature, after checking that each lowers exactly its crate's
+// public functions.
+fn generate_host_sections(
+    crates_dir: &Path,
+) -> Vec<(&'static host_seam::HostFeature, host_seam::HostSection)> {
+    let mut out = Vec::new();
+    for feature in host_seam::HOST_FEATURES {
+        if !host_seam::is_host_feature_enabled(feature) {
+            continue;
+        }
+        let src_dir = crates_dir.join(feature.crate_dir).join("src");
+        println!("cargo::rerun-if-changed={}", src_dir.display());
+        let sources: Vec<String> = collect_rust_source_files(&src_dir)
+            .iter()
+            .map(|path| fs::read_to_string(path).unwrap())
+            .collect();
+        let exports = host_seam::collect_host_exports(&sources);
+        host_seam::check_host_scan_membership(feature, &exports)
+            .unwrap_or_else(|error| panic!("{error}"));
+        out.push((feature, host_seam::generate_host_section(feature)));
+    }
+    return out;
 }
 
 fn collect_rust_source_files(dir: &Path) -> Vec<PathBuf> {

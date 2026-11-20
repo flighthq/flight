@@ -1,6 +1,13 @@
 use std::collections::{BTreeMap, BTreeSet};
 
+// Each feature set has its own committed baseline: the default one, and one per host feature,
+// whose lent carriers make functions reachable that the default library leaves unreachable.
+#[cfg(not(feature = "host-headless"))]
 const COMMITTED_BASELINE: &str = include_str!("ffi_reachability_baseline.tsv");
+#[cfg(feature = "host-headless")]
+const COMMITTED_BASELINE: &str = include_str!("ffi_reachability_baseline_host_headless.tsv");
+#[cfg(feature = "host-headless")]
+const DEFAULT_BASELINE: &str = include_str!("ffi_reachability_baseline.tsv");
 const GENERATED_BASELINE: &str =
     include_str!(concat!(env!("OUT_DIR"), "/ffi_reachability_baseline.tsv"));
 const GENERATED_GRAPH: &str = include_str!(concat!(env!("OUT_DIR"), "/ffi_reachability_graph.tsv"));
@@ -345,4 +352,71 @@ fn graph_and_baseline_have_one_stable_classification_per_surface_wrapper() {
             "reachable" | "policy-exempt" | "unreachable"
         )
     }));
+}
+
+// The headless host lends a surface and a render target, so with it every function blocked only
+// by those carriers becomes reachable, and no function becomes unreachable that was not before.
+#[cfg(feature = "host-headless")]
+#[test]
+fn headless_host_feature_only_resolves_the_carriers_it_lends() {
+    let rows = |report: &str, kind: &str| -> BTreeMap<String, String> {
+        return report
+            .lines()
+            .filter_map(|line| line.strip_prefix(kind))
+            .filter_map(|row| row.split_once('|'))
+            .map(|(name, carrier)| (name.to_string(), carrier.to_string()))
+            .collect();
+    };
+    let default = rows(DEFAULT_BASELINE, "unreachable|");
+    let hosted = rows(COMMITTED_BASELINE, "unreachable|");
+    let added: Vec<_> = hosted
+        .keys()
+        .filter(|name| !default.contains_key(*name))
+        .collect();
+    assert!(
+        added.is_empty(),
+        "newly unreachable with the host: {added:?}"
+    );
+    for (name, carrier) in &default {
+        if carrier == "*const flight_sdk::SurfaceRef"
+            || carrier == "*const flight_sdk::WgpuRenderTarget"
+        {
+            assert_ne!(
+                hosted.get(name),
+                Some(carrier),
+                "{name} is still blocked by {carrier}"
+            );
+        }
+    }
+    assert!(
+        !COMMITTED_BASELINE.contains("|*const flight_sdk::SurfaceRef")
+            && !COMMITTED_BASELINE.contains("|*const flight_sdk::WgpuRenderTarget"),
+        "the host's lent carriers still block a function"
+    );
+    let graph = rows(GENERATED_GRAPH, "produce|");
+    for (producer, carrier) in [
+        ("flight_create_headless_host", "Box<FfiHeadlessHostHandle>"),
+        (
+            "flight_create_headless_host_surface",
+            "*const flight_sdk::SurfaceRef",
+        ),
+        (
+            "flight_create_headless_host_render_target",
+            "*const flight_sdk::WgpuRenderTarget",
+        ),
+        (
+            "flight_get_headless_host_wgpu_device",
+            "*const flight_sdk::WgpuDevice",
+        ),
+        (
+            "flight_get_headless_host_wgpu_capability",
+            "*const flight_sdk::HostWgpuCapability",
+        ),
+    ] {
+        assert_eq!(
+            graph.get(producer).map(String::as_str),
+            Some(carrier),
+            "{producer}"
+        );
+    }
 }

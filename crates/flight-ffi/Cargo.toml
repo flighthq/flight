@@ -26,8 +26,12 @@ path = "src/bin/offsets.rs"
 # Noop-backend WGPU state and target producers standing in for the host seam that supplies them,
 # for live C tests of the render pass bracket. Never part of the default library or header.
 stand-in-wgpu-host = ["dep:wgpu"]
+# Links and scans flight-host-headless: an opaque headless host and the device, capability,
+# surface and render-target carriers it lends, in the header's FLIGHT_HOST_HEADLESS section.
+host-headless = ["dep:flight-host-headless"]
 
 [dependencies]
+flight-host-headless = { path = "../flight-host-headless", optional = true }
 flight-sdk = { workspace = true }
 serde_json = { version = "1", default-features = false, features = ["std"] }
 wgpu = { version = "30.0.1", default-features = false, features = ["std", "wgsl", "noop"], optional = true }
