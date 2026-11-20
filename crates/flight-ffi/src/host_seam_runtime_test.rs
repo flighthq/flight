@@ -293,6 +293,9 @@ mod flight_destroy_headless_host {
         unsafe { flight_destroy_headless_host(host) };
         assert_eq!(count_headless_host_carriers(host), None);
         drop(state);
+        // A live host during the checks: a stale or foreign handle must not reach it either.
+        let other = unsafe { flight_create_headless_host(null()) };
+        assert!(!other.is_null());
         for stale in [
             host,
             null_mut(),
@@ -312,6 +315,56 @@ mod flight_destroy_headless_host {
             assert!(unsafe { flight_create_headless_host_render_target(stale, 2, 2) }.is_null());
         }
         assert_eq!(count_headless_host_carriers(host), None);
+        assert!(!unsafe { flight_is_headless_host_destroyed(other) });
+        unsafe { flight_destroy_headless_host(other) };
+    }
+}
+
+mod flight_destroy_headless_host_resources {
+    use super::*;
+
+    // Destroying the host releases a lent target's GPU resources at once and destroys the
+    // device, which a render state built over the lent device observes as device loss.
+    #[test]
+    fn releases_the_target_capture_and_destroys_the_device() {
+        let Some(host) = create_test_host("releases_the_target_capture_and_destroys_the_device")
+        else {
+            return;
+        };
+        let target =
+            unsafe { flight_create_headless_host_render_target(host, SCENE_WIDTH, SCENE_HEIGHT) };
+        let device = unsafe { flight_get_headless_host_wgpu_device(host) };
+        render_known_scene(unsafe { &*device }, unsafe { &*target });
+        let lent: &WgpuRenderTarget = unsafe { &*target };
+        let WgpuRenderTarget::Screen(screen) = lent else {
+            panic!("a lent render target is a screen target");
+        };
+        let screen = screen.clone();
+        assert!(screen.read().unwrap().capture_buffer.is_some());
+        let state = create_wgpu_render_state(unsafe { &*device }, None);
+        unsafe { flight_destroy_headless_host(host) };
+        {
+            let screen = screen.read().unwrap();
+            assert!(screen.capture_buffer.is_none() && screen.capture_texture.is_none());
+            assert!(screen.presentation_view.is_none());
+        }
+        let native = flight_sdk::render_wgpu::contract::get_wgpu_render_state_native_device(&state);
+        let deadline = std::time::Instant::now() + std::time::Duration::from_secs(10);
+        let lost = loop {
+            let _ = native.device.poll(wgpu::PollType::Poll);
+            if let Some(lost) = flight_sdk::render_wgpu::contract::get_wgpu_device_loss(&state) {
+                break lost;
+            }
+            assert!(
+                std::time::Instant::now() < deadline,
+                "the device loss never settled"
+            );
+            std::thread::sleep(std::time::Duration::from_millis(5));
+        };
+        assert_eq!(
+            lost.reason,
+            flight_sdk::render_wgpu::contract::WgpuDeviceLostReason::Destroyed
+        );
     }
 }
 

@@ -44,6 +44,33 @@ mod check_host_scan_membership {
     }
 }
 
+mod generate_host_sections {
+    // The build scans every enabled host feature's crate and refuses to generate when its public
+    // functions and the feature's lowerings differ.
+    #[test]
+    fn refuses_to_build_a_feature_whose_crate_drifted_from_its_lowerings() {
+        let build = include_str!("../build.rs");
+        let body = build
+            .split_once("fn generate_host_sections(")
+            .unwrap()
+            .1
+            .split_once("\n}\n")
+            .unwrap()
+            .0;
+        let scan = body
+            .find("host_seam::collect_host_exports(&sources)")
+            .unwrap();
+        let check = body
+            .find("host_seam::check_host_scan_membership(feature, &exports)")
+            .unwrap();
+        let refuse = body.find("panic!(\"{error}\")").unwrap();
+        let section = body
+            .find("host_seam::generate_host_section(feature)")
+            .unwrap();
+        assert!(scan < check && check < refuse && refuse < section, "{body}");
+    }
+}
+
 mod collect_host_exports {
     use super::*;
 
@@ -156,6 +183,17 @@ mod headless_build_section {
         ));
         assert!(HEADER.contains("FlightHeadlessHost * flight_create_headless_host(void * arg0);"));
         assert!(HEADER.contains("void flight_destroy_headless_host(FlightHeadlessHost * arg0);"));
+        let close = HEADER.find("#endif /* FLIGHT_HOST_HEADLESS */\n").unwrap();
+        let declarations = HEADER[open..close]
+            .lines()
+            .filter(|line| !line.starts_with("/*") && line.ends_with(");"))
+            .count();
+        assert_eq!(
+            GENERATED
+                .matches("#[doc = \"flight-ffi section|FLIGHT_HOST_HEADLESS\"]")
+                .count(),
+            declarations
+        );
         assert!(HEADER.contains(
             "/* Borrowed return; do not free; valid while the host is not destroyed. */\nvoid * flight_get_headless_host_wgpu_device(FlightHeadlessHost * arg0);"
         ));
