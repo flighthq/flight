@@ -3,6 +3,8 @@
 //! HashLink, stats and reachability surface. Runtime behaviour is in
 //! `src/render_pass_bracket_runtime_test.rs`.
 
+// The test checks the generator's table, checks and guard; its emitters run only in the build script.
+#[allow(dead_code)]
 #[path = "../render_pass_bracket.rs"]
 mod render_pass_bracket;
 

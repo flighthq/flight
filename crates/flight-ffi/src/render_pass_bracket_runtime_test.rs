@@ -828,7 +828,7 @@ fn scene_record_ids(scene: &Scene) -> Vec<u64> {
     return scene_runtime(scene)
         .pass_stack
         .iter()
-        .map(|record| get_entity_id(record))
+        .map(get_entity_id)
         .collect();
 }
 
