@@ -211,6 +211,100 @@ fn headless_host_section_stays_hidden_without_its_guard_macro() {
     );
 }
 
+// The same scene, rendered once by the strict C program through the generated externs on the
+// device and target the headless host lends and once through the Rust API on a Rust-created
+// headless host, reads back identically within HEADLESS_RENDER_TOLERANCE per channel. The scene's
+// known fills are checked on the Rust frame first, and a perturbed copy must be rejected, so the
+// comparison cannot pass on two blank or two wrong frames.
+#[cfg(feature = "host-headless")]
+#[test]
+fn headless_render_from_c_matches_the_same_scene_rendered_through_rust() {
+    let work_dir = Path::new(env!("OUT_DIR")).join("flight-ffi-c-headless-render-scene");
+    fs::create_dir_all(&work_dir).unwrap();
+    let scene = work_dir.join("scene.svg");
+    let pixels = work_dir.join("c-frame.rgba");
+    fs::write(&scene, HEADLESS_RENDER_SVG).unwrap();
+    let _ = fs::remove_file(&pixels);
+    let Some(output) = z_compile_link_and_run_with_args(
+        Library::HostHeadless,
+        "headless_render.c",
+        "headless_render",
+        true,
+        false,
+        &[&scene, &pixels],
+    ) else {
+        return;
+    };
+    let stdout = String::from_utf8_lossy(&output.stdout);
+    if stdout.contains("skipped") {
+        eprintln!(
+            "SKIPPED headless_render_from_c_matches_the_same_scene_rendered_through_rust: {stdout}"
+        );
+        return;
+    }
+    assert_eq!(stdout.trim(), "flight-ffi headless render: ok");
+    let from_c = fs::read(&pixels).unwrap();
+    let from_rust = headless_render::render_reference_scene(HEADLESS_RENDER_SVG)
+        .expect("the C program found an adapter, so the Rust reference must too");
+    let size = (headless_render::WIDTH * headless_render::HEIGHT * 4) as usize;
+    assert_eq!((from_c.len(), from_rust.len()), (size, size));
+
+    for (x, y, rgba) in headless_render::KNOWN_PIXELS {
+        assert_eq!(
+            headless_render::pixel(&from_rust, x, y),
+            rgba,
+            "the Rust reference misses the scene's known fill at ({x}, {y})"
+        );
+    }
+    let mut perturbed = from_rust.clone();
+    perturbed[size / 2] ^= 0x40;
+    assert_eq!(
+        headless_render::count_mismatches(&from_rust, &perturbed, HEADLESS_RENDER_TOLERANCE),
+        1,
+        "the comparison does not see a one-pixel difference"
+    );
+    let mismatches =
+        headless_render::count_mismatches(&from_rust, &from_c, HEADLESS_RENDER_TOLERANCE);
+    assert_eq!(
+        mismatches, 0,
+        "{mismatches} pixels differ beyond {HEADLESS_RENDER_TOLERANCE} per channel between the C and Rust frames"
+    );
+}
+
+#[cfg(feature = "host-headless")]
+#[test]
+fn headless_render_sanitizer_probe_detects_a_leaked_node() {
+    let work_dir = Path::new(env!("OUT_DIR")).join("flight-ffi-c-headless-render-leak");
+    fs::create_dir_all(&work_dir).unwrap();
+    let scene = work_dir.join("scene.svg");
+    let pixels = work_dir.join("c-frame.rgba");
+    fs::write(&scene, HEADLESS_RENDER_SVG).unwrap();
+    let Some(output) = z_compile_link_and_run_with_args(
+        Library::HostHeadless,
+        "headless_render.c",
+        "headless_render-leak-probe",
+        true,
+        true,
+        &[&scene, &pixels],
+    ) else {
+        return;
+    };
+    let stdout = String::from_utf8_lossy(&output.stdout);
+    if stdout.contains("skipped") {
+        eprintln!("SKIPPED headless_render_sanitizer_probe_detects_a_leaked_node: {stdout}");
+        return;
+    }
+    let diagnostics = String::from_utf8_lossy(&output.stderr);
+    assert!(
+        !output.status.success(),
+        "LeakSanitizer accepted a deliberately leaked node"
+    );
+    assert!(
+        diagnostics.contains("LeakSanitizer") && diagnostics.contains("detected memory leaks"),
+        "deliberate node leak did not produce a live LeakSanitizer report:\n{diagnostics}"
+    );
+}
+
 #[test]
 fn render_pass_bracket_links_static_library_and_runs() {
     if let Some(output) =
@@ -366,6 +460,24 @@ fn z_compile_link_and_run_against(
     sanitizers: bool,
     deliberate_leak: bool,
 ) -> Option<std::process::Output> {
+    return z_compile_link_and_run_with_args(
+        library,
+        source_name,
+        stem,
+        sanitizers,
+        deliberate_leak,
+        &[],
+    );
+}
+
+fn z_compile_link_and_run_with_args(
+    library: Library,
+    source_name: &str,
+    stem: &str,
+    sanitizers: bool,
+    deliberate_leak: bool,
+    args: &[&Path],
+) -> Option<std::process::Output> {
     if env!("FLIGHT_FFI_TARGET") != env!("FLIGHT_FFI_HOST") {
         eprintln!(
             "skipping the flight-ffi C consumer: it is built for {} and cannot run on host {}",
@@ -456,6 +568,7 @@ fn z_compile_link_and_run_against(
     run(&mut link, "link the C consumer");
 
     let mut executable_command = Command::new(&executable);
+    executable_command.args(args);
     if let Some(sanitizer_runtimes) = sanitizer_runtimes {
         executable_command.env("LD_PRELOAD", sanitizer_runtimes.join(":"));
         executable_command.env("ASAN_OPTIONS", "detect_leaks=1:halt_on_error=1");
@@ -473,3 +586,99 @@ enum Library {
     HostHeadless,
     StandInWgpuHost,
 }
+
+// The Rust half of the headless render comparison: the scene the C program builds, rendered
+// through the Rust API on a Rust-created headless host, and the frame comparison.
+#[cfg(feature = "host-headless")]
+mod headless_render {
+    use flight_sdk::Transform2DNode;
+
+    pub const WIDTH: u32 = 48;
+    pub const HEIGHT: u32 = 32;
+    // The node offset the C program applies to the imported subtree.
+    const OFFSET: (f64, f64) = (4.0, 2.0);
+
+    // Interior pixels of each fill after the offset, and a corner the scene leaves untouched
+    // (the target's zero-initialized contents, loaded by a pass with no clear).
+    pub const KNOWN_PIXELS: [(u32, u32, [u8; 4]); 3] = [
+        (12, 9, [255, 0, 0, 255]),
+        (32, 18, [0, 255, 0, 255]),
+        (0, 0, [0, 0, 0, 0]),
+    ];
+
+    pub fn count_mismatches(expected: &[u8], actual: &[u8], tolerance: u8) -> usize {
+        return expected
+            .chunks(4)
+            .zip(actual.chunks(4))
+            .filter(|(want, got)| {
+                return want
+                    .iter()
+                    .zip(got.iter())
+                    .any(|(want, got)| want.abs_diff(*got) > tolerance);
+            })
+            .count();
+    }
+
+    pub fn pixel(frame: &[u8], x: u32, y: u32) -> [u8; 4] {
+        let offset = ((y * WIDTH + x) * 4) as usize;
+        return frame[offset..offset + 4].try_into().unwrap();
+    }
+
+    // The C program's sequence through the Rust API: host, lent target, render state over the
+    // host device, the same registrations, the SVG subtree under a display-object root at the same
+    // offset, prepare, begin with no clear, draw, end, submit, and the host read-back.
+    // flight-lint: allow(f64) the SDK's 2D node transform fields are f64
+    pub fn render_reference_scene(svg: &str) -> Option<Vec<u8>> {
+        let mut host = flight_host_headless::create_headless_host(None)?;
+        let target = flight_host_headless::create_headless_host_render_target(&host, WIDTH, HEIGHT);
+        let mut state = flight_sdk::render_wgpu::contract::create_wgpu_render_state(
+            flight_host_headless::get_headless_host_wgpu_device(&host),
+            None,
+        );
+        flight_sdk::scene2d_wgpu::contract::register_wgpu_standard_material(&mut state);
+        flight_sdk::render_wgpu::contract::register_standard_wgpu_texture_resolvers(&mut state);
+        flight_sdk::scene2d_wgpu::contract::register_wgpu_scene2d_render_preset(&mut state);
+        let root: flight_sdk::NodeRef = flight_sdk::create_display_object();
+        let shapes = flight_sdk::create_scene2d_from_svg_document(svg, None, None);
+        {
+            let mut guard = shapes.write().unwrap();
+            *guard.transform2d_mut().x = OFFSET.0;
+            *guard.transform2d_mut().y = OFFSET.1;
+        }
+        let shapes: flight_sdk::NodeRef = shapes;
+        flight_sdk::add_node_child(&root, &shapes);
+        let mut proxies = flight_sdk::RenderProxies2D::<flight_sdk::WgpuRenderState>::default();
+        flight_sdk::prepare_scene_2d_render(&mut state, &mut proxies, &root);
+        let mut pass =
+            flight_sdk::render_wgpu::contract::begin_wgpu_render_pass(&mut state, &target, None);
+        flight_sdk::scene2d_wgpu::contract::render_wgpu_scene2d(
+            &mut pass,
+            &mut proxies,
+            &root,
+            None,
+        );
+        flight_sdk::render_wgpu::contract::end_wgpu_render_pass(pass);
+        flight_sdk::render_wgpu::contract::submit_wgpu_frame(&mut state);
+        let flight_sdk::WgpuRenderTarget::Screen(screen) = &target else {
+            panic!("a headless render target is a screen target");
+        };
+        let bitmap = flight_host_headless::create_bitmap_from_headless_screen_render_target(
+            screen,
+            Some(10_000),
+        )
+        .expect("the reference frame reads back");
+        drop(state);
+        drop(target);
+        flight_host_headless::destroy_headless_host(&mut host);
+        return Some(bitmap.data.into_vec());
+    }
+}
+
+// Per-channel difference allowed between the C and Rust frames. Both run the same SDK pipeline on
+// the same adapter, so they are expected to agree exactly; 1 absorbs a rounding-mode difference.
+#[cfg(feature = "host-headless")]
+const HEADLESS_RENDER_TOLERANCE: u8 = 1;
+
+// Two solid opaque rectangles on whole pixels: their interiors are known exactly on any adapter.
+#[cfg(feature = "host-headless")]
+const HEADLESS_RENDER_SVG: &str = r##"<svg xmlns="http://www.w3.org/2000/svg" width="48" height="32"><rect x="2" y="2" width="12" height="10" fill="#ff0000"/><rect x="20" y="8" width="16" height="14" fill="#00ff00"/></svg>"##;

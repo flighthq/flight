@@ -276,11 +276,17 @@ fn provisional_wgpu_host_carriers_reach_the_declared_render_sequence() {
         "flight_destroy_wgpu_render_state",
         "flight_create_wgpu_offscreen_render_state",
     ] {
+        // A host feature produces the provisional carriers, so the sequence is reachable outright.
+        let (classification, blocker) = if cfg!(feature = "host-headless") {
+            ("reachable", "-")
+        } else {
+            ("policy-exempt", "provisional_wgpu_host")
+        };
         assert_eq!(
-            functions[function].classification, "policy-exempt",
+            functions[function].classification, classification,
             "{function} must join the provisional host fixed point"
         );
-        assert_eq!(functions[function].blocker, "provisional_wgpu_host");
+        assert_eq!(functions[function].blocker, blocker);
     }
 
     assert!(
@@ -354,46 +360,94 @@ fn graph_and_baseline_have_one_stable_classification_per_surface_wrapper() {
     }));
 }
 
-// The headless host lends a surface and a render target, so with it every function blocked only
-// by those carriers becomes reachable, and no function becomes unreachable that was not before.
+// The headless host lends the device, surface and render target that the default library can
+// only assume a native host supplies. With it, every function the default baseline exempts under
+// that provisional policy is reachable outright, the full render sequence among them, and no
+// function becomes unreachable that was not before.
 #[cfg(feature = "host-headless")]
 #[test]
-fn headless_host_feature_only_resolves_the_carriers_it_lends() {
-    let rows = |report: &str, kind: &str| -> BTreeMap<String, String> {
+fn headless_host_feature_produces_the_provisional_wgpu_host_carriers() {
+    let rows = |report: &str, kind: &str| -> BTreeSet<String> {
         return report
             .lines()
             .filter_map(|line| line.strip_prefix(kind))
-            .filter_map(|row| row.split_once('|'))
-            .map(|(name, carrier)| (name.to_string(), carrier.to_string()))
+            .map(|row| row.split('|').next().unwrap().to_string())
             .collect();
     };
-    let default = rows(DEFAULT_BASELINE, "unreachable|");
-    let hosted = rows(COMMITTED_BASELINE, "unreachable|");
-    let added: Vec<_> = hosted
-        .keys()
-        .filter(|name| !default.contains_key(*name))
+    let provisional = |report: &str| -> BTreeSet<String> {
+        return report
+            .lines()
+            .filter_map(|line| line.strip_prefix("exempt|"))
+            .filter(|row| row.contains("|provisional_wgpu_host|"))
+            .map(|row| row.split('|').next().unwrap().to_string())
+            .collect();
+    };
+    let default_unreachable = rows(DEFAULT_BASELINE, "unreachable|");
+    let hosted_unreachable = rows(COMMITTED_BASELINE, "unreachable|");
+    let added: Vec<_> = hosted_unreachable
+        .difference(&default_unreachable)
         .collect();
     assert!(
         added.is_empty(),
         "newly unreachable with the host: {added:?}"
     );
-    for (name, carrier) in &default {
-        if carrier == "*const flight_sdk::SurfaceRef"
-            || carrier == "*const flight_sdk::WgpuRenderTarget"
-        {
-            assert_ne!(
-                hosted.get(name),
-                Some(carrier),
-                "{name} is still blocked by {carrier}"
-            );
-        }
-    }
+    let assumed = provisional(DEFAULT_BASELINE);
+    assert!(assumed.len() > 100, "the provisional policy became vacuous");
     assert!(
-        !COMMITTED_BASELINE.contains("|*const flight_sdk::SurfaceRef")
-            && !COMMITTED_BASELINE.contains("|*const flight_sdk::WgpuRenderTarget"),
-        "the host's lent carriers still block a function"
+        provisional(COMMITTED_BASELINE).is_empty(),
+        "a function still relies on the provisional host policy"
     );
-    let graph = rows(GENERATED_GRAPH, "produce|");
+    let reachable: BTreeSet<String> = GENERATED_GRAPH
+        .lines()
+        .filter_map(|line| line.strip_prefix("function|"))
+        .filter(|row| row.contains("|reachable|"))
+        .map(|row| row.split('|').next().unwrap().to_string())
+        .collect();
+    // The surface verbs also take the resize and display capabilities, which only a windowed host
+    // fills; with the surface produced they stay exempt under that policy alone.
+    let host_capability: BTreeSet<String> = COMMITTED_BASELINE
+        .lines()
+        .filter_map(|line| line.strip_prefix("exempt|"))
+        .filter(|row| row.contains("|host_capability|"))
+        .map(|row| row.split('|').next().unwrap().to_string())
+        .collect();
+    let unresolved: Vec<_> = assumed
+        .iter()
+        .filter(|name| !reachable.contains(*name) && !host_capability.contains(*name))
+        .collect();
+    assert!(
+        unresolved.is_empty(),
+        "provisionally exempt and still unreachable: {unresolved:?}"
+    );
+    for function in [
+        "flight_attach_window_render_state",
+        "flight_resize_surface",
+        "flight_set_surface_display_size",
+    ] {
+        assert!(host_capability.contains(function), "{function}");
+    }
+    for function in [
+        "flight_create_wgpu_render_state",
+        "flight_register_wgpu_scene2d_render_preset",
+        "flight_prepare_wgpu_scene_2d_render",
+        "flight_begin_wgpu_render_pass",
+        "flight_render_wgpu_scene2d",
+        "flight_end_wgpu_render_pass",
+        "flight_submit_wgpu_frame",
+        "flight_create_wgpu_screen_render_target",
+        "flight_create_bitmap_from_headless_screen_render_target",
+    ] {
+        assert!(
+            reachable.contains(function),
+            "{function} is not reachable with the host"
+        );
+    }
+    let produced: BTreeSet<(String, String)> = GENERATED_GRAPH
+        .lines()
+        .filter_map(|line| line.strip_prefix("produce|"))
+        .filter_map(|row| row.split_once('|'))
+        .map(|(name, carrier)| (name.to_string(), carrier.to_string()))
+        .collect();
     for (producer, carrier) in [
         ("flight_create_headless_host", "Box<FfiHeadlessHostHandle>"),
         (
@@ -413,10 +467,9 @@ fn headless_host_feature_only_resolves_the_carriers_it_lends() {
             "*const flight_sdk::HostWgpuCapability",
         ),
     ] {
-        assert_eq!(
-            graph.get(producer).map(String::as_str),
-            Some(carrier),
-            "{producer}"
+        assert!(
+            produced.contains(&(producer.to_string(), carrier.to_string())),
+            "{producer} does not produce {carrier}"
         );
     }
 }
