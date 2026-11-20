@@ -3,7 +3,9 @@ use std::io::Cursor;
 use flight_audio::AudioBuffer;
 use flight_entity::Ref;
 use lewton::audio::{AudioReadError, PreviousWindowRight, read_audio_packet_generic};
-use lewton::header::{HeaderReadError, read_header_ident, read_header_setup};
+use lewton::header::{
+    HeaderReadError, IdentHeader, SetupHeader, read_header_ident, read_header_setup,
+};
 use ogg::{OggReadError, Packet, PacketReader};
 
 use crate::decoded_audio::{
@@ -12,6 +14,117 @@ use crate::decoded_audio::{
     validate_decoded_sample_count,
 };
 use crate::types::{AudioCodecsHostDecodeExplanationReason, AudioCodecsHostOptions};
+
+// The contract file-structure rule requires modules before functions.
+#[allow(clippy::items_after_test_module)]
+#[cfg(test)]
+mod tests {
+    use std::sync::atomic::AtomicBool;
+
+    use super::*;
+    use crate::audio_codecs_host::create_audio_codecs_host_options;
+    use crate::generated_media::{
+        VorbisChannelContent, create_vorbis_stream_shape, encode_ogg_vorbis,
+        encode_ogg_vorbis_with_single_codebook, encode_vorbis_setup_with_single_codebook,
+    };
+    use crate::types::AudioCodecsHostState;
+
+    fn decode_counting_setup_parses(
+        bytes: &[u8],
+    ) -> (AudioCodecsHostDecodeExplanationReason, usize) {
+        let state = AudioCodecsHostState {
+            alive: AtomicBool::new(true),
+        };
+        let watch = DecodeWatch {
+            signal: None,
+            state: &state,
+        };
+        VORBIS_SETUP_PARSES.with(|count| count.set(0));
+        let reason = match decode_ogg_vorbis(&create_audio_codecs_host_options(), bytes, &watch) {
+            Ok(_) => AudioCodecsHostDecodeExplanationReason::Ready,
+            Err(failure) => failure.reason,
+        };
+        return (reason, VORBIS_SETUP_PARSES.with(|count| return count.get()));
+    }
+
+    fn scan_reason(
+        dimensions: u16,
+        entries: u32,
+        lookup_type: u8,
+    ) -> AudioCodecsHostDecodeExplanationReason {
+        let packet = encode_vorbis_setup_with_single_codebook(dimensions, entries, lookup_type);
+        return match scan_vorbis_codebook_tables(&packet) {
+            Ok(()) => AudioCodecsHostDecodeExplanationReason::Ready,
+            Err(failure) => failure.reason,
+        };
+    }
+
+    #[test]
+    fn codebook_tables_over_the_bound_never_reach_the_backing_parser() {
+        let over = encode_ogg_vorbis_with_single_codebook(1, (1 << 22) + 1, 0);
+        assert_eq!(
+            decode_counting_setup_parses(&over),
+            (
+                AudioCodecsHostDecodeExplanationReason::ResourceLimitExceeded,
+                0
+            )
+        );
+        let tone = VorbisChannelContent::Tone { bin: 4, level: 230 };
+        let valid = encode_ogg_vorbis(&create_vorbis_stream_shape(vec![tone]));
+        assert_eq!(
+            decode_counting_setup_parses(&valid),
+            (AudioCodecsHostDecodeExplanationReason::Ready, 1)
+        );
+    }
+
+    #[test]
+    fn entries_alone_are_bounded_at_the_table_limit() {
+        assert_eq!(
+            scan_reason(1, 1 << 22, 0),
+            AudioCodecsHostDecodeExplanationReason::Ready
+        );
+        assert_eq!(
+            scan_reason(1, (1 << 22) + 1, 0),
+            AudioCodecsHostDecodeExplanationReason::ResourceLimitExceeded
+        );
+    }
+
+    #[test]
+    fn lookup_tables_count_entries_times_dimensions_at_the_limit() {
+        // 1,398,101 entries of two dimensions hold 3 * 1,398,101 = 4,194,303 table values.
+        assert_eq!(
+            scan_reason(2, 1_398_101, 1),
+            AudioCodecsHostDecodeExplanationReason::Ready
+        );
+        assert_eq!(
+            scan_reason(2, 1_398_102, 1),
+            AudioCodecsHostDecodeExplanationReason::ResourceLimitExceeded
+        );
+        assert_eq!(
+            scan_reason(0xffff, 0xff_ffff, 1),
+            AudioCodecsHostDecodeExplanationReason::ResourceLimitExceeded
+        );
+    }
+
+    #[test]
+    fn lookup1_value_counts_are_exact_integer_roots() {
+        let cases = [
+            (3, 1, 3),
+            (1_024, 10, 2),
+            (1_023, 10, 1),
+            (3_125, 5, 5),
+            (3_124, 5, 4),
+            (0xff_ffff, 0xffff, 1),
+            (1_398_101, 2, 1_182),
+        ];
+        for (entries, dimensions, expected) in cases {
+            assert_eq!(
+                get_vorbis_lookup1_value_count(entries, dimensions),
+                expected
+            );
+        }
+    }
+}
 
 /// A little-endian bit cursor over a Vorbis setup header, as the Vorbis bitstream packs fields
 /// from the least significant bit of each byte.
@@ -69,12 +182,7 @@ pub(crate) fn decode_ogg_vorbis(
     let setup_packet =
         read_stream_packet(&mut reader, serial, bytes)?.ok_or_else(missing_header)?;
     scan_vorbis_codebook_tables(&setup_packet.data)?;
-    let setup = read_header_setup(
-        &setup_packet.data,
-        ident.audio_channels,
-        (ident.blocksize_0, ident.blocksize_1),
-    )
-    .map_err(map_setup_error)?;
+    let setup = open_vorbis_setup(&setup_packet.data, &ident).map_err(map_setup_error)?;
     let mut window = PreviousWindowRight::new();
     let mut planar: Vec<Vec<f32>> = (0..channels).map(|_| return Vec::new()).collect();
     let mut frames: usize = 0;
@@ -239,6 +347,18 @@ fn missing_header() -> DecodeFailure {
     );
 }
 
+/// Hands the setup header to the backing parser. Unit tests count these entries to prove that a
+/// codebook-table rejection never reaches it.
+fn open_vorbis_setup(packet: &[u8], ident: &IdentHeader) -> Result<SetupHeader, HeaderReadError> {
+    #[cfg(test)]
+    VORBIS_SETUP_PARSES.with(|count| count.set(count.get() + 1));
+    return read_header_setup(
+        packet,
+        ident.audio_channels,
+        (ident.blocksize_0, ident.blocksize_1),
+    );
+}
+
 fn read_setup_bits(bits: &mut SetupBits<'_>, count: u32) -> Result<u64, DecodeFailure> {
     let mut value: u64 = 0;
     for offset in 0..count {
@@ -341,4 +461,11 @@ fn scan_vorbis_codebook_tables(packet: &[u8]) -> Result<(), DecodeFailure> {
         bits.position += skipped as usize;
     }
     return Ok(());
+}
+
+// flight-lint: allow(hidden-state) test-only probe counting backing-parser entries; compiled out of the library
+#[cfg(test)]
+thread_local! {
+    /// How many times this thread has handed a setup header to the backing parser.
+    static VORBIS_SETUP_PARSES: std::cell::Cell<usize> = const { std::cell::Cell::new(0) };
 }

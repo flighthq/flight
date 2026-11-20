@@ -2,11 +2,16 @@
 
 mod audio_codecs_host;
 mod decoded_audio;
+#[cfg(test)]
+#[path = "../tests/generated_media.rs"]
+mod generated_media;
 #[cfg(feature = "ogg")]
 mod ogg_vorbis_decoder;
 mod types;
 #[cfg(feature = "wav")]
 mod wav_decoder;
+#[cfg(feature = "wav")]
+mod wav_preflight;
 
 pub mod contract;
 

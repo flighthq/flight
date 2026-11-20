@@ -6,38 +6,122 @@ use hound::{Error, Sample, SampleFormat, WavReader, WavSamples};
 
 use crate::decoded_audio::{
     DecodeFailure, DecodeWatch, check_decode_watch, create_decode_failure,
-    create_decoded_audio_buffer, no_audio_frames, validate_decoded_layout,
-    validate_decoded_sample_count,
+    create_decoded_audio_buffer,
 };
 use crate::types::{AudioCodecsHostDecodeExplanationReason, AudioCodecsHostOptions};
+use crate::wav_preflight::preflight_wav;
+
+// The contract file-structure rule requires modules before functions.
+#[allow(clippy::items_after_test_module)]
+#[cfg(test)]
+mod tests {
+    use std::sync::atomic::AtomicBool;
+
+    use super::*;
+    use crate::audio_codecs_host::create_audio_codecs_host_options;
+    use crate::generated_media::{encode_wav, interleave_i16};
+    use crate::types::AudioCodecsHostState;
+
+    fn decode_counting_backing(
+        options: &AudioCodecsHostOptions,
+        bytes: &[u8],
+    ) -> (AudioCodecsHostDecodeExplanationReason, usize) {
+        let state = AudioCodecsHostState {
+            alive: AtomicBool::new(true),
+        };
+        let watch = DecodeWatch {
+            signal: None,
+            state: &state,
+        };
+        WAV_BACKING_OPENS.with(|count| count.set(0));
+        let reason = match decode_wav(options, bytes, &watch) {
+            Ok(_) => AudioCodecsHostDecodeExplanationReason::Ready,
+            Err(failure) => failure.reason,
+        };
+        return (reason, WAV_BACKING_OPENS.with(|count| return count.get()));
+    }
+
+    #[test]
+    fn accepted_declarations_open_the_backing_reader_once() {
+        let at_cap = AudioCodecsHostOptions {
+            max_decoded_samples: 4,
+            ..create_audio_codecs_host_options()
+        };
+        let four_samples = encode_wav(1, 2, 8_000, 16, &interleave_i16(&[1, 2, 3, 4]), None);
+        assert_eq!(
+            decode_counting_backing(&at_cap, &four_samples),
+            (AudioCodecsHostDecodeExplanationReason::Ready, 1)
+        );
+    }
+
+    #[test]
+    fn declarations_beyond_the_input_or_cap_never_reach_the_backing_reader() {
+        let lifted = AudioCodecsHostOptions {
+            max_decoded_samples: usize::MAX,
+            ..create_audio_codecs_host_options()
+        };
+        let tiny = encode_wav(1, 2, 8_000, 16, &interleave_i16(&[1, 2]), Some(0xffff_fff0));
+        assert_eq!(
+            decode_counting_backing(&lifted, &tiny),
+            (AudioCodecsHostDecodeExplanationReason::TruncatedInput, 0)
+        );
+        assert_eq!(
+            decode_counting_backing(&create_audio_codecs_host_options(), &tiny),
+            (
+                AudioCodecsHostDecodeExplanationReason::ResourceLimitExceeded,
+                0
+            )
+        );
+        let below_cap = AudioCodecsHostOptions {
+            max_decoded_samples: 3,
+            ..create_audio_codecs_host_options()
+        };
+        let four_samples = encode_wav(1, 2, 8_000, 16, &interleave_i16(&[1, 2, 3, 4]), None);
+        assert_eq!(
+            decode_counting_backing(&below_cap, &four_samples),
+            (
+                AudioCodecsHostDecodeExplanationReason::ResourceLimitExceeded,
+                0
+            )
+        );
+        let a_law = encode_wav(6, 1, 8_000, 8, &[1, 2], None);
+        assert_eq!(
+            decode_counting_backing(&lifted, &a_law),
+            (
+                AudioCodecsHostDecodeExplanationReason::UnsupportedEncoding,
+                0
+            )
+        );
+    }
+}
 
 /// Decodes a RIFF/WAVE file holding 8-, 16-, 24- or 32-bit integer PCM or 32-bit float samples.
 /// Integer samples scale by 2^(bits - 1), so the most negative code is exactly -1.0; float samples
-/// pass through unchanged.
+/// pass through unchanged. `preflight_wav` settles the layout and frame count first, so the
+/// backing reader never sees a declaration beyond the input or the host limits, and storage is
+/// reserved for exactly the preflighted frames.
 pub(crate) fn decode_wav(
     options: &AudioCodecsHostOptions,
     bytes: &[u8],
     watch: &DecodeWatch<'_>,
 ) -> Result<Ref<AudioBuffer>, DecodeFailure> {
-    let mut reader = WavReader::new(Cursor::new(bytes))
-        .map_err(|error| return map_wav_open_error(bytes, error))?;
+    let layout = preflight_wav(options, bytes)?;
+    let mut reader = open_wav_backing(bytes).map_err(map_wav_error)?;
     let spec = reader.spec();
-    let channels = usize::from(spec.channels);
-    validate_decoded_layout(options, channels, spec.sample_rate)?;
-    let frames = reader.duration() as usize;
-    if frames == 0 {
-        return Err(no_audio_frames());
+    if usize::from(spec.channels) != layout.channels || spec.sample_rate != layout.sample_rate {
+        return Err(create_decode_failure(
+            AudioCodecsHostDecodeExplanationReason::MalformedInput,
+            "the WAV header is read inconsistently",
+        ));
     }
-    validate_decoded_sample_count(options, channels, frames)?;
-    // The header's declared length is untrusted: reserve no more frames than the input could hold.
-    let bytes_per_frame = usize::from(spec.bits_per_sample).div_ceil(8) * channels;
-    let capacity = frames.min(bytes.len() / bytes_per_frame.max(1));
-    let mut planar: Vec<Vec<f32>> = (0..channels)
-        .map(|_| return Vec::with_capacity(capacity))
+    let mut planar: Vec<Vec<f32>> = (0..layout.channels)
+        .map(|_| return Vec::with_capacity(layout.frames))
         .collect();
     match (spec.sample_format, spec.bits_per_sample) {
         (SampleFormat::Float, 32) => {
-            read_wav_samples(reader.samples::<f32>(), &mut planar, watch, |value| value)?;
+            read_wav_samples(reader.samples::<f32>(), &mut planar, watch, |value| {
+                return value;
+            })?;
         }
         (SampleFormat::Int, 8) => {
             read_wav_samples(reader.samples::<i8>(), &mut planar, watch, |value| {
@@ -66,15 +150,7 @@ pub(crate) fn decode_wav(
             ));
         }
     }
-    return Ok(create_decoded_audio_buffer(spec.sample_rate, planar));
-}
-
-fn is_wav_encoding_supported(format_tag: u16, bits_per_sample: u16) -> bool {
-    return match format_tag {
-        WAVE_FORMAT_PCM => matches!(bits_per_sample, 8 | 16 | 24 | 32),
-        WAVE_FORMAT_IEEE_FLOAT => bits_per_sample == 32,
-        _ => false,
-    };
+    return Ok(create_decoded_audio_buffer(layout.sample_rate, planar));
 }
 
 fn map_wav_error(error: Error) -> DecodeFailure {
@@ -99,47 +175,12 @@ fn map_wav_error(error: Error) -> DecodeFailure {
     };
 }
 
-/// Header rejections name a well-formed but unsupported encoding (such as 12-bit or 64-bit float
-/// samples) whenever the `fmt ` chunk itself is readable; anything else is malformed.
-fn map_wav_open_error(bytes: &[u8], error: Error) -> DecodeFailure {
-    if let Error::FormatError(_) = error
-        && let Some((format_tag, bits_per_sample)) = read_wav_format(bytes)
-        && !is_wav_encoding_supported(format_tag, bits_per_sample)
-    {
-        return create_decode_failure(
-            AudioCodecsHostDecodeExplanationReason::UnsupportedEncoding,
-            "WAV sample encoding is not supported",
-        );
-    }
-    return map_wav_error(error);
-}
-
-/// The format tag (resolved through an extensible header's sub-format) and bits per sample of
-/// the first `fmt ` chunk, or `None` when the RIFF chunk walk does not reach one.
-fn read_wav_format(bytes: &[u8]) -> Option<(u16, u16)> {
-    if bytes.get(0..4)? != b"RIFF" || bytes.get(8..12)? != b"WAVE" {
-        return None;
-    }
-    let read_u16 = |offset: usize| {
-        return Some(u16::from_le_bytes(
-            bytes.get(offset..offset + 2)?.try_into().ok()?,
-        ));
-    };
-    let mut offset: usize = 12;
-    loop {
-        let id = bytes.get(offset..offset + 4)?;
-        let size = u32::from_le_bytes(bytes.get(offset + 4..offset + 8)?.try_into().ok()?) as usize;
-        let body = offset + 8;
-        if id == b"fmt " && size >= 16 {
-            let mut format_tag = read_u16(body)?;
-            let bits_per_sample = read_u16(body + 14)?;
-            if format_tag == WAVE_FORMAT_EXTENSIBLE && size >= 40 {
-                format_tag = read_u16(body + 24)?;
-            }
-            return Some((format_tag, bits_per_sample));
-        }
-        offset = body.checked_add(size)?.checked_add(size & 1)?;
-    }
+/// Opens the backing reader. Unit tests count these entries to prove that a preflight rejection
+/// never reaches the backing parser.
+fn open_wav_backing(bytes: &[u8]) -> Result<WavReader<Cursor<&[u8]>>, Error> {
+    #[cfg(test)]
+    WAV_BACKING_OPENS.with(|count| count.set(count.get() + 1));
+    return WavReader::new(Cursor::new(bytes));
 }
 
 fn read_wav_samples<S: Sample>(
@@ -159,7 +200,11 @@ fn read_wav_samples<S: Sample>(
     return Ok(());
 }
 
-const WAVE_FORMAT_EXTENSIBLE: u16 = 0xfffe;
-const WAVE_FORMAT_IEEE_FLOAT: u16 = 3;
-const WAVE_FORMAT_PCM: u16 = 1;
 const WAV_SAMPLES_PER_WATCH_CHECK: usize = 1 << 16;
+
+// flight-lint: allow(hidden-state) test-only probe counting backing-parser entries; compiled out of the library
+#[cfg(test)]
+thread_local! {
+    /// How many times this thread has opened the backing reader.
+    static WAV_BACKING_OPENS: std::cell::Cell<usize> = const { std::cell::Cell::new(0) };
+}

@@ -63,10 +63,19 @@ Every limit is checked before the storage it bounds is allocated or grown:
 | `max_encoded_bytes` | 256 MiB | |
 
 Streams must also fit an `AudioBuffer`: 1 to 32 channels, 3,000 to 768,000 Hz, and at least one
-frame. A WAV header's declared length never reserves more frames than the input bytes can hold.
-Vorbis codebook tables are bounded at 2^22 entries plus lookup values per stream; this is checked
-before the setup header is parsed. A panic inside a backing library is caught, and the decode
-fails as malformed input.
+frame.
+
+Untrusted header sizes are settled before any backing parser sees the input:
+- **WAV.** A preflight walks the RIFF chunks to the data chunk header. It checks the encoding and
+  layout, then the declared frames, using checked arithmetic. A declaration whose samples exceed
+  `max_decoded_samples` fails as an exceeded limit, even when the input is tiny. A declaration
+  longer than the bytes actually supplied fails as truncated input. Only then is `hound` opened,
+  and sample storage is reserved for exactly the preflighted frames. A data chunk that is not a
+  whole number of frames is malformed.
+- **Vorbis.** Codebook tables are bounded at 2^22 entries plus lookup values per stream. This is
+  checked before the setup header reaches `lewton`.
+
+A panic inside a backing library is caught, and the decode fails as malformed input.
 
 Decoding is CPU-only and has no thread affinity. Capability closures are `Send + Sync`, and the
 host is `Send + Sync`. The work runs synchronously on whichever thread polls the returned future,

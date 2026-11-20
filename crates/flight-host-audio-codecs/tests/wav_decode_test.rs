@@ -132,7 +132,8 @@ mod failures {
         let host = create_default_host();
         let mut not_wave = stereo_pcm16();
         not_wave[8..12].copy_from_slice(b"AVI ");
-        for bytes in [b"not a wave file at all".to_vec(), not_wave] {
+        let partial_frame = encode_wav(1, 2, 8_000, 16, &interleave_i16(&[100, -100, 200]), None);
+        for bytes in [b"not a wave file at all".to_vec(), not_wave, partial_frame] {
             assert!(
                 decode_audio_with_audio_codecs_host(&host, &bytes, "audio/wav", None).is_none()
             );
