@@ -57,7 +57,7 @@ pub(crate) fn flush_bounded_writer(_writer: &mut BoundedWriter) -> io::Result<()
 
 #[cfg(any(feature = "jpeg", feature = "png"))]
 pub(crate) fn premultiply_rgba(data: &mut [u8]) {
-    for pixel in data.chunks_exact_mut(4) {
+    for pixel in data.as_chunks_mut::<4>().0 {
         let alpha = u16::from(pixel[3]);
         pixel[0] = ((u16::from(pixel[0]) * alpha + 127) / 255) as u8;
         pixel[1] = ((u16::from(pixel[1]) * alpha + 127) / 255) as u8;

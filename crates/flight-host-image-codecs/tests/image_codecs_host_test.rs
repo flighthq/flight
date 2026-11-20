@@ -232,8 +232,10 @@ mod jpeg {
         let mut total_error = 0usize;
         for (actual, expected) in decoded
             .data
-            .chunks_exact(4)
-            .zip(source.data.chunks_exact(4))
+            .as_chunks::<4>()
+            .0
+            .iter()
+            .zip(source.data.as_chunks::<4>().0)
         {
             assert_eq!(actual[3], 255);
             total_error += actual[..3]
@@ -344,6 +346,19 @@ mod jpeg {
             ),
             ImageCodecsHostOperationExplanationReason::PixelLengthMismatch,
         );
+        assert_reason(
+            &explain_image_codecs_host_encode(
+                &host,
+                &DecodedImage {
+                    data: vec![0; 9].into_boxed_slice(),
+                    height: 1,
+                    width: 2,
+                },
+                "image/jpeg",
+                None,
+            ),
+            ImageCodecsHostOperationExplanationReason::PixelLengthMismatch,
+        );
 
         let encoded = encoded_fixture();
         let mut options = create_image_codecs_host_options();
@@ -443,7 +458,7 @@ mod png {
         )
         .expect("premultiplied PNG decode succeeds");
         let mut expected = image.data.into_vec();
-        for pixel in expected.chunks_exact_mut(4) {
+        for pixel in expected.as_chunks_mut::<4>().0 {
             let alpha = u16::from(pixel[3]);
             for channel in &mut pixel[..3] {
                 *channel = ((u16::from(*channel) * alpha + 127) / 255) as u8;
@@ -509,6 +524,11 @@ mod png {
                 height: 2,
                 width: 3,
             },
+            DecodedImage {
+                data: vec![0; 25].into_boxed_slice(),
+                height: 2,
+                width: 3,
+            },
         ] {
             assert!(
                 encode_image_with_image_codecs_host(&host, &invalid, "image/png", None).is_none()
@@ -532,6 +552,19 @@ mod png {
                 &host,
                 &DecodedImage {
                     data: vec![0; 23].into_boxed_slice(),
+                    height: 2,
+                    width: 3,
+                },
+                "image/png",
+                None,
+            ),
+            ImageCodecsHostOperationExplanationReason::PixelLengthMismatch,
+        );
+        assert_reason(
+            &explain_image_codecs_host_encode(
+                &host,
+                &DecodedImage {
+                    data: vec![0; 25].into_boxed_slice(),
                     height: 2,
                     width: 3,
                 },
