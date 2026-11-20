@@ -1,0 +1,43 @@
+[package]
+name = "flight-host-text"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+repository.workspace = true
+homepage.workspace = true
+authors.workspace = true
+description = "Rust-native font loading, shaping and glyph rasterization capabilities for Flight"
+publish = false
+autotests = false
+
+[features]
+default = ["system-discovery"]
+system-discovery = []
+
+[lib]
+doctest = false
+
+[[test]]
+name = "tests"
+path = "tests/main.rs"
+
+[dependencies]
+flight-buffer = { workspace = true }
+flight-compression = { workspace = true }
+flight-entity = { workspace = true }
+flight-font = { workspace = true }
+flight-font-formats = { workspace = true }
+flight-host = { workspace = true }
+flight-path = { workspace = true }
+flight-textformat = { workspace = true }
+flight-textshaper = { workspace = true }
+rustybuzz = { version = "=0.20.1" }
+ttf-parser = { version = "=0.25.1" }
+
+[dev-dependencies]
+flight-bitmap = { workspace = true }
+flight-font-formats = { workspace = true }
+flight-glyphatlas = { workspace = true }
+
+[lints]
+workspace = true
