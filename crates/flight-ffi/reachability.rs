@@ -10,6 +10,13 @@ const NULLABLE_PARAM_DOC_PREFIX: &str = "flight-ffi nullable|";
 const HOST_CAPABILITY_POLICY: &str = "host_capability";
 const HOST_CAPABILITY_REASON: &str =
     "feature-gated native host crates supply borrowed Host*Capability carriers";
+const PROVISIONAL_WGPU_HOST_POLICY: &str = "provisional_wgpu_host";
+const PROVISIONAL_WGPU_HOST_REASON: &str = "native hosts must supply the borrowed WGPU device, abstract render target and surface carriers";
+const PROVISIONAL_WGPU_HOST_CARRIERS: &[&str] = &[
+    "*const flight_sdk::SurfaceRef",
+    "*const flight_sdk::WgpuDevice",
+    "*const flight_sdk::WgpuRenderTarget",
+];
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 enum OwnershipKind {
@@ -605,12 +612,29 @@ pub fn generate(
         .filter(|carrier| is_host_capability_carrier(carrier))
         .cloned()
         .collect();
-    let (reachable_with_policy, producible_with_policy) =
-        solve(&functions, policy_carriers.iter().cloned());
-    let exempt: BTreeSet<_> = reachable_with_policy
+    let (reachable_with_host_policy, _) = solve(&functions, policy_carriers.iter().cloned());
+    let host_exempt: BTreeSet<_> = reachable_with_host_policy
         .difference(&reachable)
         .cloned()
         .collect();
+    let provisional_wgpu_carriers: BTreeSet<_> = PROVISIONAL_WGPU_HOST_CARRIERS
+        .iter()
+        .map(|carrier| canonical_type(carrier))
+        .collect();
+    let combined_policy_carriers = policy_carriers
+        .union(&provisional_wgpu_carriers)
+        .cloned()
+        .collect::<BTreeSet<_>>();
+    let (reachable_with_policy, producible_with_policy) =
+        solve(&functions, combined_policy_carriers.iter().cloned());
+    let provisional_wgpu_exempt: BTreeSet<_> = reachable_with_policy
+        .difference(&reachable_with_host_policy)
+        .cloned()
+        .collect();
+    let exempt = host_exempt
+        .union(&provisional_wgpu_exempt)
+        .cloned()
+        .collect::<BTreeSet<_>>();
     let unreachable: BTreeMap<_, _> = functions
         .iter()
         .filter(|(name, _)| !reachable_with_policy.contains(*name))
@@ -642,11 +666,21 @@ pub fn generate(
         "policy|{HOST_CAPABILITY_POLICY}|{HOST_CAPABILITY_REASON}"
     )
     .unwrap();
+    writeln!(
+        graph,
+        "policy|{PROVISIONAL_WGPU_HOST_POLICY}|{PROVISIONAL_WGPU_HOST_REASON}"
+    )
+    .unwrap();
+    for carrier in &provisional_wgpu_carriers {
+        writeln!(graph, "seed|{PROVISIONAL_WGPU_HOST_POLICY}|{carrier}").unwrap();
+    }
     for (name, function) in &functions {
         let (classification, blocker) = if reachable.contains(name) {
             ("reachable", "-")
-        } else if exempt.contains(name) {
+        } else if host_exempt.contains(name) {
             ("policy-exempt", HOST_CAPABILITY_POLICY)
+        } else if provisional_wgpu_exempt.contains(name) {
+            ("policy-exempt", PROVISIONAL_WGPU_HOST_POLICY)
         } else {
             ("unreachable", unreachable[name].as_str())
         };
@@ -688,6 +722,14 @@ pub fn generate(
     .unwrap();
     writeln!(
         baseline,
+        "policy|{PROVISIONAL_WGPU_HOST_POLICY}|{PROVISIONAL_WGPU_HOST_REASON}"
+    )
+    .unwrap();
+    for carrier in &provisional_wgpu_carriers {
+        writeln!(baseline, "seed|{PROVISIONAL_WGPU_HOST_POLICY}|{carrier}").unwrap();
+    }
+    writeln!(
+        baseline,
         "summary|policy-exempt|{}|unreachable|{}|blocking-carriers|{}",
         surface_exempt.len(),
         surface_unreachable.len(),
@@ -697,7 +739,7 @@ pub fn generate(
     for (carrier, count) in &carrier_counts {
         writeln!(baseline, "carrier|{count}|{carrier}").unwrap();
     }
-    for name in &surface_exempt {
+    for name in surface_exempt.intersection(&host_exempt) {
         let direct: Vec<_> = functions[name]
             .consumes
             .intersection(&policy_carriers)
@@ -711,6 +753,23 @@ pub fn generate(
         writeln!(
             baseline,
             "exempt|{name}|{HOST_CAPABILITY_POLICY}|{evidence}"
+        )
+        .unwrap();
+    }
+    for name in surface_exempt.intersection(&provisional_wgpu_exempt) {
+        let direct: Vec<_> = functions[name]
+            .consumes
+            .intersection(&provisional_wgpu_carriers)
+            .cloned()
+            .collect();
+        let evidence = if direct.is_empty() {
+            "transitive".to_string()
+        } else {
+            direct.join(",")
+        };
+        writeln!(
+            baseline,
+            "exempt|{name}|{PROVISIONAL_WGPU_HOST_POLICY}|{evidence}"
         )
         .unwrap();
     }

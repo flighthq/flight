@@ -27,3 +27,5 @@ mod flight_ffi_task_k_opaque_handle_test;
 mod flight_ffi_task_m_residual_skip_test;
 #[path = "task_s_capability_constructor_test.rs"]
 mod flight_ffi_task_s_capability_constructor_test;
+#[path = "wgpu_backend_scan_test.rs"]
+mod flight_ffi_wgpu_backend_scan_test;

@@ -1014,6 +1014,10 @@ const ITEM_D_GENERATED_SOURCES: usize = 1;
 // is an ownership policy skip. Task M's census test pins the names.
 const ITEM_C_INTERACTION_GENERATED_SOURCES: usize = 59;
 const ITEM_C_INTERACTION_SKIPPED_SOURCES: usize = 1;
+const BACKEND_SCAN_TOTAL_SOURCES: usize = 232;
+const BACKEND_SCAN_GENERATED_SOURCES: usize = 167;
+const BACKEND_SCAN_SKIPPED_SOURCES: usize = 65;
+const BACKEND_SCAN_MONOMORPHIZED_EXTRAS: usize = 8;
 
 // The producer fixed point also finds three pre-K wrappers that consumed boxes no public wrapper
 // could produce. They are removals from the baseline generated set, not members of the original
@@ -1362,17 +1366,20 @@ fn task_k_source_decision_delta_from_pre_k_baseline_is_exact() {
     let expected_generated = PRE_K_GENERATED_SOURCES + generated_additions - generated_removals
         + TASK_M_GENERATED_SOURCES
         + ITEM_D_GENERATED_SOURCES
-        + ITEM_C_INTERACTION_GENERATED_SOURCES;
+        + ITEM_C_INTERACTION_GENERATED_SOURCES
+        + BACKEND_SCAN_GENERATED_SOURCES;
     let expected_skipped = PRE_K_SKIPPED_SOURCES - generated_additions + generated_removals
         - TASK_M_GENERATED_SOURCES
-        + ITEM_C_INTERACTION_SKIPPED_SOURCES;
+        + ITEM_C_INTERACTION_SKIPPED_SOURCES
+        + BACKEND_SCAN_SKIPPED_SOURCES;
     assert_eq!(
         source_census(stats),
         (
             PRE_K_TOTAL_SOURCES
                 + ITEM_D_GENERATED_SOURCES
                 + ITEM_C_INTERACTION_GENERATED_SOURCES
-                + ITEM_C_INTERACTION_SKIPPED_SOURCES,
+                + ITEM_C_INTERACTION_SKIPPED_SOURCES
+                + BACKEND_SCAN_TOTAL_SOURCES,
             expected_generated,
             expected_skipped
         ),
@@ -1380,7 +1387,11 @@ fn task_k_source_decision_delta_from_pre_k_baseline_is_exact() {
     );
     assert_eq!(
         wrapper_census(stats),
-        (expected_generated + 97, expected_generated, 97),
+        (
+            expected_generated + 97 + BACKEND_SCAN_MONOMORPHIZED_EXTRAS,
+            expected_generated,
+            97 + BACKEND_SCAN_MONOMORPHIZED_EXTRAS
+        ),
         "{heading}: Task K must not change the pre-K monomorphized wrapper extras"
     );
 

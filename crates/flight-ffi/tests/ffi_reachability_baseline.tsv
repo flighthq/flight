@@ -1,7 +1,12 @@
 format|ffi-reachability-baseline|1
 policy|host_capability|feature-gated native host crates supply borrowed Host*Capability carriers
-summary|policy-exempt|278|unreachable|2351|blocking-carriers|701
+policy|provisional_wgpu_host|native hosts must supply the borrowed WGPU device, abstract render target and surface carriers
+seed|provisional_wgpu_host|*const flight_sdk::SurfaceRef
+seed|provisional_wgpu_host|*const flight_sdk::WgpuDevice
+seed|provisional_wgpu_host|*const flight_sdk::WgpuRenderTarget
+summary|policy-exempt|435|unreachable|2392|blocking-carriers|722
 carrier|1|*const Option<String>
+carrier|1|*const String
 carrier|2|*const flight_sdk::AbcInstruction
 carrier|1|*const flight_sdk::AccessibilityNode
 carrier|3|*const flight_sdk::AmbientLightReading
@@ -65,7 +70,7 @@ carrier|1|*const flight_sdk::DissolveModifierOptions
 carrier|1|*const flight_sdk::EasingSegment
 carrier|2|*const flight_sdk::EffectCaptureGeometry
 carrier|1|*const flight_sdk::EffectInput
-carrier|3|*const flight_sdk::EffectRef
+carrier|4|*const flight_sdk::EffectRef
 carrier|1|*const flight_sdk::EmissiveModifierOptions
 carrier|1|*const flight_sdk::EntityRuntimeWriteGuard
 carrier|2|*const flight_sdk::FlightDocumentInteractiveStates
@@ -118,6 +123,9 @@ carrier|5|*const flight_sdk::LibgdxRangeValue
 carrier|14|*const flight_sdk::LocaleInput
 carrier|3|*const flight_sdk::LottieLayerKind
 carrier|1|*const flight_sdk::LottieShapePath
+carrier|2|*const flight_sdk::Material2DFields
+carrier|2|*const flight_sdk::Material3DFields
+carrier|2|*const flight_sdk::MaterialFields
 carrier|1|*const flight_sdk::MediaSessionMetadata
 carrier|4|*const flight_sdk::MediaSessionPositionState
 carrier|1|*const flight_sdk::MenuSignalsState
@@ -189,6 +197,7 @@ carrier|1|*const flight_sdk::RateLimitedLogSinkOptions
 carrier|1|*const flight_sdk::RegExp
 carrier|1|*const flight_sdk::RegExpExecResult
 carrier|2|*const flight_sdk::RegExpMatchRange
+carrier|1|*const flight_sdk::RenderTargetDescriptor
 carrier|1|*const flight_sdk::Requirement
 carrier|3|*const flight_sdk::RequirementCatalogEntry
 carrier|15|*const flight_sdk::RichTextData
@@ -218,8 +227,9 @@ carrier|1|*const flight_sdk::Scene2DResourceCoverageExplanation
 carrier|1|*const flight_sdk::Scene2DResourceFailureGuardState
 carrier|2|*const flight_sdk::Scene2DResourceFailureNotice
 carrier|2|*const flight_sdk::Scene3D
-carrier|1|*const flight_sdk::Scene3DKindUsage
+carrier|3|*const flight_sdk::Scene3DKindUsage
 carrier|6|*const flight_sdk::Scene3DLightBlock
+carrier|1|*const flight_sdk::Scene3DRenderList
 carrier|2|*const flight_sdk::Scene3DResourceLoadProgress
 carrier|2|*const flight_sdk::Scene3DResourceResolverContext
 carrier|4|*const flight_sdk::ScreenChangedMetrics
@@ -264,6 +274,7 @@ carrier|1|*const flight_sdk::SpriteRuntime
 carrier|10|*const flight_sdk::SpritesheetFormatRegistry
 carrier|1|*const flight_sdk::SpritesheetFramePattern
 carrier|1|*const flight_sdk::SpritesheetImportOptions
+carrier|2|*const flight_sdk::StandardMaterial
 carrier|32|*const flight_sdk::StarlingPexDocument
 carrier|4|*const flight_sdk::StarlingSubTexture
 carrier|1|*const flight_sdk::StatechartInput
@@ -279,7 +290,6 @@ carrier|2|*const flight_sdk::StorageMigrationCheckpointFailed
 carrier|1|*const flight_sdk::StorageMigrationOk
 carrier|8|*const flight_sdk::StorageNamespace
 carrier|5|*const flight_sdk::StrokeStyle
-carrier|3|*const flight_sdk::SurfaceRef
 carrier|2|*const flight_sdk::SvgCssRule
 carrier|9|*const flight_sdk::SvgGradient
 carrier|7|*const flight_sdk::SvgStyle
@@ -330,7 +340,13 @@ carrier|1|*const flight_sdk::VideoChannelRuntimeStateRef
 carrier|2|*const flight_sdk::VideoResourceUrl
 carrier|2|*const flight_sdk::ViewportAlign
 carrier|1|*const flight_sdk::VoxelGrid
-carrier|1|*const flight_sdk::WgpuRenderTarget
+carrier|1|*const flight_sdk::WgpuColorLutTextureCache
+carrier|1|*const flight_sdk::WgpuHostAcquisition
+carrier|1|*const flight_sdk::WgpuRenderStateOptions
+carrier|4|*const flight_sdk::WgpuRenderStats
+carrier|1|*const flight_sdk::WgpuScene3DForwardLightList
+carrier|5|*const flight_sdk::WgpuShapeRendererData
+carrier|1|*const flight_sdk::WgpuVelocityWriter
 carrier|4|*const flight_sdk::WindowBounds
 carrier|1|*const flight_sdk::interaction::contract::HitTestContext
 carrier|1|*const flight_sdk::node::contract::AdjustmentRef
@@ -563,14 +579,16 @@ carrier|2|*mut flight_sdk::UnpackedRectangleExplanation
 carrier|2|*mut flight_sdk::VelocitySample
 carrier|1|*mut flight_sdk::VertexDisplaceModifierOptions
 carrier|2|*mut flight_sdk::VoxelGrid
-carrier|2|*mut flight_sdk::WgpuRenderState
+carrier|1|*mut flight_sdk::WgpuColorLutTextureCache
+carrier|4|*mut flight_sdk::WgpuRenderStats
+carrier|1|*mut flight_sdk::WgpuScene3DForwardLightList
+carrier|5|*mut flight_sdk::WgpuShapeRendererData
 carrier|5|*mut flight_sdk::WindowBounds
 carrier|4|*mut flight_sdk::path::contract::PathMeshPool
 carrier|2|*mut flight_sdk::skeleton2d::contract::Skeleton2DGuardState
 carrier|1|*mut flight_sdk::skeleton2d::contract::Slot2D
 carrier|2|*mut flight_sdk::text_markup::contract::TextMarkupGuardState
 carrier|1|*mut flight_sdk::textlayout::contract::TextLayoutMeasureState
-carrier|5|Box<FfiWgpuRenderPassHandle>
 carrier|1|Box<Vec<flight_sdk::AnimationTrackValidationDiagnostic>>
 carrier|1|Box<Vec<flight_sdk::ColorKeyframe>>
 carrier|1|Box<Vec<flight_sdk::CommandRef>>
@@ -669,6 +687,8 @@ carrier|1|Box<flight_sdk::Ref<flight_sdk::Path>>
 carrier|3|Box<flight_sdk::Ref<flight_sdk::PathMorph>>
 carrier|9|Box<flight_sdk::Ref<flight_sdk::Physics2DCollider>>
 carrier|1|Box<flight_sdk::Ref<flight_sdk::Record<flight_sdk::TextFormat>>>
+carrier|1|Box<flight_sdk::Ref<flight_sdk::RenderCache>>
+carrier|4|Box<flight_sdk::Ref<flight_sdk::RenderTexture>>
 carrier|3|Box<flight_sdk::Ref<flight_sdk::Scene2DResourceFailureGuardState>>
 carrier|3|Box<flight_sdk::Ref<flight_sdk::Scene3D>>
 carrier|5|Box<flight_sdk::Ref<flight_sdk::Scene3DResourceResolver>>
@@ -681,6 +701,7 @@ carrier|1|Box<flight_sdk::Ref<flight_sdk::StatechartRaw>>
 carrier|2|Box<flight_sdk::Ref<flight_sdk::Texture>>
 carrier|20|Box<flight_sdk::Ref<flight_sdk::TrayIcon>>
 carrier|23|Box<flight_sdk::Ref<flight_sdk::VideoChannel>>
+carrier|1|Box<flight_sdk::Ref<flight_sdk::WgpuTextureRenderTarget>>
 carrier|1|Box<flight_sdk::Ref<flight_sdk::WindowResizeTargetHandle>>
 carrier|1|Box<flight_sdk::Ref<flight_sdk::text::contract::TextLayoutContext>>
 carrier|1|Box<flight_sdk::RequirementCatalog>
@@ -697,7 +718,11 @@ carrier|12|Box<flight_sdk::TextLineMetrics>
 carrier|1|Box<flight_sdk::TextMeasureFunction>
 carrier|12|Box<flight_sdk::TextureContainer>
 carrier|2|Box<flight_sdk::TextureContainerLevels>
+carrier|1|Box<flight_sdk::TextureSourceKind>
 carrier|1|Box<flight_sdk::TextureSourceRef>
+carrier|4|Box<flight_sdk::WgpuEffectApplicationExplanation>
+carrier|1|Box<flight_sdk::WgpuEffectRunner>
+carrier|1|Box<flight_sdk::WgpuQuadMaterialRenderer>
 carrier|4|Box<flight_sdk::XmlElement>
 carrier|1|Box<std::sync::Arc<flight_sdk::Blob>>
 carrier|1|Box<std::sync::Arc<flight_sdk::CompressedImageData>>
@@ -980,9 +1005,167 @@ exempt|flight_watch_geolocation_position|host_capability|*const flight_sdk::Host
 exempt|flight_write_binary_file|host_capability|*const flight_sdk::HostFileSystemCapability
 exempt|flight_write_file_atomic|host_capability|*const flight_sdk::HostFileSystemCapability
 exempt|flight_write_text_file|host_capability|*const flight_sdk::HostFileSystemCapability
+exempt|flight_are_wgpu_color_adjustment_guards_enabled|provisional_wgpu_host|transitive
+exempt|flight_are_wgpu_effect_guards_enabled|provisional_wgpu_host|transitive
+exempt|flight_are_wgpu_scene3d_custom_shader_guards_enabled|provisional_wgpu_host|transitive
+exempt|flight_are_wgpu_scene3d_forward_light_selection_guards_enabled|provisional_wgpu_host|transitive
+exempt|flight_attach_window_render_state|provisional_wgpu_host|*const flight_sdk::SurfaceRef
+exempt|flight_bake_wgpu_environment_ibl|provisional_wgpu_host|transitive
+exempt|flight_begin_wgpu_frame|provisional_wgpu_host|transitive
+exempt|flight_begin_wgpu_render_pass|provisional_wgpu_host|*const flight_sdk::WgpuRenderTarget
+exempt|flight_create_wgpu_cache_state|provisional_wgpu_host|transitive
+exempt|flight_create_wgpu_device_state|provisional_wgpu_host|*const flight_sdk::WgpuDevice
+exempt|flight_create_wgpu_effect_state|provisional_wgpu_host|transitive
+exempt|flight_create_wgpu_offscreen_render_state|provisional_wgpu_host|transitive
+exempt|flight_create_wgpu_render_state|provisional_wgpu_host|*const flight_sdk::WgpuDevice
+exempt|flight_create_wgpu_screen_render_target|provisional_wgpu_host|*const flight_sdk::SurfaceRef,*const flight_sdk::WgpuDevice
+exempt|flight_create_wgpu_velocity_target|provisional_wgpu_host|transitive
+exempt|flight_destroy_wgpu_effect_state|provisional_wgpu_host|transitive
+exempt|flight_destroy_wgpu_render_state|provisional_wgpu_host|transitive
+exempt|flight_destroy_wgpu_render_texture_pool|provisional_wgpu_host|transitive
+exempt|flight_destroy_wgpu_scene_2d_render|provisional_wgpu_host|transitive
+exempt|flight_destroy_wgpu_screen_render_target|provisional_wgpu_host|transitive
+exempt|flight_destroy_wgpu_texture_render_target|provisional_wgpu_host|transitive
+exempt|flight_disable_wgpu_effect_guards|provisional_wgpu_host|transitive
+exempt|flight_dispose_external_wgpu_texture__texture|provisional_wgpu_host|transitive
+exempt|flight_dispose_wgpu_device_signals|provisional_wgpu_host|transitive
+exempt|flight_enable_wgpu_blend_mode_support|provisional_wgpu_host|transitive
+exempt|flight_enable_wgpu_clip_support|provisional_wgpu_host|transitive
+exempt|flight_enable_wgpu_color_adjustment_guards|provisional_wgpu_host|transitive
+exempt|flight_enable_wgpu_device_signals|provisional_wgpu_host|transitive
+exempt|flight_enable_wgpu_effect_guards|provisional_wgpu_host|transitive
+exempt|flight_enable_wgpu_render_cache|provisional_wgpu_host|transitive
+exempt|flight_enable_wgpu_scene3d_custom_shader_guards|provisional_wgpu_host|transitive
+exempt|flight_enable_wgpu_scene3d_forward_light_selection_guards|provisional_wgpu_host|transitive
+exempt|flight_enable_wgpu_screen_render_target_antialias|provisional_wgpu_host|transitive
+exempt|flight_enable_wgpu_screen_render_target_capture|provisional_wgpu_host|transitive
+exempt|flight_enable_wgpu_stroke_path_tessellation|provisional_wgpu_host|transitive
+exempt|flight_enable_wgpu_text_input|provisional_wgpu_host|transitive
+exempt|flight_enable_wgpu_texture_resolver_guards|provisional_wgpu_host|transitive
+exempt|flight_end_wgpu_render_pass|provisional_wgpu_host|transitive
+exempt|flight_end_wgpu_screen_render_target_frame|provisional_wgpu_host|transitive
+exempt|flight_explain_wgpu_texture_resolution__texture|provisional_wgpu_host|transitive
+exempt|flight_free_wgpu_render_pass_handle|provisional_wgpu_host|transitive
+exempt|flight_get_wgpu_custom_material_shader_source|provisional_wgpu_host|transitive
+exempt|flight_get_wgpu_device_loss|provisional_wgpu_host|transitive
+exempt|flight_get_wgpu_effect_runner|provisional_wgpu_host|transitive
+exempt|flight_get_wgpu_mesh_material_renderer|provisional_wgpu_host|transitive
+exempt|flight_get_wgpu_scene3d_time|provisional_wgpu_host|transitive
+exempt|flight_has_wgpu_effect_runner|provisional_wgpu_host|transitive
+exempt|flight_is_wgpu_device_lost|provisional_wgpu_host|transitive
+exempt|flight_prepare_wgpu_scene_2d_render|provisional_wgpu_host|transitive
+exempt|flight_register_standard_wgpu_texture_resolvers|provisional_wgpu_host|transitive
+exempt|flight_register_wgpu_bevel_effect|provisional_wgpu_host|transitive
+exempt|flight_register_wgpu_bitmap_displacement_effect|provisional_wgpu_host|transitive
+exempt|flight_register_wgpu_bitmap_text_renderer|provisional_wgpu_host|transitive
+exempt|flight_register_wgpu_bitmap_texture_resolver|provisional_wgpu_host|transitive
+exempt|flight_register_wgpu_blend_effect|provisional_wgpu_host|transitive
+exempt|flight_register_wgpu_blinn_phong_material|provisional_wgpu_host|transitive
+exempt|flight_register_wgpu_bloom_effect|provisional_wgpu_host|transitive
+exempt|flight_register_wgpu_blur_effect|provisional_wgpu_host|transitive
+exempt|flight_register_wgpu_camera_motion_blur_effect|provisional_wgpu_host|transitive
+exempt|flight_register_wgpu_chromatic_aberration_effect|provisional_wgpu_host|transitive
+exempt|flight_register_wgpu_color_adjustment_material_feature|provisional_wgpu_host|transitive
+exempt|flight_register_wgpu_composite_effect|provisional_wgpu_host|transitive
+exempt|flight_register_wgpu_compressed_image_texture_resolver|provisional_wgpu_host|transitive
+exempt|flight_register_wgpu_compressed_texture_decoder|provisional_wgpu_host|transitive
+exempt|flight_register_wgpu_compressed_texture_upload|provisional_wgpu_host|transitive
+exempt|flight_register_wgpu_contact_shadows_effect|provisional_wgpu_host|transitive
+exempt|flight_register_wgpu_convolution_effect|provisional_wgpu_host|transitive
+exempt|flight_register_wgpu_crt_effect|provisional_wgpu_host|transitive
+exempt|flight_register_wgpu_custom_material_shader|provisional_wgpu_host|transitive
+exempt|flight_register_wgpu_custom_shader_material|provisional_wgpu_host|transitive
+exempt|flight_register_wgpu_depth_material|provisional_wgpu_host|transitive
+exempt|flight_register_wgpu_directional_blur_effect|provisional_wgpu_host|transitive
+exempt|flight_register_wgpu_displacement_effect|provisional_wgpu_host|transitive
+exempt|flight_register_wgpu_dither_effect|provisional_wgpu_host|transitive
+exempt|flight_register_wgpu_drop_shadow_effect|provisional_wgpu_host|transitive
+exempt|flight_register_wgpu_emissive_material|provisional_wgpu_host|transitive
+exempt|flight_register_wgpu_film_grain_effect|provisional_wgpu_host|transitive
+exempt|flight_register_wgpu_fxaa_effect|provisional_wgpu_host|transitive
+exempt|flight_register_wgpu_glitch_effect|provisional_wgpu_host|transitive
+exempt|flight_register_wgpu_god_rays_effect|provisional_wgpu_host|transitive
+exempt|flight_register_wgpu_gradient_bevel_effect|provisional_wgpu_host|transitive
+exempt|flight_register_wgpu_gradient_glow_effect|provisional_wgpu_host|transitive
+exempt|flight_register_wgpu_halftone_effect|provisional_wgpu_host|transitive
+exempt|flight_register_wgpu_image_texture_resolver|provisional_wgpu_host|transitive
+exempt|flight_register_wgpu_inner_glow_effect|provisional_wgpu_host|transitive
+exempt|flight_register_wgpu_inner_shadow_effect|provisional_wgpu_host|transitive
+exempt|flight_register_wgpu_kuwahara_effect|provisional_wgpu_host|transitive
+exempt|flight_register_wgpu_lambert_material|provisional_wgpu_host|transitive
+exempt|flight_register_wgpu_lens_dirt_effect|provisional_wgpu_host|transitive
+exempt|flight_register_wgpu_lens_distortion_effect|provisional_wgpu_host|transitive
+exempt|flight_register_wgpu_lens_flare_effect|provisional_wgpu_host|transitive
+exempt|flight_register_wgpu_matcap_material|provisional_wgpu_host|transitive
+exempt|flight_register_wgpu_median_effect|provisional_wgpu_host|transitive
+exempt|flight_register_wgpu_mesh_material_renderer|provisional_wgpu_host|transitive
+exempt|flight_register_wgpu_mesh_shape_renderer|provisional_wgpu_host|transitive
+exempt|flight_register_wgpu_mipmap_generation|provisional_wgpu_host|transitive
+exempt|flight_register_wgpu_modifier_snippet|provisional_wgpu_host|transitive
+exempt|flight_register_wgpu_morph_shape_renderer|provisional_wgpu_host|transitive
+exempt|flight_register_wgpu_motion_blur_effect|provisional_wgpu_host|transitive
+exempt|flight_register_wgpu_normal_material|provisional_wgpu_host|transitive
+exempt|flight_register_wgpu_outer_glow_effect|provisional_wgpu_host|transitive
+exempt|flight_register_wgpu_outline_effect|provisional_wgpu_host|transitive
+exempt|flight_register_wgpu_particle_emitter2d_renderer|provisional_wgpu_host|transitive
+exempt|flight_register_wgpu_particle_emitter3d_pass|provisional_wgpu_host|transitive
+exempt|flight_register_wgpu_phong_material|provisional_wgpu_host|transitive
+exempt|flight_register_wgpu_pixelate_effect|provisional_wgpu_host|transitive
+exempt|flight_register_wgpu_posterize_effect|provisional_wgpu_host|transitive
+exempt|flight_register_wgpu_quad_batch_renderer|provisional_wgpu_host|transitive
+exempt|flight_register_wgpu_radial_blur_effect|provisional_wgpu_host|transitive
+exempt|flight_register_wgpu_raster_shape_renderer|provisional_wgpu_host|transitive
+exempt|flight_register_wgpu_render_cache_renderer|provisional_wgpu_host|transitive
+exempt|flight_register_wgpu_render_texture_resolver|provisional_wgpu_host|transitive
+exempt|flight_register_wgpu_rich_text_renderer|provisional_wgpu_host|transitive
+exempt|flight_register_wgpu_scale9_shape_renderer|provisional_wgpu_host|transitive
+exempt|flight_register_wgpu_scale9_sprite_renderer|provisional_wgpu_host|transitive
+exempt|flight_register_wgpu_scanlines_effect|provisional_wgpu_host|transitive
+exempt|flight_register_wgpu_scene2d_render_preset|provisional_wgpu_host|transitive
+exempt|flight_register_wgpu_scene2d_renderer|provisional_wgpu_host|transitive
+exempt|flight_register_wgpu_scene3d_render_preset|provisional_wgpu_host|transitive
+exempt|flight_register_wgpu_screen_space_fog_effect|provisional_wgpu_host|transitive
+exempt|flight_register_wgpu_shaded_material|provisional_wgpu_host|transitive
+exempt|flight_register_wgpu_shape_renderer|provisional_wgpu_host|transitive
+exempt|flight_register_wgpu_sharpen_effect|provisional_wgpu_host|transitive
+exempt|flight_register_wgpu_sketch_effect|provisional_wgpu_host|transitive
+exempt|flight_register_wgpu_smaa_effect|provisional_wgpu_host|transitive
+exempt|flight_register_wgpu_specular_glossiness_pbr_material|provisional_wgpu_host|transitive
+exempt|flight_register_wgpu_sprite_renderer|provisional_wgpu_host|transitive
+exempt|flight_register_wgpu_ssao_effect|provisional_wgpu_host|transitive
+exempt|flight_register_wgpu_standard_material|provisional_wgpu_host|transitive
+exempt|flight_register_wgpu_standard_pbr_material|provisional_wgpu_host|transitive
+exempt|flight_register_wgpu_text_label_renderer|provisional_wgpu_host|transitive
+exempt|flight_register_wgpu_tilemap_renderer|provisional_wgpu_host|transitive
+exempt|flight_register_wgpu_tilt_shift_effect|provisional_wgpu_host|transitive
+exempt|flight_register_wgpu_tone_map_effect|provisional_wgpu_host|transitive
+exempt|flight_register_wgpu_toon_material|provisional_wgpu_host|transitive
+exempt|flight_register_wgpu_unlit_material|provisional_wgpu_host|transitive
+exempt|flight_register_wgpu_vertex_color_material|provisional_wgpu_host|transitive
+exempt|flight_register_wgpu_vignette_effect|provisional_wgpu_host|transitive
+exempt|flight_register_wgpu_white_balance_effect|provisional_wgpu_host|transitive
+exempt|flight_register_wgpu_wireframe_material|provisional_wgpu_host|transitive
+exempt|flight_render_wgpu_environment_skybox|provisional_wgpu_host|transitive
+exempt|flight_render_wgpu_scene2d|provisional_wgpu_host|transitive
+exempt|flight_render_wgpu_scene3d|provisional_wgpu_host|transitive
+exempt|flight_render_wgpu_scene3d_shadow_map|provisional_wgpu_host|transitive
+exempt|flight_render_wgpu_velocity|provisional_wgpu_host|transitive
+exempt|flight_resize_surface|provisional_wgpu_host|*const flight_sdk::SurfaceRef
+exempt|flight_resolve_wgpu_mesh_material_renderer__shaded_material|provisional_wgpu_host|transitive
+exempt|flight_resolve_wgpu_modifier_snippet|provisional_wgpu_host|transitive
+exempt|flight_resolve_wgpu_quad_material_renderer__shaded_material|provisional_wgpu_host|transitive
+exempt|flight_resolve_wgpu_texture__texture|provisional_wgpu_host|transitive
+exempt|flight_set_surface_display_size|provisional_wgpu_host|*const flight_sdk::SurfaceRef
+exempt|flight_set_wgpu_effect_application_guard|provisional_wgpu_host|transitive
+exempt|flight_set_wgpu_effect_state_sample_count_guard|provisional_wgpu_host|transitive
+exempt|flight_set_wgpu_effect_state_skip_guard|provisional_wgpu_host|transitive
+exempt|flight_set_wgpu_scene3d_time|provisional_wgpu_host|transitive
+exempt|flight_submit_wgpu_frame|provisional_wgpu_host|transitive
+exempt|flight_sync_wgpu_screen_render_target_extent|provisional_wgpu_host|transitive
 unreachable|flight_acquire_path_mesh|*mut flight_sdk::path::contract::PathMeshPool
 unreachable|flight_acquire_path_mesh_typed|*mut flight_sdk::path::contract::PathMeshPool
 unreachable|flight_acquire_spritesheet_player|*mut flight_sdk::SpritesheetPlayerPool
+unreachable|flight_acquire_wgpu_render_texture|*const flight_sdk::RenderTargetDescriptor
 unreachable|flight_add_audio_bus_to_mixer|Box<flight_sdk::Ref<flight_sdk::AudioMixer>>
 unreachable|flight_add_log_sink|Box<flight_sdk::LogSink>
 unreachable|flight_add_movie_clip_frame_script|*const flight_sdk::TimelineFrameArg
@@ -1046,19 +1229,18 @@ unreachable|flight_attach_socket|Box<flight_sdk::Ref<flight_sdk::Socket>>
 unreachable|flight_attach_text_input|*const flight_sdk::InputIngressSource
 unreachable|flight_attach_wheel_input|*const flight_sdk::InputIngressSource
 unreachable|flight_attach_window|*const flight_sdk::NativeWindowHandle
-unreachable|flight_attach_window_render_state|*const flight_sdk::SurfaceRef
 unreachable|flight_attach_window_resize|Box<flight_sdk::Ref<flight_sdk::WindowResizeTargetHandle>>
 unreachable|flight_bake_color_lut|Box<flight_sdk::ColorTransformFunction>
 unreachable|flight_bake_color_lut_for_run|Box<flight_sdk::Ref<dyn flight_sdk::Adjustment>>
 unreachable|flight_begin_debug_span|Box<flight_sdk::Ref<flight_sdk::DebugState>>
 unreachable|flight_begin_log_group|Box<flight_sdk::Ref<flight_sdk::LogState>>
-unreachable|flight_begin_wgpu_render_pass|*const flight_sdk::WgpuRenderTarget
 unreachable|flight_bevel_bitmap|*const flight_sdk::BitmapBevelOptions
 unreachable|flight_box_blur_bitmap|*const flight_sdk::BitmapBoxBlurOptions
 unreachable|flight_build_rich_text_layout_params|Box<flight_sdk::TextMeasureFunction>
 unreachable|flight_build_spine_binary_segment_easings|*const flight_sdk::SpineBinaryValueTimeline
 unreachable|flight_build_spine_segment_easings|*const flight_sdk::JsonRecord
 unreachable|flight_build_stroke_path_geometry|*const flight_sdk::StrokeStyle
+unreachable|flight_build_wgpu_render_registries|*const flight_sdk::WgpuRenderStateOptions
 unreachable|flight_can_lerp_effects|*const flight_sdk::EffectRef
 unreachable|flight_capture_snapshot|*const flight_sdk::SnapshotGuardState
 unreachable|flight_clear_audio_channel_loop_region|Box<flight_sdk::Ref<flight_sdk::AudioChannel>>
@@ -1199,7 +1381,7 @@ unreachable|flight_destroy_canvas_surface|Box<flight_sdk::Ref<flight_sdk::Canvas
 unreachable|flight_destroy_power_keep_awake|*mut flight_sdk::PowerContext
 unreachable|flight_destroy_tray_icon|Box<flight_sdk::Ref<flight_sdk::TrayIcon>>
 unreachable|flight_destroy_video_channel|Box<flight_sdk::Ref<flight_sdk::VideoChannel>>
-unreachable|flight_destroy_wgpu_scene_2d_render|*mut flight_sdk::WgpuRenderState
+unreachable|flight_destroy_wgpu_render_texture|Box<flight_sdk::Ref<flight_sdk::RenderTexture>>
 unreachable|flight_detach_gamepad_input|*const flight_sdk::InputIngressSource
 unreachable|flight_detach_keyboard_input|*const flight_sdk::InputIngressSource
 unreachable|flight_detach_pointer_input|*const flight_sdk::InputIngressSource
@@ -1281,7 +1463,6 @@ unreachable|flight_enable_video_channel_signals|Box<flight_sdk::Ref<flight_sdk::
 unreachable|flight_end_debug_span|Box<flight_sdk::Ref<flight_sdk::LogState>>
 unreachable|flight_end_log_group|Box<flight_sdk::Ref<flight_sdk::LogState>>
 unreachable|flight_end_log_timer|Box<flight_sdk::Ref<flight_sdk::LogState>>
-unreachable|flight_end_wgpu_render_pass|Box<FfiWgpuRenderPassHandle>
 unreachable|flight_enter_log_span|Box<flight_sdk::LogSpan>
 unreachable|flight_equals_skeleton_2d|*const flight_sdk::Skeleton2D
 unreachable|flight_equals_snapshot|Box<flight_sdk::Snapshot>
@@ -1312,6 +1493,9 @@ unreachable|flight_explain_spatial_indexing_3d|*const flight_sdk::SpatialIndex3D
 unreachable|flight_explain_statechart_transition|Box<flight_sdk::Ref<flight_sdk::StatechartInstanceRaw>>
 unreachable|flight_explain_stroke_path_tessellation|*const flight_sdk::StrokeStyle
 unreachable|flight_explain_unpacked_rectangles|*const flight_sdk::PackableRectangle
+unreachable|flight_explain_wgpu_effect_application|*const flight_sdk::EffectRef
+unreachable|flight_explain_wgpu_render_texture|Box<flight_sdk::Ref<flight_sdk::RenderTexture>>
+unreachable|flight_explain_wgpu_scene3d_coverage|*const flight_sdk::Scene3DKindUsage
 unreachable|flight_extract_animation_root_motion|Box<flight_sdk::AnimationRootMotionExtractor>
 unreachable|flight_fade_audio_bus_gain|Box<flight_sdk::Ref<flight_sdk::AudioMixer>>
 unreachable|flight_fade_audio_channel_gain|Box<flight_sdk::Ref<flight_sdk::AudioChannel>>
@@ -1339,7 +1523,6 @@ unreachable|flight_format_unit|*const flight_sdk::LocaleInput
 unreachable|flight_frame_orbit_camera_controller_to_sphere|*const flight_sdk::Projection
 unreachable|flight_free_material2_d_ref|Box<flight_sdk::Ref<dyn flight_sdk::Material2D>>
 unreachable|flight_free_material_data_ref|Box<flight_sdk::Ref<dyn flight_sdk::MaterialData>>
-unreachable|flight_free_wgpu_render_pass_handle|Box<FfiWgpuRenderPassHandle>
 unreachable|flight_get_abc_file_major_version|Box<flight_sdk::AbcFile>
 unreachable|flight_get_abc_file_minor_version|Box<flight_sdk::AbcFile>
 unreachable|flight_get_abc_instruction_offset|*const flight_sdk::AbcInstruction
@@ -2224,6 +2407,20 @@ unreachable|flight_get_video_channel_playback_rate|Box<flight_sdk::Ref<flight_sd
 unreachable|flight_get_video_channel_signals|Box<flight_sdk::Ref<flight_sdk::VideoChannel>>
 unreachable|flight_get_video_channel_width|Box<flight_sdk::Ref<flight_sdk::VideoChannel>>
 unreachable|flight_get_voxel_grid_depth|*const flight_sdk::VoxelGrid
+unreachable|flight_get_wgpu_color_lut_texture_cache_size|*const flight_sdk::WgpuColorLutTextureCache
+unreachable|flight_get_wgpu_effect_application_explanation_registered_count|Box<flight_sdk::WgpuEffectApplicationExplanation>
+unreachable|flight_get_wgpu_effect_application_explanation_requested_count|Box<flight_sdk::WgpuEffectApplicationExplanation>
+unreachable|flight_get_wgpu_quad_material_renderer|*const String
+unreachable|flight_get_wgpu_render_stats_batch_flush_count|*const flight_sdk::WgpuRenderStats
+unreachable|flight_get_wgpu_render_stats_draw_call_count|*const flight_sdk::WgpuRenderStats
+unreachable|flight_get_wgpu_render_stats_instance_count|*const flight_sdk::WgpuRenderStats
+unreachable|flight_get_wgpu_render_stats_texture_upload_count|*const flight_sdk::WgpuRenderStats
+unreachable|flight_get_wgpu_scene3_dforward_light_list_mesh_count|*const flight_sdk::WgpuScene3DForwardLightList
+unreachable|flight_get_wgpu_shape_renderer_data_last_content_id|*const flight_sdk::WgpuShapeRendererData
+unreachable|flight_get_wgpu_shape_renderer_data_last_h|*const flight_sdk::WgpuShapeRendererData
+unreachable|flight_get_wgpu_shape_renderer_data_last_pixel_ratio|*const flight_sdk::WgpuShapeRendererData
+unreachable|flight_get_wgpu_shape_renderer_data_last_w|*const flight_sdk::WgpuShapeRendererData
+unreachable|flight_get_wgpu_shape_renderer_data_mesh_version|*const flight_sdk::WgpuShapeRendererData
 unreachable|flight_get_window_bounds|*mut flight_sdk::WindowBounds
 unreachable|flight_get_window_bounds_height|*const flight_sdk::WindowBounds
 unreachable|flight_get_window_bounds_width|*const flight_sdk::WindowBounds
@@ -2248,6 +2445,7 @@ unreachable|flight_has_non_solid_shape_fill|*const flight_sdk::ShapeCommandToken
 unreachable|flight_has_non_solid_shape_stroke|*const flight_sdk::ShapeCommandToken
 unreachable|flight_has_shape_fill|*const flight_sdk::ShapeCommandToken
 unreachable|flight_has_status_bar_style_entry|*const flight_sdk::StatusBarStyleStacks
+unreachable|flight_has_wgpu_scene3d_coverage|*const flight_sdk::Scene3DKindUsage
 unreachable|flight_index_of_bone|*const flight_sdk::skeleton2d::contract::Bone2D
 unreachable|flight_index_of_spine_slot|*const flight_sdk::skeleton2d::contract::Slot2D
 unreachable|flight_init_appearance_runtime_trait|*mut flight_sdk::HasAppearanceRuntime
@@ -2287,6 +2485,7 @@ unreachable|flight_is_tray_destroyed|Box<flight_sdk::Ref<flight_sdk::TrayIcon>>
 unreachable|flight_is_tray_icon_animating|Box<flight_sdk::Ref<flight_sdk::TrayIcon>>
 unreachable|flight_is_video_channel_muted|Box<flight_sdk::Ref<flight_sdk::VideoChannel>>
 unreachable|flight_is_video_channel_playing|Box<flight_sdk::Ref<flight_sdk::VideoChannel>>
+unreachable|flight_is_wgpu_render_texture_ready|Box<flight_sdk::Ref<flight_sdk::RenderTexture>>
 unreachable|flight_itemize_text|Box<Vec<flight_sdk::TextItem>>
 unreachable|flight_libgdx_atlas_spritesheet_format|*const flight_sdk::SpritesheetFormatRegistry
 unreachable|flight_libgdx_atlas_texture_atlas_format|*const flight_sdk::TextureAtlasFormatRegistry
@@ -2330,7 +2529,7 @@ unreachable|flight_play_audio_resource|*const flight_sdk::AudioDeviceHandle
 unreachable|flight_play_video_resource|*const flight_sdk::VideoChannelRuntimeStateRef
 unreachable|flight_pop_status_bar_style_entry|*mut flight_sdk::StatusBarStyleStacks
 unreachable|flight_popup_tray_context_menu|Box<flight_sdk::Ref<flight_sdk::TrayIcon>>
-unreachable|flight_prepare_wgpu_scene_2d_render|*mut flight_sdk::WgpuRenderState
+unreachable|flight_prepare_wgpu_scene3d_forward_lights|*const flight_sdk::Scene3DRenderList
 unreachable|flight_push_flow_state|Box<flight_sdk::Ref<flight_sdk::FlowGuardState>>
 unreachable|flight_push_status_bar_style_entry|*const flight_sdk::StatusBarStyleEntry
 unreachable|flight_query_collision_aabb_face3d|*const flight_sdk::CollisionShape3D
@@ -2350,6 +2549,7 @@ unreachable|flight_read_dialog_handle_text_file|Box<flight_sdk::Ref<flight_sdk::
 unreachable|flight_read_spine_binary_string_reference|*const Option<String>
 unreachable|flight_read_swf_filter_list|*const flight_sdk::swf::contract::SwfGuardStateRef
 unreachable|flight_refresh_bitmap_text_glyph_layout|*const flight_sdk::BitmapTextGuardState
+unreachable|flight_refresh_wgpu_render_cache|Box<flight_sdk::Ref<flight_sdk::RenderCache>>
 unreachable|flight_register_built_in_collision_face_queries3d|*mut flight_sdk::CollisionRegistry3D
 unreachable|flight_register_built_in_collision_supports2d|*mut flight_sdk::CollisionRegistry2D
 unreachable|flight_register_built_in_collision_supports3d|*mut flight_sdk::CollisionRegistry3D
@@ -2384,9 +2584,16 @@ unreachable|flight_register_spritesheet_format|*mut flight_sdk::SpritesheetForma
 unreachable|flight_register_svg_clip_handler|Box<flight_sdk::SvgClipHandler>
 unreachable|flight_register_svg_element_handler|Box<flight_sdk::SvgElementHandler>
 unreachable|flight_register_texture_atlas_format|*mut flight_sdk::TextureAtlasFormatRegistry
+unreachable|flight_register_wgpu_blend_effect_backdrop|Box<flight_sdk::Ref<flight_sdk::WgpuTextureRenderTarget>>
+unreachable|flight_register_wgpu_effect|Box<flight_sdk::WgpuEffectRunner>
+unreachable|flight_register_wgpu_quad_material_renderer|Box<flight_sdk::WgpuQuadMaterialRenderer>
+unreachable|flight_register_wgpu_texture_resolver|Box<flight_sdk::TextureSourceKind>
+unreachable|flight_register_wgpu_velocity_writer|*const flight_sdk::WgpuVelocityWriter
 unreachable|flight_release_path_mesh|*mut flight_sdk::path::contract::PathMeshPool
 unreachable|flight_release_path_mesh_typed|*mut flight_sdk::path::contract::PathMeshPool
 unreachable|flight_release_spritesheet_player|*mut flight_sdk::SpritesheetPlayerPool
+unreachable|flight_release_wgpu_acquisition|*const flight_sdk::WgpuHostAcquisition
+unreachable|flight_release_wgpu_render_texture|Box<flight_sdk::Ref<flight_sdk::RenderTexture>>
 unreachable|flight_remove_log_sink|Box<flight_sdk::LogSink>
 unreachable|flight_remove_movie_clip_frame_script|*const flight_sdk::TimelineFrameArg
 unreachable|flight_remove_namespaced_storage_item|*const flight_sdk::StorageNamespace
@@ -2394,15 +2601,11 @@ unreachable|flight_remove_physics2d_collider|Box<flight_sdk::Ref<flight_sdk::Phy
 unreachable|flight_remove_physics2d_joint|*const flight_sdk::Physics2DJointRef
 unreachable|flight_remove_timeline_frame_script|*const flight_sdk::TimelineFrameArg
 unreachable|flight_remove_tray_balloon|Box<flight_sdk::Ref<flight_sdk::TrayIcon>>
-unreachable|flight_render_wgpu_environment_skybox|Box<FfiWgpuRenderPassHandle>
-unreachable|flight_render_wgpu_scene2d|Box<FfiWgpuRenderPassHandle>
-unreachable|flight_render_wgpu_scene3d|Box<FfiWgpuRenderPassHandle>
 unreachable|flight_reorder_bidi_line|Box<Vec<usize>>
 unreachable|flight_replace_flow_state|Box<flight_sdk::Ref<flight_sdk::FlowGuardState>>
 unreachable|flight_request_app_window_fullscreen|Box<flight_sdk::Ref<flight_sdk::FullscreenTargetHandle>>
 unreachable|flight_reset_failed_audio_resource_reference|Box<flight_sdk::AudioResourceReference>
 unreachable|flight_reset_failed_image_resource_reference|*const flight_sdk::ImageResourceReference
-unreachable|flight_resize_surface|*const flight_sdk::SurfaceRef
 unreachable|flight_resolve_bidi_levels|*const flight_sdk::textbidi::contract::BidiClassKernel
 unreachable|flight_resolve_color_adjustments_color_scale_bias|*mut flight_sdk::ColorScaleBias
 unreachable|flight_resolve_flight_document_scene_tokens|Box<flight_sdk::FlightDocumentScene>
@@ -2410,6 +2613,14 @@ unreachable|flight_resolve_layout_tree|*const flight_sdk::LayoutTree
 unreachable|flight_resolve_scene2d_resources|*mut flight_sdk::Scene2DResources
 unreachable|flight_resolve_scene3d_resources|Box<flight_sdk::Ref<flight_sdk::Scene3D>>
 unreachable|flight_resolve_spine_draw_ordering|*const flight_sdk::SpineDrawOrderMove
+unreachable|flight_resolve_wgpu_mesh_material_renderer__material2_dfields|*const flight_sdk::Material2DFields
+unreachable|flight_resolve_wgpu_mesh_material_renderer__material3_dfields|*const flight_sdk::Material3DFields
+unreachable|flight_resolve_wgpu_mesh_material_renderer__material_fields|*const flight_sdk::MaterialFields
+unreachable|flight_resolve_wgpu_mesh_material_renderer__standard_material|*const flight_sdk::StandardMaterial
+unreachable|flight_resolve_wgpu_quad_material_renderer__material2_dfields|*const flight_sdk::Material2DFields
+unreachable|flight_resolve_wgpu_quad_material_renderer__material3_dfields|*const flight_sdk::Material3DFields
+unreachable|flight_resolve_wgpu_quad_material_renderer__material_fields|*const flight_sdk::MaterialFields
+unreachable|flight_resolve_wgpu_quad_material_renderer__standard_material|*const flight_sdk::StandardMaterial
 unreachable|flight_restore_snapshot|*const flight_sdk::SnapshotValue
 unreachable|flight_resume_all_audio_mixer_channels|Box<flight_sdk::Ref<flight_sdk::AudioMixer>>
 unreachable|flight_resume_audio_channel|Box<flight_sdk::Ref<flight_sdk::AudioChannel>>
@@ -3105,7 +3316,6 @@ unreachable|flight_set_storage_migration_checkpoint_failed_version|*mut flight_s
 unreachable|flight_set_storage_migration_ok_version|*mut flight_sdk::StorageMigrationOk
 unreachable|flight_set_storage_migration_version|*mut flight_sdk::StorageMigration
 unreachable|flight_set_stroke_path_tessellation_explanation_supported|Box<flight_sdk::StrokePathTessellationExplanation>
-unreachable|flight_set_surface_display_size|*const flight_sdk::SurfaceRef
 unreachable|flight_set_svg_css_rule_order|*mut flight_sdk::SvgCssRule
 unreachable|flight_set_svg_css_rule_specificity|*mut flight_sdk::SvgCssRule
 unreachable|flight_set_svg_gradient_cx|*mut flight_sdk::SvgGradient
@@ -3233,6 +3443,19 @@ unreachable|flight_set_video_channel_loops|Box<flight_sdk::Ref<flight_sdk::Video
 unreachable|flight_set_video_channel_muted|Box<flight_sdk::Ref<flight_sdk::VideoChannel>>
 unreachable|flight_set_video_channel_playback_rate|Box<flight_sdk::Ref<flight_sdk::VideoChannel>>
 unreachable|flight_set_voxel_grid_depth|*mut flight_sdk::VoxelGrid
+unreachable|flight_set_wgpu_color_lut_texture_cache_size|*mut flight_sdk::WgpuColorLutTextureCache
+unreachable|flight_set_wgpu_effect_application_explanation_registered_count|Box<flight_sdk::WgpuEffectApplicationExplanation>
+unreachable|flight_set_wgpu_effect_application_explanation_requested_count|Box<flight_sdk::WgpuEffectApplicationExplanation>
+unreachable|flight_set_wgpu_render_stats_batch_flush_count|*mut flight_sdk::WgpuRenderStats
+unreachable|flight_set_wgpu_render_stats_draw_call_count|*mut flight_sdk::WgpuRenderStats
+unreachable|flight_set_wgpu_render_stats_instance_count|*mut flight_sdk::WgpuRenderStats
+unreachable|flight_set_wgpu_render_stats_texture_upload_count|*mut flight_sdk::WgpuRenderStats
+unreachable|flight_set_wgpu_scene3_dforward_light_list_mesh_count|*mut flight_sdk::WgpuScene3DForwardLightList
+unreachable|flight_set_wgpu_shape_renderer_data_last_content_id|*mut flight_sdk::WgpuShapeRendererData
+unreachable|flight_set_wgpu_shape_renderer_data_last_h|*mut flight_sdk::WgpuShapeRendererData
+unreachable|flight_set_wgpu_shape_renderer_data_last_pixel_ratio|*mut flight_sdk::WgpuShapeRendererData
+unreachable|flight_set_wgpu_shape_renderer_data_last_w|*mut flight_sdk::WgpuShapeRendererData
+unreachable|flight_set_wgpu_shape_renderer_data_mesh_version|*mut flight_sdk::WgpuShapeRendererData
 unreachable|flight_set_window_bounds_height|*mut flight_sdk::WindowBounds
 unreachable|flight_set_window_bounds_width|*mut flight_sdk::WindowBounds
 unreachable|flight_set_window_bounds_x|*mut flight_sdk::WindowBounds

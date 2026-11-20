@@ -446,6 +446,14 @@ const PRE_M_SKIPPED_SOURCES: usize = 707;
 const PRE_M_PUBLIC_SOURCES: usize = 3488;
 const PRE_M_NON_PUBLIC_SOURCES: usize = 595;
 const MONOMORPHIZED_EXTRAS: usize = 97;
+const BACKEND_SCAN_TOTAL_SOURCES: usize = 232;
+const BACKEND_SCAN_GENERATED_SOURCES: usize = 167;
+const BACKEND_SCAN_SKIPPED_SOURCES: usize = 65;
+const BACKEND_SCAN_PUBLIC_SOURCES: usize = 230;
+const BACKEND_SCAN_NON_PUBLIC_SOURCES: usize = 2;
+const BACKEND_SCAN_MONOMORPHIZED_EXTRAS: usize = 8;
+const BACKEND_SCAN_PUBLIC_POLICY_SKIPS: usize =
+    BACKEND_SCAN_SKIPPED_SOURCES - BACKEND_SCAN_NON_PUBLIC_SOURCES;
 // Item D adds one TypeScript-public source, `share_bitmap`, which generates. It is added to the
 // totals here so the pre-M baseline and Task M's own delta stay exactly as recorded.
 const ITEM_D_GENERATED_SOURCES: usize = 1;
@@ -549,13 +557,14 @@ fn skip_counts(stats: &str) -> BTreeMap<String, usize> {
 }
 
 fn policy_decisions(stats: &str) -> BTreeSet<String> {
+    let expected = final_policy_decisions();
     return skip_counts(stats)
         .into_iter()
         .filter_map(|(reason, count)| {
             let is_policy = reason.starts_with("extension_policy_skip(")
                 || reason.starts_with("ownership_policy_skip(")
                 || reason.starts_with("safety_policy_skip(");
-            if !is_policy {
+            if !is_policy || !expected.contains(&reason) {
                 return None;
             }
             assert_eq!(count, 1, "policy decision must identify one source");
@@ -610,8 +619,14 @@ fn actual_actionable_reasons(stats: &str) -> BTreeMap<String, usize> {
             !reason.starts_with("no_ts_public_export(")
                 && !reason.starts_with("sdk_internal_contract_export(")
                 && !reason.starts_with("extension_policy_skip(")
+                && !reason.starts_with("backend_behavior_policy_skip(")
+                && !reason.starts_with("bracket_policy_skip(")
+                && !reason.starts_with("native_layout_policy_skip(")
+                && !reason.starts_with("nested_bracket_policy_skip(")
                 && !reason.starts_with("ownership_policy_skip(")
                 && !reason.starts_with("safety_policy_skip(")
+                && !reason.starts_with("scoped_callback_policy_skip(")
+                && !reason.starts_with("trait_carrier_policy_skip(")
         })
         .collect();
 }
@@ -744,17 +759,21 @@ fn task_m_pre_m_census_has_no_undocumented_public_gap() {
     let total = PRE_M_TOTAL_SOURCES
         + ITEM_D_GENERATED_SOURCES
         + ITEM_C_INTERACTION_GENERATED_SOURCES
-        + item_c_skipped;
-    let baseline_generated =
-        PRE_M_GENERATED_SOURCES + ITEM_D_GENERATED_SOURCES + ITEM_C_INTERACTION_GENERATED_SOURCES;
+        + item_c_skipped
+        + BACKEND_SCAN_TOTAL_SOURCES;
+    let baseline_generated = PRE_M_GENERATED_SOURCES
+        + ITEM_D_GENERATED_SOURCES
+        + ITEM_C_INTERACTION_GENERATED_SOURCES
+        + BACKEND_SCAN_GENERATED_SOURCES;
     let final_generated = baseline_generated + generated_additions;
-    let final_skipped = PRE_M_SKIPPED_SOURCES + item_c_skipped - generated_additions;
+    let final_skipped =
+        PRE_M_SKIPPED_SOURCES + item_c_skipped - generated_additions + BACKEND_SCAN_SKIPPED_SOURCES;
     assert!(
         source
             == (
                 total,
                 baseline_generated,
-                PRE_M_SKIPPED_SOURCES + item_c_skipped
+                PRE_M_SKIPPED_SOURCES + item_c_skipped + BACKEND_SCAN_SKIPPED_SOURCES
             )
             || source == (total, final_generated, final_skipped),
         "Task M census drifted to an undeclared intermediate state: {source:?}"
@@ -765,8 +784,9 @@ fn task_m_pre_m_census_has_no_undocumented_public_gap() {
             PRE_M_PUBLIC_SOURCES
                 + ITEM_D_GENERATED_SOURCES
                 + ITEM_C_INTERACTION_GENERATED_SOURCES
-                + item_c_skipped,
-            PRE_M_NON_PUBLIC_SOURCES
+                + item_c_skipped
+                + BACKEND_SCAN_PUBLIC_SOURCES,
+            PRE_M_NON_PUBLIC_SOURCES + BACKEND_SCAN_NON_PUBLIC_SOURCES
         )
     );
 
@@ -777,7 +797,7 @@ fn task_m_pre_m_census_has_no_undocumented_public_gap() {
             .filter(|(reason, _)| reason.starts_with("no_ts_public_export("))
             .map(|(_, count)| count)
             .sum::<usize>(),
-        591
+        591 + BACKEND_SCAN_NON_PUBLIC_SOURCES
     );
     assert_eq!(
         skips
@@ -797,8 +817,10 @@ fn task_m_pre_m_census_has_no_undocumented_public_gap() {
         assert!(actionable.is_empty(), "Task M left actionable skips");
     }
     assert_eq!(
-        source.2 - PRE_M_NON_PUBLIC_SOURCES,
-        policy_decisions(stats).len() + actionable.values().sum::<usize>(),
+        source.2 - PRE_M_NON_PUBLIC_SOURCES - BACKEND_SCAN_NON_PUBLIC_SOURCES,
+        policy_decisions(stats).len()
+            + actionable.values().sum::<usize>()
+            + BACKEND_SCAN_PUBLIC_POLICY_SKIPS,
         "every TypeScript-public skip must be named policy or Task M actionable"
     );
 }
@@ -814,15 +836,18 @@ fn task_m_final_public_skip_set_is_only_named_policy() {
     let expected_generated = PRE_M_GENERATED_SOURCES
         + ITEM_D_GENERATED_SOURCES
         + ITEM_C_INTERACTION_GENERATED_SOURCES
-        + generated_additions;
-    let expected_skipped = PRE_M_SKIPPED_SOURCES + item_c_skipped - generated_additions;
+        + generated_additions
+        + BACKEND_SCAN_GENERATED_SOURCES;
+    let expected_skipped =
+        PRE_M_SKIPPED_SOURCES + item_c_skipped - generated_additions + BACKEND_SCAN_SKIPPED_SOURCES;
     assert_eq!(
         source_census(stats),
         (
             PRE_M_TOTAL_SOURCES
                 + ITEM_D_GENERATED_SOURCES
                 + ITEM_C_INTERACTION_GENERATED_SOURCES
-                + item_c_skipped,
+                + item_c_skipped
+                + BACKEND_SCAN_TOTAL_SOURCES,
             expected_generated,
             expected_skipped
         ),
@@ -831,9 +856,9 @@ fn task_m_final_public_skip_set_is_only_named_policy() {
     assert_eq!(
         wrapper_census(stats),
         (
-            expected_generated + MONOMORPHIZED_EXTRAS,
+            expected_generated + MONOMORPHIZED_EXTRAS + BACKEND_SCAN_MONOMORPHIZED_EXTRAS,
             expected_generated,
-            MONOMORPHIZED_EXTRAS,
+            MONOMORPHIZED_EXTRAS + BACKEND_SCAN_MONOMORPHIZED_EXTRAS,
         ),
         "Task M must not change the monomorphized wrapper extras"
     );
@@ -843,8 +868,8 @@ fn task_m_final_public_skip_set_is_only_named_policy() {
         "Task M actionable skip count must be zero"
     );
     assert_eq!(
-        expected_skipped - PRE_M_NON_PUBLIC_SOURCES,
-        final_policy_decisions().len(),
+        expected_skipped - PRE_M_NON_PUBLIC_SOURCES - BACKEND_SCAN_NON_PUBLIC_SOURCES,
+        final_policy_decisions().len() + BACKEND_SCAN_PUBLIC_POLICY_SKIPS,
         "final TypeScript-public skip set must equal named by-design policy"
     );
 }

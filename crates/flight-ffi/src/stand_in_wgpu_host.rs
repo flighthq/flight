@@ -55,9 +55,7 @@ fn create_stand_in_render_state() -> Option<flight_sdk::WgpuRenderState> {
         provider: Arc::new("flight-ffi-stand-in-wgpu-host"),
         handle: Arc::new(create_wgpu_native_device(device, queue, spawn)),
     };
-    let mut state = create_wgpu_render_state(&device, None);
-    flight_sdk::register_wgpu_scene2d_render_preset(&mut state);
-    return Some(state);
+    return Some(create_wgpu_render_state(&device, None));
 }
 
 fn create_stand_in_texture_target(
@@ -101,9 +99,8 @@ pub(crate) extern "C" fn flight_stand_in_create_solid_shape(
     return Box::into_raw(Box::new(crate::ffi_node_from_concrete_2d(shape)));
 }
 
-/// Creates a render state on wgpu's noop backend with the standard 2D render preset registered.
-/// Release it with `flight_stand_in_destroy_wgpu_render_state`; returns NULL when no noop device
-/// is available.
+/// Creates an unregistered render state on wgpu's noop backend. Release it with
+/// `flight_stand_in_destroy_wgpu_render_state`; returns NULL when no noop device is available.
 #[unsafe(no_mangle)]
 pub(crate) extern "C" fn flight_stand_in_create_wgpu_render_state()
 -> *mut flight_sdk::WgpuRenderState {
@@ -181,6 +178,9 @@ pub(crate) unsafe extern "C" fn flight_stand_in_run_wgpu_reference_sequence(
     let Some(mut state) = create_stand_in_render_state() else {
         return false;
     };
+    flight_sdk::register_wgpu_standard_material(&mut state);
+    flight_sdk::register_standard_wgpu_texture_resolvers(&mut state);
+    flight_sdk::register_wgpu_scene2d_render_preset(&mut state);
     let target = create_stand_in_texture_target(&state, width, height);
     let mut proxies = WgpuProxies::default();
     flight_sdk::prepare_scene_2d_render(&mut state, &mut proxies, &source);
@@ -189,6 +189,7 @@ pub(crate) unsafe extern "C" fn flight_stand_in_run_wgpu_reference_sequence(
     flight_sdk::render_wgpu_scene2d(&mut pass, &mut proxies, &source, None);
     unsafe { *reports.add(1) = get_stand_in_report(pass.state, &proxies) };
     end_wgpu_render_pass(pass);
+    flight_sdk::submit_wgpu_frame(&mut state);
     unsafe { *reports.add(2) = get_stand_in_report(&state, &proxies) };
     flight_sdk::destroy_render_state(&mut state, &mut proxies);
     return true;

@@ -39,6 +39,11 @@ export {
 } from './wgpuRenderTexturePool.ts';
 export * from './wgpuScreenAntialias.ts';
 export { createBitmapFromWgpuScreenRenderTarget, enableWgpuScreenRenderTargetCapture } from './wgpuScreenCapture.ts';
-export { createWgpuScreenRenderTarget, destroyWgpuScreenRenderTarget } from './wgpuScreenRenderTarget.ts';
+export {
+  createWgpuScreenRenderTarget,
+  destroyWgpuScreenRenderTarget,
+  endWgpuScreenRenderTargetFrame,
+  syncWgpuScreenRenderTargetExtent,
+} from './wgpuScreenRenderTarget.ts';
 export { createWgpuTextureRenderTarget, destroyWgpuTextureRenderTarget } from './wgpuTextureRenderTarget.ts';
 export * from './wgpuTextureResolver.ts';

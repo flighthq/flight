@@ -2,9 +2,10 @@
  * render state or render target; both come from the host seam that acquires a device. The
  * `stand-in-wgpu-host` build supplies them on wgpu's noop backend, which records commands but does
  * not rasterize, and runs the same sequence natively as the reference. This program builds a scene
- * through the generated externs, then prepares, begins, draws, ends and submits it through them,
- * and compares the state after each step with the native reference. It also drives the guarded
- * state wrappers and released, repeated and foreign handles under the sanitizers. */
+ * through the generated externs, registers its render policy, prepares, begins, draws, ends,
+ * submits, derives an offscreen state and destroys it through them, and compares the state after
+ * each render step with the native reference. It also drives the guarded state wrappers and
+ * released, repeated and foreign handles under the sanitizers. */
 
 #include <stdbool.h>
 #include <stdint.h>
@@ -113,6 +114,9 @@ int main(void) {
   void *target = flight_stand_in_create_wgpu_texture_target(state, size, size);
   void *proxies = flight_create_wgpu_scene_2d_render_proxies();
   ok &= check(state != NULL && target != NULL && proxies != NULL, "stand-in carriers");
+  flight_register_wgpu_standard_material(state);
+  flight_register_standard_wgpu_texture_resolvers(state);
+  flight_register_wgpu_scene2d_render_preset(state);
   ok &= check(flight_prepare_wgpu_scene_2d_render(state, proxies, root), "prepare");
 
   FlightWgpuRenderPassHandle *pass = flight_begin_wgpu_render_pass(state, target, NULL);
@@ -126,6 +130,7 @@ int main(void) {
   ok &= check(flight_render_wgpu_scene2d(pass, proxies, root, NULL), "draw");
   ok &= matches(state, proxies, &reference[1], "after draw");
   ok &= check(flight_end_wgpu_render_pass(pass), "end");
+  flight_submit_wgpu_frame(state);
   ok &= matches(state, proxies, &reference[2], "after end and submit");
 
   ok &= check(!flight_end_wgpu_render_pass(pass), "second end refused");
@@ -152,7 +157,10 @@ int main(void) {
                   !second.encoder_open,
               "free ends and submits the open second frame");
 
-  flight_destroy_wgpu_scene_2d_render(state, proxies);
+  void *offscreen = flight_create_wgpu_offscreen_render_state(state);
+  ok &= check(offscreen != NULL, "offscreen render-state path");
+  flight_free_wgpu_offscreen_render_state_result(offscreen);
+  flight_destroy_wgpu_render_state(state, proxies);
   flight_free_wgpu_scene_2d_render_proxies(proxies);
   flight_stand_in_destroy_wgpu_render_target(target);
   flight_stand_in_destroy_wgpu_render_state(state);

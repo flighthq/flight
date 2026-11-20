@@ -1,4 +1,4 @@
-Signal inventory: 255 occurrences in 48 owning crates (44 named-export, 4 glob-export: flight-assets, flight-loader, flight-net, flight-share; each occurrence counted once under its defining crate) (251 fields, 4 function parameters/returns, 30 Ref-wrapped), 89 payload types
+Signal inventory: 256 occurrences in 49 owning crates (45 named-export, 4 glob-export: flight-assets, flight-loader, flight-net, flight-share; each occurrence counted once under its defining crate) (252 fields, 4 function parameters/returns, 30 Ref-wrapped), 90 payload types
 signal|flight-animation|flight-animation/src/types.rs|AnimationPlayer.on_event|Option<Signal<AnimationClipEvent>>|AnimationClipEvent
 signal|flight-animation|flight-animation/src/types.rs|AnimationPlayer.on_finished|Option<Signal<()>>|()
 signal|flight-animation|flight-animation/src/types.rs|AnimationPlayer.on_looped|Option<Signal<()>>|()
@@ -194,6 +194,7 @@ signal|flight-quadbatch|flight-quadbatch/src/types.rs|QuadBatchSignals.on_instan
 signal|flight-quadbatch|flight-quadbatch/src/types.rs|QuadBatchSignals.on_instance_removed|Signal<(usize, i32)>|(usize, i32)
 signal|flight-render|flight-render/src/types.rs|RenderCacheAdapterSignals.on_prepare|Signal<()>|()
 signal|flight-render|flight-render/src/types.rs|RenderRegistrySignals.on_registry_miss|Signal<(RenderRegistryTable, Kind)>|(RenderRegistryTable, Kind)
+signal|flight-render-wgpu|flight-render-wgpu/src/types.rs|WgpuDeviceSignals.on_device_lost|Signal<WgpuDeviceLostInfo>|WgpuDeviceLostInfo
 signal|flight-scene2d|flight-scene2d/src/types.rs|Scene2DSignals.on_fullscreen_changed|Signal<()>|()
 signal|flight-scene2d|flight-scene2d/src/types.rs|Scene2DSignals.on_orientation_changed|Signal<()>|()
 signal|flight-scene2d|flight-scene2d/src/types.rs|Scene2DSignals.on_resize|Signal<()>|()
@@ -338,6 +339,7 @@ payload|TrayMenuSelectionEvent|1
 payload|Unknown|1
 payload|Vec<NodeRef>|1
 payload|Vec<String>|1
+payload|WgpuDeviceLostInfo|1
 payload|bool|3
 payload|f32|3
 payload|f64|6
@@ -538,6 +540,7 @@ producer|flight-quadbatch|QuadBatchSignals.on_instance_appended|ref-connect
 producer|flight-quadbatch|QuadBatchSignals.on_instance_removed|skip|payload has no connect wrapper
 producer|flight-render|RenderCacheAdapterSignals.on_prepare|get
 producer|flight-render|RenderRegistrySignals.on_registry_miss|skip|payload has no connect wrapper
+producer|flight-render-wgpu|WgpuDeviceSignals.on_device_lost|skip|payload has no connect wrapper
 producer|flight-scene2d|Scene2DSignals.on_fullscreen_changed|ref-connect
 producer|flight-scene2d|Scene2DSignals.on_orientation_changed|ref-connect
 producer|flight-scene2d|Scene2DSignals.on_resize|ref-connect
@@ -682,6 +685,7 @@ policy|TrayMenuSelectionEvent|flight_connect_tray_menu_selection_event_signal|bo
 policy|Unknown|skip|dynamic `Unknown` payload has no C representation
 policy|Vec<NodeRef>|skip|node payload waits for Item B's FlightNode carrier
 policy|Vec<String>|skip|collection payload has no Task M callback carrier
+policy|WgpuDeviceLostInfo|skip|Rust-owned String field has no borrowed C struct layout
 policy|bool|flight_connect_bool_signal|scalar
 policy|f32|flight_connect_f32_signal|scalar
 policy|f64|flight_connect_f64_signal|scalar

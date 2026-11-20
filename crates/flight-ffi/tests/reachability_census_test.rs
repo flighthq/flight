@@ -229,6 +229,72 @@ fn carrier_graph_preserves_thin_fat_raw_and_policy_distinctions() {
 }
 
 #[test]
+fn provisional_wgpu_host_carriers_reach_the_declared_render_sequence() {
+    let expected_seeds = [
+        "*const flight_sdk::SurfaceRef",
+        "*const flight_sdk::WgpuDevice",
+        "*const flight_sdk::WgpuRenderTarget",
+    ]
+    .into_iter()
+    .collect::<BTreeSet<_>>();
+    for report in [GENERATED_GRAPH, GENERATED_BASELINE] {
+        let seeds = report
+            .lines()
+            .filter_map(|line| line.strip_prefix("seed|provisional_wgpu_host|"))
+            .collect::<BTreeSet<_>>();
+        assert_eq!(seeds, expected_seeds);
+        assert!(report.contains(
+            "policy|provisional_wgpu_host|native hosts must supply the borrowed WGPU device, abstract render target and surface carriers"
+        ));
+    }
+
+    let functions = function_rows();
+    assert_eq!(
+        functions["flight_create_wgpu_scene_2d_render_proxies"].classification,
+        "reachable"
+    );
+    for function in [
+        "flight_create_wgpu_render_state",
+        "flight_register_wgpu_standard_material",
+        "flight_register_standard_wgpu_texture_resolvers",
+        "flight_register_wgpu_scene2d_render_preset",
+        "flight_prepare_wgpu_scene_2d_render",
+        "flight_begin_wgpu_render_pass",
+        "flight_render_wgpu_scene2d",
+        "flight_end_wgpu_render_pass",
+        "flight_submit_wgpu_frame",
+        "flight_create_wgpu_screen_render_target",
+        "flight_end_wgpu_screen_render_target_frame",
+        "flight_sync_wgpu_screen_render_target_extent",
+        "flight_destroy_wgpu_render_state",
+        "flight_create_wgpu_offscreen_render_state",
+    ] {
+        assert_eq!(
+            functions[function].classification, "policy-exempt",
+            "{function} must join the provisional host fixed point"
+        );
+        assert_eq!(functions[function].blocker, "provisional_wgpu_host");
+    }
+
+    assert!(
+        edge_rows("consume", "flight_create_wgpu_render_state")
+            .contains("*const flight_sdk::WgpuDevice")
+    );
+    assert!(
+        edge_rows("consume", "flight_begin_wgpu_render_pass")
+            .contains("*const flight_sdk::WgpuRenderTarget")
+    );
+    assert!(
+        edge_rows("consume", "flight_create_wgpu_screen_render_target")
+            .contains("*const flight_sdk::SurfaceRef")
+    );
+    assert!(
+        edge_rows("produce", "flight_create_wgpu_screen_render_target")
+            .contains("Box<flight_sdk::WgpuScreenRenderTarget>")
+    );
+}
+
+#[test]
 fn nested_alias_carriers_join_the_real_fixed_point() {
     let functions = function_rows();
     assert_eq!(

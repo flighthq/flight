@@ -450,6 +450,7 @@ fn ref_only_values_borrow_ref_handles_while_dual_produced_types_stay_pinned() {
             "TextLayoutResult",
             "Texture",
             "Texture2D",
+            "WgpuRenderState",
             "XmlElement"
         ]
     );

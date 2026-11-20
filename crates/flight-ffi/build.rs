@@ -179,6 +179,7 @@ const SCAN_CRATES: &[&str] = &[
     "flight-dialog",
     "flight-easing",
     "flight-effects",
+    "flight-effects-wgpu",
     "flight-encoding",
     "flight-entity",
     "flight-filesystem",
@@ -237,6 +238,7 @@ const SCAN_CRATES: &[&str] = &[
     "flight-regexp",
     "flight-registry",
     "flight-render",
+    "flight-render-wgpu",
     "flight-requirement",
     "flight-requirement-catalog",
     "flight-requirement-codegen",
@@ -245,9 +247,11 @@ const SCAN_CRATES: &[&str] = &[
     "flight-scene2d",
     "flight-scene2d-formats",
     "flight-scene2d-resources",
+    "flight-scene2d-wgpu",
     "flight-scene3d",
     "flight-scene3d-formats",
     "flight-scene3d-resources",
+    "flight-scene3d-wgpu",
     "flight-screen",
     "flight-selection",
     "flight-sensors",
@@ -432,10 +436,327 @@ const OPAQUE_FALLBACK_EXCLUDED_TYPES: &[&str] = &[
 // caller-retained pointer, never by reconstructing ownership with Box::from_raw.
 const CALLER_RETAINED_CLONE_TYPES: &[&str] = &["ParticleFormatCodec"];
 const SAFETY_POLICY_SKIP_FNS: &[&str] = &[
+    // The three RenderTexture borrows must be proven pairwise distinct or grouped under one lock;
+    // the current ABI only arbitrates two same-allocation borrows.
+    "apply_wgpu_effects_to_render_texture",
     "enable_clip_guards",
     "enable_statechart_guards",
     // The capability contains a host-supplied Arc<dyn Fn>; C cannot construct it soundly.
     "get_connectivity_online",
+];
+// WGPU backend sources outside the declared render sequence. Each decision is literal so a new
+// backend export fails the public-skip census instead of inheriting a pattern-based exemption.
+const WGPU_BACKEND_POLICY_SKIP_FNS: &[(&str, &str, &str)] = &[
+    (
+        "begin_wgpu_effect_pass",
+        "nested_bracket_policy_skip",
+        "nested effect pass borrows a caller-owned render pass",
+    ),
+    (
+        "begin_wgpu_render_pass",
+        "bracket_policy_skip",
+        "emitted by the borrow-erased bracket table",
+    ),
+    (
+        "create_external_wgpu_texture",
+        "native_layout_policy_skip",
+        "consumes native wgpu Texture ownership",
+    ),
+    (
+        "create_wgpu_texture_render_target",
+        "native_layout_policy_skip",
+        "native wgpu TextureFormat has no declared C layout",
+    ),
+    (
+        "end_wgpu_effect_pass",
+        "nested_bracket_policy_skip",
+        "nested effect pass consumes a caller-owned render-pass borrow",
+    ),
+    (
+        "end_wgpu_render_pass",
+        "bracket_policy_skip",
+        "emitted by the borrow-erased bracket table",
+    ),
+    (
+        "get_wgpu_shape_rasterizer",
+        "backend_behavior_policy_skip",
+        "optional SDK callback has no declared C ownership contract",
+    ),
+    (
+        "is_wgpu_bitmap_displacement_effect_resolvable",
+        "trait_carrier_policy_skip",
+        "borrowed dyn Effect has no declared FFI trait carrier",
+    ),
+    (
+        "is_wgpu_effect_resolvable",
+        "trait_carrier_policy_skip",
+        "borrowed dyn Effect has no declared FFI trait carrier",
+    ),
+    (
+        "register_wgpu_shape_rasterizer",
+        "backend_behavior_policy_skip",
+        "optional rasterizer callback has no declared C teardown contract",
+    ),
+    (
+        "render_into_wgpu_render_texture",
+        "scoped_callback_policy_skip",
+        "scoped FnOnce borrows a render pass without a C callback contract",
+    ),
+    (
+        "render_wgpu_environment_skybox",
+        "bracket_policy_skip",
+        "emitted by the borrow-erased bracket table",
+    ),
+    (
+        "render_wgpu_scene2d",
+        "bracket_policy_skip",
+        "emitted by the borrow-erased bracket table",
+    ),
+    (
+        "render_wgpu_scene3d",
+        "bracket_policy_skip",
+        "emitted by the borrow-erased bracket table",
+    ),
+    (
+        "set_wgpu_effect_velocity_texture",
+        "native_layout_policy_skip",
+        "consumes optional native wgpu Texture ownership",
+    ),
+    (
+        "wgpu_bevel_effect_runner",
+        "backend_behavior_policy_skip",
+        "SDK-owned effect hook receives a private borrow-scoped context",
+    ),
+    (
+        "wgpu_bitmap_displacement_effect_runner",
+        "backend_behavior_policy_skip",
+        "SDK-owned effect hook receives a private borrow-scoped context",
+    ),
+    (
+        "wgpu_blend_effect_runner",
+        "backend_behavior_policy_skip",
+        "SDK-owned effect hook receives a private borrow-scoped context",
+    ),
+    (
+        "wgpu_bloom_effect_runner",
+        "backend_behavior_policy_skip",
+        "SDK-owned effect hook receives a private borrow-scoped context",
+    ),
+    (
+        "wgpu_blur_effect_runner",
+        "backend_behavior_policy_skip",
+        "SDK-owned effect hook receives a private borrow-scoped context",
+    ),
+    (
+        "wgpu_camera_motion_blur_effect_runner",
+        "backend_behavior_policy_skip",
+        "SDK-owned effect hook receives a private borrow-scoped context",
+    ),
+    (
+        "wgpu_chromatic_aberration_effect_runner",
+        "backend_behavior_policy_skip",
+        "SDK-owned effect hook receives a private borrow-scoped context",
+    ),
+    (
+        "wgpu_composite_effect_runner",
+        "backend_behavior_policy_skip",
+        "SDK-owned effect hook receives a private borrow-scoped context",
+    ),
+    (
+        "wgpu_contact_shadows_effect_runner",
+        "backend_behavior_policy_skip",
+        "SDK-owned effect hook receives a private borrow-scoped context",
+    ),
+    (
+        "wgpu_convolution_effect_runner",
+        "backend_behavior_policy_skip",
+        "SDK-owned effect hook receives a private borrow-scoped context",
+    ),
+    (
+        "wgpu_crt_effect_runner",
+        "backend_behavior_policy_skip",
+        "SDK-owned effect hook receives a private borrow-scoped context",
+    ),
+    (
+        "wgpu_directional_blur_effect_runner",
+        "backend_behavior_policy_skip",
+        "SDK-owned effect hook receives a private borrow-scoped context",
+    ),
+    (
+        "wgpu_displacement_effect_runner",
+        "backend_behavior_policy_skip",
+        "SDK-owned effect hook receives a private borrow-scoped context",
+    ),
+    (
+        "wgpu_dither_effect_runner",
+        "backend_behavior_policy_skip",
+        "SDK-owned effect hook receives a private borrow-scoped context",
+    ),
+    (
+        "wgpu_drop_shadow_effect_runner",
+        "backend_behavior_policy_skip",
+        "SDK-owned effect hook receives a private borrow-scoped context",
+    ),
+    (
+        "wgpu_film_grain_effect_runner",
+        "backend_behavior_policy_skip",
+        "SDK-owned effect hook receives a private borrow-scoped context",
+    ),
+    (
+        "wgpu_fxaa_effect_runner",
+        "backend_behavior_policy_skip",
+        "SDK-owned effect hook receives a private borrow-scoped context",
+    ),
+    (
+        "wgpu_glitch_effect_runner",
+        "backend_behavior_policy_skip",
+        "SDK-owned effect hook receives a private borrow-scoped context",
+    ),
+    (
+        "wgpu_god_rays_effect_runner",
+        "backend_behavior_policy_skip",
+        "SDK-owned effect hook receives a private borrow-scoped context",
+    ),
+    (
+        "wgpu_gradient_bevel_effect_runner",
+        "backend_behavior_policy_skip",
+        "SDK-owned effect hook receives a private borrow-scoped context",
+    ),
+    (
+        "wgpu_gradient_glow_effect_runner",
+        "backend_behavior_policy_skip",
+        "SDK-owned effect hook receives a private borrow-scoped context",
+    ),
+    (
+        "wgpu_halftone_effect_runner",
+        "backend_behavior_policy_skip",
+        "SDK-owned effect hook receives a private borrow-scoped context",
+    ),
+    (
+        "wgpu_inner_glow_effect_runner",
+        "backend_behavior_policy_skip",
+        "SDK-owned effect hook receives a private borrow-scoped context",
+    ),
+    (
+        "wgpu_inner_shadow_effect_runner",
+        "backend_behavior_policy_skip",
+        "SDK-owned effect hook receives a private borrow-scoped context",
+    ),
+    (
+        "wgpu_kuwahara_effect_runner",
+        "backend_behavior_policy_skip",
+        "SDK-owned effect hook receives a private borrow-scoped context",
+    ),
+    (
+        "wgpu_lens_dirt_effect_runner",
+        "backend_behavior_policy_skip",
+        "SDK-owned effect hook receives a private borrow-scoped context",
+    ),
+    (
+        "wgpu_lens_distortion_effect_runner",
+        "backend_behavior_policy_skip",
+        "SDK-owned effect hook receives a private borrow-scoped context",
+    ),
+    (
+        "wgpu_lens_flare_effect_runner",
+        "backend_behavior_policy_skip",
+        "SDK-owned effect hook receives a private borrow-scoped context",
+    ),
+    (
+        "wgpu_median_effect_runner",
+        "backend_behavior_policy_skip",
+        "SDK-owned effect hook receives a private borrow-scoped context",
+    ),
+    (
+        "wgpu_motion_blur_effect_runner",
+        "backend_behavior_policy_skip",
+        "SDK-owned effect hook receives a private borrow-scoped context",
+    ),
+    (
+        "wgpu_node2d_velocity_writer",
+        "backend_behavior_policy_skip",
+        "SDK-owned velocity hook receives a private borrow-scoped context",
+    ),
+    (
+        "wgpu_outer_glow_effect_runner",
+        "backend_behavior_policy_skip",
+        "SDK-owned effect hook receives a private borrow-scoped context",
+    ),
+    (
+        "wgpu_outline_effect_runner",
+        "backend_behavior_policy_skip",
+        "SDK-owned effect hook receives a private borrow-scoped context",
+    ),
+    (
+        "wgpu_particle_emitter2d_velocity_writer",
+        "backend_behavior_policy_skip",
+        "SDK-owned velocity hook receives a private borrow-scoped context",
+    ),
+    (
+        "wgpu_pixelate_effect_runner",
+        "backend_behavior_policy_skip",
+        "SDK-owned effect hook receives a private borrow-scoped context",
+    ),
+    (
+        "wgpu_posterize_effect_runner",
+        "backend_behavior_policy_skip",
+        "SDK-owned effect hook receives a private borrow-scoped context",
+    ),
+    (
+        "wgpu_radial_blur_effect_runner",
+        "backend_behavior_policy_skip",
+        "SDK-owned effect hook receives a private borrow-scoped context",
+    ),
+    (
+        "wgpu_scanlines_effect_runner",
+        "backend_behavior_policy_skip",
+        "SDK-owned effect hook receives a private borrow-scoped context",
+    ),
+    (
+        "wgpu_screen_space_fog_effect_runner",
+        "backend_behavior_policy_skip",
+        "SDK-owned effect hook receives a private borrow-scoped context",
+    ),
+    (
+        "wgpu_sharpen_effect_runner",
+        "backend_behavior_policy_skip",
+        "SDK-owned effect hook receives a private borrow-scoped context",
+    ),
+    (
+        "wgpu_sketch_effect_runner",
+        "backend_behavior_policy_skip",
+        "SDK-owned effect hook receives a private borrow-scoped context",
+    ),
+    (
+        "wgpu_smaa_effect_runner",
+        "backend_behavior_policy_skip",
+        "SDK-owned effect hook receives a private borrow-scoped context",
+    ),
+    (
+        "wgpu_ssao_effect_runner",
+        "backend_behavior_policy_skip",
+        "SDK-owned effect hook receives a private borrow-scoped context",
+    ),
+    (
+        "wgpu_tilt_shift_effect_runner",
+        "backend_behavior_policy_skip",
+        "SDK-owned effect hook receives a private borrow-scoped context",
+    ),
+    (
+        "wgpu_tone_map_effect_runner",
+        "backend_behavior_policy_skip",
+        "SDK-owned effect hook receives a private borrow-scoped context",
+    ),
+    (
+        "wgpu_vignette_effect_runner",
+        "backend_behavior_policy_skip",
+        "SDK-owned effect hook receives a private borrow-scoped context",
+    ),
+    (
+        "wgpu_white_balance_effect_runner",
+        "backend_behavior_policy_skip",
+        "SDK-owned effect hook receives a private borrow-scoped context",
+    ),
 ];
 // Public extension points whose behavior values cannot be authored by C or HashLink. The plural
 // bulk registration functions are deliberately not here: they consume no caller behavior and
@@ -686,6 +1007,10 @@ const SIGNAL_PAYLOAD_POLICIES: &[(&str, &str)] = &[
         "Vec<String>",
         "skip:collection payload has no Task M callback carrier",
     ),
+    (
+        "WgpuDeviceLostInfo",
+        "skip:Rust-owned String field has no borrowed C struct layout",
+    ),
     ("bool", "connect"),
     ("f32", "connect"),
     ("f64", "connect"),
@@ -725,6 +1050,12 @@ const SDK_INTERNAL_CONTRACT_EXPORT_FNS: &[&str] = &[
 ];
 
 fn explicit_skip_category(name: &str) -> Option<&'static str> {
+    if let Some((_, category, _)) = WGPU_BACKEND_POLICY_SKIP_FNS
+        .iter()
+        .find(|(function, _, _)| *function == name)
+    {
+        return Some(category);
+    }
     if SAFETY_POLICY_SKIP_FNS.contains(&name) || GUARD_POLICY_SKIP_FNS.contains(&name) {
         return Some("safety_policy_skip");
     }
@@ -1430,6 +1761,22 @@ fn main() {
                 "{name} must remain an exact public {category} decision"
             );
         }
+    }
+    let mut wgpu_policy_names = BTreeSet::new();
+    for (name, category, reason) in WGPU_BACKEND_POLICY_SKIP_FNS {
+        assert!(
+            wgpu_policy_names.insert(*name),
+            "duplicate WGPU policy entry"
+        );
+        assert!(
+            !reason.trim().is_empty(),
+            "{name} needs a WGPU policy reason"
+        );
+        assert_eq!(
+            stats_public_skips.get(*name).map(String::as_str),
+            Some(format!("{category}({name}: {reason})").as_str()),
+            "{name} must remain an exact public {category} decision"
+        );
     }
     let actionable_public_skips: Vec<_> = stats_public_skips
         .iter()
@@ -6670,6 +7017,12 @@ pub unsafe extern "C" fn flight_vec_ref_{slug}_free(handle: *mut FfiVecRefHandle
 }
 
 fn categorize_skip(func: &ParsedFn) -> String {
+    if let Some((_, category, reason)) = WGPU_BACKEND_POLICY_SKIP_FNS
+        .iter()
+        .find(|(function, _, _)| *function == func.name)
+    {
+        return format!("{category}({}: {reason})", func.name);
+    }
     if let Some(category) = explicit_skip_category(&func.name) {
         return format!("{category}({})", func.name);
     }
@@ -6725,11 +7078,17 @@ fn categorize_skip(func: &ParsedFn) -> String {
 fn is_by_design_public_skip(reason: &str) -> bool {
     [
         "behavior_policy_skip(",
+        "backend_behavior_policy_skip(",
+        "bracket_policy_skip(",
         "extension_policy_skip(",
         "guard_policy_skip(",
         "import_handler_policy_skip(",
+        "native_layout_policy_skip(",
+        "nested_bracket_policy_skip(",
         "ownership_policy_skip(",
         "safety_policy_skip(",
+        "scoped_callback_policy_skip(",
+        "trait_carrier_policy_skip(",
     ]
     .iter()
     .any(|prefix| reason.starts_with(prefix))
