@@ -4,7 +4,7 @@
 use std::future::Future;
 use std::io::{BufRead, BufReader, Read, Write};
 use std::net::{Shutdown, TcpListener, TcpStream};
-use std::sync::atomic::{AtomicBool, Ordering};
+use std::sync::atomic::{AtomicBool, AtomicUsize, Ordering};
 use std::sync::{Arc, Mutex, RwLock};
 use std::task::{Context, Poll, Wake, Waker};
 use std::thread::JoinHandle;
@@ -48,12 +48,30 @@ pub enum Reply {
     },
     /// Writes raw bytes and closes.
     Raw(Vec<u8>),
+    /// Declares `chunk.len() * count` bytes, then writes `chunk` every `interval`, stopping early
+    /// when the client goes away.
+    Trickle {
+        chunk: Vec<u8>,
+        count: usize,
+        interval: Duration,
+    },
+}
+
+/// What the server saw happen to its connections.
+#[derive(Default)]
+pub struct ConnectionEvents {
+    pub accepted: AtomicUsize,
+    /// Connections the client closed while the server waited for its next request.
+    pub closed_by_client: AtomicUsize,
+    /// Trickled bodies cut short because the client stopped reading.
+    pub abandoned_bodies: AtomicUsize,
 }
 
 pub type Handler = Arc<dyn Fn(&ReceivedRequest) -> Reply + Send + Sync>;
 
 /// A server on an ephemeral loopback port. Dropping it stops the accept loop and joins it.
 pub struct LoopbackServer {
+    pub events: Arc<ConnectionEvents>,
     pub port: u16,
     pub received: Arc<Mutex<Vec<ReceivedRequest>>>,
     stopping: Arc<AtomicBool>,
@@ -61,6 +79,18 @@ pub struct LoopbackServer {
 }
 
 impl LoopbackServer {
+    pub fn accepted(&self) -> usize {
+        return self.events.accepted.load(Ordering::SeqCst);
+    }
+
+    pub fn abandoned_bodies(&self) -> usize {
+        return self.events.abandoned_bodies.load(Ordering::SeqCst);
+    }
+
+    pub fn closed_by_client(&self) -> usize {
+        return self.events.closed_by_client.load(Ordering::SeqCst);
+    }
+
     pub fn received(&self) -> Vec<ReceivedRequest> {
         return self.received.lock().unwrap().clone();
     }
@@ -158,6 +188,38 @@ pub fn get_response_bytes(response: &NetResponse) -> Vec<u8> {
     };
 }
 
+/// Encodes `data` as a gzip member using stored (uncompressed) deflate blocks, written here from
+/// the gzip and deflate formats so the test needs no compression library.
+pub fn encode_gzip_stored(data: &[u8]) -> Vec<u8> {
+    let mut out = vec![0x1f, 0x8b, 8, 0, 0, 0, 0, 0, 0, 0xff];
+    let blocks: Vec<&[u8]> = if data.is_empty() {
+        vec![&[]]
+    } else {
+        data.chunks(65_535).collect()
+    };
+    for (index, block) in blocks.iter().enumerate() {
+        out.push(u8::from(index + 1 == blocks.len()));
+        let length = block.len() as u16;
+        out.extend_from_slice(&length.to_le_bytes());
+        out.extend_from_slice(&(!length).to_le_bytes());
+        out.extend_from_slice(block);
+    }
+    let mut crc: u32 = !0;
+    for byte in data {
+        crc ^= u32::from(*byte);
+        for _ in 0..8 {
+            crc = if crc & 1 == 1 {
+                (crc >> 1) ^ 0xEDB8_8320
+            } else {
+                crc >> 1
+            };
+        }
+    }
+    out.extend_from_slice(&(!crc).to_le_bytes());
+    out.extend_from_slice(&(data.len() as u32).to_le_bytes());
+    return out;
+}
+
 pub fn ok_reply(body: &[u8]) -> Reply {
     return Reply::Full {
         status: 200,
@@ -172,6 +234,8 @@ pub fn start_loopback_server(handler: Handler) -> LoopbackServer {
     let port = listener.local_addr().unwrap().port();
     let received = Arc::new(Mutex::new(Vec::new()));
     let stopping = Arc::new(AtomicBool::new(false));
+    let events = Arc::new(ConnectionEvents::default());
+    let thread_events = events.clone();
     let thread_received = received.clone();
     let thread_stopping = stopping.clone();
     let thread = std::thread::spawn(move || {
@@ -183,11 +247,13 @@ pub fn start_loopback_server(handler: Handler) -> LoopbackServer {
             let Ok(stream) = stream else {
                 continue;
             };
+            thread_events.accepted.fetch_add(1, Ordering::SeqCst);
             let handler = handler.clone();
             let received = thread_received.clone();
             let stopping = thread_stopping.clone();
+            let events = thread_events.clone();
             connections.push(std::thread::spawn(move || {
-                serve_loopback_connection(stream, &handler, &received, &stopping);
+                serve_loopback_connection(stream, &handler, &received, &stopping, &events);
             }));
         }
         for connection in connections {
@@ -195,6 +261,7 @@ pub fn start_loopback_server(handler: Handler) -> LoopbackServer {
         }
     });
     return LoopbackServer {
+        events,
         port,
         received,
         stopping,
@@ -210,11 +277,22 @@ impl Wake for ThreadParker {
     }
 }
 
-fn read_loopback_request(reader: &mut BufReader<TcpStream>) -> Option<ReceivedRequest> {
+/// Reads the next request. `Err(true)` means the client closed the connection cleanly between
+/// requests; `Err(false)` is any other end.
+fn read_loopback_request(reader: &mut BufReader<TcpStream>) -> Result<ReceivedRequest, bool> {
     let mut line = String::new();
-    if reader.read_line(&mut line).ok()? == 0 {
-        return None;
+    match reader.read_line(&mut line) {
+        Ok(0) => return Err(true),
+        Ok(_) => {}
+        Err(_) => return Err(false),
     }
+    return parse_loopback_request(reader, &line).ok_or(false);
+}
+
+fn parse_loopback_request(
+    reader: &mut BufReader<TcpStream>,
+    line: &str,
+) -> Option<ReceivedRequest> {
     let mut parts = line.trim_end().splitn(3, ' ');
     let method = parts.next()?.to_string();
     let path = parts.next()?.to_string();
@@ -249,6 +327,7 @@ fn serve_loopback_connection(
     handler: &Handler,
     received: &Mutex<Vec<ReceivedRequest>>,
     stopping: &AtomicBool,
+    events: &ConnectionEvents,
 ) {
     stream
         .set_read_timeout(Some(Duration::from_secs(5)))
@@ -256,8 +335,14 @@ fn serve_loopback_connection(
     let mut writer = stream.try_clone().unwrap();
     let mut reader = BufReader::new(stream);
     while !stopping.load(Ordering::SeqCst) {
-        let Some(request) = read_loopback_request(&mut reader) else {
-            break;
+        let request = match read_loopback_request(&mut reader) {
+            Ok(request) => request,
+            Err(closed_by_client) => {
+                if closed_by_client {
+                    events.closed_by_client.fetch_add(1, Ordering::SeqCst);
+                }
+                break;
+            }
         };
         received.lock().unwrap().push(request.clone());
         match handler(&request) {
@@ -294,9 +379,47 @@ fn serve_loopback_connection(
                 let _ = writer.write_all(&bytes);
                 break;
             }
+            Reply::Trickle {
+                chunk,
+                count,
+                interval,
+            } => {
+                let head = format!(
+                    "HTTP/1.1 200 OK\r\ncontent-length: {}\r\n\r\n",
+                    chunk.len() * count
+                );
+                let _ = writer.write_all(head.as_bytes());
+                for _ in 0..count {
+                    if stopping.load(Ordering::SeqCst) {
+                        break;
+                    }
+                    if writer
+                        .write_all(&chunk)
+                        .and_then(|_| writer.flush())
+                        .is_err()
+                    {
+                        events.abandoned_bodies.fetch_add(1, Ordering::SeqCst);
+                        break;
+                    }
+                    std::thread::sleep(interval);
+                }
+                break;
+            }
         }
     }
     let _ = writer.shutdown(Shutdown::Both);
+}
+
+/// Polls `condition` until it holds, failing the test with `label` after `bound`.
+pub fn wait_until(label: &str, bound: Duration, condition: impl Fn() -> bool) {
+    let started = Instant::now();
+    while !condition() {
+        assert!(
+            started.elapsed() < bound,
+            "{label}: not reached within {bound:?}"
+        );
+        std::thread::sleep(Duration::from_millis(5));
+    }
 }
 
 /// Per-request timeout every test request carries, so no test can hang on the network.

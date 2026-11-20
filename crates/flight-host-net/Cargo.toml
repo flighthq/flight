@@ -29,7 +29,8 @@ flight-net = { workspace = true }
 flight-signals = { workspace = true }
 flight-stream = { workspace = true }
 serde_json = { version = "1" }
-ureq = { version = "3.5.2", default-features = false, features = ["gzip"] }
+flate2 = { version = "1", default-features = false, features = ["rust_backend"] }
+ureq = { version = "3.5.2", default-features = false }
 
 [lints]
 workspace = true

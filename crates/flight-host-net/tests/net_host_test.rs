@@ -74,6 +74,84 @@ mod destroy_net_host {
     }
 }
 
+mod destroy_net_host_with_connections {
+    use super::*;
+    use std::time::{Duration, Instant};
+
+    #[test]
+    fn closes_idle_connections_and_ends_requests_in_flight() {
+        let idle_server = start_loopback_server(Arc::new(|_| ok_reply(b"pooled")));
+        let stalled_server = start_loopback_server(Arc::new(|_| Reply::Stall {
+            head_and_part: b"HTTP/1.1 200 OK\r\ncontent-length: 100\r\n\r\npart".to_vec(),
+            hold: Duration::from_secs(5),
+        }));
+        let mut host = create_net_host(None);
+        let capability = get_net_host_capability(&host).clone();
+        let pooled = block_on_within(
+            "pooled request",
+            TEST_DEADLINE,
+            send_net_request(
+                &capability,
+                &create_get_request(&idle_server.url("/pooled")),
+                None,
+                &create_unguarded_net_state(),
+            ),
+        )
+        .unwrap();
+        assert_eq!(pooled.read().unwrap().status, 200);
+        assert_eq!(
+            idle_server.closed_by_client(),
+            0,
+            "the connection should stay pooled"
+        );
+        let in_flight_capability = capability.clone();
+        let stalled_url = stalled_server.url("/stalled");
+        let in_flight = std::thread::spawn(move || {
+            let request = create_get_request(&stalled_url);
+            request.write().unwrap().timeout_ms = None;
+            let response = block_on_within(
+                "request in flight across destroy",
+                TEST_DEADLINE,
+                send_net_request(
+                    &in_flight_capability,
+                    &request,
+                    None,
+                    &create_unguarded_net_state(),
+                ),
+            )
+            .unwrap();
+            return (response.read().unwrap().clone(), Instant::now());
+        });
+        wait_until(
+            "the stalled request reaches its server",
+            Duration::from_secs(3),
+            || {
+                return stalled_server.received().len() == 1;
+            },
+        );
+        std::thread::sleep(Duration::from_millis(50));
+        let destroyed_at = Instant::now();
+        destroy_net_host(&mut host);
+        wait_until(
+            "the idle pooled connection closes",
+            Duration::from_secs(1),
+            || {
+                return idle_server.closed_by_client() == 1;
+            },
+        );
+        let (response, resolved_at) = in_flight.join().unwrap();
+        assert!(
+            resolved_at.duration_since(destroyed_at) < Duration::from_secs(1),
+            "the request in flight outlived destroy by {:?}",
+            resolved_at.duration_since(destroyed_at)
+        );
+        assert_eq!(
+            explain_net_host_response(&response).map(|explanation| explanation.reason),
+            Some(NetHostResponseExplanationReason::HostDestroyed)
+        );
+    }
+}
+
 mod get_net_host_capabilities {
     use super::*;
 

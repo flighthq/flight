@@ -133,6 +133,17 @@ mod methods_and_bodies {
     }
 
     #[test]
+    fn identifies_the_host_rather_than_the_backing_library() {
+        let server = start_loopback_server(Arc::new(|_| ok_reply(b"")));
+        let host = create_net_host(None);
+        fetch(&host, &create_get_request(&server.url("/agent")), None);
+        assert_eq!(
+            server.received()[0].header("user-agent"),
+            Some("flight-host-net")
+        );
+    }
+
+    #[test]
     fn caller_content_type_and_headers_are_sent_unchanged() {
         let server = start_loopback_server(Arc::new(|_| ok_reply(b"")));
         let host = create_net_host(None);
@@ -461,6 +472,25 @@ mod redirects {
     }
 
     #[test]
+    fn follow_with_no_redirects_allowed_fails_on_the_first_redirect() {
+        let server = start_redirecting_server();
+        let mut options = create_net_host_options();
+        options.redirect_limit = 0;
+        let host = create_net_host(Some(&options));
+        let response = fetch(&host, &create_get_request(&server.url("/start")), None);
+        assert_host_failure(
+            &response,
+            NetHostResponseExplanationReason::TooManyRedirects,
+        );
+        assert_eq!(server.received().len(), 1);
+        let direct = fetch(&host, &create_get_request(&server.url("/end")), None);
+        assert_eq!(
+            direct.status, 200,
+            "a response that is not a redirect still succeeds"
+        );
+    }
+
+    #[test]
     fn manual_mode_returns_the_redirect_response() {
         let server = start_redirecting_server();
         let host = create_net_host(None);
@@ -543,6 +573,13 @@ mod failures {
             Some(&options),
         );
         assert_host_failure(&response, NetHostResponseExplanationReason::Aborted);
+        // A worker that was started anyway would connect within milliseconds.
+        std::thread::sleep(Duration::from_millis(300));
+        assert_eq!(
+            server.accepted(),
+            0,
+            "a pre-aborted request opened a connection"
+        );
         assert!(server.received().is_empty());
     }
 
@@ -627,5 +664,236 @@ mod failures {
         let mut keys = Vec::new();
         flight_entity::get_record_keys(&mut keys, &headers);
         assert!(keys.is_empty());
+    }
+}
+
+mod cancellation {
+    use super::*;
+
+    fn start_trickling_server() -> LoopbackServer {
+        return start_loopback_server(Arc::new(|_| Reply::Trickle {
+            chunk: vec![b'x'; 1024],
+            count: 400,
+            interval: Duration::from_millis(10),
+        }));
+    }
+
+    fn create_progress_options(
+        signal: Option<flight_stream::AbortSignal>,
+    ) -> (Ref<NetRequestOptions>, Arc<Mutex<usize>>) {
+        let progress: Ref<Signal<Ref<NetProgress>>> = Arc::new(RwLock::new(create_signal()));
+        let ticks = Arc::new(Mutex::new(0));
+        let count = ticks.clone();
+        connect_signal(
+            &progress.read().unwrap(),
+            Arc::new(move |_: &Ref<NetProgress>| *count.lock().unwrap() += 1),
+            None,
+        );
+        let options = Arc::new(RwLock::new(NetRequestOptions {
+            progress: Some(progress),
+            signal,
+        }));
+        return (options, ticks);
+    }
+
+    #[test]
+    fn abort_mid_body_stops_the_worker_reading() {
+        let server = start_trickling_server();
+        let host = create_net_host(None);
+        let controller = create_abort_controller();
+        let (options, _) = create_progress_options(Some(controller.signal.clone()));
+        let request = create_get_request(&server.url("/trickle"));
+        let aborter = std::thread::spawn(move || {
+            std::thread::sleep(Duration::from_millis(150));
+            abort_controller(&controller, None);
+        });
+        let response = fetch(&host, &request, Some(&options));
+        aborter.join().unwrap();
+        assert_host_failure(&response, NetHostResponseExplanationReason::Aborted);
+        // The full body takes 4 s to trickle; a worker that stopped reading closes its connection
+        // and the server's next writes fail.
+        wait_until(
+            "server sees the aborted body abandoned",
+            Duration::from_secs(2),
+            || {
+                return server.abandoned_bodies() == 1;
+            },
+        );
+    }
+
+    #[test]
+    fn dropping_the_future_mid_body_stops_the_worker_reading() {
+        let server = start_trickling_server();
+        let host = create_net_host(None);
+        let (options, ticks) = create_progress_options(None);
+        let request = create_get_request(&server.url("/trickle"));
+        let state = create_unguarded_net_state();
+        let mut future = Box::pin(send_net_request(
+            get_net_host_capability(&host),
+            &request,
+            Some(&options),
+            &state,
+        ));
+        let waker = std::task::Waker::noop();
+        let mut context = std::task::Context::from_waker(waker);
+        let started = Instant::now();
+        while *ticks.lock().unwrap() == 0 {
+            assert!(future.as_mut().poll(&mut context).is_pending());
+            assert!(
+                started.elapsed() < Duration::from_secs(3),
+                "no body bytes arrived"
+            );
+            std::thread::sleep(Duration::from_millis(5));
+        }
+        drop(future);
+        wait_until(
+            "server sees the dropped body abandoned",
+            Duration::from_secs(2),
+            || {
+                return server.abandoned_bodies() == 1;
+            },
+        );
+    }
+}
+
+mod gzip_responses {
+    use super::*;
+
+    #[test]
+    fn decodes_the_body_and_keeps_the_encoding_headers_and_encoded_total() {
+        let payload = generate_payload(150 * 1024);
+        let encoded = encode_gzip_stored(&payload);
+        let encoded_length = encoded.len();
+        let server = start_loopback_server(Arc::new(move |_| Reply::Full {
+            status: 200,
+            reason: "OK",
+            headers: vec![
+                ("Content-Encoding", "gzip".to_string()),
+                ("X-Keep", "1".to_string()),
+            ],
+            body: encoded.clone(),
+        }));
+        let host = create_net_host(None);
+        let signal: Ref<Signal<Ref<NetProgress>>> = Arc::new(RwLock::new(create_signal()));
+        let seen = Arc::new(Mutex::new(Vec::<NetProgress>::new()));
+        let record = seen.clone();
+        connect_signal(
+            &signal.read().unwrap(),
+            Arc::new(move |progress: &Ref<NetProgress>| {
+                record
+                    .lock()
+                    .unwrap()
+                    .push(progress.read().unwrap().clone());
+            }),
+            None,
+        );
+        let options = Arc::new(RwLock::new(NetRequestOptions {
+            progress: Some(signal),
+            signal: None,
+        }));
+        let request = create_get_request(&server.url("/compressed"));
+        {
+            let mut request = request.write().unwrap();
+            request.response_type = Some(NetResponseType::ArrayBuffer);
+            request.headers = Some(create_headers(&[("Accept-Encoding", "br")]));
+        }
+        let response = fetch(&host, &request, Some(&options));
+        assert_eq!(
+            response.status, 200,
+            "status text {:?}",
+            response.status_text
+        );
+        assert_eq!(
+            get_response_bytes(&response),
+            payload,
+            "decoded body differs"
+        );
+        assert_eq!(
+            get_header(&response, "content-encoding").as_deref(),
+            Some("gzip")
+        );
+        assert_eq!(
+            get_header(&response, "content-length"),
+            Some(encoded_length.to_string())
+        );
+        assert_eq!(get_header(&response, "x-keep").as_deref(), Some("1"));
+        let seen = seen.lock().unwrap();
+        assert!(!seen.is_empty(), "no progress was emitted");
+        assert!(seen.iter().all(|progress| progress.total == encoded_length));
+        assert_eq!(seen.last().unwrap().loaded, payload.len());
+        assert_eq!(server.received()[0].header("accept-encoding"), Some("gzip"));
+    }
+
+    #[test]
+    fn an_empty_gzip_labelled_head_response_succeeds() {
+        let server = start_loopback_server(Arc::new(|_| Reply::Full {
+            status: 200,
+            reason: "OK",
+            headers: vec![("Content-Encoding", "gzip".to_string())],
+            body: encode_gzip_stored(b"head"),
+        }));
+        let host = create_net_host(None);
+        let request = create_get_request(&server.url("/head"));
+        request.write().unwrap().method = "HEAD".to_string();
+        let response = fetch(&host, &request, None);
+        assert_eq!(
+            response.status, 200,
+            "status text {:?}",
+            response.status_text
+        );
+        assert!(matches!(&response.body, Some(NetResponseBody::Text(text)) if text.is_empty()));
+    }
+
+    #[test]
+    fn a_corrupt_gzip_body_is_a_protocol_error() {
+        let server = start_loopback_server(Arc::new(|_| Reply::Full {
+            status: 200,
+            reason: "OK",
+            headers: vec![("Content-Encoding", "gzip".to_string())],
+            body: b"definitely not gzip".to_vec(),
+        }));
+        let host = create_net_host(None);
+        let response = fetch(&host, &create_get_request(&server.url("/corrupt")), None);
+        assert_host_failure(&response, NetHostResponseExplanationReason::ProtocolError);
+    }
+}
+
+mod timeouts {
+    use super::*;
+
+    #[test]
+    fn huge_infinite_nan_and_negative_timeouts_resolve_without_panicking() {
+        let server = start_loopback_server(Arc::new(|_| ok_reply(b"done")));
+        let host = create_net_host(None);
+        for timeout in [
+            1.0e15,
+            1.0e22,
+            1.0e30,
+            f32::MAX,
+            f32::INFINITY,
+            f32::NAN,
+            -5.0,
+        ] {
+            let request = create_get_request(&server.url("/huge"));
+            request.write().unwrap().timeout_ms = Some(timeout);
+            let response = fetch(&host, &request, None);
+            assert_eq!(
+                response.status, 200,
+                "timeout {timeout}: {:?}",
+                response.status_text
+            );
+        }
+    }
+
+    #[test]
+    fn a_zero_timeout_times_out() {
+        let server = start_loopback_server(Arc::new(|_| ok_reply(b"late")));
+        let host = create_net_host(None);
+        let request = create_get_request(&server.url("/zero"));
+        request.write().unwrap().timeout_ms = Some(0.0);
+        assert_host_failure(
+            &fetch(&host, &request, None),
+            NetHostResponseExplanationReason::Timeout,
+        );
     }
 }

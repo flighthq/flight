@@ -29,6 +29,39 @@ use crate::net_transport::{
 };
 use crate::types::NetHostResponseExplanationReason;
 
+#[cfg(test)]
+mod worker_panic_tests {
+    use super::*;
+
+    #[test]
+    fn a_panicking_worker_still_completes_the_request() {
+        let shared = Arc::new(Mutex::new(NetHostRequestShared::default()));
+        let worker_shared = shared.clone();
+        let worker = std::thread::spawn(move || {
+            run_net_host_request_guarded(worker_shared, || panic!("backing layer panicked"));
+        });
+        assert!(worker.join().is_err(), "the worker should have panicked");
+        let outcome = shared.lock().unwrap().outcome.take();
+        assert!(matches!(
+            outcome,
+            Some(Err(NetHostResponseExplanationReason::NetworkError))
+        ));
+    }
+
+    #[test]
+    fn a_completed_worker_keeps_its_outcome() {
+        let shared = Arc::new(Mutex::new(NetHostRequestShared::default()));
+        run_net_host_request_guarded(shared.clone(), || {
+            return Err(NetHostResponseExplanationReason::Timeout);
+        });
+        let outcome = shared.lock().unwrap().outcome.take();
+        assert!(matches!(
+            outcome,
+            Some(Err(NetHostResponseExplanationReason::Timeout))
+        ));
+    }
+}
+
 struct NetHostRequestFuture {
     abort_listener: Option<AbortCallback>,
     cancelled: Arc<AtomicBool>,
@@ -43,6 +76,12 @@ struct NetHostRequestShared {
     outcome: Option<Result<NetResponse, NetHostResponseExplanationReason>>,
     progress: VecDeque<NetProgress>,
     waker: Option<Waker>,
+}
+
+/// Completes its request as `network error` when dropped, unless an outcome is already set. The
+/// worker holds one for its whole run, so a panic in the transfer cannot leave the future pending.
+struct NetHostRequestCompletion {
+    shared: Arc<Mutex<NetHostRequestShared>>,
 }
 
 struct NetHostRequestSnapshot {
@@ -207,13 +246,24 @@ fn push_net_host_progress(shared: &Mutex<NetHostRequestShared>, progress: NetPro
     }
 }
 
+/// Runs `work` and completes the request with its outcome. If `work` panics, the request still
+/// completes, as `network error`, while the panic unwinds, so its future always resolves.
+fn run_net_host_request_guarded(
+    shared: Arc<Mutex<NetHostRequestShared>>,
+    work: impl FnOnce() -> Result<NetResponse, NetHostResponseExplanationReason>,
+) {
+    let completion = NetHostRequestCompletion { shared };
+    let outcome = work();
+    complete_net_host_request(&completion.shared, outcome);
+}
+
 fn run_net_host_request_worker(
     transport: &NetTransport,
     request: NetTransportRequest,
     response_type: NetResponseType,
     shared: &Mutex<NetHostRequestShared>,
     cancelled: &AtomicBool,
-) {
+) -> Result<NetResponse, NetHostResponseExplanationReason> {
     let total = Cell::new(0);
     let mut loaded = 0;
     let result = run_net_transport_request(
@@ -236,7 +286,7 @@ fn run_net_host_request_worker(
             return true;
         },
     );
-    let outcome = result.map(|(head, bytes)| {
+    return result.map(|(head, bytes)| {
         let mut headers = Record::default();
         for (name, value) in head.headers {
             let joined = match get_record_value(&headers, &name) {
@@ -261,7 +311,6 @@ fn run_net_host_request_worker(
             url: head.url,
         };
     });
-    complete_net_host_request(shared, outcome);
 }
 
 pub(crate) fn send_net_host_request(
@@ -302,13 +351,16 @@ pub(crate) fn send_net_host_request(
             let spawned = std::thread::Builder::new()
                 .name("flight-net-request".to_string())
                 .spawn(move || {
-                    run_net_host_request_worker(
-                        &transport,
-                        transport_request,
-                        response_type,
-                        &worker_shared,
-                        &cancelled,
-                    );
+                    let progress_shared = worker_shared.clone();
+                    run_net_host_request_guarded(worker_shared, move || {
+                        return run_net_host_request_worker(
+                            &transport,
+                            transport_request,
+                            response_type,
+                            &progress_shared,
+                            &cancelled,
+                        );
+                    });
                 });
             match spawned {
                 Ok(_) => None,
@@ -373,11 +425,12 @@ fn snapshot_net_host_request(request: &NetRequest) -> NetHostRequestSnapshot {
             }
             body_bytes = Some(bytes);
         }
-        // Negative timeouts are ignored, as the web backend ignores them.
+        // Negative timeouts are ignored, as the web backend ignores them. Larger finite values are
+        // clamped so the deadline arithmetic stays in range.
         let timeout = request
             .timeout_ms
             .filter(|timeout| *timeout >= 0.0 && timeout.is_finite())
-            .map(|timeout| Duration::from_secs_f32(timeout / 1000.0));
+            .map(|timeout| Duration::from_secs_f32(timeout.min(NET_HOST_MAX_TIMEOUT_MS) / 1000.0));
         let redirect = match request.redirect.unwrap_or(NetRedirect::Follow) {
             NetRedirect::Follow => NetTransportRedirect::Follow,
             NetRedirect::Error => NetTransportRedirect::Reject,
@@ -403,6 +456,10 @@ fn strip_utf8_bom(bytes: &[u8]) -> &[u8] {
     return bytes.strip_prefix(&[0xEF, 0xBB, 0xBF]).unwrap_or(bytes);
 }
 
+/// The longest timeout a request keeps, in milliseconds (about 31 years); longer finite timeouts
+/// are clamped to it.
+pub(crate) const NET_HOST_MAX_TIMEOUT_MS: f32 = 1.0e12;
+
 /// The content type the Fetch standard gives a text body when the caller sets none.
 const NET_HOST_TEXT_CONTENT_TYPE: &str = "text/plain;charset=UTF-8";
 
@@ -411,6 +468,15 @@ impl Future for NetHostRequestFuture {
 
     fn poll(mut self: Pin<&mut Self>, context: &mut Context<'_>) -> Poll<NetRequestResult> {
         return poll_net_host_request(&mut self, context);
+    }
+}
+
+impl Drop for NetHostRequestCompletion {
+    fn drop(&mut self) {
+        complete_net_host_request(
+            &self.shared,
+            Err(NetHostResponseExplanationReason::NetworkError),
+        );
     }
 }
 

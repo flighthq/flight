@@ -5,7 +5,7 @@ use std::sync::{Arc, RwLock};
 use flight_net::{HostNetCapabilities, HostNetCapability};
 
 use crate::net_host_request::send_net_host_request;
-use crate::net_transport::create_net_transport;
+use crate::net_transport::{close_net_transport, create_net_transport};
 use crate::types::*;
 
 /// The provider value behind a net host's capabilities: identity only, no state.
@@ -48,7 +48,10 @@ pub fn create_net_host_options() -> NetHostOptions {
 /// connection; requests sent afterwards resolve to the `host destroyed` sentinel. Repeat calls are
 /// no-ops.
 pub fn destroy_net_host(host: &mut NetHost) {
-    host.transport.write().unwrap().take();
+    let transport = host.transport.write().unwrap().take();
+    if let Some(transport) = transport {
+        close_net_transport(transport);
+    }
 }
 
 /// The net capability group, with its `http` slot filled, for consumers that take the group.
