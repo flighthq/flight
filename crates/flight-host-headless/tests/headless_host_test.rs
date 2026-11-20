@@ -147,6 +147,32 @@ mod create_headless_host_options {
     }
 }
 
+mod create_headless_host_render_target {
+    use super::*;
+
+    #[test]
+    fn creates_a_capture_enabled_rgba_screen_target_of_the_requested_extent() {
+        let Some(mut host) = create_test_headless_host(
+            "creates_a_capture_enabled_rgba_screen_target_of_the_requested_extent",
+        ) else {
+            return;
+        };
+        let target = create_headless_host_render_target(&host, 20, 12);
+        let WgpuRenderTarget::Screen(screen) = &target else {
+            panic!("a headless render target is a screen target");
+        };
+        {
+            let screen = screen.read().unwrap();
+            assert!(screen.capture_enabled);
+            assert_eq!(screen.format, wgpu::TextureFormat::Rgba8Unorm);
+            assert_eq!((screen.width, screen.height), (20, 12));
+        }
+        assert!(is_wgpu_screen_render_target(&target));
+        drop(target);
+        destroy_headless_host(&mut host);
+    }
+}
+
 mod destroy_headless_host {
     use super::*;
 

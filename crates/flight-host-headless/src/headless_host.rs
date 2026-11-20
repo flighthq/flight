@@ -2,14 +2,16 @@
 //! Headless host construction, its capability and carrier producers, synchronous read-back, and
 //! teardown.
 
-use std::sync::Arc;
+use std::sync::{Arc, RwLock};
 
 use flight_bitmap::Bitmap;
 use flight_entity::{FlightError, Ref};
 use flight_host::{HostSpawnCapability, ProviderRef, WgpuDevice};
 use flight_render_wgpu::{
-    WgpuCanvasContext, WgpuScreenRenderTarget, create_bitmap_from_wgpu_screen_render_target,
-    create_wgpu_native_device, create_wgpu_surface_context,
+    WgpuCanvasContext, WgpuRenderTarget, WgpuScreenRenderTarget, WgpuScreenRenderTargetOptions,
+    create_bitmap_from_wgpu_screen_render_target, create_wgpu_native_device,
+    create_wgpu_screen_render_target, create_wgpu_surface_context,
+    enable_wgpu_screen_render_target_capture,
 };
 use flight_surface::{
     HostWgpuCapability, WgpuHostAcquisition, WgpuHostAcquisitionOwnership,
@@ -18,8 +20,8 @@ use flight_surface::{
 
 use crate::headless_device::request_headless_device;
 use crate::headless_surface::{
-    attach_headless_surface, create_headless_presentation_surface, create_headless_surface_handle,
-    get_headless_surface,
+    attach_headless_surface, create_headless_host_surface, create_headless_presentation_surface,
+    create_headless_surface_handle, get_headless_surface,
 };
 use crate::types::*;
 
@@ -76,6 +78,31 @@ pub fn create_headless_host_options() -> HeadlessHostOptions {
         allow_vulkan: true,
         power_preference: HeadlessHostPowerPreference::None,
     };
+}
+
+/// Creates the offscreen target a render pass draws into: the SDK's own screen render target
+/// (`create_wgpu_screen_render_target`) over a new `width`x`height` headless surface, in the host's
+/// RGBA format, with the SDK's capture read-back enabled. Every frame submitted to it stays readable
+/// through `create_bitmap_from_headless_screen_render_target`. The target borrows the host's device
+/// and capability, so it must be released before `destroy_headless_host`.
+pub fn create_headless_host_render_target(
+    host: &HeadlessHost,
+    width: u32,
+    height: u32,
+) -> WgpuRenderTarget {
+    let surface = create_headless_host_surface(host, width, height);
+    let mut screen = create_wgpu_screen_render_target(
+        &host.wgpu,
+        &host.device,
+        &surface,
+        Some(&WgpuScreenRenderTargetOptions {
+            alpha_mode: None,
+            color_space: None,
+            format: Some(HEADLESS_SURFACE_TEXTURE_FORMAT),
+        }),
+    );
+    enable_wgpu_screen_render_target_capture(&mut screen);
+    return WgpuRenderTarget::Screen(Arc::new(RwLock::new(screen)));
 }
 
 // Device-loss continuations run on their own thread each: a headless host has no event loop to
@@ -195,3 +222,4 @@ pub fn is_headless_host_software_adapter(host: &HeadlessHost) -> bool {
 
 // Offscreen frames are RGBA: the byte order the read-back Bitmap uses, so no swizzle is needed.
 const HEADLESS_SURFACE_FORMAT: &str = "rgba8unorm";
+const HEADLESS_SURFACE_TEXTURE_FORMAT: wgpu::TextureFormat = wgpu::TextureFormat::Rgba8Unorm;

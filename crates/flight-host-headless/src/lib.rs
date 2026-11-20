@@ -24,6 +24,7 @@ pub use contract::HeadlessReadBackExplanationReason;
 pub use contract::create_bitmap_from_headless_screen_render_target;
 pub use contract::create_headless_host;
 pub use contract::create_headless_host_options;
+pub use contract::create_headless_host_render_target;
 pub use contract::create_headless_host_surface;
 pub use contract::destroy_headless_host;
 pub use contract::explain_headless_host;
