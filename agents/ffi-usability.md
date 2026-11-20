@@ -214,5 +214,5 @@ Decided by the owner on 2026-11-18:
 1. **BitmapRegion** holds `Ref<Bitmap>`; the frozen `flight-bitmap` manifest changes accordingly (§3).
 2. **Setters do not invalidate** (§2c). FFI field setters mirror the SDK; the caller names the invalidation.
 3. **Bracket handles** (§4). Borrow-erased `begin`/`end` handles on an allowlist; no scoped convenience wrapper in their place.
-4. **wgpu-only native alpha** (§5). The first native host presents through wgpu; GL arrives with the SDL host.
+4. **Both native renderers, GL and wgpu** (§5). _Revised 2026-11-20:_ the owner withdrew the earlier wgpu-first ruling. Rust supports GL and wgpu, TypeScript supports all four renderers, and "alpha" does not excuse leaving part of the SDK out. See [pass 4](ffi-usability/pass-4.md).
 5. **Capability constructors from C are deferred** beyond the alpha (§5).
