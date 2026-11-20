@@ -368,11 +368,23 @@ fn aliased_ref_only_borrows_compare_allocations_before_locking() {
     assert!(mutable.contains("std::sync::Arc::as_ptr(arc_body_a)"));
     assert!(mutable.contains("std::sync::Arc::as_ptr(arc_body_b)"));
 
-    for name in [
-        "flight_is_rigid_body2d_pair_awake",
-        "flight_relative_normal_velocity",
-        "flight_is_physics2d_pair_ordered",
-        "flight_default_node_runtime_can_add_child",
+    for (name, fallback) in [
+        (
+            "flight_is_rigid_body2d_pair_awake",
+            ".as_deref().unwrap_or(&guard_",
+        ),
+        (
+            "flight_relative_normal_velocity",
+            ".as_deref().unwrap_or(&guard_",
+        ),
+        (
+            "flight_is_physics2d_pair_ordered",
+            ".as_deref().unwrap_or(&guard_",
+        ),
+        (
+            "flight_default_node_runtime_can_add_child",
+            ".as_deref().unwrap_or(&*guard_",
+        ),
     ] {
         let body = wrapper(&wrappers, name);
         assert!(
@@ -384,7 +396,7 @@ fn aliased_ref_only_borrows_compare_allocations_before_locking() {
             "{name} does not order distinct allocations by identity"
         );
         assert!(
-            body.contains(".as_deref().unwrap_or(&*guard_"),
+            body.contains(fallback),
             "{name} does not reuse the first read guard"
         );
     }

@@ -8485,24 +8485,31 @@ fn alias_borrow_pair_bindings(pair: &AliasBorrowPair) -> Vec<String> {
     return bindings;
 }
 
+fn alias_borrow_guard_expr(param: &AliasBorrowParam, clean: &str) -> String {
+    let borrow = if param.mutable { "&mut " } else { "&" };
+    let deref = if matches!(&param.source, AliasBorrowSource::Node(_)) {
+        "*"
+    } else {
+        ""
+    };
+    format!("{borrow}{deref}guard_{clean}")
+}
+
 fn alias_borrow_call_expr(pair: &AliasBorrowPair, index: usize) -> String {
-    let first = pair.first.name.trim_start_matches('_');
-    let second = pair.second.name.trim_start_matches('_');
     if index == pair.first.index {
-        return if pair.first.mutable {
-            format!("&mut *guard_{first}")
-        } else {
-            format!("&*guard_{first}")
-        };
+        return alias_borrow_guard_expr(&pair.first, pair.first.name.trim_start_matches('_'));
     }
     assert_eq!(index, pair.second.index);
     if pair.second.mutable {
-        return format!("&mut *guard_{second}");
+        return alias_borrow_guard_expr(&pair.second, pair.second.name.trim_start_matches('_'));
     }
     if !pair.first.mutable {
-        return format!("guard_{second}.as_deref().unwrap_or(&*guard_{first})");
+        let first = pair.first.name.trim_start_matches('_');
+        let second = pair.second.name.trim_start_matches('_');
+        let fallback = alias_borrow_guard_expr(&pair.first, first);
+        return format!("guard_{second}.as_deref().unwrap_or({fallback})");
     }
-    return format!("&*guard_{second}");
+    return alias_borrow_guard_expr(&pair.second, pair.second.name.trim_start_matches('_'));
 }
 
 fn mapped_single(name: &str, ffi_ty: &str, call_expr: String) -> Option<MappedParam> {
@@ -9200,9 +9207,9 @@ fn map_ref_only_borrow(name: &str, ty: &str) -> Option<MappedParam> {
         ffi_params: vec![(name.to_string(), pointer.to_string())],
         bindings,
         call_expr: if mutable {
-            format!("&mut *guard_{clean}")
+            format!("&mut guard_{clean}")
         } else {
-            format!("&*guard_{clean}")
+            format!("&guard_{clean}")
         },
     });
 }

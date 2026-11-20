@@ -12,6 +12,16 @@ fn constant_block(name: &str) -> &'static str {
     &rest[..end]
 }
 
+fn wrapper(name: &str) -> &'static str {
+    GENERATED
+        .split_once(&format!("fn {name}("))
+        .unwrap_or_else(|| panic!("missing generated wrapper {name}"))
+        .1
+        .split("#[unsafe(no_mangle)]")
+        .next()
+        .unwrap()
+}
+
 #[test]
 fn scan_membership_is_literal_and_excludes_gl_backends() {
     let scan = constant_block("const SCAN_CRATES:");
@@ -113,4 +123,65 @@ fn renderer_registrations_are_non_generic_generated_externs() {
         assert_eq!(GENERATED.matches(&format!("fn {symbol}(")).count(), 1);
         assert_eq!(HEADER.matches(&format!(" {symbol}(")).count(), 1);
     }
+}
+
+#[test]
+fn ref_only_wgpu_borrows_rely_on_guard_auto_deref() {
+    let expected = [
+        (
+            "flight_explain_wgpu_effect_application",
+            "&guard_source, guard_dest.as_deref().unwrap_or(&guard_source)",
+        ),
+        (
+            "flight_destroy_wgpu_render_texture",
+            "&guard_render_texture",
+        ),
+        (
+            "flight_explain_wgpu_render_texture",
+            "&guard_render_texture",
+        ),
+        (
+            "flight_is_wgpu_render_texture_ready",
+            "&guard_render_texture",
+        ),
+    ];
+    for (name, fragment) in expected {
+        let body = wrapper(name);
+        assert!(body.contains(fragment), "{name} lacks {fragment}");
+        assert!(
+            !body.contains("&*guard_") && !body.contains("&mut *guard_"),
+            "{name} restored an explicit dereference that guard auto-deref supplies"
+        );
+    }
+}
+
+#[test]
+fn every_ref_only_guard_call_avoids_an_explicit_deref() {
+    let mut checked = 0;
+    for body in GENERATED.split("#[unsafe(no_mangle)]") {
+        for line in body.lines() {
+            let Some(rest) = line.trim().strip_prefix("let arc_") else {
+                continue;
+            };
+            if !line.contains("as *const flight_sdk::Ref<") {
+                continue;
+            }
+            let Some((clean, _)) = rest.split_once(" = ") else {
+                continue;
+            };
+            if !body.contains(&format!("guard_{clean}")) {
+                continue;
+            }
+            checked += 1;
+            assert!(
+                !body.contains(&format!("&*guard_{clean}"))
+                    && !body.contains(&format!("&mut *guard_{clean}")),
+                "the {clean} Ref guard restored an explicit dereference"
+            );
+        }
+    }
+    assert!(
+        checked > 100,
+        "ref-only guard census became vacuous: {checked}"
+    );
 }
