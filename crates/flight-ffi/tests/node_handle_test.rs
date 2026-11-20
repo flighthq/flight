@@ -108,7 +108,7 @@ fn generated_node_wrappers_have_no_raw_fat_ref_casts() {
 }
 
 #[test]
-fn landed_base_node_consumer_census_has_exact_reviewed_outcomes() {
+fn node_consumer_census_has_exact_expected_outcomes() {
     let mut fixture = NODE_CONSUMER_MIGRATION.lines();
     assert_eq!(fixture.next(), Some("format|ffi-node-consumer-migration|1"));
     assert_eq!(

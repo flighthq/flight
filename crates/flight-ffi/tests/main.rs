@@ -7,8 +7,8 @@ mod flight_ffi_callback_alias_test;
 mod flight_ffi_declared_instantiation_test;
 #[path = "hl_shim_test.rs"]
 mod flight_ffi_hl_shim_test;
-#[path = "item_b_node_carrier_test.rs"]
-mod flight_ffi_item_b_node_carrier_test;
+#[path = "node_handle_test.rs"]
+mod flight_ffi_node_handle_test;
 #[path = "public_perimeter_test.rs"]
 mod flight_ffi_public_perimeter_test;
 #[path = "reachability_census_test.rs"]

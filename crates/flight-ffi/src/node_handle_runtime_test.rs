@@ -313,7 +313,7 @@ fn node_carriers_watchdog_concurrent_pairs_share_one_allocation_order() {
         ]);
 
         // Shared aliases must reuse the first guard. Several waiting writers make a second read of
-        // the same writer-preferring RwLock deadlock deterministically under the BMR3 mutation.
+        // the same writer-preferring RwLock deadlock deterministically if alias reuse regresses.
         let mut alias_operations: Vec<Box<dyn FnOnce() + Send>> = Vec::new();
         for writer_index in 0..3 {
             alias_operations.push(Box::new(move || {
@@ -450,58 +450,6 @@ fn node_field_access_recovers_from_a_poisoned_view_lock() {
 }
 
 #[test]
-fn node_field_optional_node2d_slice_preserves_null_elements_and_rejects_malformed_inputs() {
-    unsafe {
-        let sprite = flight_create_sprite();
-        let node3d = flight_create_particle_emitter_3d();
-        let artboard = flight_sdk::RiveArtboardGraph::default();
-        let rebuilds: std::collections::HashMap<usize, flight_sdk::RiveRebuild> =
-            Default::default();
-        let range = flight_sdk::RiveObjectRange { end: 0, start: 0 };
-        let call = |ptr: *const *const FlightNode, len: usize| {
-            flight_create_rive_animation_clips(
-                std::ptr::null(),
-                0,
-                &range,
-                ptr,
-                len,
-                &artboard,
-                (&rebuilds as *const std::collections::HashMap<usize, flight_sdk::RiveRebuild>)
-                    .cast(),
-                std::ptr::null(),
-                std::ptr::null_mut(),
-            )
-        };
-
-        let nodes = [
-            std::ptr::null(),
-            sprite as *const FlightNode,
-            std::ptr::null(),
-        ];
-        let result = call(nodes.as_ptr(), nodes.len());
-        assert!(!result.is_null(), "NULL elements lower to None");
-        assert_eq!(flight_create_rive_animation_clips_result_len(result), 0);
-        flight_create_rive_animation_clips_result_free(result.cast());
-
-        let empty = call(std::ptr::null(), 0);
-        assert!(!empty.is_null(), "NULL with zero length is an empty slice");
-        flight_create_rive_animation_clips_result_free(empty.cast());
-        assert!(
-            call(std::ptr::null(), 2).is_null(),
-            "NULL with non-zero length is rejected"
-        );
-        let wrong_kind = [sprite as *const FlightNode, node3d as *const FlightNode];
-        assert!(
-            call(wrong_kind.as_ptr(), wrong_kind.len()).is_null(),
-            "a non-2D element is rejected before the SDK call"
-        );
-
-        flight_free_node(node3d);
-        flight_free_node(sprite);
-    }
-}
-
-#[test]
 fn node_field_mutation_is_locked_explicit_and_kind_safe() {
     unsafe {
         let sprite = flight_create_sprite();
@@ -625,6 +573,58 @@ fn node_field_mutation_is_locked_explicit_and_kind_safe() {
             flight_get_node_appearance_revision(sprite),
             clip_appearance.wrapping_add(1),
             "the SDK clip setter invalidates appearance"
+        );
+
+        flight_free_node(node3d);
+        flight_free_node(sprite);
+    }
+}
+
+#[test]
+fn node_field_optional_node2d_slice_preserves_null_elements_and_rejects_malformed_inputs() {
+    unsafe {
+        let sprite = flight_create_sprite();
+        let node3d = flight_create_particle_emitter_3d();
+        let artboard = flight_sdk::RiveArtboardGraph::default();
+        let rebuilds: std::collections::HashMap<usize, flight_sdk::RiveRebuild> =
+            Default::default();
+        let range = flight_sdk::RiveObjectRange { end: 0, start: 0 };
+        let call = |ptr: *const *const FlightNode, len: usize| {
+            flight_create_rive_animation_clips(
+                std::ptr::null(),
+                0,
+                &range,
+                ptr,
+                len,
+                &artboard,
+                (&rebuilds as *const std::collections::HashMap<usize, flight_sdk::RiveRebuild>)
+                    .cast(),
+                std::ptr::null(),
+                std::ptr::null_mut(),
+            )
+        };
+
+        let nodes = [
+            std::ptr::null(),
+            sprite as *const FlightNode,
+            std::ptr::null(),
+        ];
+        let result = call(nodes.as_ptr(), nodes.len());
+        assert!(!result.is_null(), "NULL elements lower to None");
+        assert_eq!(flight_create_rive_animation_clips_result_len(result), 0);
+        flight_create_rive_animation_clips_result_free(result.cast());
+
+        let empty = call(std::ptr::null(), 0);
+        assert!(!empty.is_null(), "NULL with zero length is an empty slice");
+        flight_create_rive_animation_clips_result_free(empty.cast());
+        assert!(
+            call(std::ptr::null(), 2).is_null(),
+            "NULL with non-zero length is rejected"
+        );
+        let wrong_kind = [sprite as *const FlightNode, node3d as *const FlightNode];
+        assert!(
+            call(wrong_kind.as_ptr(), wrong_kind.len()).is_null(),
+            "a non-2D element is rejected before the SDK call"
         );
 
         flight_free_node(node3d);

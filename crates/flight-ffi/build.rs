@@ -3819,7 +3819,7 @@ fn generate_node_field_accessors(
     for field in fields {
         let getter_name = format!("flight_get_{stem}_{}", field.name);
         // A raw field write cannot shadow an SDK setter whose canonical verb also invalidates.
-        // These are the two current collisions; non-colliding fields keep their concise B3 names.
+        // These are the two current collisions; non-colliding fields keep their concise names.
         let setter_name = match (struct_name, field.name.as_str()) {
             ("NodeFields", "enabled") => "flight_set_node_enabled_field".to_string(),
             ("Node3DFields", "alpha") => "flight_set_node3d_alpha_field".to_string(),

@@ -20,7 +20,7 @@ mod interaction_reentry_runtime_test;
 #[cfg(test)]
 mod interaction_signal_runtime_test;
 #[cfg(test)]
-mod item_b_node_carrier_test;
+mod node_handle_runtime_test;
 #[cfg(test)]
 mod shape_bounds_context_test;
 #[cfg(test)]
