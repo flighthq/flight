@@ -25,6 +25,8 @@ mod flight_ffi_reachability_unit_test;
 mod flight_ffi_registry_tokens_test;
 #[path = "render_pass_bracket_test.rs"]
 mod flight_ffi_render_pass_bracket_test;
+#[path = "renderer_handles_test.rs"]
+mod flight_ffi_renderer_handles_test;
 #[path = "root_census_test.rs"]
 mod flight_ffi_root_census_test;
 #[path = "signal_identity_test.rs"]

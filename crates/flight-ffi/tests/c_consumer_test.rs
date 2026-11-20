@@ -204,6 +204,36 @@ fn headless_host_sanitizer_probe_detects_a_leaked_adapter_name() {
     }
 }
 
+// A headless consumer runs on the software Vulkan driver alone, so its frames do not depend on which
+// other drivers the machine has installed; a consumer without the host section is left unpinned.
+#[test]
+fn headless_consumers_run_pinned_to_the_software_vulkan_driver() {
+    let icd = PathBuf::from("/usr/share/vulkan/icd.d/lvp_icd.json");
+    let pinned = CConsumer {
+        executable: PathBuf::from("headless-consumer"),
+        sanitizer_runtimes: None,
+        software_vulkan_icd: Some(icd.clone()),
+    }
+    .command();
+    let unpinned = CConsumer {
+        executable: PathBuf::from("consumer"),
+        sanitizer_runtimes: None,
+        software_vulkan_icd: None,
+    }
+    .command();
+    for variable in ["VK_DRIVER_FILES", "VK_ICD_FILENAMES"] {
+        let value = pinned
+            .get_envs()
+            .find(|(name, _)| *name == variable)
+            .and_then(|(_, value)| value);
+        assert_eq!(value, Some(icd.as_os_str()), "{variable}");
+        assert!(
+            unpinned.get_envs().all(|(name, _)| name != variable),
+            "{variable}"
+        );
+    }
+}
+
 // The host section's declarations exist only for a consumer that defines the guard macro: the
 // same header compiled without it must leave every host name free.
 #[cfg(feature = "host-headless")]
@@ -335,6 +365,203 @@ fn headless_render_sanitizer_probe_detects_a_leaked_node() {
         diagnostics.contains("LeakSanitizer") && diagnostics.contains("detected memory leaks"),
         "deliberate node leak did not produce a live LeakSanitizer report:\n{diagnostics}"
     );
+}
+
+// Built-in renderers bound from C to a node's standard kind and to a caller's own kind: the
+// custom kind draws only once it is bound, and foreign, forged and NULL handles are refused.
+#[test]
+fn renderer_binding_draws_a_custom_kind_with_a_built_in_renderer_under_sanitizers() {
+    if let Some(output) = z_compile_link_and_run_against(
+        Library::StandInWgpuHost,
+        "renderer_binding.c",
+        "renderer_binding",
+        true,
+        false,
+    ) {
+        assert_eq!(
+            String::from_utf8_lossy(&output.stdout).trim(),
+            "flight-ffi renderer binding: ok"
+        );
+    }
+}
+
+// The binding program leaks its custom-kind scene root under `FLIGHT_FFI_DELIBERATE_LEAK`. The program
+// runs on a joined worker thread, so no stale copy of the root's address survives on a live stack for
+// LeakSanitizer's conservative scan to mistake for a reference. Each run must complete the
+// program's own checks and then fail only through LeakSanitizer's leak report, never through a
+// sanitizer that could not start; runs under environments of different sizes shift the stack, so
+// the detection cannot depend on one layout.
+#[test]
+fn renderer_binding_sanitizer_probe_detects_a_leaked_scene_root() {
+    let Some(consumer) = z_compile_and_link(
+        Library::StandInWgpuHost,
+        "renderer_binding.c",
+        "renderer_binding-leak-probe",
+        true,
+        true,
+        |_| Vec::new(),
+    ) else {
+        return;
+    };
+    for padding in [0, 1, 17, 64, 255] {
+        let output = consumer
+            .command()
+            .env("FLIGHT_FFI_PROBE_PADDING", "x".repeat(padding))
+            .output()
+            .unwrap();
+        let diagnostics = String::from_utf8_lossy(&output.stderr);
+        assert_eq!(
+            String::from_utf8_lossy(&output.stdout).trim(),
+            "flight-ffi renderer binding: ok",
+            "the leak probe did not complete its own checks (padding {padding}):\n{diagnostics}"
+        );
+        assert!(
+            !diagnostics.contains("LeakSanitizer has encountered a fatal error")
+                && !diagnostics.contains("ERROR: AddressSanitizer"),
+            "the sanitizer failed for a reason other than the leak (padding {padding}):\n{diagnostics}"
+        );
+        assert_eq!(
+            output.status.code(),
+            Some(SANITIZER_EXIT_CODE),
+            "LeakSanitizer accepted a deliberately leaked scene root (padding {padding}):\n{diagnostics}"
+        );
+        assert!(
+            diagnostics.contains("ERROR: LeakSanitizer: detected memory leaks")
+                && diagnostics.contains("Direct leak of"),
+            "deliberate scene root leak did not produce a live LeakSanitizer report:\n{diagnostics}"
+        );
+    }
+}
+
+// Every producer of every family offered by a cast to every built-in consumer and to the owned free,
+// in C and through the generated HashLink primitives: only the consumer's own family is accepted and
+// nothing is freed.
+#[test]
+fn renderer_census_refuses_every_producer_of_another_family_under_sanitizers() {
+    for (stem, through_hashlink) in [
+        ("renderer_census", false),
+        ("renderer_census-hashlink", true),
+    ] {
+        let Some(consumer) = z_compile_and_link(
+            Library::StandInWgpuHost,
+            "renderer_census.c",
+            stem,
+            true,
+            false,
+            |work_dir| z_write_census_includes(work_dir, through_hashlink),
+        ) else {
+            return;
+        };
+        let output = run(&mut consumer.command(), "run the renderer census");
+        let lane = if through_hashlink { "hashlink" } else { "c" };
+        assert_eq!(
+            String::from_utf8_lossy(&output.stdout).trim(),
+            format!(
+                "flight-ffi renderer census ({lane}): ok {}",
+                z_builtin_renderer_producers().len()
+            )
+        );
+    }
+}
+
+// Strict C refuses, without a cast, every producer's handle where another family's is expected, and
+// every borrowed handle, the mesh lookup's included, where the owned free expects an owned copy;
+// a handle of the consumer's own family compiles.
+#[test]
+fn builtin_renderer_handles_of_another_family_do_not_compile() {
+    if env!("FLIGHT_FFI_TARGET") != env!("FLIGHT_FFI_HOST") {
+        return;
+    }
+    let work_dir = Path::new(env!("OUT_DIR")).join("flight-ffi-builtin-family-negative");
+    fs::create_dir_all(&work_dir).unwrap();
+    let mut sources: Vec<(String, String)> = Vec::new();
+    let mut families = std::collections::BTreeSet::new();
+    for (family, producer) in z_builtin_renderer_producers() {
+        if families.insert(family.clone()) {
+            sources.push((family, format!("{producer}()")));
+        }
+    }
+    assert_eq!(sources.len(), 7);
+    sources.push((
+        "FlightBuiltinWgpuMeshMaterialRenderer".to_string(),
+        "flight_get_wgpu_mesh_material_renderer(state, \"probe\")".to_string(),
+    ));
+    let consumers = [
+        (
+            "FlightBuiltinWgpuNodeRenderer",
+            "flight_register_wgpu_node_renderer(state, \"probe\", HANDLE);",
+        ),
+        (
+            "FlightBuiltinGlNodeRenderer",
+            "flight_register_gl_node_renderer(state, \"probe\", HANDLE);",
+        ),
+        (
+            "FlightBuiltinWgpuMeshMaterialRenderer",
+            "flight_register_wgpu_mesh_material_renderer(state, \"probe\", HANDLE);",
+        ),
+        (
+            "FlightBuiltinWgpuQuadMaterialRenderer",
+            "flight_register_wgpu_quad_material_renderer(state, \"probe\", HANDLE);",
+        ),
+        (
+            "FlightBuiltinWgpuRenderPreset",
+            "flight_register_wgpu_render_preset(state, HANDLE);",
+        ),
+        (
+            "an owned renderer copy",
+            "flight_free_wgpu_quad_material_renderer(HANDLE);",
+        ),
+    ];
+    let compiler = cc::Build::new()
+        .cargo_metadata(false)
+        .target(env!("FLIGHT_FFI_TARGET"))
+        .host(env!("FLIGHT_FFI_HOST"))
+        .opt_level(0)
+        .debug(false)
+        .out_dir(&work_dir)
+        .get_compiler();
+    let mut accepted = 0;
+    for (index, (family, handle)) in sources.iter().enumerate() {
+        for (consumer_index, (takes, call)) in consumers.iter().enumerate() {
+            let source = work_dir.join(format!("handle_{index}_{consumer_index}.c"));
+            fs::write(
+                &source,
+                format!(
+                    "#include \"flight_ffi.h\"\nvoid probe(void *state);\nvoid probe(void *state) {{\n  (void)state;\n  {}\n}}\n",
+                    call.replace("HANDLE", handle)
+                ),
+            )
+            .unwrap();
+            let mut compile = compiler.to_command();
+            compile
+                .args(["-std=c11", "-Wall", "-Wextra", "-Wpedantic", "-Werror"])
+                .arg(format!("-I{}", env!("OUT_DIR")))
+                .arg("-c")
+                .arg(&source)
+                .arg("-o")
+                .arg(work_dir.join(format!("handle_{index}_{consumer_index}.o")));
+            let compiled = compile.output().unwrap();
+            let diagnostics = String::from_utf8_lossy(&compiled.stderr);
+            if family == takes {
+                assert!(
+                    compiled.status.success(),
+                    "{handle} was refused where its own family is taken:\n{diagnostics}"
+                );
+                accepted += 1;
+            } else {
+                assert!(
+                    !compiled.status.success(),
+                    "strict C accepted {handle} ({family}) where {takes} is taken"
+                );
+                assert!(
+                    diagnostics.contains("incompatible-pointer-types")
+                        || diagnostics.contains("discarded-qualifiers"),
+                    "{handle} into {takes} failed for an unexpected reason:\n{diagnostics}"
+                );
+            }
+        }
+    }
+    assert_eq!(accepted, 6);
 }
 
 #[test]
@@ -510,6 +737,43 @@ fn z_compile_link_and_run_with_args(
     deliberate_leak: bool,
     args: &[&Path],
 ) -> Option<std::process::Output> {
+    let consumer = z_compile_and_link(
+        library,
+        source_name,
+        stem,
+        sanitizers,
+        deliberate_leak,
+        |_| Vec::new(),
+    )?;
+    let mut command = consumer.command();
+    command.args(args);
+    let output = if deliberate_leak {
+        command.output().unwrap()
+    } else {
+        run(&mut command, "run the C consumer")
+    };
+    // With the software driver pinned there is always an adapter, so a host program that found
+    // none is a failure of the pin, never a skip.
+    assert!(
+        consumer.software_vulkan_icd.is_none()
+            || !String::from_utf8_lossy(&output.stdout).contains("skipped"),
+        "{stem} found no adapter through the pinned software Vulkan driver: {}",
+        String::from_utf8_lossy(&output.stdout)
+    );
+    return Some(output);
+}
+
+// Compiles and links one C consumer as `z_compile_link_and_run_with_args` does, with the extra
+// compiler arguments `extra` returns for the work directory, and returns it unrun; `None` when the
+// target is not the host, or when a headless consumer has no software Vulkan driver to pin.
+fn z_compile_and_link(
+    library: Library,
+    source_name: &str,
+    stem: &str,
+    sanitizers: bool,
+    deliberate_leak: bool,
+    extra: impl FnOnce(&Path) -> Vec<String>,
+) -> Option<CConsumer> {
     if env!("FLIGHT_FFI_TARGET") != env!("FLIGHT_FFI_HOST") {
         eprintln!(
             "skipping the flight-ffi C consumer: it is built for {} and cannot run on host {}",
@@ -520,6 +784,19 @@ fn z_compile_link_and_run_with_args(
     }
 
     let host_section = library == Library::HostHeadless;
+    // A machine may have several Vulkan drivers installed; the headless programs load exactly one,
+    // Mesa's software driver, so their adapter and the sanitizers' view are the same everywhere.
+    let software_vulkan_icd = if host_section {
+        let Some(icd) = find_software_vulkan_icd() else {
+            eprintln!(
+                "SKIPPED {stem}: no Mesa lavapipe ICD (libvulkan_lvp) is installed; install mesa-vulkan-drivers to run it"
+            );
+            return None;
+        };
+        Some(icd)
+    } else {
+        None
+    };
     let library = build_static_library(library);
     let work_dir = library
         .parent()
@@ -572,6 +849,7 @@ fn z_compile_link_and_run_with_args(
     if host_section {
         compile.arg("-DFLIGHT_HOST_HEADLESS");
     }
+    compile.args(extra(&work_dir));
     compile.arg("-c").arg(&source).arg("-o").arg(&object);
     let compiled = run(&mut compile, "compile the C consumer");
     let diagnostics = String::from_utf8_lossy(&compiled.stderr);
@@ -598,39 +876,86 @@ fn z_compile_link_and_run_with_args(
             .arg("link-arg=-lubsan");
     }
     run(&mut link, "link the C consumer");
+    return Some(CConsumer {
+        executable,
+        sanitizer_runtimes,
+        software_vulkan_icd,
+    });
+}
 
-    let mut executable_command = Command::new(&executable);
-    executable_command.args(args);
-    // A machine may have several Vulkan drivers installed; the headless programs load exactly one,
-    // Mesa's software driver, so their adapter and the sanitizers' view are the same everywhere.
-    if host_section {
-        let Some(icd) = find_software_vulkan_icd() else {
-            eprintln!(
-                "SKIPPED {stem}: no Mesa lavapipe ICD (libvulkan_lvp) is installed; install mesa-vulkan-drivers to run it"
+// A linked C consumer, run under the sanitizers it was compiled with and, for a headless consumer,
+// on the one software Vulkan driver it is pinned to.
+struct CConsumer {
+    executable: PathBuf,
+    sanitizer_runtimes: Option<Vec<String>>,
+    software_vulkan_icd: Option<PathBuf>,
+}
+
+impl CConsumer {
+    fn command(&self) -> Command {
+        let mut command = Command::new(&self.executable);
+        if let Some(icd) = &self.software_vulkan_icd {
+            command.env("VK_DRIVER_FILES", icd);
+            command.env("VK_ICD_FILENAMES", icd);
+        }
+        if let Some(sanitizer_runtimes) = &self.sanitizer_runtimes {
+            command.env("LD_PRELOAD", sanitizer_runtimes.join(":"));
+            command.env(
+                "ASAN_OPTIONS",
+                format!("detect_leaks=1:halt_on_error=1:exitcode={SANITIZER_EXIT_CODE}"),
             );
-            return None;
-        };
-        executable_command.env("VK_DRIVER_FILES", &icd);
-        executable_command.env("VK_ICD_FILENAMES", &icd);
+            command.env("UBSAN_OPTIONS", "halt_on_error=1:print_stacktrace=1");
+        }
+        return command;
     }
-    if let Some(sanitizer_runtimes) = sanitizer_runtimes {
-        executable_command.env("LD_PRELOAD", sanitizer_runtimes.join(":"));
-        executable_command.env("ASAN_OPTIONS", "detect_leaks=1:halt_on_error=1");
-        executable_command.env("UBSAN_OPTIONS", "halt_on_error=1:print_stacktrace=1");
-    }
-    let output = if deliberate_leak {
-        executable_command.output().unwrap()
-    } else {
-        run(&mut executable_command, "run the C consumer")
-    };
-    // With the software driver pinned there is always an adapter, so a host program that found
-    // none is a failure of the pin, never a skip.
+}
+
+// Every borrowed producer the generated header declares, as (borrowed C type, producer).
+fn z_builtin_renderer_producers() -> Vec<(String, String)> {
+    let header = fs::read_to_string(Path::new(env!("OUT_DIR")).join("flight_ffi.h")).unwrap();
+    return header
+        .lines()
+        .filter_map(|line| {
+            let rest = line.strip_prefix("const FlightBuiltin")?;
+            let (family, producer) = rest.strip_suffix("(void);")?.split_once(" * ")?;
+            return Some((format!("FlightBuiltin{family}"), producer.to_string()));
+        })
+        .collect();
+}
+
+// Writes the census program's producer list and, for the HashLink lane, a stand-in for the HashLink
+// header declaring only what the generated shim uses, so the shim compiles as strict C and its
+// primitives run without the HashLink runtime. Returns the compiler arguments that select them.
+fn z_write_census_includes(work_dir: &Path, through_hashlink: bool) -> Vec<String> {
+    let include_dir = work_dir.join("include");
+    fs::create_dir_all(&include_dir).unwrap();
+    let producers = z_builtin_renderer_producers();
     assert!(
-        !host_section || !String::from_utf8_lossy(&output.stdout).contains("skipped"),
-        "{stem} found no adapter through the pinned software Vulkan driver: {}",
-        String::from_utf8_lossy(&output.stdout)
+        !producers.is_empty(),
+        "the header declares no built-in producer"
     );
-    return Some(output);
+    let mut list = String::from(
+        "#ifndef FLIGHT_BUILTIN_RENDERER_PRODUCERS_H\n#define FLIGHT_BUILTIN_RENDERER_PRODUCERS_H\n#define FLIGHT_BUILTIN_RENDERER_PRODUCERS(X) \\\n",
+    );
+    for (family, producer) in &producers {
+        list.push_str(&format!("  X({family}, {producer}) \\\n"));
+    }
+    list.push_str("\n#endif\n");
+    fs::write(
+        include_dir.join("flight_builtin_renderer_producers.h"),
+        list,
+    )
+    .unwrap();
+    let mut arguments = vec![format!("-I{}", include_dir.display())];
+    if through_hashlink {
+        fs::write(
+            include_dir.join("hl.h"),
+            "#ifndef FLIGHT_FFI_TEST_HL_H\n#define FLIGHT_FFI_TEST_HL_H\n#include <stdint.h>\ntypedef unsigned char vbyte;\ntypedef int64_t int64;\ntypedef struct varray {\n  void *t;\n  void *at;\n  int size;\n  int padding;\n} varray;\n#define HL_PRIM\n#define DEFINE_PRIM(t, name, args) extern int flight_ffi_test_hl_primitive\n#define hl_aptr(a, t) ((t *)(((varray *)(a)) + 1))\n#endif\n",
+        )
+        .unwrap();
+        arguments.push("-DFLIGHT_FFI_THROUGH_HASHLINK=1".to_string());
+    }
+    return arguments;
 }
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
@@ -763,3 +1088,7 @@ fn find_software_vulkan_icd() -> Option<PathBuf> {
     }
     return None;
 }
+
+// The exit status a sanitizer reports a finding with: distinct from a consumer's own failure
+// status (1), so a detected leak is never confused with a program that failed its checks.
+const SANITIZER_EXIT_CODE: i32 = 23;

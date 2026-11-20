@@ -8,6 +8,7 @@ mod reachability;
 mod registry_carrier;
 mod registry_tokens;
 mod render_pass_bracket;
+mod renderer_handles;
 mod root_census;
 mod signal_identity;
 mod signal_ref_connect;
@@ -1290,6 +1291,18 @@ const DECLARED_INSTANTIATIONS: &[DeclaredInstantiation] = &[
     },
     DeclaredInstantiation {
         crate_dir: "flight-render",
+        function: "register_node_renderer",
+        ffi_name: "flight_register_gl_node_renderer",
+        type_args: &[("S", "GlRenderState")],
+    },
+    DeclaredInstantiation {
+        crate_dir: "flight-render",
+        function: "register_node_renderer",
+        ffi_name: "flight_register_wgpu_node_renderer",
+        type_args: &[("S", "WgpuRenderState")],
+    },
+    DeclaredInstantiation {
+        crate_dir: "flight-render",
         function: "destroy_render_state",
         ffi_name: "flight_destroy_wgpu_scene_2d_render",
         type_args: &[("S", "WgpuRenderState")],
@@ -2001,6 +2014,26 @@ fn main() {
     all_output.push_str(&declared.output);
     writeln!(all_output).unwrap();
 
+    // Built-in renderers and presets cross as borrowed handles: one producer per static, and every
+    // wrapper that consumes one resolves it against its own family first.
+    let builtin_renderers = collect_builtin_renderer_statics(crates_dir);
+    let renderer_handles = renderer_handles::generate_renderer_handles(&builtin_renderers);
+    for name in &renderer_handles.surface {
+        assert!(
+            seen_names.insert(name.clone()),
+            "{name} collides with an existing FFI symbol"
+        );
+    }
+    writeln!(all_output, "// built-in renderer handles").unwrap();
+    all_output.push_str(&renderer_handles.output);
+    writeln!(all_output).unwrap();
+    let (guarded_materials, guarded_material_registrars) =
+        renderer_handles::guard_builtin_material_registrars(&all_output);
+    all_output = guarded_materials;
+    let (guarded_lookups, guarded_material_lookups) =
+        renderer_handles::guard_builtin_material_lookups(&all_output);
+    all_output = guarded_lookups;
+
     // Every wrapper outside the bracket that takes a bracket's state claims it per call and is
     // refused while that state's pass is open.
     let mut bracket_state_wrappers = Vec::new();
@@ -2223,6 +2256,22 @@ fn main() {
     for name in &lent_carrier_consumers {
         writeln!(stats_file, "  host lent carrier consumer: {name}").unwrap();
     }
+    writeln!(
+        stats_file,
+        "FFI built-in renderer handles: {} statics, {} producers",
+        builtin_renderers.len(),
+        builtin_renderers.len()
+    )
+    .unwrap();
+    for line in &renderer_handles.report {
+        writeln!(stats_file, "  renderer handle: {line}").unwrap();
+    }
+    for name in &guarded_material_registrars {
+        writeln!(stats_file, "  renderer handle consumer: {name}").unwrap();
+    }
+    for name in &guarded_material_lookups {
+        writeln!(stats_file, "  renderer kind lookup: {name}").unwrap();
+    }
     let mut sorted_skips: Vec<_> = stats_skipped.iter().collect();
     sorted_skips.sort_by(|a, b| b.1.cmp(a.1));
     for (reason, count) in &sorted_skips {
@@ -2319,6 +2368,16 @@ fn main() {
     let (claimed, claim_guarded) = claim_guard::guard_claimed_carriers(&all_output);
     all_output = claimed;
     all_output.push_str(claim_guard::CLAIM_SUPPORT);
+    // An owned renderer copy's free refuses every built-in's address, so a borrowed handle forced
+    // through it is never released.
+    let (guarded_frees, owned_renderer_frees) =
+        renderer_handles::guard_owned_renderer_frees(&all_output);
+    all_output = guarded_frees;
+    assert!(
+        !owned_renderer_frees.is_empty(),
+        "no owned renderer free to guard: the built-in free guard is unreachable"
+    );
+
     let caller_producible = collect_caller_producible_value_types(crates_dir);
     let reachability_aliases = collect_reachability_aliases();
     fs::write(out_dir.join("ffi_generated.rs"), &all_output).unwrap();
@@ -2911,7 +2970,7 @@ fn generate_declared_instantiations(
             .iter()
             .map(|(_, concrete)| qualify_type(concrete))
             .collect();
-        let wrapper = wrapper
+        let mut wrapper = wrapper
             .replace(&generic_symbol, &format!("fn {}(", entry.ffi_name))
             .replace(
                 &generic_call,
@@ -2921,6 +2980,12 @@ fn generate_declared_instantiations(
                     turbofish.join(", ")
                 ),
             );
+        // The renderer of a node-renderer registrar is a borrowed built-in handle, resolved
+        // against its backend's statics before use, never an erased pointer read on trust.
+        if entry.function == "register_node_renderer" {
+            wrapper =
+                renderer_handles::guard_node_renderer_instantiation(&wrapper, entry.type_args[0].1);
+        }
         assert!(
             seen_names.insert(entry.ffi_name.to_string()),
             "{} collides with an existing FFI symbol",
@@ -3580,6 +3645,19 @@ fn generate_host_sections(
         out.push((feature, section));
     }
     return out;
+}
+
+// Every `pub static` built-in renderer and preset of the crates whose renderers C can borrow.
+fn collect_builtin_renderer_statics(crates_dir: &Path) -> Vec<renderer_handles::BuiltinRenderer> {
+    let mut sources = Vec::new();
+    for crate_dir in renderer_handles::OWNING_CRATES {
+        let src_dir = crates_dir.join(crate_dir).join("src");
+        println!("cargo::rerun-if-changed={}", src_dir.display());
+        for path in collect_rust_source_files(&src_dir) {
+            sources.push((crate_dir.to_string(), fs::read_to_string(path).unwrap()));
+        }
+    }
+    return renderer_handles::collect_builtin_renderers(&sources);
 }
 
 fn collect_rust_source_files(dir: &Path) -> Vec<PathBuf> {

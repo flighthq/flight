@@ -4,7 +4,7 @@ policy|provisional_wgpu_host|native hosts must supply the borrowed WGPU device, 
 seed|provisional_wgpu_host|*const flight_sdk::SurfaceRef
 seed|provisional_wgpu_host|*const flight_sdk::WgpuDevice
 seed|provisional_wgpu_host|*const flight_sdk::WgpuRenderTarget
-summary|policy-exempt|294|unreachable|9134|blocking-carriers|1664
+summary|policy-exempt|294|unreachable|9134|blocking-carriers|1665
 carrier|1|*const Box<flight_sdk::Uint8Array>
 carrier|1|*const Option<String>
 carrier|1|*const [u32;3]
@@ -949,6 +949,7 @@ carrier|6|*mut flight_sdk::GeolocationRequestOptions
 carrier|2|*mut flight_sdk::GizmoCreateOptions
 carrier|7|*mut flight_sdk::GizmoSmartGuideResult
 carrier|4|*mut flight_sdk::GlContextOptions
+carrier|1|*mut flight_sdk::GlRenderState
 carrier|6|*mut flight_sdk::GlassExtendedPbrMaterialOptions
 carrier|7|*mut flight_sdk::GltfAccessor
 carrier|1|*mut flight_sdk::GltfAccessorData
@@ -1657,7 +1658,7 @@ carrier|3|Box<flight_sdk::TooltipController>
 carrier|4|Box<flight_sdk::TreeViewController>
 carrier|4|Box<flight_sdk::WgpuEffectApplicationExplanation>
 carrier|1|Box<flight_sdk::WgpuEffectRunner>
-carrier|3|Box<flight_sdk::WgpuQuadMaterialRenderer>
+carrier|2|Box<flight_sdk::WgpuQuadMaterialRenderer>
 carrier|4|Box<flight_sdk::WgpuRenderTextureExplanation>
 carrier|4|Box<flight_sdk::WindowController>
 carrier|4|Box<flight_sdk::Woff2CompositeGlyphMeasure>
@@ -8158,6 +8159,7 @@ unreachable|flight_register_command_binding|Box<flight_sdk::CommandBindingRef>
 unreachable|flight_register_debug_subsystem|*const flight_sdk::DebugSubsystemHooks
 unreachable|flight_register_default_command_bindings|*const flight_sdk::CommandPropertyAccessRef
 unreachable|flight_register_default_shape_bounds_commands|Box<flight_sdk::Ref<flight_sdk::ShapeBoundsState>>
+unreachable|flight_register_gl_node_renderer|*mut flight_sdk::GlRenderState
 unreachable|flight_register_gltf_core_feature_handler|Box<flight_sdk::Ref<flight_sdk::GltfCoreFeatureHandler>>
 unreachable|flight_register_gltf_draco_decoder|*mut flight_sdk::GltfDracoRegistry
 unreachable|flight_register_gltf_extension_handler|Box<flight_sdk::Ref<flight_sdk::GltfExtensionHandler>>
@@ -8184,7 +8186,6 @@ unreachable|flight_register_swf_scene2d_document_importer|Box<flight_sdk::swf::c
 unreachable|flight_register_texture_atlas_format|*mut flight_sdk::TextureAtlasFormatRegistry
 unreachable|flight_register_wgpu_blend_effect_backdrop|Box<flight_sdk::Ref<flight_sdk::WgpuTextureRenderTarget>>
 unreachable|flight_register_wgpu_effect|Box<flight_sdk::WgpuEffectRunner>
-unreachable|flight_register_wgpu_quad_material_renderer|Box<flight_sdk::WgpuQuadMaterialRenderer>
 unreachable|flight_register_wgpu_texture_resolver|Box<flight_sdk::TextureSourceKind>
 unreachable|flight_register_wgpu_velocity_writer|*const flight_sdk::WgpuVelocityWriter
 unreachable|flight_rehydrate_awd2_body|Box<flight_sdk::Ref<Box<flight_sdk::Uint8Array>>>

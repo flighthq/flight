@@ -1561,7 +1561,6 @@ render	explainScene3DPipelineCoverage	generic_function
 render	getCanvasHostSurface	unreachable_carrier
 render	mergeRenderOptions	generic_function
 render	prepareScene3DRender	generic_function
-render	registerNodeRenderer	generic_function
 render	registerNodeRenderers	generic_function
 render	registerRenderCacheNodeRenderer	generic_function
 render	resizeRenderView	no_rust_implementation
@@ -1636,7 +1635,6 @@ render-wgpu	createWgpuTextureRenderTarget	skip:native_layout_policy_skip
 render-wgpu	destroyWgpuRenderTexture	unreachable_carrier
 render-wgpu	explainWgpuRenderTexture	unreachable_carrier
 render-wgpu	isWgpuRenderTextureReady	unreachable_carrier
-render-wgpu	registerWgpuQuadMaterialRenderer	unreachable_carrier
 render-wgpu	registerWgpuTextureResolver	unreachable_carrier
 render-wgpu	releaseWgpuAcquisition	unreachable_carrier
 render-wgpu	releaseWgpuRenderTexture	unreachable_carrier
