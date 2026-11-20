@@ -1,4 +1,7 @@
+#[cfg(feature = "system-discovery")]
+use std::fs;
 use std::sync::Arc;
+use std::time::{Duration, Instant};
 
 use flight_buffer::{
     ArrayBufferViewKind, create_array_buffer_from_bytes, create_array_buffer_view,
@@ -59,6 +62,307 @@ fn loaded_synthetic_host() -> TextHost {
     return host;
 }
 
+fn shaper_options() -> TextShaperOptions {
+    return TextShaperOptions {
+        direction: None,
+        features: None,
+        language: None,
+        script: None,
+        variations: None,
+    };
+}
+
+mod bounded_reverse_cmap {
+    use super::*;
+
+    #[test]
+    fn caches_grouped_mappings_and_rejects_unbounded_or_overlapping_ranges_promptly() {
+        let font = synthetic_format_12_font(&[(0x10000, 0x10000, 1)]);
+        let host = create_text_host(None);
+        load_font_bytes_with_text_host(&host, "grouped", &font, None).expect("grouped cmap");
+        let reverse = get_text_host_shaper_capabilities(&host)
+            .shaper
+            .as_ref()
+            .expect("shaper")
+            .get_code_point_for_glyph
+            .as_ref()
+            .expect("reverse cmap");
+        for _ in 0..1_000 {
+            assert_eq!(reverse(1), 0x10000);
+        }
+
+        for malformed in [
+            synthetic_format_12_font(&[(0, u32::MAX, 0)]),
+            synthetic_format_12_font(&[(65, 65, 1), (65, 65, 1)]),
+            synthetic_format_12_font(&[(65, 65, u32::MAX)]),
+        ] {
+            let started = Instant::now();
+            let host = create_text_host(None);
+            assert!(load_font_bytes_with_text_host(&host, "malicious", &malformed, None).is_none());
+            assert!(started.elapsed() < Duration::from_millis(250));
+        }
+    }
+
+    #[test]
+    fn enforces_group_and_total_operation_caps() {
+        let two_groups = synthetic_format_12_font(&[(65, 65, 1), (66, 66, 1)]);
+        let mut group_options = create_text_host_options();
+        group_options.max_cmap_groups = 1;
+        let group_limited = create_text_host(Some(&group_options));
+        assert!(
+            load_font_bytes_with_text_host(&group_limited, "groups", &two_groups, None).is_none()
+        );
+
+        let mut work_options = create_text_host_options();
+        work_options.max_cmap_operations = 0;
+        let work_limited = create_text_host(Some(&work_options));
+        assert!(
+            load_font_bytes_with_text_host(
+                &work_limited,
+                "work",
+                &synthetic_format_12_font(&[(65, 65, 1)]),
+                None,
+            )
+            .is_none()
+        );
+    }
+}
+
+#[cfg(feature = "system-discovery")]
+mod bounded_system_discovery {
+    use super::*;
+
+    #[test]
+    fn sorts_candidates_and_enforces_traversal_and_byte_caps() {
+        let directory = TestDirectory::create();
+        fs::write(
+            directory.path().join("a.ttf"),
+            synthetic_named_font("Ordered", 600.0),
+        )
+        .expect("write a");
+        fs::write(
+            directory.path().join("b.ttf"),
+            synthetic_named_font("Ordered", 900.0),
+        )
+        .expect("write b");
+        let mut options = create_text_host_options();
+        options.font_directories = vec![directory.path().to_string_lossy().into_owned()];
+        options.max_discovery_files = 3;
+        let host = create_text_host(Some(&options));
+        discover_system_font_with_text_host(&host, "ordered").expect("sorted discovery");
+        assert_eq!(
+            shape_text_with_text_host(&host, "A", &format("Ordered", 20.0), None)
+                .expect("discovered run")
+                .read()
+                .expect("run")
+                .advance_width,
+            12.0
+        );
+
+        options.max_discovery_files = 2;
+        let traversal_limited = create_text_host(Some(&options));
+        assert_reason(
+            &explain_text_host_discover(&traversal_limited, "Ordered"),
+            TextHostOperationExplanationReason::ResourceLimitExceeded,
+        );
+
+        options.max_discovery_files = 3;
+        options.max_font_bytes = 1;
+        let byte_limited = create_text_host(Some(&options));
+        assert_reason(
+            &explain_text_host_discover(&byte_limited, "Ordered"),
+            TextHostOperationExplanationReason::ResourceLimitExceeded,
+        );
+    }
+
+    #[test]
+    fn sorts_configured_roots_and_filters_nonmatching_families() {
+        let first = TestDirectory::create();
+        let second = TestDirectory::create();
+        let mut roots = [first.path(), second.path()];
+        roots.sort();
+        fs::write(
+            roots[0].join("font.ttf"),
+            synthetic_named_font("RootOrder", 600.0),
+        )
+        .expect("write first root");
+        fs::write(
+            roots[1].join("font.ttf"),
+            synthetic_named_font("RootOrder", 900.0),
+        )
+        .expect("write second root");
+        let mut options = create_text_host_options();
+        options.font_directories = roots
+            .iter()
+            .map(|root| root.to_string_lossy().into_owned())
+            .collect();
+        options.max_discovery_files = 4;
+        let host = create_text_host(Some(&options));
+        discover_system_font_with_text_host(&host, "rootorder").expect("sorted root discovery");
+        assert_eq!(
+            shape_text_with_text_host(&host, "A", &format("RootOrder", 20.0), None)
+                .expect("root ordered run")
+                .read()
+                .expect("run")
+                .advance_width,
+            12.0
+        );
+
+        let families = TestDirectory::create();
+        fs::write(
+            families.path().join("a-wrong.ttf"),
+            synthetic_named_font("Other", 900.0),
+        )
+        .expect("write nonmatching family");
+        fs::write(
+            families.path().join("b-target.ttf"),
+            synthetic_named_font("Target", 600.0),
+        )
+        .expect("write matching family");
+        options.font_directories = vec![families.path().to_string_lossy().into_owned()];
+        options.max_discovery_files = 3;
+        let host = create_text_host(Some(&options));
+        discover_system_font_with_text_host(&host, "target").expect("family-filtered discovery");
+        assert_eq!(
+            shape_text_with_text_host(&host, "A", &format("Target", 20.0), None)
+                .expect("family-filtered run")
+                .read()
+                .expect("run")
+                .advance_width,
+            12.0
+        );
+    }
+
+    #[cfg(unix)]
+    #[test]
+    fn does_not_follow_symbolic_links() {
+        let directory = TestDirectory::create();
+        let target = directory.path().join("target.bin");
+        fs::write(&target, synthetic_named_font("Linked", 600.0)).expect("write target");
+        std::os::unix::fs::symlink(&target, directory.path().join("linked.ttf"))
+            .expect("create symlink");
+        let mut options = create_text_host_options();
+        options.font_directories = vec![directory.path().to_string_lossy().into_owned()];
+        options.max_discovery_files = 3;
+        let host = create_text_host(Some(&options));
+        assert_reason(
+            &explain_text_host_discover(&host, "Linked"),
+            TextHostOperationExplanationReason::FontNotFound,
+        );
+    }
+}
+
+mod bounded_woff_loading {
+    use super::*;
+
+    #[test]
+    fn loads_a_generated_woff_and_enforces_exact_encoded_and_decoded_boundaries() {
+        let plain = synthetic_font();
+        let woff = synthetic_woff();
+        let mut exact = create_text_host_options();
+        exact.max_font_bytes = woff.len();
+        exact.max_woff_decoded_bytes = plain.len();
+        let host = create_text_host(Some(&exact));
+        assert_reason(
+            &explain_text_host_load(&host, "woff", &woff, None),
+            TextHostOperationExplanationReason::Ready,
+        );
+        assert!(load_font_bytes_with_text_host(&host, "woff", &woff, None).is_some());
+        assert_eq!(
+            shape_text_with_text_host(&host, "A", &format("woff", 20.0), None)
+                .expect("WOFF shaped run")
+                .read()
+                .expect("run")
+                .advance_width,
+            12.0
+        );
+
+        let mut encoded_short = exact.clone();
+        encoded_short.max_font_bytes -= 1;
+        assert_reason(
+            &explain_text_host_load(&create_text_host(Some(&encoded_short)), "woff", &woff, None),
+            TextHostOperationExplanationReason::InputTooLarge,
+        );
+
+        let mut decoded_short = exact;
+        decoded_short.max_woff_decoded_bytes -= 1;
+        assert_reason(
+            &explain_text_host_load(&create_text_host(Some(&decoded_short)), "woff", &woff, None),
+            TextHostOperationExplanationReason::ResourceLimitExceeded,
+        );
+    }
+
+    #[test]
+    fn rejects_bombs_many_records_overlaps_and_arithmetic_mismatches_before_inflation() {
+        let mut bomb = declared_woff(1, 256 * 1024 * 1024).into_vec();
+        bomb.resize(255 * 1024, 0);
+        let bomb_length = bomb.len() as u32;
+        bomb[8..12].copy_from_slice(&bomb_length.to_be_bytes());
+        let compressed_length = bomb.len() as u32 - 64;
+        bomb[52..56].copy_from_slice(&compressed_length.to_be_bytes());
+        let host = create_text_host(None);
+        let started = Instant::now();
+        assert_reason(
+            &explain_text_host_load(&host, "bomb", &bomb, None),
+            TextHostOperationExplanationReason::ResourceLimitExceeded,
+        );
+        assert!(started.elapsed() < Duration::from_millis(250));
+
+        let mut table_options = create_text_host_options();
+        table_options.max_woff_tables = 1;
+        assert_reason(
+            &explain_text_host_load(
+                &create_text_host(Some(&table_options)),
+                "many",
+                &declared_woff(2, 8),
+                None,
+            ),
+            TextHostOperationExplanationReason::ResourceLimitExceeded,
+        );
+
+        let mut overlap = declared_woff(2, 8).into_vec();
+        overlap[68..72].copy_from_slice(&86_u32.to_be_bytes());
+        assert_reason(
+            &explain_text_host_load(&host, "overlap", &overlap, None),
+            TextHostOperationExplanationReason::MalformedFont,
+        );
+
+        let mut wrong_total = declared_woff(1, 8).into_vec();
+        wrong_total[16..20].copy_from_slice(&u32::MAX.to_be_bytes());
+        assert_reason(
+            &explain_text_host_load(&host, "overflow", &wrong_total, None),
+            TextHostOperationExplanationReason::MalformedFont,
+        );
+
+        let mut inconsistent_metadata = declared_woff(1, 8).into_vec();
+        inconsistent_metadata[28..32].copy_from_slice(&1_u32.to_be_bytes());
+        inconsistent_metadata[32..36].copy_from_slice(&1_u32.to_be_bytes());
+        assert_reason(
+            &explain_text_host_load(&host, "metadata", &inconsistent_metadata, None),
+            TextHostOperationExplanationReason::MalformedFont,
+        );
+
+        let mut overlapping_private_data = declared_woff(1, 8).into_vec();
+        overlapping_private_data[36..40].copy_from_slice(&64_u32.to_be_bytes());
+        overlapping_private_data[40..44].copy_from_slice(&4_u32.to_be_bytes());
+        assert_reason(
+            &explain_text_host_load(&host, "private", &overlapping_private_data, None),
+            TextHostOperationExplanationReason::MalformedFont,
+        );
+    }
+
+    #[test]
+    fn explanation_preflights_without_inflating_the_payload() {
+        let invalid_zlib = declared_woff(1, 8);
+        let host = create_text_host(None);
+        assert_reason(
+            &explain_text_host_load(&host, "preflight", &invalid_zlib, None),
+            TextHostOperationExplanationReason::Ready,
+        );
+        assert!(load_font_bytes_with_text_host(&host, "preflight", &invalid_zlib, None).is_none());
+    }
+}
+
 mod create_text_host {
     use super::*;
 
@@ -89,10 +393,31 @@ mod create_text_host_options {
     fn returns_documented_finite_resource_bounds() {
         let options = create_text_host_options();
         assert_eq!(options.max_font_bytes, 32 * 1024 * 1024);
+        assert_eq!(options.max_woff_decoded_bytes, 32 * 1024 * 1024);
+        assert_eq!(options.max_woff_tables, 4_096);
+        assert_eq!(options.max_cmap_groups, 4_096);
+        assert_eq!(options.max_cmap_operations, 262_144);
         assert_eq!(options.max_faces, 64);
         assert_eq!(options.max_discovery_files, 4_096);
         assert_eq!(options.max_font_size, 512.0);
         assert_eq!(options.max_glyph_pixels, 4 * 1024 * 1024);
+    }
+}
+
+#[cfg(not(feature = "system-discovery"))]
+mod disabled_system_discovery {
+    use super::*;
+
+    #[test]
+    fn reports_unavailable_even_with_configured_roots() {
+        let directory = TestDirectory::create();
+        let mut options = create_text_host_options();
+        options.font_directories = vec![directory.path().to_string_lossy().into_owned()];
+        let host = create_text_host(Some(&options));
+        assert_reason(
+            &explain_text_host_discover(&host, "Anything"),
+            TextHostOperationExplanationReason::DiscoveryUnavailable,
+        );
     }
 }
 
@@ -132,18 +457,38 @@ mod dispose_text_host {
         dispose_text_host(&mut host);
         assert!(is_text_host_disposed(&host));
         assert_eq!((shaper.measure_text)("A", &format("synthetic", 20.0)), 0.0);
-        assert!(rasterizer.rasterize(65, &raster_options("synthetic", 20.0)).is_none());
+        assert!(
+            rasterizer
+                .rasterize(65, &raster_options("synthetic", 20.0))
+                .is_none()
+        );
         assert_eq!(
-            (shaper.shape_run.as_ref().expect("shape run"))(
-                "A",
-                &format("synthetic", 20.0),
-                None,
-            )
-            .read()
-            .expect("run")
-            .glyph_count,
+            (shaper.shape_run.as_ref().expect("shape run"))("A", &format("synthetic", 20.0), None,)
+                .read()
+                .expect("run")
+                .glyph_count,
             0
         );
+        assert_eq!(
+            (shaper
+                .get_code_point_for_glyph
+                .as_ref()
+                .expect("reverse cmap"))(1),
+            -1
+        );
+        assert_eq!(
+            (shaper
+                .get_glyph_index_for_code_point
+                .as_ref()
+                .expect("cmap"))(65),
+            -1
+        );
+        assert!(
+            (shaper.get_font_metrics.as_ref().expect("font metrics"))(&format("synthetic", 20.0,))
+                .is_none()
+        );
+        assert!((shaper.get_glyph_extents.as_ref().expect("extents"))(1).is_none());
+        assert_eq!((shaper.get_glyph_name.as_ref().expect("glyph name"))(1), "");
     }
 
     #[test]
@@ -161,6 +506,68 @@ mod dispose_text_host {
     }
 }
 
+mod empty_outline_rasterization {
+    use super::*;
+
+    #[test]
+    fn preserves_space_advance_and_distinguishes_empty_missing_and_rejected_glyphs() {
+        let host = create_text_host(None);
+        load_font_bytes_with_text_host(&host, "space", &synthetic_space_font(), None)
+            .expect("space face");
+        let space =
+            rasterize_glyph_with_text_host(&host, ' ' as u32, &raster_options("space", 20.0))
+                .expect("empty outline raster");
+        assert_eq!((space.width, space.height, space.pixels.len()), (0, 0, 0));
+        assert_eq!(space.advance, 6.0);
+        let atlas = create_glyph_atlas(&GlyphAtlasOptions {
+            font_family: "space".to_string(),
+            font_size: 20.0,
+            font_style: None,
+            font_weight: None,
+            height: 32,
+            max_area: None,
+            max_bytes: None,
+            max_glyphs: None,
+            padding: Some(1),
+            rasterizer_backend: get_text_host_glyph_capabilities(&host)
+                .rasterizer
+                .as_ref()
+                .expect("rasterizer")
+                .clone(),
+            width: 32,
+        });
+        let entry = get_glyph_atlas_entry(&atlas, ' ' as u32).expect("space atlas entry");
+        let entry = entry.read().expect("entry");
+        assert_eq!((entry.width, entry.height, entry.advance), (0, 0, 6.0));
+        assert!(
+            rasterize_glyph_with_text_host(&host, 'B' as u32, &raster_options("space", 20.0),)
+                .is_none()
+        );
+        assert_reason(
+            &explain_text_host_rasterize(&host, 'B' as u32, &raster_options("space", 20.0)),
+            TextHostOperationExplanationReason::GlyphNotFound,
+        );
+
+        let run = shape_text_with_text_host(&host, "A A", &format("space", 20.0), None)
+            .expect("spaced run");
+        assert_eq!(run.read().expect("run").glyph_count, 3);
+
+        let mut limited_options = create_text_host_options();
+        limited_options.max_glyph_pixels = 1;
+        let limited = create_text_host(Some(&limited_options));
+        load_font_bytes_with_text_host(&limited, "space", &synthetic_space_font(), None)
+            .expect("limited face");
+        assert_reason(
+            &explain_text_host_rasterize(&limited, 'A' as u32, &raster_options("space", 20.0)),
+            TextHostOperationExplanationReason::ResourceLimitExceeded,
+        );
+        assert!(
+            rasterize_glyph_with_text_host(&limited, ' ' as u32, &raster_options("space", 20.0),)
+                .is_some()
+        );
+    }
+}
+
 mod explain_text_host_discover {
     use super::*;
 
@@ -173,10 +580,12 @@ mod explain_text_host_discover {
             &explain_text_host_discover(&host, "missing"),
             TextHostOperationExplanationReason::DiscoveryUnavailable,
         );
-        assert!(get_text_host_font_capabilities(&host)
-            .loader
-            .as_ref()
-            .is_some_and(|loader| !(loader.check_font_face)("1em 'missing'")));
+        assert!(
+            get_text_host_font_capabilities(&host)
+                .loader
+                .as_ref()
+                .is_some_and(|loader| !(loader.check_font_face)("1em 'missing'"))
+        );
     }
 }
 
@@ -232,8 +641,9 @@ mod explain_text_host_metrics {
             &explain_text_host_metrics(&host, &format("synthetic", 20.0)),
             TextHostOperationExplanationReason::FontFamilyNotLoaded,
         );
-        assert!(load_font_bytes_with_text_host(&host, "synthetic", &synthetic_font(), None)
-            .is_some());
+        assert!(
+            load_font_bytes_with_text_host(&host, "synthetic", &synthetic_font(), None).is_some()
+        );
         assert_reason(
             &explain_text_host_metrics(&host, &format("synthetic", 20.0)),
             TextHostOperationExplanationReason::Ready,
@@ -248,19 +658,11 @@ mod explain_text_host_rasterize {
     fn distinguishes_invalid_code_points_and_ready_glyphs() {
         let host = loaded_synthetic_host();
         assert_reason(
-            &explain_text_host_rasterize(
-                &host,
-                0x11_0000,
-                &raster_options("synthetic", 20.0),
-            ),
+            &explain_text_host_rasterize(&host, 0x11_0000, &raster_options("synthetic", 20.0)),
             TextHostOperationExplanationReason::InvalidCodePoint,
         );
         assert_reason(
-            &explain_text_host_rasterize(
-                &host,
-                65,
-                &raster_options("synthetic", 20.0),
-            ),
+            &explain_text_host_rasterize(&host, 65, &raster_options("synthetic", 20.0)),
             TextHostOperationExplanationReason::Ready,
         );
     }
@@ -276,8 +678,9 @@ mod explain_text_host_shape {
             &explain_text_host_shape(&host, "A", &format("synthetic", 20.0), None),
             TextHostOperationExplanationReason::FontFamilyNotLoaded,
         );
-        assert!(load_font_bytes_with_text_host(&host, "synthetic", &synthetic_font(), None)
-            .is_some());
+        assert!(
+            load_font_bytes_with_text_host(&host, "synthetic", &synthetic_font(), None).is_some()
+        );
         assert_reason(
             &explain_text_host_shape(&host, "A", &format("synthetic", 20.0), None),
             TextHostOperationExplanationReason::Ready,
@@ -300,13 +703,9 @@ mod get_text_host_font_capabilities {
         padded.extend_from_slice(&font);
         padded.extend_from_slice(&[8; 5]);
         let buffer = create_array_buffer_from_bytes(padded.into_boxed_slice());
-        let view = create_array_buffer_view(
-            &buffer,
-            7,
-            font.len(),
-            ArrayBufferViewKind::Uint8Array,
-        )
-        .expect("bounded view");
+        let view =
+            create_array_buffer_view(&buffer, 7, font.len(), ArrayBufferViewKind::Uint8Array)
+                .expect("bounded view");
         let face = (loader.create_font_face)(
             "windowed",
             &FontFaceSource::Data(FontFaceSourceData { value: view }),
@@ -360,28 +759,58 @@ mod get_text_host_font_variation_axes {
     use super::*;
 
     #[test]
-    fn reports_static_faces_and_accepts_runtime_variable_selection_when_available() {
+    fn applies_generated_axis_coordinates_to_shaping_and_metrics() {
         let host = loaded_synthetic_host();
         let face = load_font_bytes_with_text_host(&host, "static", &synthetic_font(), None)
             .expect("static face");
         assert!(get_text_host_font_variation_axes(&face).is_empty());
 
-        let Some(bytes) = variable_system_font() else {
-            return;
-        };
         let variable = create_text_host(None);
-        let Some(face) = load_font_bytes_with_text_host(&variable, "variable", &bytes, None) else {
-            return;
-        };
+        let face =
+            load_font_bytes_with_text_host(&variable, "variable", &synthetic_variable_font(), None)
+                .expect("generated variable face");
         let axes = get_text_host_font_variation_axes(&face);
-        assert!(!axes.is_empty());
-        let mut selected = format("variable", 20.0);
-        selected.variations = Some(Arc::new(vec![FontVariation {
+        assert_eq!(axes.len(), 1);
+        assert_eq!(axes[0].tag, "wght");
+        assert_eq!(
+            (axes[0].min, axes[0].default_value, axes[0].max),
+            (1.0, 2.0, 3.0)
+        );
+
+        let mut minimum = format("variable", 20.0);
+        minimum.variations = Some(Arc::new(vec![FontVariation {
             axis: axes[0].tag.clone(),
             value: axes[0].min,
         }]));
-        assert!(measure_font_with_text_host(&variable, &selected).is_some());
-        assert!(shape_text_with_text_host(&variable, "A", &selected, None).is_some());
+        let mut maximum = minimum.clone();
+        maximum.variations = Some(Arc::new(vec![FontVariation {
+            axis: axes[0].tag.clone(),
+            value: axes[0].max,
+        }]));
+        let minimum_run =
+            shape_text_with_text_host(&variable, "A", &minimum, None).expect("minimum run");
+        let maximum_run =
+            shape_text_with_text_host(&variable, "A", &maximum, None).expect("maximum run");
+        assert_eq!(minimum_run.read().expect("minimum").advance_width, 12.0);
+        assert_eq!(maximum_run.read().expect("maximum").advance_width, 18.0);
+        let minimum_metrics =
+            measure_font_with_text_host(&variable, &minimum).expect("minimum metrics");
+        let maximum_metrics =
+            measure_font_with_text_host(&variable, &maximum).expect("maximum metrics");
+        assert_eq!(minimum_metrics.underline_position, -100.0);
+        assert_eq!(maximum_metrics.underline_position, 100.0);
+
+        let overridden = shape_text_with_text_host(
+            &variable,
+            "A",
+            &minimum,
+            Some(&TextShaperOptions {
+                variations: maximum.variations.as_deref().cloned(),
+                ..shaper_options()
+            }),
+        )
+        .expect("option variation override");
+        assert_eq!(overridden.read().expect("override").advance_width, 18.0);
     }
 }
 
@@ -450,21 +879,39 @@ mod load_font_bytes_with_text_host {
         );
     }
 
-
     #[test]
     fn selects_a_nonzero_collection_face() {
         let host = create_text_host(None);
         let collection = synthetic_font_collection();
-        assert!(load_font_bytes_with_text_host(
-            &host,
-            "second",
-            &collection,
-            Some(&TextHostFaceOptions { face_index: 1 }),
-        )
-        .is_some());
+        assert!(
+            load_font_bytes_with_text_host(
+                &host,
+                "second",
+                &collection,
+                Some(&TextHostFaceOptions { face_index: 1 }),
+            )
+            .is_some()
+        );
         let run = shape_text_with_text_host(&host, "A", &format("second", 10.0), None)
             .expect("second face run");
         assert_eq!(run.read().expect("run").advance_width, 9.0);
+    }
+
+    #[test]
+    fn accepts_the_exact_byte_limit_and_rejects_one_byte_less() {
+        let font = synthetic_font();
+        let mut options = create_text_host_options();
+        options.max_font_bytes = font.len();
+        let exact = create_text_host(Some(&options));
+        assert!(load_font_bytes_with_text_host(&exact, "exact", &font, None).is_some());
+
+        options.max_font_bytes -= 1;
+        let short = create_text_host(Some(&options));
+        assert!(load_font_bytes_with_text_host(&short, "short", &font, None).is_none());
+        assert_reason(
+            &explain_text_host_load(&short, "short", &font, None),
+            TextHostOperationExplanationReason::InputTooLarge,
+        );
     }
 }
 
@@ -474,8 +921,8 @@ mod measure_font_with_text_host {
     #[test]
     fn returns_design_metrics_for_the_selected_family() {
         let host = loaded_synthetic_host();
-        let metrics = measure_font_with_text_host(&host, &format("synthetic", 20.0))
-            .expect("font metrics");
+        let metrics =
+            measure_font_with_text_host(&host, &format("synthetic", 20.0)).expect("font metrics");
         assert_eq!(metrics.units_per_em, 1_000.0);
         assert!(metrics.ascent > 0.0);
         assert!(metrics.descent >= 0.0);
@@ -488,12 +935,8 @@ mod rasterize_glyph_with_text_host {
     #[test]
     fn returns_bounded_straight_alpha_rgba_with_dimensions_origin_and_stride() {
         let host = loaded_synthetic_host();
-        let bitmap = rasterize_glyph_with_text_host(
-            &host,
-            65,
-            &raster_options("synthetic", 20.0),
-        )
-        .expect("glyph bitmap");
+        let bitmap = rasterize_glyph_with_text_host(&host, 65, &raster_options("synthetic", 20.0))
+            .expect("glyph bitmap");
         assert!(bitmap.width > 0);
         assert!(bitmap.height > 0);
         assert_eq!(
@@ -501,7 +944,14 @@ mod rasterize_glyph_with_text_host {
             bitmap.width as usize * bitmap.height as usize * 4
         );
         assert!(bitmap.bearing_y >= 0);
-        assert!(bitmap.pixels.as_chunks::<4>().0.iter().any(|pixel| pixel[3] > 0));
+        assert!(
+            bitmap
+                .pixels
+                .as_chunks::<4>()
+                .0
+                .iter()
+                .any(|pixel| pixel[3] > 0)
+        );
         for pixel in bitmap.pixels.as_chunks::<4>().0 {
             if pixel[3] > 0 {
                 assert_eq!(&pixel[..3], &[255, 255, 255]);
@@ -512,53 +962,36 @@ mod rasterize_glyph_with_text_host {
     #[test]
     fn rejects_missing_scalars_sizes_and_resource_excesses() {
         let host = loaded_synthetic_host();
-        assert!(rasterize_glyph_with_text_host(
-            &host,
-            66,
-            &raster_options("synthetic", 20.0),
-        )
-        .is_none());
+        assert!(
+            rasterize_glyph_with_text_host(&host, 66, &raster_options("synthetic", 20.0),)
+                .is_none()
+        );
         assert_reason(
-            &explain_text_host_rasterize(
-                &host,
-                0x11_0000,
-                &raster_options("synthetic", 20.0),
-            ),
+            &explain_text_host_rasterize(&host, 0x11_0000, &raster_options("synthetic", 20.0)),
             TextHostOperationExplanationReason::InvalidCodePoint,
         );
         assert_reason(
-            &explain_text_host_rasterize(
-                &host,
-                65,
-                &raster_options("synthetic", f32::NAN),
-            ),
+            &explain_text_host_rasterize(&host, 65, &raster_options("synthetic", 0.0)),
             TextHostOperationExplanationReason::InvalidSize,
         );
         assert_reason(
-            &explain_text_host_rasterize(
-                &host,
-                65,
-                &raster_options("synthetic", 513.0),
-            ),
+            &explain_text_host_rasterize(&host, 65, &raster_options("synthetic", f32::NAN)),
+            TextHostOperationExplanationReason::InvalidSize,
+        );
+        assert_reason(
+            &explain_text_host_rasterize(&host, 65, &raster_options("synthetic", 513.0)),
             TextHostOperationExplanationReason::InvalidSize,
         );
 
         let mut options = create_text_host_options();
         options.max_glyph_pixels = 1;
         let limited = create_text_host(Some(&options));
-        assert!(load_font_bytes_with_text_host(
-            &limited,
-            "synthetic",
-            &synthetic_font(),
-            None,
-        )
-        .is_some());
+        assert!(
+            load_font_bytes_with_text_host(&limited, "synthetic", &synthetic_font(), None,)
+                .is_some()
+        );
         assert_reason(
-            &explain_text_host_rasterize(
-                &limited,
-                65,
-                &raster_options("synthetic", 20.0),
-            ),
+            &explain_text_host_rasterize(&limited, 65, &raster_options("synthetic", 20.0)),
             TextHostOperationExplanationReason::ResourceLimitExceeded,
         );
     }
@@ -586,6 +1019,254 @@ mod rasterize_glyph_with_text_host {
     }
 }
 
+mod reviewed_face_and_lifecycle_invariants {
+    use super::*;
+
+    #[test]
+    fn selects_the_newest_case_insensitive_family_and_shares_provider_identity() {
+        let host = create_text_host(None);
+        load_font_bytes_with_text_host(&host, "Family", &synthetic_font_with_advance(600.0), None)
+            .expect("first face");
+        load_font_bytes_with_text_host(&host, "family", &synthetic_font_with_advance(900.0), None)
+            .expect("second face");
+        let run = shape_text_with_text_host(&host, "A", &format("FAMILY", 20.0), None)
+            .expect("fallback run");
+        assert_eq!(run.read().expect("run").advance_width, 18.0);
+
+        let loader = get_text_host_font_capabilities(&host)
+            .loader
+            .as_ref()
+            .expect("loader");
+        let rasterizer = get_text_host_glyph_capabilities(&host)
+            .rasterizer
+            .as_ref()
+            .expect("rasterizer");
+        let shaper = get_text_host_shaper_capabilities(&host)
+            .shaper
+            .as_ref()
+            .expect("shaper");
+        assert!(Arc::ptr_eq(&loader.provider, &rasterizer.provider));
+        assert!(Arc::ptr_eq(&loader.provider, &shaper.provider));
+    }
+
+    #[test]
+    fn disposed_loader_rejects_create_add_and_load_before_font_work() {
+        let mut host = create_text_host(None);
+        let loader = get_text_host_font_capabilities(&host)
+            .loader
+            .as_ref()
+            .expect("loader")
+            .clone();
+        dispose_text_host(&mut host);
+        let malicious = synthetic_format_12_font(&[(0, u32::MAX, 0)]);
+        let length = malicious.len();
+        let buffer = create_array_buffer_from_bytes(malicious);
+        let view = create_array_buffer_view(&buffer, 0, length, ArrayBufferViewKind::Uint8Array)
+            .expect("font view");
+        let started = Instant::now();
+        let face = (loader.create_font_face)(
+            "disposed",
+            &FontFaceSource::Data(FontFaceSourceData { value: view }),
+        );
+        assert!(started.elapsed() < Duration::from_millis(100));
+        assert!(block_on((loader.load_font_face)(&face)).is_err());
+        (loader.add_font_face)(&face);
+        assert!(!(loader.check_font_face)("1em 'disposed'"));
+        assert!(block_on((loader.load_font_faces)("1em 'disposed'")).is_err());
+    }
+}
+
+mod reviewed_raster_invariants {
+    use super::*;
+
+    #[test]
+    fn keeps_rows_top_first_bearings_y_down_metrics_scaled_and_caps_exact() {
+        let host = create_text_host(None);
+        load_font_bytes_with_text_host(&host, "asymmetric", &synthetic_asymmetric_font(), None)
+            .expect("asymmetric face");
+        let bitmap =
+            rasterize_glyph_with_text_host(&host, 'L' as u32, &raster_options("asymmetric", 100.0))
+                .expect("asymmetric raster");
+        let width = bitmap.width as usize;
+        let row_ink = |row: usize| {
+            bitmap.pixels[row * width * 4..(row + 1) * width * 4]
+                .chunks_exact(4)
+                .filter(|pixel| pixel[3] > 128)
+                .count()
+        };
+        assert!(row_ink(bitmap.height as usize - 2) > row_ink(1) * 2);
+        assert!(bitmap.bearing_y > 0);
+
+        let shaper = get_text_host_shaper_capabilities(&host)
+            .shaper
+            .as_ref()
+            .expect("shaper");
+        let extents =
+            (shaper.get_glyph_extents.as_ref().expect("extents"))(1).expect("glyph extents");
+        assert_eq!(extents.x_bearing, 0.0);
+        assert_eq!(extents.y_bearing, -7.8);
+        assert_eq!((extents.width, extents.height), (6.0, 7.8));
+
+        let metrics = (get_text_host_glyph_capabilities(&host)
+            .rasterizer
+            .as_ref()
+            .expect("rasterizer")
+            .measure_metrics
+            .as_ref()
+            .expect("metrics"))(&raster_options("asymmetric", 20.0))
+        .expect("scaled metrics");
+        assert_eq!((metrics.ascent, metrics.descent), (16.0, 4.0));
+
+        let pixel_count = bitmap.width as usize * bitmap.height as usize;
+        let mut exact_options = create_text_host_options();
+        exact_options.max_glyph_pixels = pixel_count;
+        let exact = create_text_host(Some(&exact_options));
+        load_font_bytes_with_text_host(&exact, "asymmetric", &synthetic_asymmetric_font(), None)
+            .expect("exact face");
+        assert!(
+            rasterize_glyph_with_text_host(
+                &exact,
+                'L' as u32,
+                &raster_options("asymmetric", 100.0),
+            )
+            .is_some()
+        );
+        exact_options.max_glyph_pixels -= 1;
+        let short = create_text_host(Some(&exact_options));
+        load_font_bytes_with_text_host(&short, "asymmetric", &synthetic_asymmetric_font(), None)
+            .expect("short face");
+        assert!(
+            rasterize_glyph_with_text_host(
+                &short,
+                'L' as u32,
+                &raster_options("asymmetric", 100.0),
+            )
+            .is_none()
+        );
+    }
+}
+
+mod reviewed_shaping_invariants {
+    use super::*;
+
+    #[test]
+    fn converts_vertical_coordinates_and_applies_spacing_on_the_advance_axis() {
+        let host = loaded_synthetic_host();
+        let mut spaced = format("synthetic", 20.0);
+        spaced.letter_spacing = Some(2.0);
+        let horizontal =
+            shape_text_with_text_host(&host, "AA", &spaced, None).expect("horizontal run");
+        let horizontal = horizontal.read().expect("horizontal");
+        assert_eq!(horizontal.advance_width, 28.0);
+        assert_eq!(
+            horizontal
+                .glyphs
+                .iter()
+                .map(|glyph| glyph.x_advance)
+                .sum::<f32>(),
+            horizontal.advance_width
+        );
+        let measure = (get_text_host_shaper_capabilities(&host)
+            .shaper
+            .as_ref()
+            .expect("shaper")
+            .measure_text)("AA", &spaced);
+        assert_eq!(measure, horizontal.advance_width);
+
+        let vertical = shape_text_with_text_host(
+            &host,
+            "AA",
+            &spaced,
+            Some(&TextShaperOptions {
+                direction: Some(TextDirection::TopToBottom),
+                script: Some("Cyrl".to_string()),
+                ..shaper_options()
+            }),
+        )
+        .expect("vertical run");
+        let vertical = vertical.read().expect("vertical");
+        assert_eq!(vertical.direction, TextDirection::TopToBottom);
+        assert_eq!(vertical.script, "Cyrl");
+        assert!(vertical.glyphs.iter().all(|glyph| glyph.y_advance > 0.0));
+        assert_eq!(
+            vertical
+                .glyphs
+                .iter()
+                .map(|glyph| glyph.y_advance)
+                .sum::<f32>(),
+            vertical.advance_width
+        );
+        let unspaced_vertical = shape_text_with_text_host(
+            &host,
+            "AA",
+            &format("synthetic", 20.0),
+            Some(&TextShaperOptions {
+                direction: Some(TextDirection::TopToBottom),
+                script: Some("Cyrl".to_string()),
+                ..shaper_options()
+            }),
+        )
+        .expect("unspaced vertical run");
+        assert_eq!(
+            vertical.advance_width
+                - unspaced_vertical
+                    .read()
+                    .expect("unspaced vertical")
+                    .advance_width,
+            4.0
+        );
+    }
+
+    #[test]
+    fn reports_resolved_script_and_rejects_an_invalid_language_hint() {
+        let host = loaded_synthetic_host();
+        let explicit = shape_text_with_text_host(
+            &host,
+            "A",
+            &format("synthetic", 20.0),
+            Some(&TextShaperOptions {
+                language: Some("en".to_string()),
+                script: Some("Cyrl".to_string()),
+                ..shaper_options()
+            }),
+        )
+        .expect("explicit properties");
+        assert_eq!(explicit.read().expect("run").script, "Cyrl");
+
+        let invalid = TextShaperOptions {
+            language: Some(String::new()),
+            ..shaper_options()
+        };
+        assert!(
+            shape_text_with_text_host(&host, "A", &format("synthetic", 20.0), Some(&invalid),)
+                .is_none()
+        );
+
+        let localized = create_text_host(None);
+        load_font_bytes_with_text_host(&localized, "language", &synthetic_language_font(), None)
+            .expect("language fixture");
+        let shape_for = |language: &str| {
+            shape_text_with_text_host(
+                &localized,
+                "A",
+                &format("language", 20.0),
+                Some(&TextShaperOptions {
+                    language: Some(language.to_string()),
+                    script: Some("Latn".to_string()),
+                    ..shaper_options()
+                }),
+            )
+            .expect("localized run")
+            .read()
+            .expect("localized run")
+            .glyphs[0]
+                .glyph_id
+        };
+        assert_eq!(shape_for("en"), 1);
+        assert_eq!(shape_for("tr"), 2);
+    }
+}
+
 mod shape_text_with_text_host {
     use super::*;
 
@@ -600,7 +1281,7 @@ mod shape_text_with_text_host {
                 direction: Some(TextDirection::LeftToRight),
                 features: None,
                 language: Some("en".to_string()),
-                script: Some("Latn".to_string()),
+                script: Some("Cyrl".to_string()),
                 variations: None,
             }),
         )
@@ -609,7 +1290,10 @@ mod shape_text_with_text_host {
         assert_eq!(run.direction, TextDirection::LeftToRight);
         assert_eq!(run.glyph_count, 3);
         assert_eq!(
-            run.glyphs.iter().map(|glyph| glyph.cluster).collect::<Vec<_>>(),
+            run.glyphs
+                .iter()
+                .map(|glyph| glyph.cluster)
+                .collect::<Vec<_>>(),
             vec![0, 1, 3]
         );
         assert_eq!(run.glyphs[1].glyph_id, 0);
@@ -621,6 +1305,7 @@ mod shape_text_with_text_host {
     #[test]
     fn applies_features_script_language_direction_substitution_and_positioning_when_available() {
         let Some(bytes) = complex_system_font() else {
+            eprintln!("SKIP: no system font with complex OpenType shaping tables is available");
             return;
         };
         let host = create_text_host(None);
@@ -663,8 +1348,26 @@ mod shape_text_with_text_host {
         .expect("ligated run");
         assert!(
             enabled.read().expect("enabled").glyph_count
-                <= disabled.read().expect("disabled").glyph_count
+                < disabled.read().expect("disabled").glyph_count
         );
+        let ranged = shape_text_with_text_host(
+            &host,
+            "fifi",
+            &format("complex", 28.0),
+            Some(&TextShaperOptions {
+                features: Some(vec![TextFeature {
+                    end: Some(2),
+                    start: Some(0),
+                    tag: "liga".to_string(),
+                    value: 0,
+                }]),
+                language: Some("en".to_string()),
+                script: Some("Latn".to_string()),
+                ..shaper_options()
+            }),
+        )
+        .expect("ranged ligature run");
+        assert_eq!(ranged.read().expect("ranged").glyph_count, 3);
 
         let unkerned = shape_text_with_text_host(
             &host,
@@ -723,10 +1426,19 @@ mod shape_text_with_text_host {
         .expect("Arabic run");
         let run = run.read().expect("Arabic run");
         assert_eq!(run.direction, TextDirection::RightToLeft);
+        assert_eq!(run.script, "Arab");
         assert!(!run.glyphs.is_empty());
         assert!(run.glyphs.iter().all(|glyph| glyph.cluster >= 0));
-        assert!(run.glyphs.iter().all(|glyph| glyph.cluster <= arabic.encode_utf16().count() as i32));
-        assert!(run.glyphs.windows(2).any(|pair| pair[0].cluster >= pair[1].cluster));
+        assert!(
+            run.glyphs
+                .iter()
+                .all(|glyph| glyph.cluster <= arabic.encode_utf16().count() as i32)
+        );
+        assert!(
+            run.glyphs
+                .windows(2)
+                .any(|pair| pair[0].cluster >= pair[1].cluster)
+        );
         let shaper = get_text_host_shaper_capabilities(&host)
             .shaper
             .as_ref()
@@ -734,12 +1446,34 @@ mod shape_text_with_text_host {
         let nominal: Vec<i32> = arabic
             .chars()
             .map(|character| {
-                (shaper.get_glyph_index_for_code_point.as_ref().expect("cmap"))(
-                    character as i32,
-                )
+                (shaper
+                    .get_glyph_index_for_code_point
+                    .as_ref()
+                    .expect("cmap"))(character as i32)
             })
             .collect();
-        assert!(run.glyphs.iter().any(|glyph| !nominal.contains(&glyph.glyph_id)));
+        assert!(
+            run.glyphs
+                .iter()
+                .any(|glyph| !nominal.contains(&glyph.glyph_id))
+        );
+
+        let automatic = shape_text_with_text_host(&host, "سلام", &format("complex", 28.0), None)
+            .expect("auto-detected Arabic run");
+        let automatic = automatic.read().expect("automatic run");
+        assert_eq!(automatic.direction, TextDirection::RightToLeft);
+        assert_eq!(automatic.script, "Arab");
+
+        let marked = shape_text_with_text_host(&host, "x\u{301}", &format("complex", 28.0), None)
+            .expect("positioned mark run");
+        let marked = marked.read().expect("marked run");
+        let mark = marked
+            .glyphs
+            .iter()
+            .find(|glyph| glyph.x_advance == 0.0)
+            .expect("zero-advance mark");
+        assert!(mark.x_offset < -1.0);
+        assert!(mark.y_offset < 0.0 && mark.y_offset > -0.5);
     }
 
     #[test]
@@ -757,20 +1491,12 @@ mod shape_text_with_text_host {
             script: None,
             variations: None,
         };
-        assert!(shape_text_with_text_host(
-            &host,
-            "A",
-            &format("synthetic", 20.0),
-            Some(&options),
-        )
-        .is_none());
+        assert!(
+            shape_text_with_text_host(&host, "A", &format("synthetic", 20.0), Some(&options),)
+                .is_none()
+        );
         assert_reason(
-            &explain_text_host_shape(
-                &host,
-                "A",
-                &format("synthetic", 20.0),
-                Some(&options),
-            ),
+            &explain_text_host_shape(&host, "A", &format("synthetic", 20.0), Some(&options)),
             TextHostOperationExplanationReason::InvalidFeature,
         );
     }
@@ -781,12 +1507,8 @@ mod shape_text_with_text_host {
         let run = shape_text_with_text_host(&host, "A", &format("synthetic", 20.0), None)
             .expect("Latin run");
         assert_eq!(run.read().expect("run").glyph_count, 1);
-        let direct = rasterize_glyph_with_text_host(
-            &host,
-            65,
-            &raster_options("synthetic", 20.0),
-        )
-        .expect("direct raster");
+        let direct = rasterize_glyph_with_text_host(&host, 65, &raster_options("synthetic", 20.0))
+            .expect("direct raster");
         let backend = get_text_host_glyph_capabilities(&host)
             .rasterizer
             .as_ref()
@@ -821,7 +1543,7 @@ mod shape_text_with_text_host {
     }
 
     #[test]
-    fn capability_shape_run_uses_rustybuzz_and_its_declared_option_subset() {
+    fn capability_shape_run_uses_its_declared_option_subset() {
         let host = loaded_synthetic_host();
         let shaper = get_text_host_shaper_capabilities(&host)
             .shaper
@@ -832,9 +1554,12 @@ mod shape_text_with_text_host {
             &format("synthetic", 20.0),
             Some(&ShapeRunOptions {
                 direction: Some(TextDirection::TopToBottom),
-                script: Some("Latn".to_string()),
+                script: Some("Cyrl".to_string()),
             }),
         );
-        assert_eq!(run.read().expect("run").direction, TextDirection::TopToBottom);
+        let run = run.read().expect("run");
+        assert_eq!(run.direction, TextDirection::TopToBottom);
+        assert_eq!(run.script, "Cyrl");
+        assert!(run.glyphs[0].y_advance > 0.0);
     }
 }

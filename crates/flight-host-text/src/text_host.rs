@@ -5,8 +5,8 @@ use std::sync::{Arc, RwLock, RwLockReadGuard, RwLockWriteGuard};
 use flight_buffer::get_array_buffer_storage;
 use flight_entity::{FlightError, FlightErrorKind, Ref, Unknown};
 use flight_font::{
-    FontFace, FontFaceSource, FontVariationAxis, GlyphRasterizeOptions,
-    GlyphRasterizedBitmap, HostFontCapabilities, HostFontLoadingCapability, HostGlyphCapabilities,
+    FontFace, FontFaceSource, FontVariationAxis, GlyphRasterizeOptions, GlyphRasterizedBitmap,
+    HostFontCapabilities, HostFontLoadingCapability, HostGlyphCapabilities,
     HostGlyphRasterizerCapability,
 };
 use flight_host::{FontFaceHandle, ProviderRef};
@@ -16,7 +16,7 @@ use flight_textshaper::{
     TextShaperOptions, create_shaped_run,
 };
 
-use crate::opentype_backend::{self, BackendFailure, RasterFailure};
+use crate::opentype_backend::{self, BackendFailure, BackendLimits, RasterFailure};
 use crate::types::*;
 
 pub(crate) struct TextFailure {
@@ -54,14 +54,21 @@ fn create_font_capabilities(
             }),
             create_font_face: Arc::new(move |family, source| {
                 return catch_operation(|| {
-                    let bytes = source_bytes(source)?;
-                    if bytes.is_empty()
-                        || bytes.len() > create_options.max_font_bytes
-                        || read_faces(&create_state).len() >= create_options.max_faces
-                    {
+                    require_alive(&create_state).ok()?;
+                    if read_faces(&create_state).len() >= create_options.max_faces {
                         return None;
                     }
-                    return opentype_backend::create_face(&create_provider, family, &bytes, 0).ok();
+                    let bytes = source_bytes(source, create_options.max_font_bytes)?;
+                    let face = opentype_backend::create_face(
+                        &create_provider,
+                        family,
+                        &bytes,
+                        0,
+                        backend_limits(&create_options),
+                    )
+                    .ok()?;
+                    require_alive(&create_state).ok()?;
+                    return Some(face);
                 })
                 .flatten()
                 .unwrap_or_else(|| create_invalid_face(&create_provider, family));
@@ -166,7 +173,8 @@ fn create_shaper_capabilities(
                 .unwrap_or(-1);
             })),
             get_font_metrics: Some(Arc::new(move |format| {
-                return catch_operation(|| metrics_with_parts(&metrics_state, format).ok()).flatten();
+                return catch_operation(|| metrics_with_parts(&metrics_state, format).ok())
+                    .flatten();
             })),
             get_glyph_extents: Some(Arc::new(move |glyph_id| {
                 return catch_operation(|| {
@@ -249,11 +257,15 @@ pub fn create_text_host_face_options() -> TextHostFaceOptions {
 pub fn create_text_host_options() -> TextHostOptions {
     return TextHostOptions {
         font_directories: default_font_directories(),
+        max_cmap_groups: 4_096,
+        max_cmap_operations: 262_144,
         max_discovery_files: 4_096,
         max_faces: 64,
         max_font_bytes: 32 * 1024 * 1024,
         max_font_size: 512.0,
         max_glyph_pixels: 4 * 1024 * 1024,
+        max_woff_decoded_bytes: 32 * 1024 * 1024,
+        max_woff_tables: 4_096,
     };
 }
 
@@ -262,6 +274,9 @@ fn add_face(state: &TextHostState, options: &TextHostOptions, face: &Arc<FontFac
         return false;
     }
     let mut faces = write_faces(state);
+    if require_alive(state).is_err() {
+        return false;
+    }
     if faces.iter().any(|candidate| Arc::ptr_eq(candidate, face)) {
         return true;
     }
@@ -286,6 +301,10 @@ fn backend_failure(error: BackendFailure) -> TextFailure {
             TextHostOperationExplanationReason::MalformedFont,
             "font data or a required table is malformed",
         ),
+        BackendFailure::ResourceLimitExceeded => failure(
+            TextHostOperationExplanationReason::ResourceLimitExceeded,
+            "font tables or mappings exceed the configured work limit",
+        ),
         BackendFailure::UnsupportedFont => failure(
             TextHostOperationExplanationReason::UnsupportedFont,
             "font container is unsupported by this host",
@@ -293,7 +312,16 @@ fn backend_failure(error: BackendFailure) -> TextFailure {
     };
 }
 
-fn catch_operation<T>(operation: impl FnOnce() -> T) -> Option<T> {
+fn backend_limits(options: &TextHostOptions) -> BackendLimits {
+    return BackendLimits {
+        max_cmap_groups: options.max_cmap_groups,
+        max_cmap_operations: options.max_cmap_operations,
+        max_woff_decoded_bytes: options.max_woff_decoded_bytes,
+        max_woff_tables: options.max_woff_tables,
+    };
+}
+
+pub(crate) fn catch_operation<T>(operation: impl FnOnce() -> T) -> Option<T> {
     return catch_unwind(AssertUnwindSafe(operation)).ok();
 }
 
@@ -328,10 +356,7 @@ fn default_font_directories() -> Vec<String> {
 /// Finds, loads and registers a system font family when discovery is enabled. Returns `None` when
 /// discovery is unavailable, no matching family exists, a limit is exceeded, or the host is
 /// disposed; `explain_text_host_discover` distinguishes these cases.
-pub fn discover_system_font_with_text_host(
-    host: &TextHost,
-    family: &str,
-) -> Option<Arc<FontFace>> {
+pub fn discover_system_font_with_text_host(host: &TextHost, family: &str) -> Option<Arc<FontFace>> {
     return catch_operation(|| {
         discover_with_parts(
             &host.state,
@@ -363,12 +388,17 @@ fn discover_with_parts(
             family,
             options.max_discovery_files,
             options.max_font_bytes,
+            backend_limits(options),
         )
-        .ok_or_else(|| {
-            failure(
+        .map_err(|error| match error {
+            crate::system_discovery::DiscoveryFailure::LimitExceeded => failure(
+                TextHostOperationExplanationReason::ResourceLimitExceeded,
+                "system font discovery exceeded the configured traversal or byte limit",
+            ),
+            crate::system_discovery::DiscoveryFailure::NotFound => failure(
                 TextHostOperationExplanationReason::FontNotFound,
                 "no matching font family was found in the configured roots",
-            )
+            ),
         })?;
         return load_with_parts(state, options, provider, family, &bytes, 0, register);
     }
@@ -407,10 +437,7 @@ fn explain_result<T>(result: Result<T, TextFailure>) -> TextHostOperationExplana
 }
 
 /// Pure bounded explanation for system discovery. The probe never registers a face.
-pub fn explain_text_host_discover(
-    host: &TextHost,
-    family: &str,
-) -> TextHostOperationExplanation {
+pub fn explain_text_host_discover(host: &TextHost, family: &str) -> TextHostOperationExplanation {
     let result = catch_result(|| {
         let provider = host
             .fonts
@@ -423,7 +450,8 @@ pub fn explain_text_host_discover(
     return explain_result(result);
 }
 
-/// Pure bounded explanation for byte loading. The probe parses but never registers a face.
+/// Pure bounded explanation for byte loading. The probe inspects container bounds but never parses
+/// a font face, inflates a table or registers a face.
 pub fn explain_text_host_load(
     host: &TextHost,
     family: &str,
@@ -433,17 +461,11 @@ pub fn explain_text_host_load(
     let result = catch_result(|| {
         require_alive(&host.state)?;
         validate_load_limits(&host.state, &host.options, bytes)?;
-        let provider = host
-            .fonts
-            .loader
-            .as_ref()
-            .map(|loader| &loader.provider)
-            .ok_or_else(discovery_unavailable)?;
-        return opentype_backend::create_face(
-            provider,
-            family,
+        let _ = family;
+        return opentype_backend::inspect_font_bytes(
             bytes,
             face_options.copied().unwrap_or_default().face_index,
+            backend_limits(&host.options),
         )
         .map_err(backend_failure);
     });
@@ -485,10 +507,7 @@ fn failure(reason: TextHostOperationExplanationReason, message: &'static str) ->
     return TextFailure { message, reason };
 }
 
-fn find_face(
-    state: &TextHostState,
-    family: Option<&str>,
-) -> Result<Arc<FontFace>, TextFailure> {
+fn find_face(state: &TextHostState, family: Option<&str>) -> Result<Arc<FontFace>, TextFailure> {
     require_alive(state)?;
     return read_faces(state)
         .iter()
@@ -563,8 +582,9 @@ fn load_with_parts(
 ) -> Result<Arc<FontFace>, TextFailure> {
     require_alive(state)?;
     validate_load_limits(state, options, bytes)?;
-    let face = opentype_backend::create_face(provider, family, bytes, face_index)
-        .map_err(backend_failure)?;
+    let face =
+        opentype_backend::create_face(provider, family, bytes, face_index, backend_limits(options))
+            .map_err(backend_failure)?;
     if register && !add_face(state, options, &face) {
         return Err(failure(
             TextHostOperationExplanationReason::FaceLimitExceeded,
@@ -575,10 +595,7 @@ fn load_with_parts(
 }
 
 /// Returns design-unit font metrics for the selected family and variations.
-pub fn measure_font_with_text_host(
-    host: &TextHost,
-    format: &TextFormat,
-) -> Option<FontMetrics> {
+pub fn measure_font_with_text_host(host: &TextHost, format: &TextFormat) -> Option<FontMetrics> {
     return catch_operation(|| metrics_with_parts(&host.state, format).ok()).flatten();
 }
 
@@ -630,22 +647,17 @@ fn rasterize_with_parts(
         ));
     }
     let face = find_face(state, Some(&options.font_family))?;
-    return opentype_backend::rasterize(
-        &face,
-        code_point,
-        options,
-        host_options.max_glyph_pixels,
-    )
-    .map_err(|error| match error {
-        RasterFailure::GlyphNotFound => failure(
-            TextHostOperationExplanationReason::GlyphNotFound,
-            "font has no rasterizable outline for this code point",
-        ),
-        RasterFailure::ResourceLimitExceeded => failure(
-            TextHostOperationExplanationReason::ResourceLimitExceeded,
-            "glyph bitmap exceeds the host pixel limit",
-        ),
-    });
+    return opentype_backend::rasterize(&face, code_point, options, host_options.max_glyph_pixels)
+        .map_err(|error| match error {
+            RasterFailure::GlyphNotFound => failure(
+                TextHostOperationExplanationReason::GlyphNotFound,
+                "font has no glyph mapping for this code point",
+            ),
+            RasterFailure::ResourceLimitExceeded => failure(
+                TextHostOperationExplanationReason::ResourceLimitExceeded,
+                "glyph bitmap exceeds the host pixel limit",
+            ),
+        });
 }
 
 fn read_faces(state: &TextHostState) -> RwLockReadGuard<'_, Vec<Arc<FontFace>>> {
@@ -694,10 +706,13 @@ fn shorthand_contains_family(shorthand: &str, family: &str) -> bool {
     return shorthand.ends_with(&format!("'{escaped}'"));
 }
 
-fn source_bytes(source: &FontFaceSource) -> Option<Vec<u8>> {
+fn source_bytes(source: &FontFaceSource, max_bytes: usize) -> Option<Vec<u8>> {
     let FontFaceSource::Data(data) = source else {
         return None;
     };
+    if data.value.byte_length == 0 || data.value.byte_length > max_bytes {
+        return None;
+    }
     let storage = get_array_buffer_storage(&data.value.buffer);
     let guard = storage
         .read()

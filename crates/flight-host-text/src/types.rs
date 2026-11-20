@@ -17,11 +17,15 @@ pub struct TextHost {
 #[derive(Clone, Debug, PartialEq)]
 pub struct TextHostOptions {
     pub font_directories: Vec<String>,
+    pub max_cmap_groups: usize,
+    pub max_cmap_operations: usize,
     pub max_discovery_files: usize,
     pub max_faces: usize,
     pub max_font_bytes: usize,
     pub max_font_size: f32,
     pub max_glyph_pixels: usize,
+    pub max_woff_decoded_bytes: usize,
+    pub max_woff_tables: usize,
 }
 
 /// Selection within a font collection. Variations remain per-operation Flight `FontVariation`s.

@@ -29,9 +29,11 @@ does not currently expose a complete reconstructed font to a shaper.
 
 The headless Flight glyph atlas accepts Unicode code points while a shaped run carries glyph IDs.
 Latin code points can traverse loading, shaping, rasterization, atlas packing and bitmap readback,
-and this crate tests that path against the direct RGBA result. A general complex-script draw path
-still lacks a glyph-ID rasterization carrier/function between `ShapedGlyph.glyph_id` and the
-codepoint-keyed atlas; this crate does not reverse-map substituted glyphs or invent a renderer.
+and this crate tests that path against the direct RGBA result. The backend builds one bounded,
+immutable reverse cmap when a face is loaded; repeated glyph-to-codepoint queries use that cache.
+A general complex-script draw path still lacks a glyph-ID rasterization carrier/function between
+`ShapedGlyph.glyph_id` and the codepoint-keyed atlas; this crate does not reverse-map substituted
+glyphs or invent a renderer.
 
 Every replaceable third-party type is confined to `opentype_backend.rs`. Public operations and
 state use Flight records, plain host values and opaque `FontFaceHandle`s only. There is no native
@@ -45,16 +47,27 @@ groups. Loaded faces and retained callbacks may outlive the host value, but call
 after `dispose_text_host` or `Drop`. Disposal is idempotent and clears the registry; memory is freed
 when the final face/callback reference is dropped.
 
-Defaults cap one font at 32 MiB, a registry at 64 faces, discovery at 4,096 candidate files, font
-size at 512 pixels and one glyph at four million pixels. Size arithmetic is checked. Shaping and
-rasterization never write a last-error slot: each sentinel has a pure `explain_text_host_*` probe.
+Defaults cap one encoded font and one decoded WOFF at 32 MiB, WOFF directories at 4,096 tables, a
+registry at 64 faces, discovery at 4,096 traversed entries, reverse cmap parsing at 4,096 groups and
+262,144 mapping operations, font size at 512 pixels and one glyph at four million pixels. Size
+arithmetic is checked. WOFF headers, directory ranges and reconstructed size are validated before
+inflation; identical compressed streams are inflated only once. A load explanation performs only
+the bounded container preflight, so it never parses a face or inflates WOFF payload data.
+
+Shaping and rasterization never write a last-error slot: each sentinel has a pure
+`explain_text_host_*` probe. Output coordinates use a y-down convention for both offsets and
+advances. Horizontal `advance_width` is the sum of x advances; top-to-bottom `advance_width` and
+direct shaping results use y advances, and letter spacing follows the corresponding advance axis.
+A mapped glyph with no outline, such as a space, rasterizes to a valid 0-by-0 bitmap while retaining
+its advance; missing mappings and resource-limit rejection remain distinct failures.
 
 ## Discovery and threads
 
 Byte loading works with `--no-default-features`. The default `system-discovery` feature scans the
-configured directories in sorted order without following symbolic links. Defaults are the common
-system font roots on Linux, macOS and Windows; callers can replace them. Missing roots, unreadable
-files and unavailable discovery are ordinary explained outcomes.
+configured directories in sorted order without following symbolic links. The discovery cap counts
+every traversed directory entry, not only readable font files. Defaults are the common system font
+roots on Linux, macOS and Windows; callers can replace them. Missing roots, unreadable files and
+unavailable discovery are ordinary explained outcomes.
 
 All records and callbacks are `Send + Sync`; work runs synchronously on the calling thread. The
 host creates no workers, executor, process singleton, module-level mutable state or thread-affine

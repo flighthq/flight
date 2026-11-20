@@ -1098,6 +1098,7 @@ dependencies = [
  "flight-entity",
  "flight-font",
  "flight-font-formats",
+ "flight-geometry",
  "flight-glyphatlas",
  "flight-host",
  "flight-path",
