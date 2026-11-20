@@ -428,13 +428,12 @@ fn ffi_claim_wgpu_render_state(state: *const {qualifier}::{state}, require_close
     return Some(FfiWgpuRenderStateClaim(address));
 }
 // One call through an Open handle: the handle is Busy and its state claimed until the call drops.
-// Dropping it, on return or while unwinding, settles the handle to `settle`, and for a terminal
-// phase releases the state's open bracket, before the state claim is released.
+// Dropping it, on return or while unwinding, settles the handle to `settle`, for a terminal phase
+// releases the state's open bracket, and releases the state claim, all in one critical section.
 struct FfiWgpuRenderPassCall {
     token: usize,
     entry: FfiWgpuRenderPassEntry,
     settle: FfiWgpuRenderPassPhase,
-    _claim: FfiWgpuRenderStateClaim,
 }
 impl Drop for FfiWgpuRenderPassCall {
     fn drop(&mut self) {
@@ -446,13 +445,29 @@ impl Drop for FfiWgpuRenderPassCall {
         if terminal && registry.open.get(&self.entry.state) == Some(&self.token) {
             registry.open.remove(&self.entry.state);
         }
+        registry.claimed.remove(&self.entry.state);
     }
 }
 // Starts a call on `pass`: the token must name a live Open handle whose state no other call holds.
-// The check, the claim and the Busy transition happen under one lock.
 fn ffi_start_wgpu_render_pass_call(pass: *mut {handle}) -> Option<FfiWgpuRenderPassCall> {
+    return ffi_start_locked_wgpu_render_pass_call(&mut ffi_wgpu_render_passes(), pass.addr());
+}
+// Free's one critical section: an ended or stale handle is released, and an Open one whose state
+// no other call holds starts the call that ends it. Any other handle, a Busy one included, is left
+// exactly as it is.
+fn ffi_start_wgpu_render_pass_release(pass: *mut {handle}) -> Option<FfiWgpuRenderPassCall> {
     let token = pass.addr();
     let mut registry = ffi_wgpu_render_passes();
+    let phase = registry.entries.get(&token)?.phase;
+    if matches!(phase, FfiWgpuRenderPassPhase::Ended | FfiWgpuRenderPassPhase::Stale) {
+        registry.entries.remove(&token);
+        return None;
+    }
+    return ffi_start_locked_wgpu_render_pass_call(&mut registry, token);
+}
+// The phase check, the claim and the Busy transition of a call start, under the registry lock the
+// caller holds, so no other call can change the handle between the check and the transition.
+fn ffi_start_locked_wgpu_render_pass_call(registry: &mut FfiWgpuRenderPassRegistry, token: usize) -> Option<FfiWgpuRenderPassCall> {
     let entry = *registry.entries.get(&token)?;
     if entry.phase != FfiWgpuRenderPassPhase::Open {
         return None;
@@ -467,7 +482,6 @@ fn ffi_start_wgpu_render_pass_call(pass: *mut {handle}) -> Option<FfiWgpuRenderP
         token,
         entry,
         settle: FfiWgpuRenderPassPhase::Open,
-        _claim: FfiWgpuRenderStateClaim(entry.state),
     });
 }
 // Issues the next token for a newly opened pass and records it as its state's open bracket.
@@ -483,21 +497,18 @@ fn ffi_register_wgpu_render_pass(entry: FfiWgpuRenderPassEntry) -> Option<usize>
 }
 // Before a begin on a state the caller has claimed: the open bracket recorded at this address is
 // released when its state or record no longer matches, and keeps the state refused when it does.
-// Returns whether the state is free of an open bracket.
+// Returns whether the state is free of an open bracket. The lookup, the classification and the
+// release are one critical section; classifying only reads the claimed state.
 unsafe fn ffi_settle_wgpu_render_state_bracket(state: usize) -> bool {
-    let open = {
-        let registry = ffi_wgpu_render_passes();
-        registry.open.get(&state).map(|token| (*token, registry.entries.get(token).copied()))
-    };
-    let Some((token, entry)) = open else {
+    let mut registry = ffi_wgpu_render_passes();
+    let Some(token) = registry.open.get(&state).copied() else {
         return true;
     };
-    if let Some(entry) = entry
-        && unsafe { ffi_classify_wgpu_render_pass(&entry) } != FfiWgpuRenderPassRelation::Stale
+    if let Some(entry) = registry.entries.get(&token)
+        && unsafe { ffi_classify_wgpu_render_pass(entry) } != FfiWgpuRenderPassRelation::Stale
     {
         return false;
     }
-    let mut registry = ffi_wgpu_render_passes();
     if let Some(live) = registry.entries.get_mut(&token) {
         live.phase = FfiWgpuRenderPassPhase::Stale;
     }
@@ -508,6 +519,7 @@ unsafe fn ffi_settle_wgpu_render_state_bracket(state: usize) -> bool {
 std::thread_local! {
     static FFI_WGPU_RENDER_PASS_TRACE: std::cell::RefCell<Vec<&'static str>> = const { std::cell::RefCell::new(Vec::new()) };
     static FFI_WGPU_RENDER_PASS_FAULT: std::cell::Cell<Option<&'static str>> = const { std::cell::Cell::new(None) };
+    static FFI_WGPU_RENDER_PASS_HOOK: std::cell::RefCell<Option<(&'static str, Box<dyn FnOnce()>)>> = const { std::cell::RefCell::new(None) };
 }
 #[cfg(test)]
 fn trace_wgpu_render_pass_validation(step: &'static str) {
@@ -528,6 +540,27 @@ fn inject_wgpu_render_pass_fault(point: &'static str) {
 }
 #[cfg(not(test))]
 fn inject_wgpu_render_pass_fault(_point: &'static str) {}
+// Runs, once, the test hook set for `point` on this thread, so a test can act at an exact point
+// between a wrapper's registry decision and what it does with it.
+#[cfg(test)]
+fn run_wgpu_render_pass_hook(point: &'static str) {
+    let hook = FFI_WGPU_RENDER_PASS_HOOK.with(|slot| {
+        let mut slot = slot.borrow_mut();
+        if slot.as_ref().is_some_and(|(at, _)| *at == point) {
+            return slot.take().map(|(_, hook)| hook);
+        }
+        return None;
+    });
+    if let Some(hook) = hook {
+        hook();
+    }
+}
+#[cfg(not(test))]
+fn run_wgpu_render_pass_hook(_point: &'static str) {}
+#[cfg(test)]
+fn set_wgpu_render_pass_hook(point: &'static str, hook: Box<dyn FnOnce()>) {
+    FFI_WGPU_RENDER_PASS_HOOK.with(|slot| *slot.borrow_mut() = Some((point, hook)));
+}
 #[cfg(test)]
 fn set_wgpu_render_pass_fault(point: Option<&'static str>) {
     FFI_WGPU_RENDER_PASS_FAULT.with(|fault| fault.set(point));
@@ -667,22 +700,9 @@ pub unsafe extern "C" fn {ffi_free}(pass: *mut {handle}) {
     if pass.is_null() {
         return;
     }
-    let token = pass.addr();
-    {
-        let mut registry = ffi_wgpu_render_passes();
-        let Some(entry) = registry.entries.get(&token).copied() else {
-            return;
-        };
-        match entry.phase {
-            FfiWgpuRenderPassPhase::Busy => return,
-            FfiWgpuRenderPassPhase::Ended | FfiWgpuRenderPassPhase::Stale => {
-                registry.entries.remove(&token);
-                return;
-            }
-            FfiWgpuRenderPassPhase::Open => {}
-        }
-    }
-    let Some(mut call) = ffi_start_wgpu_render_pass_call(pass) else {
+    let started = ffi_start_wgpu_render_pass_release(pass);
+    run_wgpu_render_pass_hook("free");
+    let Some(mut call) = started else {
         return;
     };
     match unsafe { ffi_classify_wgpu_render_pass(&call.entry) } {
@@ -692,6 +712,7 @@ pub unsafe extern "C" fn {ffi_free}(pass: *mut {handle}) {
             unsafe { ffi_end_exact_wgpu_render_pass(&mut call) };
         }
     }
+    let token = call.token;
     drop(call);
     ffi_wgpu_render_passes().entries.remove(&token);
 }

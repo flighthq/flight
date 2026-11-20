@@ -369,9 +369,9 @@ mod generated_bracket {
     #[test]
     fn claims_the_handle_and_its_state_under_one_lock_and_settles_them_on_drop() {
         let section = z_bracket_section();
-        let start = z_between(section, "fn ffi_start_wgpu_render_pass_call(", "\n}");
+        let start = z_between(section, "fn ffi_start_locked_wgpu_render_pass_call(", "\n}");
         let order = [
-            "let mut registry = ffi_wgpu_render_passes();",
+            "registry: &mut FfiWgpuRenderPassRegistry",
             "entry.phase != FfiWgpuRenderPassPhase::Open",
             "registry.claimed.insert(entry.state)",
             "live.phase = FfiWgpuRenderPassPhase::Busy;",
@@ -388,16 +388,80 @@ mod generated_bracket {
             positions.windows(2).all(|pair| pair[0] < pair[1]),
             "{start}"
         );
+        assert!(!start.contains("ffi_wgpu_render_passes()"), "{start}");
+        let call = z_between(section, "fn ffi_start_wgpu_render_pass_call(", "\n}");
+        assert!(
+            call.contains(
+                "ffi_start_locked_wgpu_render_pass_call(&mut ffi_wgpu_render_passes(), pass.addr())"
+            ),
+            "{call}"
+        );
+        let release = z_between(section, "fn ffi_start_wgpu_render_pass_release(", "\n}");
+        let order = [
+            "let mut registry = ffi_wgpu_render_passes();",
+            "FfiWgpuRenderPassPhase::Ended | FfiWgpuRenderPassPhase::Stale",
+            "registry.entries.remove(&token);",
+            "return ffi_start_locked_wgpu_render_pass_call(&mut registry, token);",
+        ];
+        let positions: Vec<usize> = order
+            .iter()
+            .map(|step| {
+                release
+                    .find(step)
+                    .unwrap_or_else(|| panic!("{step}\n{release}"))
+            })
+            .collect();
+        assert!(
+            positions.windows(2).all(|pair| pair[0] < pair[1]),
+            "{release}"
+        );
         assert_eq!(
-            start.matches("ffi_wgpu_render_passes()").count(),
+            release.matches("ffi_wgpu_render_passes()").count(),
             1,
-            "{start}"
+            "{release}"
+        );
+        assert!(!release.contains("Busy"), "{release}");
+        let free = z_function("flight_free_wgpu_render_pass_handle");
+        let decided = free
+            .find("let started = ffi_start_wgpu_render_pass_release(pass);")
+            .unwrap();
+        let hook = free.find("run_wgpu_render_pass_hook(\"free\");").unwrap();
+        let dropped = free.find("drop(call);").unwrap();
+        let removed = free
+            .find("ffi_wgpu_render_passes().entries.remove(&token);")
+            .unwrap();
+        assert!(
+            decided < hook && hook < dropped && dropped < removed,
+            "{free}"
+        );
+        assert_eq!(
+            free.matches("ffi_wgpu_render_passes()").count(),
+            1,
+            "{free}"
         );
         let settle = z_between(section, "impl Drop for FfiWgpuRenderPassCall {", "\n}\n");
-        assert!(settle.contains("entry.phase = self.settle;"), "{settle}");
-        assert!(
-            settle.contains("registry.open.remove(&self.entry.state);"),
+        assert_eq!(
+            settle.matches("ffi_wgpu_render_passes()").count(),
+            1,
             "{settle}"
+        );
+        let settled = settle.find("entry.phase = self.settle;").unwrap();
+        let bracket = settle
+            .find("registry.open.remove(&self.entry.state);")
+            .unwrap();
+        let unclaimed = settle
+            .find("registry.claimed.remove(&self.entry.state);")
+            .unwrap();
+        assert!(settled < bracket && bracket < unclaimed, "{settle}");
+        let reclaimed = z_between(
+            section,
+            "unsafe fn ffi_settle_wgpu_render_state_bracket(",
+            "\n}",
+        );
+        assert_eq!(
+            reclaimed.matches("ffi_wgpu_render_passes()").count(),
+            1,
+            "{reclaimed}"
         );
         let release = z_between(section, "impl Drop for FfiWgpuRenderStateClaim {", "\n}\n");
         assert!(release.contains("claimed.remove(&self.0)"), "{release}");
@@ -447,7 +511,10 @@ mod generated_bracket {
         for name in z_bracket_symbols().into_iter().skip(1) {
             let body = z_function(name);
             let null = body.find("pass.is_null()").unwrap();
-            let claim = body.find("ffi_start_wgpu_render_pass_call(pass)").unwrap();
+            let claim = body
+                .find("ffi_start_wgpu_render_pass_call(pass)")
+                .or_else(|| body.find("ffi_start_wgpu_render_pass_release(pass)"))
+                .unwrap();
             let relation = body
                 .find("ffi_classify_wgpu_render_pass(&call.entry)")
                 .unwrap();

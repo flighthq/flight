@@ -3,7 +3,7 @@ use std::ffi::c_void;
 use std::future::Future;
 use std::ptr::{NonNull, null, null_mut};
 use std::sync::atomic::{AtomicUsize, Ordering};
-use std::sync::{Arc, Barrier, Mutex, RwLock};
+use std::sync::{Arc, Barrier, Condvar, Mutex, RwLock};
 use std::task::{Context, Poll, Waker};
 use std::time::Duration;
 
@@ -315,6 +315,55 @@ mod flight_free_wgpu_render_pass_handle {
         assert_eq!(scene_record_ids(&scene).len(), 1);
         assert!(unsafe { flight_end_wgpu_render_pass(next) });
         unsafe { flight_free_wgpu_render_pass_handle(next) };
+    }
+
+    // The draw is held inside its submit, so the handle is provably Busy when free runs. Free's
+    // hook, which runs after free's registry decision, lets the draw finish before free acts on
+    // that decision: a free that decided on one lock and claimed on another would find the
+    // handle Open again and end it.
+    #[test]
+    fn leaves_a_handle_busy_in_a_draw_open_and_reusable_after_the_draw_finishes() {
+        let _exclusive = CONCURRENT_DRAWS_LOCK
+            .lock()
+            .unwrap_or_else(|poisoned| poisoned.into_inner());
+        let scene = create_scene_with(&CONCURRENT_RENDERER);
+        let pass = scene_begin(&scene);
+        let token = pass.addr();
+        let (handle, proxies, source) = (
+            pass.addr(),
+            scene_proxies_ptr(&scene).expose_provenance(),
+            scene_source_ptr(&scene).expose_provenance(),
+        );
+        hold_concurrent_draws();
+        let drawer = std::thread::spawn(move || {
+            return unsafe {
+                flight_render_wgpu_scene2d(
+                    std::ptr::without_provenance_mut(handle),
+                    std::ptr::with_exposed_provenance_mut(proxies),
+                    std::ptr::with_exposed_provenance(source),
+                    null(),
+                )
+            };
+        });
+        wait_for_held_concurrent_draw();
+        assert_eq!(pass_entry(pass).phase, FfiWgpuRenderPassPhase::Busy);
+        let drawer = Arc::new(Mutex::new(Some(drawer)));
+        let hooked = drawer.clone();
+        set_wgpu_render_pass_hook(
+            "free",
+            Box::new(move || finish_held_concurrent_draw(&hooked)),
+        );
+        unsafe { flight_free_wgpu_render_pass_handle(pass) };
+        finish_held_concurrent_draw(&drawer);
+        assert_eq!(pass_entry(pass).phase, FfiWgpuRenderPassPhase::Open);
+        assert_eq!(get_wgpu_render_state_open_pass(scene.state), Some(token));
+        assert!(!is_wgpu_render_state_claimed(scene.state));
+        assert_eq!(scene_record_ids(&scene).len(), 1);
+        assert!(scene_render_2d(&scene, pass));
+        assert!(unsafe { flight_end_wgpu_render_pass(pass) });
+        unsafe { flight_free_wgpu_render_pass_handle(pass) };
+        assert_eq!(inspect_wgpu_render_pass(pass), None);
+        assert!(scene_record_ids(&scene).is_empty());
     }
 }
 
@@ -685,6 +734,14 @@ mod same_index_record_replacement {
     }
 }
 
+// Whether the next concurrent draw waits inside its submit, whether one is waiting there, and
+// whether it may go on.
+struct ConcurrentHold {
+    armed: bool,
+    entered: bool,
+    released: bool,
+}
+
 #[derive(Debug, PartialEq, Eq)]
 struct CrossThread {
     begin_null: bool,
@@ -780,6 +837,26 @@ fn block_on<F: Future>(future: F) -> F::Output {
         }
         std::thread::yield_now();
     }
+}
+
+// Lets a held draw go on and joins its thread, once; the draw must have succeeded.
+fn finish_held_concurrent_draw(drawer: &Mutex<Option<std::thread::JoinHandle<bool>>>) {
+    let Some(drawer) = drawer.lock().unwrap().take() else {
+        return;
+    };
+    let mut hold = CONCURRENT_HOLD.lock().unwrap();
+    hold.released = true;
+    CONCURRENT_HOLD_CHANGED.notify_all();
+    drop(hold);
+    assert!(drawer.join().unwrap());
+}
+
+fn hold_concurrent_draws() {
+    *CONCURRENT_HOLD.lock().unwrap() = ConcurrentHold {
+        armed: true,
+        entered: false,
+        released: false,
+    };
 }
 
 // A render state on wgpu's noop backend whose display objects draw through `renderer`.
@@ -898,6 +975,16 @@ fn submit_concurrent(
     _state: &mut flight_sdk::WgpuRenderState,
     _proxy: &flight_sdk::RenderProxy2D<flight_sdk::WgpuRenderState>,
 ) {
+    let mut hold = CONCURRENT_HOLD.lock().unwrap();
+    if hold.armed {
+        hold.armed = false;
+        hold.entered = true;
+        CONCURRENT_HOLD_CHANGED.notify_all();
+        while !hold.released {
+            hold = CONCURRENT_HOLD_CHANGED.wait(hold).unwrap();
+        }
+    }
+    drop(hold);
     let active = CONCURRENT_ACTIVE.fetch_add(1, Ordering::SeqCst) + 1;
     CONCURRENT_MAX.fetch_max(active, Ordering::SeqCst);
     std::thread::sleep(Duration::from_micros(200));
@@ -986,6 +1073,13 @@ fn take_reentry() -> Option<Reentry> {
     return REENTRY.with(|reentry| reentry.borrow_mut().take());
 }
 
+fn wait_for_held_concurrent_draw() {
+    let mut hold = CONCURRENT_HOLD.lock().unwrap();
+    while !hold.entered {
+        hold = CONCURRENT_HOLD_CHANGED.wait(hold).unwrap();
+    }
+}
+
 static CONCURRENT_RENDERER: flight_sdk::NodeRenderer<flight_sdk::WgpuRenderState> =
     flight_sdk::NodeRenderer {
         format: None,
@@ -1008,6 +1102,14 @@ static PROBE_RENDERER: flight_sdk::NodeRenderer<flight_sdk::WgpuRenderState> =
 static CONCURRENT_ACTIVE: AtomicUsize = AtomicUsize::new(0);
 // flight-lint: allow(hidden-state) test probe: the concurrency renderer's submit is a plain fn pointer shared by every drawing thread, so its overlap counters are process-wide and one lock keeps them to one test at a time
 static CONCURRENT_DRAWS: AtomicUsize = AtomicUsize::new(0);
+// flight-lint: allow(hidden-state) test probe: the concurrency renderer's submit is a plain fn pointer shared by every drawing thread, so the hold that parks one draw inside it is process-wide and one lock keeps it to one test at a time
+static CONCURRENT_HOLD: Mutex<ConcurrentHold> = Mutex::new(ConcurrentHold {
+    armed: false,
+    entered: false,
+    released: false,
+});
+// flight-lint: allow(hidden-state) test probe: the concurrency renderer's submit is a plain fn pointer shared by every drawing thread, so the hold that parks one draw inside it is process-wide and one lock keeps it to one test at a time
+static CONCURRENT_HOLD_CHANGED: Condvar = Condvar::new();
 // flight-lint: allow(hidden-state) test probe: the concurrency renderer's submit is a plain fn pointer shared by every drawing thread, so its overlap counters are process-wide and one lock keeps them to one test at a time
 static CONCURRENT_DRAWS_LOCK: Mutex<()> = Mutex::new(());
 // flight-lint: allow(hidden-state) test probe: the concurrency renderer's submit is a plain fn pointer shared by every drawing thread, so its overlap counters are process-wide and one lock keeps them to one test at a time
