@@ -335,6 +335,11 @@ mod generated_bracket {
             "{register}"
         );
         assert!(!section.contains("registry.issued"));
+        let release = z_between(section, "fn ffi_start_wgpu_render_pass_release(", "\n}");
+        let family = release
+            .find("if !ffi_is_registry_token(token, FFI_RENDER_PASS_TOKEN_TAG) {\n        return None;\n    }")
+            .expect("pass release skips the family check");
+        assert!(family < release.find("ffi_wgpu_render_passes()").unwrap());
     }
 
     #[test]

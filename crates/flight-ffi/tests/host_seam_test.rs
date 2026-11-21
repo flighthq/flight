@@ -134,6 +134,33 @@ mod generate_host_section {
             "FFI_HEADLESS_HOSTS.lock().unwrap_or_else(std::sync::PoisonError::into_inner)"
         ));
         assert!(section.contains("std::ptr::without_provenance_mut(token)"));
+        for (function, check) in [
+            (
+                "fn ffi_with_headless_host<R>(",
+                "if !ffi_is_registry_token(token, FFI_HEADLESS_HOST_TOKEN_TAG) {\n        return None;\n    }",
+            ),
+            (
+                "fn ffi_take_headless_host(",
+                "if !ffi_is_registry_token(token, FFI_HEADLESS_HOST_TOKEN_TAG) {\n        return None;\n    }",
+            ),
+            (
+                "fn ffi_resolve_headless_lent(",
+                "if !ffi_is_registry_token(handle, tag) {\n        return None;\n    }",
+            ),
+        ] {
+            let start = section
+                .find(function)
+                .unwrap_or_else(|| panic!("missing {function}"));
+            let body = &section[start..start + section[start..].find("\n}").unwrap()];
+            let family = body
+                .find(check)
+                .unwrap_or_else(|| panic!("{function} skips the family check"));
+            let lookup = body.find("ffi_headless_hosts()").unwrap();
+            assert!(
+                family < lookup,
+                "{function} looks up before checking the family"
+            );
+        }
     }
 }
 
