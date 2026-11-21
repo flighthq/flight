@@ -8,7 +8,7 @@
 //! The raster surface belongs to the render node rather than the module: its image identity is the
 //! GPU-cache key, so two RichText nodes drawn in one frame cannot overwrite each other's upload.
 
-use std::sync::{Arc, RwLock};
+use std::sync::{Arc, PoisonError, RwLock};
 
 use flight_color::compute_rgba_css_string;
 use flight_entity::allocate_entity;
@@ -72,7 +72,7 @@ pub fn create_wgpu_rich_text_data(
 /// Frees a RichText node's scratch (TS `destroyWgpuRichTextData`): the GPU cache entry while its
 /// image key is still valid, then the raster surface back to the provider that created it.
 pub fn destroy_wgpu_rich_text_data(state: &mut WgpuRenderState, data: RendererDataRef) {
-    let mut guard = data.write().unwrap();
+    let mut guard = data.write().unwrap_or_else(PoisonError::into_inner);
     let Some(rich_data) = get_wgpu_renderer_data_mut::<WgpuRichTextData>(Some(&mut *guard)) else {
         return;
     };

@@ -5,7 +5,7 @@
 //! tessellated half (meshes and their GPU buffers) and the rasterized half (surface and image),
 //! each allocated only when a strategy needs it.
 
-use std::sync::{Arc, RwLock};
+use std::sync::{Arc, PoisonError, RwLock};
 
 use flight_entity::{Ref, allocate_entity, get_entity_id};
 use flight_image::{HostImageCapability, ImageResource};
@@ -72,23 +72,28 @@ pub(crate) fn destroy_wgpu_premultiplied_image_texture(
     state: &WgpuRenderState,
     image: &Ref<ImageResource>,
 ) {
-    let key = get_entity_id(&*image.read().unwrap());
+    let key = get_entity_id(&*image.read().unwrap_or_else(PoisonError::into_inner));
     let context = get_wgpu_render_state_runtime(state).context.clone();
     let entry = context
         .write()
-        .unwrap()
+        .unwrap_or_else(PoisonError::into_inner)
         .texture_source_premultiplied_texture_cache
         .remove(&key);
     if let Some(entry) = entry {
-        entry.read().unwrap().texture.destroy();
+        entry
+            .read()
+            .unwrap_or_else(PoisonError::into_inner)
+            .texture
+            .destroy();
     }
 }
 
 /// Frees a shape's cache (TS `destroyWgpuShapeData`): the GPU texture uploaded for its raster
 /// surface and that texture's cache key, then the provider-owned surface, then the mesh path's
 /// per-shape buffers. A shape that only ever tessellated owns mesh state but no raster resources.
+/// A cache a contained panic poisoned mid-upload is still freed: teardown only releases resources.
 pub fn destroy_wgpu_shape_data(state: &mut WgpuRenderState, data: RendererDataRef) {
-    let mut guard = data.write().unwrap();
+    let mut guard = data.write().unwrap_or_else(PoisonError::into_inner);
     let Some(shape_data) = get_wgpu_shape_data(&mut *guard) else {
         return;
     };

@@ -1,6 +1,7 @@
 //! flight-compiler: target-native
 
 use std::collections::HashMap;
+use std::sync::PoisonError;
 
 use crate::{
     BaseRenderState, ColorAdjustmentUnsupportedGuard, RenderProxies2D, RenderState,
@@ -65,8 +66,15 @@ pub fn destroy_render_state<S: RenderState>(state: &mut S, proxies: &mut RenderP
     }
     runtime.render_proxy_adapter_map.clear();
     runtime.registry_guard_enabled = false;
-    runtime.registry_misses.write().unwrap().clear();
-    *runtime.registry_guard_log.write().unwrap() = None;
+    runtime
+        .registry_misses
+        .write()
+        .unwrap_or_else(PoisonError::into_inner)
+        .clear();
+    *runtime
+        .registry_guard_log
+        .write()
+        .unwrap_or_else(PoisonError::into_inner) = None;
     runtime.color_adjustment_guard_log = None;
     runtime.scene_render_guard_log = None;
     runtime.prepared_scene3d = None;

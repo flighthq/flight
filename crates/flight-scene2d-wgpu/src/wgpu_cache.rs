@@ -6,7 +6,7 @@
 //! quad. The source's module WeakMap of targets per state is the state's own package record (D5).
 
 use flight_render::RenderTargetClear;
-use std::sync::{Arc, RwLock};
+use std::sync::{Arc, PoisonError, RwLock};
 
 use flight_entity::{Ref, get_entity_id};
 use flight_geometry::{Matrix, create_matrix, create_rectangle, multiply_matrix};
@@ -87,7 +87,12 @@ pub fn create_wgpu_cache_state(
         Arc::new(move |_owner: &mut WgpuRenderState| {
             // The cache state's proxies are caller-owned; teardown frees the state's own resources.
             let mut proxies: RenderProxies2D<WgpuRenderState> = RenderProxies2D::default();
-            destroy_wgpu_render_state(&mut teardown_state.write().unwrap(), &mut proxies);
+            destroy_wgpu_render_state(
+                &mut teardown_state
+                    .write()
+                    .unwrap_or_else(PoisonError::into_inner),
+                &mut proxies,
+            );
         }),
     );
     return cache_state;
@@ -110,7 +115,9 @@ fn destroy_owned_wgpu_render_cache_targets(state: &mut WgpuRenderState) {
         return;
     };
     for entry in &targets {
-        destroy_wgpu_texture_render_target(&entry.target.read().unwrap());
+        destroy_wgpu_texture_render_target(
+            &entry.target.read().unwrap_or_else(PoisonError::into_inner),
+        );
     }
 }
 

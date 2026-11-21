@@ -1,5 +1,7 @@
 //! flight-compiler: target-native
 
+use std::sync::PoisonError;
+
 use flight_entity::{Ref, get_entity_id};
 use flight_surface::{CanvasSurface, HostCanvasCapability};
 
@@ -24,7 +26,7 @@ pub fn destroy_canvas_host_surface(
     surfaces: &mut CanvasHostSurfaces,
     surface: &Ref<CanvasSurface>,
 ) {
-    let id = get_entity_id(&*surface.read().unwrap());
+    let id = get_entity_id(&*surface.read().unwrap_or_else(PoisonError::into_inner));
     let Some(host) = surfaces.hosts.remove(&id) else {
         return;
     };

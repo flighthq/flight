@@ -6,7 +6,7 @@
 //! cache and draws as one quad with the scale stripped from the transform (the size is already
 //! baked into the texture). Mirrors the GL Scale9 renderer.
 
-use std::sync::{Arc, RwLock};
+use std::sync::{Arc, PoisonError, RwLock};
 
 use flight_entity::{Ref, allocate_entity};
 use flight_geometry::{create_matrix, create_rectangle};
@@ -82,7 +82,7 @@ pub fn acquire_wgpu_scale9_shape_raster_surface(
 /// Frees a Scale9Shape node's scratch (TS `destroyWgpuScale9ShapeData`): the GPU cache entry, then
 /// the raster surface.
 pub fn destroy_wgpu_scale9_shape_data(state: &mut WgpuRenderState, data: RendererDataRef) {
-    let mut guard = data.write().unwrap();
+    let mut guard = data.write().unwrap_or_else(PoisonError::into_inner);
     let Some(shape_data) = get_wgpu_scale9_shape_data(&mut *guard) else {
         return;
     };

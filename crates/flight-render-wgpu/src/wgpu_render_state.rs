@@ -6,7 +6,7 @@
 //! queue (D17); a state is synchronous to build because acquisition happens before it.
 
 use std::collections::HashMap;
-use std::sync::{Arc, RwLock};
+use std::sync::{Arc, PoisonError, RwLock};
 
 use flight_host::WgpuDevice;
 use flight_registry::KindMap;
@@ -392,7 +392,9 @@ fn copy_renderer_policy_snapshot(target: &mut WgpuRenderState, source: &WgpuRend
 /// and every pool slot's buffers (TS `destroyWgpuRenderState`). Runs the state's teardowns first,
 /// and the device tier's when the last state on it is destroyed. Idempotent. Pipelines, layouts,
 /// samplers and views are dropped with the state; uploaded textures are freed by their dispose
-/// paths, and screen storage by `destroy_wgpu_screen_render_target`.
+/// paths, and screen storage by `destroy_wgpu_screen_render_target`. A lock a contained draw panic
+/// poisoned is recovered rather than unwrapped: teardown only releases, so a half-written cache is
+/// still freed.
 // flight-lint: allow(conform-params) D17 sketch A: render proxies are an explicit caller-owned store
 pub fn destroy_wgpu_render_state(
     state: &mut WgpuRenderState,
@@ -428,7 +430,7 @@ pub fn destroy_wgpu_render_state(
     }
     let context = runtime.context.clone();
     let (references, native, teardowns) = {
-        let mut device_runtime = context.write().unwrap();
+        let mut device_runtime = context.write().unwrap_or_else(PoisonError::into_inner);
         device_runtime.references -= 1;
         let teardowns = if device_runtime.references == 0 {
             std::mem::take(&mut device_runtime.teardowns)

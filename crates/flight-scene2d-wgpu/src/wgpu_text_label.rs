@@ -5,7 +5,7 @@
 //! rasterizes its glyph runs into a per-node 2D surface at device-pixel density, and draws the
 //! surface's image as one quad through the shared batch.
 
-use std::sync::{Arc, RwLock};
+use std::sync::{Arc, PoisonError, RwLock};
 
 use flight_color::compute_rgba_css_string;
 use flight_entity::allocate_entity;
@@ -69,7 +69,7 @@ fn create_wgpu_text_label_data(
 // Removes the GPU cache entry while its image key is still valid, then returns the raster surface
 // to the provider that created it.
 fn destroy_wgpu_text_label_data(state: &mut WgpuRenderState, data: RendererDataRef) {
-    let mut guard = data.write().unwrap();
+    let mut guard = data.write().unwrap_or_else(PoisonError::into_inner);
     let Some(text_label_data) = get_wgpu_renderer_data_mut::<WgpuTextLabelData>(Some(&mut *guard))
     else {
         return;
