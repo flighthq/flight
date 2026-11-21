@@ -3,6 +3,7 @@ mod host_seam;
 mod native_bindings;
 mod public_perimeter;
 mod reachability;
+mod registry_tokens;
 mod render_pass_bracket;
 mod signal_identity;
 mod signal_ref_connect;
@@ -1728,6 +1729,8 @@ fn main() {
         all_output = guarded;
         bracket_state_wrappers.extend(names);
     }
+    writeln!(all_output, "// registry tokens").unwrap();
+    all_output.push_str(&registry_tokens::generate_registry_token_support());
     let brackets = generate_borrow_erased_brackets(crates_dir, &mut seen_names);
     writeln!(all_output, "// borrow-erased brackets").unwrap();
     all_output.push_str(&brackets.output);
@@ -1736,6 +1739,14 @@ fn main() {
     // Each enabled host feature scans its crate exactly and lowers it into a guarded section that
     // is appended last, so the header can wrap it whole. A disabled feature contributes nothing.
     let host_sections = generate_host_sections(crates_dir);
+    // A host feature's lent carriers are handles, never pointers: every SDK wrapper that takes one
+    // resolves it against the live host before use.
+    let mut lent_carrier_consumers = Vec::new();
+    if !host_sections.is_empty() {
+        let (guarded, names) = host_seam::guard_lent_carrier_consumers(&all_output);
+        all_output = guarded;
+        lent_carrier_consumers = names;
+    }
 
     assert_eq!(
         shape_bounds_handlers_seen.len(),
@@ -1866,6 +1877,9 @@ fn main() {
         for line in &section.report {
             writeln!(stats_file, "  host: {line}").unwrap();
         }
+    }
+    for name in &lent_carrier_consumers {
+        writeln!(stats_file, "  host lent carrier consumer: {name}").unwrap();
     }
     let mut sorted_skips: Vec<_> = stats_skipped.iter().collect();
     sorted_skips.sort_by(|a, b| b.1.cmp(a.1));
@@ -3116,7 +3130,19 @@ fn generate_host_sections(
         let exports = host_seam::collect_host_exports(&sources);
         host_seam::check_host_scan_membership(feature, &exports)
             .unwrap_or_else(|error| panic!("{error}"));
-        out.push((feature, host_seam::generate_host_section(feature)));
+        let mut section = host_seam::generate_host_section(feature);
+        let tags: String = [
+            "FFI_HEADLESS_HOST_TOKEN_TAG",
+            "FFI_HEADLESS_DEVICE_TOKEN_TAG",
+            "FFI_HEADLESS_CAPABILITY_TOKEN_TAG",
+            "FFI_HEADLESS_SURFACE_TOKEN_TAG",
+            "FFI_HEADLESS_RENDER_TARGET_TOKEN_TAG",
+        ]
+        .iter()
+        .map(|name| registry_tokens::family_tag_const(name))
+        .collect();
+        section.output = tags + &section.output;
+        out.push((feature, section));
     }
     return out;
 }

@@ -373,7 +373,7 @@ enum FfiWgpuRenderPassRelation {
     Stale,
 }
 // The C-visible pass handle type. No value of it is ever allocated or dereferenced: a handle
-// pointer is a registry token, odd and never reissued.
+// pointer is a render pass registry token, never reissued in any family.
 pub struct {handle} {
     _token_only: [u8; 0],
 }
@@ -390,13 +390,11 @@ struct FfiWgpuRenderPassEntry {
 // claim. A critical section only inserts, removes or assigns plain values, so a lock poisoned by a
 // panic elsewhere still guards a consistent registry and is recovered.
 struct FfiWgpuRenderPassRegistry {
-    issued: usize,
     entries: std::collections::BTreeMap<usize, FfiWgpuRenderPassEntry>,
     claimed: std::collections::BTreeSet<usize>,
     open: std::collections::BTreeMap<usize, usize>,
 }
 static FFI_WGPU_RENDER_PASSES: std::sync::Mutex<FfiWgpuRenderPassRegistry> = std::sync::Mutex::new(FfiWgpuRenderPassRegistry {
-    issued: 0,
     entries: std::collections::BTreeMap::new(),
     claimed: std::collections::BTreeSet::new(),
     open: std::collections::BTreeMap::new(),
@@ -457,6 +455,9 @@ fn ffi_start_wgpu_render_pass_call(pass: *mut {handle}) -> Option<FfiWgpuRenderP
 // exactly as it is.
 fn ffi_start_wgpu_render_pass_release(pass: *mut {handle}) -> Option<FfiWgpuRenderPassCall> {
     let token = pass.addr();
+    if !ffi_is_registry_token(token, FFI_RENDER_PASS_TOKEN_TAG) {
+        return None;
+    }
     let mut registry = ffi_wgpu_render_passes();
     let phase = registry.entries.get(&token)?.phase;
     if matches!(phase, FfiWgpuRenderPassPhase::Ended | FfiWgpuRenderPassPhase::Stale) {
@@ -468,6 +469,9 @@ fn ffi_start_wgpu_render_pass_release(pass: *mut {handle}) -> Option<FfiWgpuRend
 // The phase check, the claim and the Busy transition of a call start, under the registry lock the
 // caller holds, so no other call can change the handle between the check and the transition.
 fn ffi_start_locked_wgpu_render_pass_call(registry: &mut FfiWgpuRenderPassRegistry, token: usize) -> Option<FfiWgpuRenderPassCall> {
+    if !ffi_is_registry_token(token, FFI_RENDER_PASS_TOKEN_TAG) {
+        return None;
+    }
     let entry = *registry.entries.get(&token)?;
     if entry.phase != FfiWgpuRenderPassPhase::Open {
         return None;
@@ -484,13 +488,11 @@ fn ffi_start_locked_wgpu_render_pass_call(registry: &mut FfiWgpuRenderPassRegist
         settle: FfiWgpuRenderPassPhase::Open,
     });
 }
-// Issues the next token for a newly opened pass and records it as its state's open bracket.
-// Tokens are odd and never reissued; when the token space is exhausted none is issued.
+// Issues a render pass token for a newly opened pass and records it as its state's open bracket.
+// When the token sequence is exhausted none is issued.
 fn ffi_register_wgpu_render_pass(entry: FfiWgpuRenderPassEntry) -> Option<usize> {
     let mut registry = ffi_wgpu_render_passes();
-    let issued = registry.issued.checked_add(1)?;
-    let token = issued.checked_mul(2)?.checked_add(1)?;
-    registry.issued = issued;
+    let token = ffi_mint_registry_token(FFI_RENDER_PASS_TOKEN_TAG)?;
     registry.entries.insert(token, entry);
     registry.open.insert(entry.state, token);
     return Some(token);

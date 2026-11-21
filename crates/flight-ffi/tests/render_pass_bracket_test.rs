@@ -331,10 +331,10 @@ mod generated_bracket {
         );
         let register = z_between(section, "fn ffi_register_wgpu_render_pass(", "\n}");
         assert!(
-            register.contains("issued.checked_mul(2)?.checked_add(1)?"),
+            register.contains("ffi_mint_registry_token(FFI_RENDER_PASS_TOKEN_TAG)?"),
             "{register}"
         );
-        assert!(register.contains("registry.issued = issued;"), "{register}");
+        assert!(!section.contains("registry.issued"));
     }
 
     #[test]

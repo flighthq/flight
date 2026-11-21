@@ -50,6 +50,17 @@ static int check_options_and_creation_failure(void) {
   return 0;
 }
 
+#ifdef FLIGHT_FFI_DELIBERATE_LEAK
+/* Drops the only reference to an adapter name in a frame that has returned before the long rest of
+ * the run, so the leak sanitizer cannot find it on a live stack. */
+__attribute__((noinline)) static bool leak_adapter_name(FlightHeadlessHost *host) {
+  char *volatile leaked = flight_get_headless_host_adapter_name(host);
+  bool taken = leaked != NULL;
+  leaked = NULL;
+  return taken;
+}
+#endif
+
 /* Every host call on `host` must behave as on a host that does not exist. */
 static int check_fails_closed(FlightHeadlessHost *host) {
   CHECK(flight_is_headless_host_destroyed(host));
@@ -111,17 +122,75 @@ int main(void) {
     return 1;
   }
 
+  /* Real host, pass and lent handles, all live at once: each passed as another family is refused,
+   * and every original keeps working. */
+  void *state = flight_create_wgpu_render_state(device, NULL);
+  CHECK(state != NULL);
+  FlightWgpuRenderPassHandle *pass = flight_begin_wgpu_render_pass(state, target, NULL);
+  CHECK(pass != NULL);
+  CHECK((void *)pass != (void *)host && (void *)pass != device && (void *)pass != target);
+  if (check_fails_closed((FlightHeadlessHost *)pass) != 0) {
+    return 1;
+  }
+  if (check_fails_closed((FlightHeadlessHost *)device) != 0) {
+    return 1;
+  }
+  CHECK(!flight_end_wgpu_render_pass((FlightWgpuRenderPassHandle *)host));
+  CHECK(!flight_end_wgpu_render_pass((FlightWgpuRenderPassHandle *)target));
+  flight_free_wgpu_render_pass_handle((FlightWgpuRenderPassHandle *)host);
+  flight_free_wgpu_render_pass_handle((FlightWgpuRenderPassHandle *)device);
+  CHECK(flight_create_wgpu_render_state(target, NULL) == NULL);
+  CHECK(flight_create_wgpu_render_state(surface, NULL) == NULL);
+  CHECK(flight_create_wgpu_render_state(capability, NULL) == NULL);
+  CHECK(flight_create_wgpu_render_state(pass, NULL) == NULL);
+  CHECK(flight_create_wgpu_render_state(host, NULL) == NULL);
+  CHECK(flight_create_bitmap_from_headless_screen_render_target(device, 1000) == NULL);
+  CHECK(flight_create_bitmap_from_headless_screen_render_target(pass, 1000) == NULL);
+  CHECK(flight_create_wgpu_screen_render_target(device, capability, surface, NULL) == NULL);
+  CHECK(!flight_is_headless_host_destroyed(host));
+  CHECK(flight_end_wgpu_render_pass(pass));
+  flight_free_wgpu_render_pass_handle(pass);
+
+  /* A pass left open across the host's destroy ends and frees soundly: it holds its own shared
+   * GPU handles, never the host's storage. */
+  FlightWgpuRenderPassHandle *open = flight_begin_wgpu_render_pass(state, target, NULL);
+  CHECK(open != NULL);
+
 #ifdef FLIGHT_FFI_DELIBERATE_LEAK
-  char *leaked = flight_get_headless_host_adapter_name(host);
-  CHECK(leaked != NULL);
+  CHECK(leak_adapter_name(host));
 #endif
 
   flight_destroy_headless_host(host);
   if (check_fails_closed(host) != 0) {
     return 1;
   }
+  flight_end_wgpu_render_pass(open);
+  flight_free_wgpu_render_pass_handle(open);
   CHECK(flight_create_bitmap_from_headless_screen_render_target(target, 1000) == NULL);
   CHECK(flight_explain_headless_screen_render_target_read_back(target, 1000) == NULL);
+
+  /* Every carrier the destroyed host lent now fails closed in the SDK functions that take it. */
+  CHECK(flight_create_wgpu_render_state(device, NULL) == NULL);
+  CHECK(flight_create_wgpu_device_state(device) == NULL);
+  CHECK(flight_create_wgpu_screen_render_target(capability, device, surface, NULL) == NULL);
+  CHECK(flight_begin_wgpu_render_pass(state, target, NULL) == NULL);
+  flight_resize_surface(NULL, surface, 8.0f, 8.0f);
+  flight_release_wgpu_acquisition(capability, NULL);
+  flight_free_wgpu_render_state(state);
+
+  /* Churn: hosts come and go, their handles are never reissued, and none resolves a stale one. */
+  for (int round = 0; round < 200; ++round) {
+    FlightHeadlessHost *churn = flight_create_headless_host(NULL);
+    CHECK(churn != NULL && churn != host);
+    void *churn_device = flight_get_headless_host_wgpu_device(churn);
+    void *churn_target = flight_create_headless_host_render_target(churn, 2, 2);
+    CHECK(churn_device != device && churn_target != target);
+    CHECK(take_nonempty_string(flight_get_headless_host_adapter_name(churn)));
+    CHECK(flight_create_wgpu_render_state(device, NULL) == NULL);
+    flight_destroy_headless_host(churn);
+    flight_destroy_headless_host(churn);
+    CHECK(flight_create_bitmap_from_headless_screen_render_target(churn_target, 0) == NULL);
+  }
 
   FlightHeadlessHost *next = flight_create_headless_host(NULL);
   CHECK(next != NULL && next != host);

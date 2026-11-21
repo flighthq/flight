@@ -514,8 +514,6 @@ fn get_param_ownership_notes(function: &syn::ItemFn) -> BTreeMap<String, String>
     return notes;
 }
 
-// Contract docs use an explicit prefix so ordinary implementation prose never leaks into the
-// consumer ABI. Attribute order is source order, which keeps multiple contract lines stable.
 // The guard macro of the host section a wrapper belongs to, from its section tag.
 fn get_function_section(function: &syn::ItemFn) -> Option<String> {
     return function.attrs.iter().find_map(|attribute| {
@@ -538,6 +536,8 @@ fn get_function_section(function: &syn::ItemFn) -> Option<String> {
     });
 }
 
+// Contract docs use an explicit prefix so ordinary implementation prose never leaks into the
+// consumer ABI. Attribute order is source order, which keeps multiple contract lines stable.
 fn get_function_contracts(function: &syn::ItemFn) -> Vec<String> {
     let mut contracts = Vec::new();
     for attribute in &function.attrs {

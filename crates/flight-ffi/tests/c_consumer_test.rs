@@ -569,6 +569,18 @@ fn z_compile_link_and_run_with_args(
 
     let mut executable_command = Command::new(&executable);
     executable_command.args(args);
+    // A machine may have several Vulkan drivers installed; the headless programs load exactly one,
+    // Mesa's software driver, so their adapter and the sanitizers' view are the same everywhere.
+    if host_section {
+        let Some(icd) = find_software_vulkan_icd() else {
+            eprintln!(
+                "SKIPPED {stem}: no Mesa lavapipe ICD (libvulkan_lvp) is installed; install mesa-vulkan-drivers to run it"
+            );
+            return None;
+        };
+        executable_command.env("VK_DRIVER_FILES", &icd);
+        executable_command.env("VK_ICD_FILENAMES", &icd);
+    }
     if let Some(sanitizer_runtimes) = sanitizer_runtimes {
         executable_command.env("LD_PRELOAD", sanitizer_runtimes.join(":"));
         executable_command.env("ASAN_OPTIONS", "detect_leaks=1:halt_on_error=1");
@@ -682,3 +694,30 @@ const HEADLESS_RENDER_TOLERANCE: u8 = 1;
 // Two solid opaque rectangles on whole pixels: their interiors are known exactly on any adapter.
 #[cfg(feature = "host-headless")]
 const HEADLESS_RENDER_SVG: &str = r##"<svg xmlns="http://www.w3.org/2000/svg" width="48" height="32"><rect x="2" y="2" width="12" height="10" fill="#ff0000"/><rect x="20" y="8" width="16" height="14" fill="#00ff00"/></svg>"##;
+
+// The installed Vulkan driver manifest of Mesa's software rasterizer, lavapipe: the one ICD whose
+// library is libvulkan_lvp.
+fn find_software_vulkan_icd() -> Option<PathBuf> {
+    for dir in [
+        "/usr/share/vulkan/icd.d",
+        "/usr/local/share/vulkan/icd.d",
+        "/etc/vulkan/icd.d",
+    ] {
+        let Ok(entries) = fs::read_dir(dir) else {
+            continue;
+        };
+        let mut manifests: Vec<PathBuf> = entries
+            .filter_map(|entry| entry.ok().map(|entry| entry.path()))
+            .collect();
+        manifests.sort();
+        for manifest in manifests {
+            let Ok(text) = fs::read_to_string(&manifest) else {
+                continue;
+            };
+            if text.contains("\"library_path\"") && text.contains("libvulkan_lvp") {
+                return Some(manifest);
+            }
+        }
+    }
+    return None;
+}

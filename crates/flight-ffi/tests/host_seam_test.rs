@@ -117,19 +117,57 @@ mod generate_host_section {
         assert_eq!(section.report.len(), feature.lowerings.len());
     }
 
-    // Carriers passed back are looked up by address among the boxes live hosts lent before any
-    // dereference, and host handles are registry keys, never pointers that are read.
+    // Host handles and every carrier a host lends are registry tokens of their own family: the tag
+    // is checked before any lookup, and nothing passed back is ever dereferenced.
     #[test]
     fn validates_every_handle_and_carrier_before_using_it() {
         let section = host_seam::generate_host_section(headless_feature()).output;
-        assert!(section.contains("registry.hosts.get_mut(&host.addr())"));
-        assert!(section.contains("std::ptr::eq(&**lent, target)"));
+        assert!(section.contains("ffi_is_registry_token(token, FFI_HEADLESS_HOST_TOKEN_TAG)"));
+        assert!(section.contains("if !ffi_is_registry_token(handle, tag) {"));
+        assert!(section.contains("ffi_headless_hosts().lent.get(&handle).cloned()"));
+        assert!(!section.contains("unsafe { &*surface"));
+        assert!(!section.contains("unsafe { &*device"));
+        assert!(!section.contains("unsafe { &*capability"));
         assert!(!section.contains("unsafe { &*host"));
         assert!(!section.contains("unsafe { &*target"));
         assert!(section.contains(
             "FFI_HEADLESS_HOSTS.lock().unwrap_or_else(std::sync::PoisonError::into_inner)"
         ));
         assert!(section.contains("std::ptr::without_provenance_mut(token)"));
+    }
+}
+
+mod guard_lent_carrier_consumers {
+    use super::*;
+
+    const CONSUMER: &str = "\n#[unsafe(no_mangle)]\npub unsafe extern \"C\" fn flight_probe_target(target: *const flight_sdk::WgpuRenderTarget) -> bool {\n    if target.is_null() {\n        return false;\n    }\n    return probe(unsafe { &*target });\n}\n";
+
+    // A token-shaped argument resolves through a live host or fails before the body runs; any
+    // other argument reaches the original body, null check and borrow unchanged.
+    #[test]
+    fn resolves_token_shaped_carriers_and_keeps_every_other_argument_on_its_own_path() {
+        let (guarded, names) = host_seam::guard_lent_carrier_consumers(CONSUMER);
+        assert_eq!(names, ["flight_probe_target"]);
+        let resolve = guarded
+            .find("let lent_target = if ffi_is_registry_token_shaped(target.addr()) { let Some(lent) = ffi_resolve_headless_lent_render_target(target) else { return false; }; Some(lent) } else { None };")
+            .unwrap();
+        let null_check = guarded.find("if target.is_null()").unwrap();
+        assert!(resolve < null_check);
+        assert!(guarded.contains(
+            "return probe(match &lent_target { Some(lent) => lent, None => unsafe { &*target } });"
+        ));
+        assert!(guarded.contains(host_seam::LENT_CARRIER_CONTRACT));
+    }
+
+    #[test]
+    fn leaves_host_wrappers_and_wrappers_without_carriers_unchanged() {
+        let host = CONSUMER.replace("flight_probe_target", "flight_probe_headless_target");
+        let plain = CONSUMER.replace("*const flight_sdk::WgpuRenderTarget", "*const u8");
+        for source in [host, plain] {
+            let (guarded, names) = host_seam::guard_lent_carrier_consumers(&source);
+            assert_eq!(guarded, source);
+            assert!(names.is_empty());
+        }
     }
 }
 
@@ -197,6 +235,35 @@ mod headless_build_section {
         assert!(HEADER.contains(
             "/* Borrowed return; do not free; valid while the host is not destroyed. */\nvoid * flight_get_headless_host_wgpu_device(FlightHeadlessHost * arg0);"
         ));
+    }
+
+    #[test]
+    fn guards_every_generated_consumer_of_a_lent_carrier() {
+        let mut consumers: Vec<&str> = STATS
+            .lines()
+            .filter_map(|line| line.strip_prefix("  host lent carrier consumer: "))
+            .collect();
+        consumers.sort_unstable();
+        assert_eq!(
+            consumers,
+            [
+                "flight_attach_window_render_state",
+                "flight_begin_wgpu_render_pass",
+                "flight_create_wgpu_device_state",
+                "flight_create_wgpu_render_state",
+                "flight_create_wgpu_screen_render_target",
+                "flight_release_wgpu_acquisition",
+                "flight_resize_surface",
+                "flight_set_surface_display_size",
+            ]
+        );
+        for name in consumers {
+            let start = GENERATED
+                .find(&format!("pub unsafe extern \"C\" fn {name}("))
+                .unwrap();
+            let body = &GENERATED[start..start + GENERATED[start..].find("\n}\n").unwrap()];
+            assert!(body.contains("ffi_is_registry_token_shaped("), "{name}");
+        }
     }
 
     #[test]
