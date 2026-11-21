@@ -124,10 +124,6 @@ fn headless_host_section_links_and_runs_under_sanitizers() {
         false,
     ) {
         let stdout = String::from_utf8_lossy(&output.stdout);
-        if stdout.contains("skipped") {
-            eprintln!("SKIPPED headless_host_section_links_and_runs_under_sanitizers: {stdout}");
-            return;
-        }
         assert_eq!(stdout.trim(), "flight-ffi headless host: ok");
     }
 }
@@ -142,13 +138,6 @@ fn headless_host_sanitizer_probe_detects_a_leaked_adapter_name() {
         true,
         true,
     ) {
-        let stdout = String::from_utf8_lossy(&output.stdout);
-        if stdout.contains("skipped") {
-            eprintln!(
-                "SKIPPED headless_host_sanitizer_probe_detects_a_leaked_adapter_name: {stdout}"
-            );
-            return;
-        }
         let diagnostics = String::from_utf8_lossy(&output.stderr);
         assert!(
             !output.status.success(),
@@ -236,12 +225,6 @@ fn headless_render_from_c_matches_the_same_scene_rendered_through_rust() {
         return;
     };
     let stdout = String::from_utf8_lossy(&output.stdout);
-    if stdout.contains("skipped") {
-        eprintln!(
-            "SKIPPED headless_render_from_c_matches_the_same_scene_rendered_through_rust: {stdout}"
-        );
-        return;
-    }
     assert_eq!(stdout.trim(), "flight-ffi headless render: ok");
     let from_c = fs::read(&pixels).unwrap();
     let from_rust = headless_render::render_reference_scene(HEADLESS_RENDER_SVG)
@@ -289,11 +272,6 @@ fn headless_render_sanitizer_probe_detects_a_leaked_node() {
     ) else {
         return;
     };
-    let stdout = String::from_utf8_lossy(&output.stdout);
-    if stdout.contains("skipped") {
-        eprintln!("SKIPPED headless_render_sanitizer_probe_detects_a_leaked_node: {stdout}");
-        return;
-    }
     let diagnostics = String::from_utf8_lossy(&output.stderr);
     assert!(
         !output.status.success(),
@@ -586,10 +564,19 @@ fn z_compile_link_and_run_with_args(
         executable_command.env("ASAN_OPTIONS", "detect_leaks=1:halt_on_error=1");
         executable_command.env("UBSAN_OPTIONS", "halt_on_error=1:print_stacktrace=1");
     }
-    if deliberate_leak {
-        return Some(executable_command.output().unwrap());
-    }
-    return Some(run(&mut executable_command, "run the C consumer"));
+    let output = if deliberate_leak {
+        executable_command.output().unwrap()
+    } else {
+        run(&mut executable_command, "run the C consumer")
+    };
+    // With the software driver pinned there is always an adapter, so a host program that found
+    // none is a failure of the pin, never a skip.
+    assert!(
+        !host_section || !String::from_utf8_lossy(&output.stdout).contains("skipped"),
+        "{stem} found no adapter through the pinned software Vulkan driver: {}",
+        String::from_utf8_lossy(&output.stdout)
+    );
+    return Some(output);
 }
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]

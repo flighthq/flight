@@ -95,6 +95,7 @@ int main(void) {
     return 0;
   }
   CHECK(!flight_is_headless_host_destroyed(host));
+  CHECK(flight_is_headless_host_software_adapter(host));
   CHECK(take_nonempty_string(flight_get_headless_host_adapter_name(host)));
   CHECK(take_nonempty_string(flight_get_headless_host_adapter_backend(host)));
   void *ready = flight_explain_headless_host(NULL);
