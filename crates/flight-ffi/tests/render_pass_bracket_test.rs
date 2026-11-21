@@ -9,8 +9,8 @@
 mod render_pass_bracket;
 
 use render_pass_bracket::{
-    BORROW_ERASED_BRACKETS, BorrowErasedBracket, check_bracket_free_link, check_bracket_signature,
-    guard_bracket_state_wrappers, normalize_signature,
+    BORROW_ERASED_BRACKETS, BorrowErasedBracket, TEARDOWN_CONTRACT, check_bracket_free_link,
+    check_bracket_signature, guard_bracket_state_wrappers, normalize_signature,
 };
 
 const GENERATED: &str = include_str!(concat!(env!("OUT_DIR"), "/ffi_generated.rs"));
@@ -640,6 +640,45 @@ mod guard_bracket_state_wrappers {
         assert!(!z_between(&guarded, "fn f(", "\n}").contains("ffi_claim"));
         assert_eq!(guarded.matches("#[doc = \"flight-ffi contract|").count(), 5);
     }
+
+    #[test]
+    fn runs_each_teardown_inside_a_panic_boundary_after_the_claim() {
+        for teardown in BORROW_ERASED_BRACKETS[0].teardowns {
+            let body = z_between(GENERATED, &format!("fn {teardown}("), "\n}\n");
+            let claim = body
+                .find("let Some(_bracket_state_claim) = ffi_claim_wgpu_render_state(")
+                .unwrap_or_else(|| panic!("{teardown} skips the state claim"));
+            let boundary = body
+                .find("let _ = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {\n")
+                .unwrap_or_else(|| panic!("{teardown} lets a teardown panic reach C"));
+            let call = boundary + body[boundary..].find("    flight_sdk::").unwrap();
+            assert!(claim < boundary && boundary < call, "{teardown}: {body}");
+            assert!(body.trim_end().ends_with("}));"), "{teardown}: {body}");
+            let before = &GENERATED[..GENERATED.find(&format!("fn {teardown}(")).unwrap()];
+            let docs = &before[before.rfind("\n}\n").unwrap()..];
+            assert!(
+                docs.contains(TEARDOWN_CONTRACT),
+                "{teardown} lacks the teardown contract"
+            );
+        }
+        assert_eq!(
+            BORROW_ERASED_BRACKETS[0].teardowns,
+            [
+                "flight_destroy_wgpu_render_state",
+                "flight_destroy_wgpu_scene_2d_render"
+            ]
+        );
+        assert_eq!(GENERATED.matches(TEARDOWN_CONTRACT).count(), 2);
+    }
+
+    #[test]
+    fn wraps_only_the_named_teardowns_and_closes_each_boundary() {
+        let generated = "#[unsafe(no_mangle)]\npub unsafe extern \"C\" fn flight_destroy_wgpu_render_state(state: *mut flight_sdk::WgpuRenderState) {\n    teardown();\n}\n#[unsafe(no_mangle)]\npub unsafe extern \"C\" fn other(state: *mut flight_sdk::WgpuRenderState) {\n    other();\n}\n";
+        let (guarded, _) = guard_bracket_state_wrappers(generated, &BORROW_ERASED_BRACKETS[0]);
+        assert!(guarded.contains("let _ = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {\n    teardown();\n    }));\n}\n"));
+        assert!(!z_between(&guarded, "fn other(", "\n}").contains("catch_unwind"));
+        assert_eq!(guarded.matches(TEARDOWN_CONTRACT).count(), 1);
+    }
 }
 
 mod header {
@@ -830,6 +869,7 @@ fn z_bracket_copy() -> BorrowErasedBracket {
         ffi_end: bracket.ffi_end,
         ffi_free: bracket.ffi_free,
         consumers: bracket.consumers,
+        teardowns: bracket.teardowns,
     };
 }
 

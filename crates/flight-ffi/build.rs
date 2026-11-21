@@ -1727,6 +1727,12 @@ fn main() {
         let (guarded, names) =
             render_pass_bracket::guard_bracket_state_wrappers(&all_output, bracket);
         all_output = guarded;
+        for teardown in bracket.teardowns {
+            assert!(
+                names.iter().any(|name| name == teardown),
+                "bracket teardown {teardown} must name a generated state wrapper with no return value"
+            );
+        }
         bracket_state_wrappers.extend(names);
     }
     writeln!(all_output, "// registry tokens").unwrap();

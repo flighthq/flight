@@ -32,6 +32,10 @@ pub struct BorrowErasedBracket {
     pub ffi_end: &'static str,
     pub ffi_free: &'static str,
     pub consumers: &'static [BracketConsumer],
+    /// The state wrappers that tear the state down. Each runs its SDK call inside a panic boundary,
+    /// so a state a contained draw panic left poisoned or half-written is still destroyed and freed
+    /// through its own verbs instead of unwinding into C.
+    pub teardowns: &'static [&'static str],
 }
 
 /// One non-handle parameter after ordinary lowering: its C parameters, the bindings that convert
@@ -213,7 +217,9 @@ pub fn generate_bracket_support(
 /// Every wrapper in `generated` that takes the bracket's state outside the bracket, with a state
 /// claim inserted at the top of its body and the state contract added to its documentation. A
 /// guarded wrapper refuses a NULL state, a state inside another call and a state an open pass
-/// borrows, returning its failure value. Returns the guarded text and the guarded wrapper names.
+/// borrows, returning its failure value. A teardown wrapper also runs the rest of its body inside a
+/// panic boundary and carries the teardown contract. Returns the guarded text and the guarded
+/// wrapper names.
 pub fn guard_bracket_state_wrappers(
     generated: &str,
     bracket: &BorrowErasedBracket,
@@ -224,7 +230,12 @@ pub fn guard_bracket_state_wrappers(
     ];
     let mut out = String::with_capacity(generated.len());
     let mut guarded = Vec::new();
+    let mut in_teardown = false;
     for line in generated.split_inclusive('\n') {
+        if in_teardown && line == "}\n" {
+            out.push_str("    }));\n");
+            in_teardown = false;
+        }
         let Some(signature) = line.strip_prefix("pub unsafe extern \"C\" fn ") else {
             out.push_str(line);
             continue;
@@ -255,18 +266,30 @@ pub fn guard_bracket_state_wrappers(
             Some(ty) if ty.starts_with("*const ") => "return std::ptr::null();".to_string(),
             Some(_) => "return Default::default();".to_string(),
         };
+        let teardown = returns.is_empty() && bracket.teardowns.contains(&name);
         let attribute = "#[unsafe(no_mangle)]\n";
         if out.ends_with(attribute) {
             out.truncate(out.len() - attribute.len());
             out.push_str(&format!(
                 "#[doc = \"flight-ffi contract|{STATE_CONTRACT}\"]\n"
             ));
+            if teardown {
+                out.push_str(&format!(
+                    "#[doc = \"flight-ffi contract|{TEARDOWN_CONTRACT}\"]\n"
+                ));
+            }
             out.push_str(attribute);
         }
         out.push_str(line);
         out.push_str(&format!(
             "    let Some(_bracket_state_claim) = ffi_claim_wgpu_render_state({state_param}, true) else {{ {failure} }};\n"
         ));
+        if teardown {
+            out.push_str(
+                "    let _ = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {\n",
+            );
+            in_teardown = true;
+        }
         guarded.push(name.to_string());
     }
     return (out, guarded);
@@ -337,6 +360,10 @@ pub const BORROW_ERASED_BRACKETS: &[BorrowErasedBracket] = &[BorrowErasedBracket
             ffi_name: "flight_render_wgpu_environment_skybox",
         },
     ],
+    teardowns: &[
+        "flight_destroy_wgpu_render_state",
+        "flight_destroy_wgpu_scene_2d_render",
+    ],
 }];
 
 /// The header contract the begin wrapper carries.
@@ -350,6 +377,9 @@ pub const END_CONTRACT: &str = "Ends the open pass, restoring the state and subm
 
 /// The header contract the free wrapper carries.
 pub const FREE_CONTRACT: &str = "Releases a pass handle. NULL, an unknown or already released handle, or a pointer that is not a pass handle is a no-op: handles are registry tokens that are never reissued and never dereferenced. An open handle whose original pass is the innermost is ended first. Freeing is a no-op, and the handle stays open, while another call holds its state (including a call on the same handle from inside a draw) or while a pass opened natively is still open above it. An absent or replaced original pass is never ended; only the handle is released. A Rust panic inside the SDK end is contained and the handle is still released.";
+
+/// The header contract a teardown wrapper carries besides the state contract.
+pub const TEARDOWN_CONTRACT: &str = "Teardown completes even after a contained draw panic or device loss: a resource lock a panic poisoned is recovered, and a Rust panic inside the teardown is contained. Teardown runs once; a state it already tore down is left as it is, and the state is still freed by its own free function.";
 
 /// The header contract every other wrapper that takes the bracket's state carries.
 pub const STATE_CONTRACT: &str = "Returns without touching state, with its failure value where it returns one, when state is NULL, another call on any thread holds state, or an open render pass handle borrows state.";
