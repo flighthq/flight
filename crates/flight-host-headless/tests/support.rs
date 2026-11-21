@@ -59,9 +59,16 @@ pub fn create_known_scene_expected_bitmap() -> Bitmap {
 /// renderers, prepare, begin pass, render, end pass, submit) into the host's capture-enabled render
 /// target, and returns its screen target.
 pub fn render_known_scene(host: &HeadlessHost) -> Ref<WgpuScreenRenderTarget> {
+    let mut state = create_known_scene_render_state(get_headless_host_wgpu_device(host).unwrap());
+    let target = create_headless_host_render_target(host, SCENE_WIDTH, SCENE_HEIGHT).unwrap();
+    return render_known_scene_with(&mut state, &target);
+}
+
+/// A render state over `device` with the known scene's renderers registered.
+pub fn create_known_scene_render_state(device: &flight_host::WgpuDevice) -> WgpuRenderState {
     let format = wgpu::TextureFormat::Rgba8Unorm;
     let mut state = create_wgpu_render_state(
-        get_headless_host_wgpu_device(host),
+        device,
         Some(&WgpuRenderStateOptions {
             format: Some(format),
             ..test_default()
@@ -71,7 +78,15 @@ pub fn render_known_scene(host: &HeadlessHost) -> Ref<WgpuScreenRenderTarget> {
     register_wgpu_bitmap_texture_resolver(&mut state);
     register_wgpu_scene2d_renderer(&mut state);
     register_wgpu_sprite_renderer(&mut state);
+    return state;
+}
 
+/// Renders the known scene through `state` into `target`, a headless screen target, and returns
+/// that screen target.
+pub fn render_known_scene_with(
+    state: &mut WgpuRenderState,
+    target: &WgpuRenderTarget,
+) -> Ref<WgpuScreenRenderTarget> {
     let root: NodeRef = create_display_object();
     for (color, x, y, width, height) in SCENE_SPRITES {
         let sprite = create_sprite();
@@ -85,18 +100,17 @@ pub fn render_known_scene(host: &HeadlessHost) -> Ref<WgpuScreenRenderTarget> {
         add_node_child(&root, &node);
     }
 
-    let target = create_headless_host_render_target(host, SCENE_WIDTH, SCENE_HEIGHT);
-    let WgpuRenderTarget::Screen(screen) = &target else {
+    let WgpuRenderTarget::Screen(screen) = target else {
         panic!("a headless render target is a screen target");
     };
     let screen = screen.clone();
 
     let mut proxies: RenderProxies2D<WgpuRenderState> = test_default();
-    prepare_scene_2d_render(&mut state, &mut proxies, &root);
+    prepare_scene_2d_render(state, &mut proxies, &root);
     let [red, green, blue, alpha] = SCENE_CLEAR.to_be_bytes();
     let mut pass = begin_wgpu_render_pass(
-        &mut state,
-        &target,
+        state,
+        target,
         Some(&RenderTargetClear {
             color: Some([
                 f32::from(red) / 255.0,
@@ -111,7 +125,7 @@ pub fn render_known_scene(host: &HeadlessHost) -> Ref<WgpuScreenRenderTarget> {
     );
     render_wgpu_scene2d(&mut pass, &mut proxies, &root, None);
     end_wgpu_render_pass(pass);
-    submit_wgpu_frame(&mut state);
+    submit_wgpu_frame(state);
     return screen;
 }
 

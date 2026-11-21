@@ -6,7 +6,7 @@ use crate::support::*;
 // The presentation extent the SDK reads from a surface the host's capability acquired.
 fn acquired_extent(host: &HeadlessHost, width: u32, height: u32) -> (f32, f32) {
     let surface = create_headless_host_surface(host, width, height);
-    let capability = get_headless_host_wgpu_capability(host);
+    let capability = get_headless_host_wgpu_capability(host).unwrap();
     let acquired = pollster::block_on(create_wgpu_acquisition(capability, &surface, None))
         .expect("an immediate acquisition");
     let extent = ((acquired.surface.width)(), (acquired.surface.height)());

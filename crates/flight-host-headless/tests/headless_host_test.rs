@@ -56,8 +56,8 @@ mod create_bitmap_from_headless_screen_render_target {
         };
         let surface = create_headless_host_surface(&host, 4, 4);
         let screen = create_wgpu_screen_render_target(
-            get_headless_host_wgpu_capability(&host),
-            get_headless_host_wgpu_device(&host),
+            get_headless_host_wgpu_capability(&host).unwrap(),
+            get_headless_host_wgpu_device(&host).unwrap(),
             &surface,
             None,
         );
@@ -78,7 +78,7 @@ mod create_headless_host {
         else {
             return;
         };
-        let state = create_wgpu_render_state(get_headless_host_wgpu_device(&host), None);
+        let state = create_wgpu_render_state(get_headless_host_wgpu_device(&host).unwrap(), None);
         let native = get_wgpu_render_state_native_device(&state);
         let texture = native.device.create_texture(&wgpu::TextureDescriptor {
             label: None,
@@ -157,7 +157,7 @@ mod create_headless_host_render_target {
         ) else {
             return;
         };
-        let target = create_headless_host_render_target(&host, 20, 12);
+        let target = create_headless_host_render_target(&host, 20, 12).unwrap();
         let WgpuRenderTarget::Screen(screen) = &target else {
             panic!("a headless render target is a screen target");
         };
@@ -177,31 +177,76 @@ mod destroy_headless_host {
     use super::*;
 
     #[test]
-    fn destroys_the_device_once_and_marks_the_host() {
+    fn keeps_a_render_state_built_over_the_device_drawing_the_known_scene() {
+        let Some(mut host) = create_test_headless_host(
+            "keeps_a_render_state_built_over_the_device_drawing_the_known_scene",
+        ) else {
+            return;
+        };
+        let mut state =
+            create_known_scene_render_state(get_headless_host_wgpu_device(&host).unwrap());
+        let target = create_headless_host_render_target(&host, SCENE_WIDTH, SCENE_HEIGHT).unwrap();
+        destroy_headless_host(&mut host);
+        drop(host);
+        let screen = render_known_scene_with(&mut state, &target);
+        let actual = create_bitmap_from_headless_screen_render_target(&screen, Some(10_000))
+            .expect("the state's frame reads back after its host is destroyed");
+        assert_eq!(actual.data, create_known_scene_expected_bitmap().data);
+        assert!(get_wgpu_device_loss(&state).is_none());
+        let mut proxies = test_default();
+        destroy_wgpu_render_state(&mut state, &mut proxies);
+    }
+
+    #[test]
+    fn lends_nothing_afterwards_and_is_a_no_op_twice() {
         let Some(mut host) =
-            create_test_headless_host("destroys_the_device_once_and_marks_the_host")
+            create_test_headless_host("lends_nothing_afterwards_and_is_a_no_op_twice")
         else {
             return;
         };
-        let state = create_wgpu_render_state(get_headless_host_wgpu_device(&host), None);
         destroy_headless_host(&mut host);
         destroy_headless_host(&mut host);
         assert!(is_headless_host_destroyed(&host));
-        // The loss settles through the host's spawned continuation; give it a bounded while.
-        let native = get_wgpu_render_state_native_device(&state);
-        let deadline = std::time::Instant::now() + std::time::Duration::from_secs(10);
-        let lost = loop {
-            let _ = native.device.poll(wgpu::PollType::Poll);
-            if let Some(lost) = get_wgpu_device_loss(&state) {
-                break lost;
-            }
-            assert!(
-                std::time::Instant::now() < deadline,
-                "the loss never settled"
-            );
-            std::thread::sleep(std::time::Duration::from_millis(5));
+        assert!(get_headless_host_wgpu_device(&host).is_none());
+        assert!(get_headless_host_wgpu_capability(&host).is_none());
+        assert!(create_headless_host_render_target(&host, 4, 4).is_none());
+    }
+
+    // The device's lost callback lives as long as the device: a guard captured in it drops exactly
+    // when wgpu frees the device, so it observes teardown without destroying anything.
+    #[test]
+    fn tears_the_device_down_only_when_its_last_dependent_drops() {
+        let Some(mut host) =
+            create_test_headless_host("tears_the_device_down_only_when_its_last_dependent_drops")
+        else {
+            return;
         };
-        assert_eq!(lost.reason, WgpuDeviceLostReason::Destroyed);
+        let mut state =
+            create_known_scene_render_state(get_headless_host_wgpu_device(&host).unwrap());
+        let freed = Arc::new(std::sync::atomic::AtomicBool::new(false));
+        let guard = z_device_freed_guard(freed.clone());
+        get_wgpu_render_state_native_device(&state)
+            .device
+            .set_device_lost_callback(move |_, _| {
+                let _ = &guard;
+            });
+        let target = create_headless_host_render_target(&host, SCENE_WIDTH, SCENE_HEIGHT).unwrap();
+        render_known_scene_with(&mut state, &target);
+        destroy_headless_host(&mut host);
+        drop(host);
+        assert!(!z_is_device_freed(&state, &freed));
+        drop(target);
+        assert!(!z_is_device_freed(&state, &freed));
+        let mut proxies = test_default();
+        destroy_wgpu_render_state(&mut state, &mut proxies);
+        let native = get_wgpu_render_state_native_device(&state);
+        let _ = native.device.poll(wgpu::PollType::wait_indefinitely());
+        drop(native);
+        drop(state);
+        assert!(
+            freed.load(std::sync::atomic::Ordering::SeqCst),
+            "the device outlived its last dependent"
+        );
     }
 }
 
@@ -254,7 +299,7 @@ mod get_headless_host_wgpu_capability {
             return;
         };
         let surface = create_headless_host_surface(&host, 32, 16);
-        let capability = get_headless_host_wgpu_capability(&host);
+        let capability = get_headless_host_wgpu_capability(&host).unwrap();
         assert!((capability.is_supported)());
         let acquired = pollster::block_on(create_wgpu_acquisition(
             capability,
@@ -267,7 +312,7 @@ mod get_headless_host_wgpu_capability {
         .expect("an immediate acquisition");
         assert!(Arc::ptr_eq(
             &acquired.device.handle,
-            &get_headless_host_wgpu_device(&host).handle
+            &get_headless_host_wgpu_device(&host).unwrap().handle
         ));
         assert_eq!(acquired.format, "rgba8unorm");
         assert_eq!(
@@ -287,12 +332,12 @@ mod get_headless_host_wgpu_capability {
         };
         let foreign: flight_surface::SurfaceRef =
             flight_surface::allocate_surface::<flight_surface::SurfaceBase>(None);
-        let capability = get_headless_host_wgpu_capability(&host);
+        let capability = get_headless_host_wgpu_capability(&host).unwrap();
         let attached = (capability.attach_surface)(
             &foreign,
             &flight_surface::WgpuSurfaceAttachment {
                 alpha_mode: flight_surface::GpuCanvasAlphaMode::Premultiplied,
-                device: get_headless_host_wgpu_device(&host).clone(),
+                device: get_headless_host_wgpu_device(&host).unwrap().clone(),
                 format: "rgba8unorm".to_string(),
             },
         );
@@ -310,7 +355,7 @@ mod get_headless_host_wgpu_device {
         else {
             return;
         };
-        let device = get_headless_host_wgpu_device(&host);
+        let device = get_headless_host_wgpu_device(&host).unwrap();
         assert!(device.handle.downcast_ref::<WgpuNativeDevice>().is_some());
         destroy_headless_host(&mut host);
     }
@@ -352,4 +397,29 @@ mod is_headless_host_software_adapter {
         }
         destroy_headless_host(&mut host);
     }
+}
+
+struct ZDeviceFreedGuard(Arc<std::sync::atomic::AtomicBool>);
+
+impl Drop for ZDeviceFreedGuard {
+    fn drop(&mut self) {
+        z_mark_device_freed(self);
+    }
+}
+
+fn z_device_freed_guard(freed: Arc<std::sync::atomic::AtomicBool>) -> ZDeviceFreedGuard {
+    return ZDeviceFreedGuard(freed);
+}
+
+// Whether the device behind `state` was freed, after letting its queue settle.
+fn z_is_device_freed(state: &WgpuRenderState, freed: &std::sync::atomic::AtomicBool) -> bool {
+    let _ = get_wgpu_render_state_native_device(state)
+        .device
+        .poll(wgpu::PollType::wait_indefinitely());
+    return freed.load(std::sync::atomic::Ordering::SeqCst);
+}
+
+// Records that the device the guard watches was freed.
+fn z_mark_device_freed(guard: &ZDeviceFreedGuard) {
+    guard.0.store(true, std::sync::atomic::Ordering::SeqCst);
 }

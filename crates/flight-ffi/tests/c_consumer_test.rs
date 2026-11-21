@@ -128,6 +128,23 @@ fn headless_host_section_links_and_runs_under_sanitizers() {
     }
 }
 
+// Render objects outliving their host, under the sanitizers: a pass open on a non-empty scene
+// across the destroy, and states drawing on other threads while it happens.
+#[cfg(feature = "host-headless")]
+#[test]
+fn headless_teardown_outlives_its_host_under_sanitizers() {
+    if let Some(output) = z_compile_link_and_run_against(
+        Library::HostHeadless,
+        "headless_teardown.c",
+        "headless_teardown",
+        true,
+        false,
+    ) {
+        let stdout = String::from_utf8_lossy(&output.stdout);
+        assert_eq!(stdout.trim(), "flight-ffi headless teardown: ok");
+    }
+}
+
 #[cfg(feature = "host-headless")]
 #[test]
 fn headless_host_sanitizer_probe_detects_a_leaked_adapter_name() {
@@ -629,9 +646,10 @@ mod headless_render {
     // flight-lint: allow(f64) the SDK's 2D node transform fields are f64
     pub fn render_reference_scene(svg: &str) -> Option<Vec<u8>> {
         let mut host = flight_host_headless::create_headless_host(None)?;
-        let target = flight_host_headless::create_headless_host_render_target(&host, WIDTH, HEIGHT);
+        let target =
+            flight_host_headless::create_headless_host_render_target(&host, WIDTH, HEIGHT)?;
         let mut state = flight_sdk::render_wgpu::contract::create_wgpu_render_state(
-            flight_host_headless::get_headless_host_wgpu_device(&host),
+            flight_host_headless::get_headless_host_wgpu_device(&host)?,
             None,
         );
         flight_sdk::scene2d_wgpu::contract::register_wgpu_standard_material(&mut state);

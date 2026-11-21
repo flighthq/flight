@@ -303,7 +303,7 @@ struct HostWrapper {
 // names a host entry, and a lent device, capability, surface or render target handle names a lent
 // carrier the host still holds. A consumer resolves a lent handle to a clone of the carrier, which
 // owns its shared GPU handles for the length of the call, so nothing reads through a pointer the
-// caller supplied. Destroying a host first removes every handle it lent, then frees its resources,
+// caller supplied. Destroying a host first removes every handle it lent, then releases its resources,
 // so a handle used afterwards, or one forged, stale, of another family or of another host's
 // destroyed carrier, resolves to nothing and the call returns its failure value.
 const HEADLESS_SUPPORT_TEMPLATE: &str = r#"// native host: flight-host-headless
@@ -411,13 +411,17 @@ fn ffi_take_headless_host(token: usize) -> Option<(FfiHeadlessHostEntry, Vec<Ffi
     let carriers = entry.lent.iter().filter_map(|handle| registry.lent.remove(handle)).collect();
     return Some((entry, carriers));
 }
-// Frees what a destroyed host lent and then its device: each screen target releases its GPU
-// textures now, every other carrier drops, and the host destroys its device. Clones a call still
-// holds keep their shared handles alive until that call returns.
+// Releases what a destroyed host lent, then the host's share of its device. A screen target nothing
+// else holds has its GPU textures freed now; one an open pass or an in-flight call still holds is
+// only dropped here, and its last holder frees it, so no GPU storage is destroyed under a user. The
+// device is never destroyed explicitly: it is torn down when the last render state, pass or target
+// built over it drops.
 fn ffi_destroy_headless_host_entry(mut entry: FfiHeadlessHostEntry, carriers: Vec<FfiHeadlessLent>) {
     for carrier in carriers {
-        if let FfiHeadlessLent::RenderTarget(flight_sdk::WgpuRenderTarget::Screen(screen)) = carrier {
-            flight_sdk::destroy_wgpu_screen_render_target(&mut screen.write().unwrap_or_else(std::sync::PoisonError::into_inner));
+        if let FfiHeadlessLent::RenderTarget(flight_sdk::WgpuRenderTarget::Screen(screen)) = carrier
+            && let Ok(screen) = std::sync::Arc::try_unwrap(screen)
+        {
+            flight_sdk::destroy_wgpu_screen_render_target(&mut screen.into_inner().unwrap_or_else(std::sync::PoisonError::into_inner));
         }
     }
     flight_host_headless::destroy_headless_host(&mut entry.host);
@@ -505,10 +509,13 @@ pub unsafe extern "C" fn flight_create_headless_host(options: *const flight_host
     let Ok(Some(host)) = created else {
         return std::ptr::null_mut();
     };
-    let lent = [
-        FfiHeadlessLent::Device(flight_host_headless::get_headless_host_wgpu_device(&host).clone()),
-        FfiHeadlessLent::Capability(flight_host_headless::get_headless_host_wgpu_capability(&host).clone()),
-    ];
+    let (Some(device), Some(capability)) = (
+        flight_host_headless::get_headless_host_wgpu_device(&host).cloned(),
+        flight_host_headless::get_headless_host_wgpu_capability(&host).cloned(),
+    ) else {
+        return std::ptr::null_mut();
+    };
+    let lent = [FfiHeadlessLent::Device(device), FfiHeadlessLent::Capability(capability)];
     let mut entry = FfiHeadlessHostEntry {
         host: Box::new(host),
         capability: 0,
@@ -553,7 +560,7 @@ pub unsafe extern "C" fn flight_create_headless_host_options() -> *mut flight_ho
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn flight_create_headless_host_render_target(host: *mut FfiHeadlessHostHandle, width: u32, height: u32) -> *const flight_sdk::WgpuRenderTarget {
     let lent = ffi_with_headless_host(host, |registry, token| {
-        let target = flight_host_headless::create_headless_host_render_target(&registry.hosts[&token].host, width, height);
+        let target = flight_host_headless::create_headless_host_render_target(&registry.hosts[&token].host, width, height)?;
         return ffi_lend_headless_carrier(registry, token, FFI_HEADLESS_RENDER_TARGET_TOKEN_TAG, FfiHeadlessLent::RenderTarget(target));
     });
     return lent.flatten().map_or(std::ptr::null(), std::ptr::without_provenance);
@@ -576,7 +583,7 @@ pub unsafe extern "C" fn flight_create_headless_host_surface(host: *mut FfiHeadl
     HostWrapper {
         name: "flight_destroy_headless_host",
         surface: true,
-        source: r#"#[doc = "flight-ffi contract|Frees the host now: every surface and render target it lent is released (each target's GPU textures at once) and then its device is destroyed. Every handle it lent stops resolving before anything is freed, so a lent device, capability, surface or target used afterwards makes its consumer return its failure value; render states built over the device stay valid values that observe device loss. NULL, a destroyed, unknown or foreign handle is a no-op, so destroying twice is safe. Headless host calls may come from any thread: one registry lock serializes them, and read-back blocks only its caller. A Rust panic inside the host is contained and returns the call's failure value."]
+        source: r#"#[doc = "flight-ffi contract|Destroys the host now. Every handle it lent stops resolving before anything is released, so a lent device, capability, surface or target used afterwards makes its consumer return its failure value. Each surface and render target it lent is released: a target no open pass or in-flight call holds has its GPU textures freed at once, and one still held is freed by its last holder. The host then releases its share of the device, which is never destroyed under a dependent: render states, passes and targets built over it keep the device alive, finish or fail through their own calls, and are destroyed normally; the device is torn down when the last of them is freed. NULL, a destroyed, unknown or foreign handle is a no-op, so destroying twice is safe. Headless host calls may come from any thread: one registry lock serializes them, and read-back blocks only its caller. A Rust panic inside the host is contained and returns the call's failure value."]
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn flight_destroy_headless_host(host: *mut FfiHeadlessHostHandle) {
     let Some((entry, carriers)) = ffi_take_headless_host(host.addr()) else {

@@ -1,12 +1,14 @@
 use std::ffi::{CStr, c_char};
 use std::future::Future;
 use std::ptr::{NonNull, null, null_mut};
+use std::sync::atomic::Ordering;
 use std::sync::{Arc, Barrier, Mutex, RwLock};
 use std::task::{Context, Poll, Waker};
 
 use flight_sdk::render_wgpu::contract::{
     WgpuRenderStateOptions, WgpuRenderTarget, begin_wgpu_render_pass, create_wgpu_render_state,
-    end_wgpu_render_pass, register_wgpu_bitmap_texture_resolver, submit_wgpu_frame,
+    end_wgpu_render_pass, get_wgpu_render_state_native_device,
+    register_wgpu_bitmap_texture_resolver, register_wgpu_render_state_teardown, submit_wgpu_frame,
 };
 use flight_sdk::scene2d_wgpu::contract::{
     register_wgpu_scene2d_renderer, register_wgpu_sprite_renderer, register_wgpu_standard_material,
@@ -327,48 +329,322 @@ mod flight_destroy_headless_host {
 mod flight_destroy_headless_host_resources {
     use super::*;
 
-    // Destroying the host releases a lent target's GPU resources at once and destroys the
-    // device, which a render state built over the lent device observes as device loss.
+    // A lent target nothing else holds is freed with its host.
     #[test]
-    fn releases_the_target_capture_and_destroys_the_device() {
-        let Some(host) = create_test_host("releases_the_target_capture_and_destroys_the_device")
-        else {
+    fn frees_a_target_nothing_else_holds_at_once() {
+        let Some(host) = create_test_host("frees_a_target_nothing_else_holds_at_once") else {
             return;
         };
         let target =
             unsafe { flight_create_headless_host_render_target(host, SCENE_WIDTH, SCENE_HEIGHT) };
         let device = unsafe { flight_get_headless_host_wgpu_device(host) };
         render_known_scene(&lent_device(device), &lent_target(target));
-        let lent = lent_target(target);
-        let WgpuRenderTarget::Screen(screen) = &lent else {
+        let screen = match lent_target(target) {
+            WgpuRenderTarget::Screen(screen) => Arc::downgrade(&screen),
+            WgpuRenderTarget::Texture(_) => panic!("a lent render target is a screen target"),
+        };
+        unsafe { flight_destroy_headless_host(host) };
+        assert!(screen.upgrade().is_none(), "the host kept its target alive");
+    }
+
+    // Destroying the host never destroys GPU storage under a dependent: a target and a device a
+    // caller still holds keep working, and the device is torn down when the last of them drops.
+    #[test]
+    fn leaves_held_render_objects_drawing_and_frees_the_device_after_the_last() {
+        let Some(host) = create_test_host(
+            "leaves_held_render_objects_drawing_and_frees_the_device_after_the_last",
+        ) else {
+            return;
+        };
+        let target = lent_target(unsafe {
+            flight_create_headless_host_render_target(host, SCENE_WIDTH, SCENE_HEIGHT)
+        });
+        let device = lent_device(unsafe { flight_get_headless_host_wgpu_device(host) });
+        let freed = watch_device_freed(&device);
+        render_known_scene(&device, &target);
+        unsafe { flight_destroy_headless_host(host) };
+        let WgpuRenderTarget::Screen(screen) = &target else {
             panic!("a lent render target is a screen target");
         };
-        let screen = screen.clone();
-        assert!(screen.read().unwrap().capture_buffer.is_some());
-        let state = create_wgpu_render_state(&lent_device(device), None);
-        unsafe { flight_destroy_headless_host(host) };
-        {
-            let screen = screen.read().unwrap();
-            assert!(screen.capture_buffer.is_none() && screen.capture_texture.is_none());
-            assert!(screen.presentation_view.is_none());
-        }
-        let native = flight_sdk::render_wgpu::contract::get_wgpu_render_state_native_device(&state);
-        let deadline = std::time::Instant::now() + std::time::Duration::from_secs(10);
-        let lost = loop {
-            let _ = native.device.poll(wgpu::PollType::Poll);
-            if let Some(lost) = flight_sdk::render_wgpu::contract::get_wgpu_device_loss(&state) {
-                break lost;
-            }
-            assert!(
-                std::time::Instant::now() < deadline,
-                "the device loss never settled"
-            );
-            std::thread::sleep(std::time::Duration::from_millis(5));
-        };
+        assert!(screen.read().unwrap().capture_texture.is_some());
+        render_known_scene(&device, &target);
+        let bitmap = block_on(
+            flight_sdk::render_wgpu::contract::create_bitmap_from_wgpu_screen_render_target(
+                screen,
+                Some(10_000),
+            ),
+        )
+        .expect("a held target reads back after its host is destroyed");
         assert_eq!(
-            lost.reason,
-            flight_sdk::render_wgpu::contract::WgpuDeviceLostReason::Destroyed
+            count_mismatched_pixels(&bitmap, &create_known_scene_pixels(), 0),
+            0
         );
+        assert!(!is_device_freed(&device, &freed));
+        drop(target);
+        assert!(!is_device_freed(&device, &freed));
+        let native = get_wgpu_render_state_native_device_of(&device);
+        drop(device);
+        let _ = native.device.poll(wgpu::PollType::wait_indefinitely());
+        drop(native);
+        assert!(
+            freed.load(Ordering::SeqCst),
+            "the device outlived its last dependent"
+        );
+    }
+
+    // The reviewer's chain: a pass open on a non-empty scene when the host is destroyed draws,
+    // ends and submits through the C ABI, its frame is the known one, and the state tears down.
+    #[test]
+    fn finishes_an_open_non_empty_pass_and_tears_its_state_down() {
+        let Some(host) =
+            create_test_host("finishes_an_open_non_empty_pass_and_tears_its_state_down")
+        else {
+            return;
+        };
+        let target =
+            unsafe { flight_create_headless_host_render_target(host, SCENE_WIDTH, SCENE_HEIGHT) };
+        let device = unsafe { flight_get_headless_host_wgpu_device(host) };
+        let WgpuRenderTarget::Screen(screen) = lent_target(target) else {
+            panic!("a lent render target is a screen target");
+        };
+        let scene = create_c_scene(device, create_known_scene_root());
+        let pass =
+            unsafe { flight_begin_wgpu_render_pass(scene.state, target, &known_scene_clear()) };
+        assert!(!pass.is_null());
+        unsafe { flight_destroy_headless_host(host) };
+        assert!(unsafe {
+            flight_render_wgpu_scene2d(pass, scene.proxies.cast(), &*scene.source, null())
+        });
+        assert!(unsafe { flight_end_wgpu_render_pass(pass) });
+        unsafe { flight_free_wgpu_render_pass_handle(pass) };
+        unsafe { flight_submit_wgpu_frame(scene.state) };
+        let bitmap = block_on(
+            flight_sdk::render_wgpu::contract::create_bitmap_from_wgpu_screen_render_target(
+                &screen,
+                Some(10_000),
+            ),
+        )
+        .expect("the pass's frame reads back");
+        assert_eq!(
+            count_mismatched_pixels(&bitmap, &create_known_scene_pixels(), 0),
+            0
+        );
+        assert!(unsafe { flight_begin_wgpu_render_pass(scene.state, target, null()) }.is_null());
+        free_c_scene(scene);
+    }
+}
+
+mod flight_destroy_wgpu_render_state {
+    use super::*;
+
+    // Real device loss under an open pass: the draw's validation panic is contained and poisons the
+    // shape cache it was writing, yet the state still tears down and frees.
+    #[test]
+    fn tears_down_after_device_loss_poisons_a_shape_cache_mid_draw() {
+        let Some(host) =
+            create_test_host("tears_down_after_device_loss_poisons_a_shape_cache_mid_draw")
+        else {
+            return;
+        };
+        let target = unsafe { flight_create_headless_host_render_target(host, 8, 8) };
+        let device = unsafe { flight_get_headless_host_wgpu_device(host) };
+        let scene = create_c_scene(device, create_svg_scene_root());
+        let pass = unsafe { flight_begin_wgpu_render_pass(scene.state, target, null()) };
+        assert!(!pass.is_null());
+        get_wgpu_render_state_native_device(unsafe { &*scene.state })
+            .device
+            .destroy();
+        assert!(!unsafe {
+            flight_render_wgpu_scene2d(pass, scene.proxies.cast(), &*scene.source, null())
+        });
+        assert!(
+            count_poisoned_renderer_data(&scene) > 0,
+            "the loss never reached a renderer cache"
+        );
+        unsafe { flight_end_wgpu_render_pass(pass) };
+        unsafe { flight_free_wgpu_render_pass_handle(pass) };
+        unsafe { flight_submit_wgpu_frame(scene.state) };
+        unsafe { flight_destroy_wgpu_render_state(scene.state, scene.proxies.cast()) };
+        assert!(
+            flight_sdk::render_wgpu::contract::get_wgpu_render_state_runtime(unsafe {
+                &*scene.state
+            })
+            .destroyed
+        );
+        assert!(
+            unsafe { &*scene.proxies }
+                .entries
+                .iter()
+                .all(Option::is_none)
+        );
+        free_c_scene(scene);
+        unsafe { flight_destroy_headless_host(host) };
+    }
+
+    // A panic during a buffer write, with the device still live, leaves the cache and every other
+    // lock teardown takes poisoned; the teardown recovers each one, destroys the buffers the cache
+    // holds and releases the state's share of the device runtime.
+    #[test]
+    fn recovers_a_cache_a_panic_poisoned_during_its_buffer_write() {
+        let Some(host) =
+            create_test_host("recovers_a_cache_a_panic_poisoned_during_its_buffer_write")
+        else {
+            return;
+        };
+        let target = unsafe { flight_create_headless_host_render_target(host, 8, 8) };
+        let device = unsafe { flight_get_headless_host_wgpu_device(host) };
+        let scene = create_c_scene(device, create_svg_scene_root());
+        let pass = unsafe { flight_begin_wgpu_render_pass(scene.state, target, null()) };
+        assert!(unsafe {
+            flight_render_wgpu_scene2d(pass, scene.proxies.cast(), &*scene.source, null())
+        });
+        assert!(unsafe { flight_end_wgpu_render_pass(pass) });
+        unsafe { flight_free_wgpu_render_pass_handle(pass) };
+        let data = renderer_data(&scene);
+        assert!(!data.is_empty());
+        let native = get_wgpu_render_state_native_device(unsafe { &*scene.state });
+        for data in &data {
+            poison(data);
+        }
+        let runtime = flight_sdk::render_wgpu::contract::get_wgpu_render_state_runtime(unsafe {
+            &*scene.state
+        });
+        let context = runtime.context.clone();
+        poison(&context);
+        let render_runtime = flight_sdk::RenderState::render_runtime(unsafe { &*scene.state });
+        let misses = render_runtime.registry_misses.clone();
+        poison(&misses);
+        poison(&render_runtime.registry_guard_log.clone());
+        let buffers: Vec<wgpu::Buffer> = data.iter().flat_map(shape_buffers).collect();
+        assert!(!buffers.is_empty());
+        unsafe { flight_destroy_wgpu_render_state(scene.state, scene.proxies.cast()) };
+        assert!(
+            flight_sdk::render_wgpu::contract::get_wgpu_render_state_runtime(unsafe {
+                &*scene.state
+            })
+            .destroyed
+        );
+        for buffer in &buffers {
+            let error = capture_validation_error(&native, || {
+                native.queue.write_buffer(buffer, 0, &[0; 4]);
+            });
+            assert!(
+                error.is_some(),
+                "a poisoned cache's buffer survived teardown"
+            );
+        }
+        assert_eq!(
+            context
+                .read()
+                .unwrap_or_else(std::sync::PoisonError::into_inner)
+                .references,
+            0
+        );
+        drop(native);
+        free_c_scene(scene);
+        unsafe { flight_destroy_headless_host(host) };
+    }
+
+    // A panic inside teardown stays on the Rust side: the call returns, the state is torn down
+    // once, a second destroy is a no-op, and the state still frees.
+    #[test]
+    fn contains_a_teardown_panic_and_tears_down_once() {
+        let Some(host) = create_test_host("contains_a_teardown_panic_and_tears_down_once") else {
+            return;
+        };
+        let device = unsafe { flight_get_headless_host_wgpu_device(host) };
+        let scene = create_c_scene(device, create_svg_scene_root());
+        let runs = Arc::new(std::sync::atomic::AtomicUsize::new(0));
+        let counted = runs.clone();
+        register_wgpu_render_state_teardown(
+            unsafe { &mut *scene.state },
+            Arc::new(move |_state: &mut flight_sdk::WgpuRenderState| {
+                counted.fetch_add(1, Ordering::SeqCst);
+                panic!("a teardown failed");
+            }),
+        );
+        unsafe { flight_destroy_wgpu_render_state(scene.state, scene.proxies.cast()) };
+        unsafe { flight_destroy_wgpu_render_state(scene.state, scene.proxies.cast()) };
+        assert_eq!(runs.load(Ordering::SeqCst), 1);
+        assert!(
+            flight_sdk::render_wgpu::contract::get_wgpu_render_state_runtime(unsafe {
+                &*scene.state
+            })
+            .destroyed
+        );
+        free_c_scene(scene);
+        unsafe { flight_destroy_headless_host(host) };
+    }
+
+    // Draws on states over a lent device race the host's destroy, repeatedly: every call returns,
+    // and every state tears down and frees.
+    #[test]
+    fn tears_down_states_whose_draws_race_a_host_destroy() {
+        if create_test_host("tears_down_states_whose_draws_race_a_host_destroy")
+            .map(|host| unsafe { flight_destroy_headless_host(host) })
+            .is_none()
+        {
+            return;
+        }
+        for round in 0..20 {
+            let host = unsafe { flight_create_headless_host(null()) };
+            let device = unsafe { flight_get_headless_host_wgpu_device(host) }.addr();
+            let target = unsafe { flight_create_headless_host_render_target(host, 8, 8) }.addr();
+            let barrier = Arc::new(Barrier::new(4));
+            let workers: Vec<_> = (0..3)
+                .map(|_| {
+                    let barrier = barrier.clone();
+                    std::thread::spawn(move || {
+                        barrier.wait();
+                        for _ in 0..6 {
+                            let scene = create_c_scene(
+                                std::ptr::without_provenance(device),
+                                create_svg_scene_root(),
+                            );
+                            if scene.state.is_null() {
+                                continue;
+                            }
+                            let pass = unsafe {
+                                flight_begin_wgpu_render_pass(
+                                    scene.state,
+                                    std::ptr::without_provenance(target),
+                                    null(),
+                                )
+                            };
+                            if !pass.is_null() {
+                                unsafe {
+                                    flight_render_wgpu_scene2d(
+                                        pass,
+                                        scene.proxies.cast(),
+                                        &*scene.source,
+                                        null(),
+                                    );
+                                    flight_end_wgpu_render_pass(pass);
+                                    flight_free_wgpu_render_pass_handle(pass);
+                                    flight_submit_wgpu_frame(scene.state);
+                                }
+                            }
+                            unsafe {
+                                flight_destroy_wgpu_render_state(scene.state, scene.proxies.cast())
+                            };
+                            assert!(
+                                flight_sdk::render_wgpu::contract::get_wgpu_render_state_runtime(
+                                    unsafe { &*scene.state }
+                                )
+                                .destroyed
+                            );
+                            free_c_scene(scene);
+                        }
+                    })
+                })
+                .collect();
+            barrier.wait();
+            std::thread::sleep(std::time::Duration::from_millis(round % 5));
+            unsafe { flight_destroy_headless_host(host) };
+            for worker in workers {
+                worker.join().unwrap();
+            }
+        }
     }
 }
 
@@ -779,6 +1055,39 @@ mod inject_headless_host_fault {
     }
 }
 
+// A render state over a lent device handle, made the way a C caller makes one, with the 2D preset
+// and the known scene's renderers registered, its proxies prepared for `root`, and the FlightNode
+// handle a C caller would hold for `root`. `state` is NULL when the device no longer resolves.
+struct CScene {
+    state: *mut flight_sdk::WgpuRenderState,
+    proxies: *mut flight_sdk::RenderProxies2D<flight_sdk::WgpuRenderState>,
+    source: Box<FlightNode>,
+}
+
+struct DeviceFreedGuard(Arc<std::sync::atomic::AtomicBool>);
+
+fn create_c_scene(device: *const flight_sdk::WgpuDevice, root: flight_sdk::NodeRef) -> CScene {
+    let options = WgpuRenderStateOptions {
+        format: Some(wgpu::TextureFormat::Rgba8Unorm),
+        ..WgpuRenderStateOptions::default()
+    };
+    let state = unsafe { flight_create_wgpu_render_state(device, &options) };
+    let proxies = Box::into_raw(Box::default());
+    if !state.is_null() {
+        let state = unsafe { &mut *state };
+        register_wgpu_standard_material(state);
+        register_wgpu_bitmap_texture_resolver(state);
+        flight_sdk::scene2d_wgpu::contract::register_wgpu_scene2d_render_preset(state);
+        register_wgpu_sprite_renderer(state);
+        flight_sdk::prepare_scene_2d_render(state, unsafe { &mut *proxies }, &root);
+    }
+    return CScene {
+        state,
+        proxies,
+        source: Box::new(ffi_node_from_node_ref(root)),
+    };
+}
+
 // The pixels of the known scene: a clear color and two solid opaque rectangles on whole pixels at
 // their natural size, so every pixel is known exactly on any adapter.
 fn create_known_scene_pixels() -> Vec<u8> {
@@ -794,6 +1103,44 @@ fn create_known_scene_pixels() -> Vec<u8> {
         }
     }
     return out;
+}
+
+// The known scene's sprites under a display-object root.
+// flight-lint: allow(f64) the SDK's 2D node transform fields are f64
+fn create_known_scene_root() -> flight_sdk::NodeRef {
+    let root: flight_sdk::NodeRef = flight_sdk::create_display_object();
+    for (color, x, y, width, height) in SCENE_SPRITES {
+        let sprite = flight_sdk::create_sprite();
+        {
+            let mut guard = sprite.write().unwrap();
+            *guard.transform2d_mut().x = f64::from(x);
+            *guard.transform2d_mut().y = f64::from(y);
+            let source: flight_sdk::TextureSourceRef = Arc::new(RwLock::new(
+                flight_sdk::create_bitmap(width, height, Some(color)),
+            ));
+            let mut texture = flight_sdk::create_texture_2d();
+            texture.source = Some(source);
+            guard.data.texture = Some(Arc::new(RwLock::new(flight_sdk::Texture::Texture2D(
+                texture,
+            ))));
+        }
+        let node: flight_sdk::NodeRef = sprite;
+        flight_sdk::add_node_child(&root, &node);
+    }
+    return root;
+}
+
+// A filled SVG rectangle under a display-object root: drawn through the shape renderer, whose
+// per-shape cache uploads GPU buffers on every draw.
+fn create_svg_scene_root() -> flight_sdk::NodeRef {
+    let root: flight_sdk::NodeRef = flight_sdk::create_display_object();
+    let shapes: flight_sdk::NodeRef = flight_sdk::create_scene2d_from_svg_document(
+        "<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"8\" height=\"8\"><rect x=\"1\" y=\"1\" width=\"5\" height=\"5\" fill=\"#00ff00\"/></svg>",
+        None,
+        None,
+    );
+    flight_sdk::add_node_child(&root, &shapes);
+    return root;
 }
 
 // A host on whatever adapter the machine offers, or `None` after printing why the calling test is
@@ -820,6 +1167,18 @@ fn block_on<F: Future>(future: F) -> F::Output {
     }
 }
 
+// Runs `operation` inside a validation error scope on `native` and returns the error it raised.
+fn capture_validation_error(
+    native: &flight_sdk::render_wgpu::contract::WgpuNativeDevice,
+    operation: impl FnOnce(),
+) -> Option<wgpu::Error> {
+    let scope = native
+        .device
+        .push_error_scope(wgpu::ErrorFilter::Validation);
+    operation();
+    return block_on(scope.pop());
+}
+
 fn count_mismatched_pixels(actual: &flight_sdk::Bitmap, expected: &[u8], tolerance: u8) -> usize {
     assert_eq!((actual.width, actual.height), (SCENE_WIDTH, SCENE_HEIGHT));
     return actual
@@ -835,6 +1194,53 @@ fn count_mismatched_pixels(actual: &flight_sdk::Bitmap, expected: &[u8], toleran
         .count();
 }
 
+fn count_poisoned_renderer_data(scene: &CScene) -> usize {
+    return renderer_data(scene)
+        .iter()
+        .filter(|data| data.is_poisoned())
+        .count();
+}
+
+fn free_c_scene(scene: CScene) {
+    if !scene.state.is_null() {
+        unsafe { flight_free_wgpu_render_state(scene.state) };
+    }
+    drop(unsafe { Box::from_raw(scene.proxies) });
+}
+
+fn get_wgpu_render_state_native_device_of(
+    device: &flight_sdk::WgpuDevice,
+) -> flight_sdk::render_wgpu::contract::WgpuNativeDevice {
+    return device
+        .handle
+        .downcast_ref::<flight_sdk::render_wgpu::contract::WgpuNativeDevice>()
+        .expect("a headless device carries a native device")
+        .clone();
+}
+
+// Whether wgpu freed the device `freed` watches, after letting its queue settle.
+fn is_device_freed(device: &flight_sdk::WgpuDevice, freed: &std::sync::atomic::AtomicBool) -> bool {
+    let _ = get_wgpu_render_state_native_device_of(device)
+        .device
+        .poll(wgpu::PollType::wait_indefinitely());
+    return freed.load(Ordering::SeqCst);
+}
+
+fn known_scene_clear() -> flight_sdk::RenderTargetClear {
+    let [red, green, blue, alpha] = SCENE_CLEAR.to_be_bytes();
+    return flight_sdk::RenderTargetClear {
+        color: Some([
+            f32::from(red) / 255.0,
+            f32::from(green) / 255.0,
+            f32::from(blue) / 255.0,
+            f32::from(alpha) / 255.0,
+        ]),
+        colors: None,
+        depth: Some(1.0),
+        stencil: None,
+    };
+}
+
 // The device a lent device handle names while its host lives.
 fn lent_device(handle: *const flight_sdk::WgpuDevice) -> flight_sdk::WgpuDevice {
     return ffi_resolve_headless_lent_device(handle).expect("a live lent device");
@@ -843,6 +1249,20 @@ fn lent_device(handle: *const flight_sdk::WgpuDevice) -> flight_sdk::WgpuDevice 
 // The render target a lent render target handle names while its host lives.
 fn lent_target(handle: *const WgpuRenderTarget) -> WgpuRenderTarget {
     return ffi_resolve_headless_lent_render_target(handle).expect("a live lent render target");
+}
+
+// Records that the device the guard watches was freed.
+fn mark_device_freed(guard: &DeviceFreedGuard) {
+    guard.0.store(true, Ordering::SeqCst);
+}
+
+// Leaves `lock` poisoned, as a panic while writing under it does.
+fn poison<T: ?Sized>(lock: &RwLock<T>) {
+    let poisoned = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
+        let _writing = lock.write().unwrap();
+        panic!("a write under the lock failed");
+    }));
+    assert!(poisoned.is_err() && lock.is_poisoned());
 }
 
 // flight-lint: allow(f64) the SDK's 2D node transform fields are f64
@@ -902,6 +1322,33 @@ fn render_known_scene(device: &flight_sdk::WgpuDevice, target: &WgpuRenderTarget
     submit_wgpu_frame(&mut state);
 }
 
+fn renderer_data(scene: &CScene) -> Vec<flight_sdk::RendererDataRef> {
+    return unsafe { &*scene.proxies }
+        .entries
+        .iter()
+        .flatten()
+        .filter_map(|proxy| proxy.proxy.renderer_data.clone())
+        .collect();
+}
+
+// The GPU buffers a shape cache holds for its mesh path.
+fn shape_buffers(data: &flight_sdk::RendererDataRef) -> Vec<wgpu::Buffer> {
+    let mut guard = data
+        .write()
+        .unwrap_or_else(std::sync::PoisonError::into_inner);
+    let Some(shape) = flight_sdk::scene2d_wgpu::contract::get_wgpu_shape_data(&mut *guard) else {
+        return Vec::new();
+    };
+    let buffers = &shape.mesh_buffers;
+    return buffers
+        .vertex_buffers
+        .iter()
+        .chain(&buffers.index_buffers)
+        .chain(&buffers.uniform_buffers)
+        .cloned()
+        .collect();
+}
+
 fn take_string(text: *mut c_char) -> String {
     assert!(!text.is_null());
     let owned = unsafe { CStr::from_ptr(text) }
@@ -911,8 +1358,30 @@ fn take_string(text: *mut c_char) -> String {
     return owned;
 }
 
+// Watches the device behind `device`: the returned flag turns true when wgpu frees it. The device's
+// lost callback lives exactly as long as the device, so a guard it owns drops at that moment.
+fn watch_device_freed(device: &flight_sdk::WgpuDevice) -> Arc<std::sync::atomic::AtomicBool> {
+    let freed = Arc::new(std::sync::atomic::AtomicBool::new(false));
+    let guard = DeviceFreedGuard(freed.clone());
+    get_wgpu_render_state_native_device_of(device)
+        .device
+        .set_device_lost_callback(move |_, _| {
+            let _ = &guard;
+        });
+    return freed;
+}
+
 const SCENE_CLEAR: u32 = 0x204080ff;
+
 const SCENE_HEIGHT: u32 = 48;
+
 const SCENE_SPRITES: [(u32, u32, u32, u32, u32); 2] =
     [(0xff0000ff, 8, 6, 16, 12), (0x00ff00ff, 30, 20, 20, 24)];
+
 const SCENE_WIDTH: u32 = 64;
+
+impl Drop for DeviceFreedGuard {
+    fn drop(&mut self) {
+        mark_device_freed(self);
+    }
+}

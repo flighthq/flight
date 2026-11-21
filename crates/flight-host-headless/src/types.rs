@@ -1,7 +1,6 @@
 // flight-lint: allow-file(contract-vocabulary) native host: the host value carries native wgpu values and Rust callback forms of the capability closures it fills
 
 use flight_host::{ProviderRef, WgpuDevice};
-use flight_render_wgpu::WgpuNativeDevice;
 use flight_surface::HostWgpuCapability;
 
 /// Why `create_headless_host` would return `None`, or `Ready` when it would succeed.
@@ -26,17 +25,22 @@ pub struct HeadlessHostExplanation {
 }
 
 /// A windowless native host: one real wgpu device on a chosen adapter, and the capabilities and
-/// carriers the SDK's wgpu path borrows from it. Plain host data, not an Entity. The host owns the
-/// device; render states, surfaces and targets built over it borrow it and must be released by
-/// their own verbs before `destroy_headless_host`.
+/// carriers the SDK's wgpu path borrows from it. Plain host data, not an Entity. The host holds one
+/// share of the device; render states, surfaces and targets built over it hold their own, so
+/// `destroy_headless_host` releases only the host's share and the device is torn down when the last
+/// share drops.
 pub struct HeadlessHost {
     pub(crate) adapter_backend: String,
     pub(crate) adapter_name: String,
-    pub(crate) destroyed: bool,
-    pub(crate) device: WgpuDevice,
-    pub(crate) native: WgpuNativeDevice,
+    pub(crate) claim: Option<HeadlessHostClaim>,
     pub(crate) provider: ProviderRef,
     pub(crate) software_adapter: bool,
+}
+
+// The host's share of its device: the device carrier and the capability whose closures hold a clone
+// of it. `None` once the host is destroyed.
+pub(crate) struct HeadlessHostClaim {
+    pub(crate) device: WgpuDevice,
     pub(crate) wgpu: HostWgpuCapability,
 }
 

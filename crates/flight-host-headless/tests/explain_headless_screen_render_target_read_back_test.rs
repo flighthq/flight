@@ -15,8 +15,8 @@ mod explain_headless_screen_render_target_read_back {
     ) -> flight_entity::Ref<WgpuScreenRenderTarget> {
         let surface = create_headless_host_surface(host, 8, 8);
         let mut screen = create_wgpu_screen_render_target(
-            get_headless_host_wgpu_capability(host),
-            get_headless_host_wgpu_device(host),
+            get_headless_host_wgpu_capability(host).unwrap(),
+            get_headless_host_wgpu_device(host).unwrap(),
             &surface,
             None,
         );
@@ -94,6 +94,7 @@ mod explain_headless_screen_render_target_read_back {
             return;
         };
         let other_native = get_headless_host_wgpu_device(&other)
+            .unwrap()
             .handle
             .downcast_ref::<WgpuNativeDevice>()
             .unwrap()

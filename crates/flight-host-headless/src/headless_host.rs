@@ -53,18 +53,15 @@ pub fn create_headless_host(options: Option<&HeadlessHostOptions>) -> Option<Hea
     );
     let device = WgpuDevice {
         provider: provider.clone(),
-        handle: Arc::new(native.clone()),
+        handle: Arc::new(native),
     };
     let wgpu = create_headless_host_wgpu_capability(&provider, &device);
     return Some(HeadlessHost {
         adapter_backend: opened.adapter_backend,
         adapter_name: opened.adapter_name,
-        destroyed: false,
-        device,
-        native,
+        claim: Some(HeadlessHostClaim { device, wgpu }),
         provider,
         software_adapter: opened.software_adapter,
-        wgpu,
     });
 }
 
@@ -83,17 +80,18 @@ pub fn create_headless_host_options() -> HeadlessHostOptions {
 /// Creates the offscreen target a render pass draws into: the SDK's own screen render target
 /// (`create_wgpu_screen_render_target`) over a new `width`x`height` headless surface, in the host's
 /// RGBA format, with the SDK's capture read-back enabled. Every frame submitted to it stays readable
-/// through `create_bitmap_from_headless_screen_render_target`. The target borrows the host's device
-/// and capability, so it must be released before `destroy_headless_host`.
+/// through `create_bitmap_from_headless_screen_render_target`. The target holds its own share of the
+/// host's device. `None` once the host is destroyed.
 pub fn create_headless_host_render_target(
     host: &HeadlessHost,
     width: u32,
     height: u32,
-) -> WgpuRenderTarget {
+) -> Option<WgpuRenderTarget> {
+    let claim = host.claim.as_ref()?;
     let surface = create_headless_host_surface(host, width, height);
     let mut screen = create_wgpu_screen_render_target(
-        &host.wgpu,
-        &host.device,
+        &claim.wgpu,
+        &claim.device,
         &surface,
         Some(&WgpuScreenRenderTargetOptions {
             alpha_mode: None,
@@ -102,7 +100,7 @@ pub fn create_headless_host_render_target(
         }),
     );
     enable_wgpu_screen_render_target_capture(&mut screen);
-    return WgpuRenderTarget::Screen(Arc::new(RwLock::new(screen)));
+    return Some(WgpuRenderTarget::Screen(Arc::new(RwLock::new(screen))));
 }
 
 // Device-loss continuations run on their own thread each: a headless host has no event loop to
@@ -175,15 +173,12 @@ fn create_headless_host_wgpu_capability(
     };
 }
 
-/// Frees the host's device now. Every render state, target and surface built over it must already
-/// be released; afterwards the host's device and capability are invalid. Destroying twice is a
-/// no-op.
+/// Releases the host's share of its device now: the host lends nothing afterwards. The device itself
+/// is never destroyed under a dependent; it is torn down when the last render state, target or
+/// surface built over it drops, so those finish or fail through their own verbs rather than finding
+/// their GPU storage freed. Destroying twice is a no-op.
 pub fn destroy_headless_host(host: &mut HeadlessHost) {
-    if host.destroyed {
-        return;
-    }
-    host.destroyed = true;
-    host.native.device.destroy();
+    host.claim = None;
 }
 
 /// The backend name of the adapter the host opened (`"vulkan"`, `"metal"`, `"dx12"`).
@@ -197,21 +192,21 @@ pub fn get_headless_host_adapter_name(host: &HeadlessHost) -> &str {
 }
 
 /// The host's wgpu capability: `acquire` resolves immediately with the host's own device, and
-/// `attach_surface` configures a surface from `create_headless_host_surface`. Borrowed; valid until
-/// `destroy_headless_host`.
-pub fn get_headless_host_wgpu_capability(host: &HeadlessHost) -> &HostWgpuCapability {
-    return &host.wgpu;
+/// `attach_surface` configures a surface from `create_headless_host_surface`. Borrowed; `None` once
+/// the host is destroyed.
+pub fn get_headless_host_wgpu_capability(host: &HeadlessHost) -> Option<&HostWgpuCapability> {
+    return host.claim.as_ref().map(|claim| &claim.wgpu);
 }
 
 /// The host's device, the carrier `create_wgpu_render_state` and
-/// `create_wgpu_screen_render_target` take. Borrowed; valid until `destroy_headless_host`.
-pub fn get_headless_host_wgpu_device(host: &HeadlessHost) -> &WgpuDevice {
-    return &host.device;
+/// `create_wgpu_screen_render_target` take. Borrowed; `None` once the host is destroyed.
+pub fn get_headless_host_wgpu_device(host: &HeadlessHost) -> Option<&WgpuDevice> {
+    return host.claim.as_ref().map(|claim| &claim.device);
 }
 
 /// Whether the host has been destroyed.
 pub fn is_headless_host_destroyed(host: &HeadlessHost) -> bool {
-    return host.destroyed;
+    return host.claim.is_none();
 }
 
 /// Whether the host's adapter is a CPU (software) adapter, whose rasterization may differ from
