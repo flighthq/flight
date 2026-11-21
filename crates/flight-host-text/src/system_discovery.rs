@@ -8,6 +8,19 @@ pub(crate) enum DiscoveryFailure {
     NotFound,
 }
 
+#[cfg(test)]
+#[test]
+fn children_are_popped_in_lexical_order() {
+    let mut pending = Vec::new();
+    push_sorted_children(
+        &mut pending,
+        vec![PathBuf::from("c"), PathBuf::from("a"), PathBuf::from("b")],
+    );
+    assert_eq!(pending.pop(), Some(PathBuf::from("a")));
+    assert_eq!(pending.pop(), Some(PathBuf::from("b")));
+    assert_eq!(pending.pop(), Some(PathBuf::from("c")));
+}
+
 pub(crate) fn find_font_bytes(
     directories: &[String],
     family: &str,
@@ -15,12 +28,14 @@ pub(crate) fn find_font_bytes(
     max_bytes: usize,
     backend_limits: BackendLimits,
 ) -> Result<Box<[u8]>, DiscoveryFailure> {
-    let mut pending: Vec<PathBuf> = directories.iter().map(PathBuf::from).collect();
-    if pending.len() > max_files {
+    if directories.len() > max_files {
         return Err(DiscoveryFailure::LimitExceeded);
     }
-    pending.sort();
-    pending.reverse();
+    let mut pending = Vec::new();
+    push_sorted_children(
+        &mut pending,
+        directories.iter().map(PathBuf::from).collect(),
+    );
     let mut visited = 0_usize;
     while let Some(path) = pending.pop() {
         visited = visited
@@ -52,9 +67,7 @@ pub(crate) fn find_font_bytes(
             if children.len() > remaining {
                 return Err(DiscoveryFailure::LimitExceeded);
             }
-            children.sort();
-            children.reverse();
-            pending.extend(children);
+            push_sorted_children(&mut pending, children);
             continue;
         }
         if !is_font_path(&path) {
@@ -83,4 +96,10 @@ fn is_font_path(path: &Path) -> bool {
                 "otf" | "ttc" | "ttf" | "woff"
             )
         });
+}
+
+fn push_sorted_children(pending: &mut Vec<PathBuf>, mut children: Vec<PathBuf>) {
+    children.sort();
+    children.reverse();
+    pending.extend(children);
 }

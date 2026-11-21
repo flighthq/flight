@@ -55,6 +55,8 @@ fn create_font_capabilities(
             create_font_face: Arc::new(move |family, source| {
                 return catch_operation(|| {
                     require_alive(&create_state).ok()?;
+                    #[cfg(test)]
+                    run_test_hook(&create_state, TextHostTestHook::CreateAfterPrecheck);
                     if read_faces(&create_state).len() >= create_options.max_faces {
                         return None;
                     }
@@ -67,6 +69,8 @@ fn create_font_capabilities(
                         backend_limits(&create_options),
                     )
                     .ok()?;
+                    #[cfg(test)]
+                    run_test_hook(&create_state, TextHostTestHook::CreateAfterParse);
                     require_alive(&create_state).ok()?;
                     return Some(face);
                 })
@@ -234,6 +238,8 @@ pub fn create_text_host(options: Option<&TextHostOptions>) -> TextHost {
     let state = Arc::new(TextHostState {
         alive: AtomicBool::new(true),
         faces: RwLock::new(Vec::new()),
+        #[cfg(test)]
+        test_hook: RwLock::new(None),
     });
     let provider: ProviderRef = state.clone();
     let fonts = create_font_capabilities(&state, &provider, &options);
@@ -273,6 +279,8 @@ fn add_face(state: &TextHostState, options: &TextHostOptions, face: &Arc<FontFac
     if require_alive(state).is_err() || opentype_backend::validate_face(face).is_err() {
         return false;
     }
+    #[cfg(test)]
+    run_test_hook(state, TextHostTestHook::AddAfterPrecheck);
     let mut faces = write_faces(state);
     if require_alive(state).is_err() {
         return false;
@@ -675,6 +683,18 @@ fn require_alive(state: &TextHostState) -> Result<(), TextFailure> {
         ));
     }
     return Ok(());
+}
+
+#[cfg(test)]
+fn run_test_hook(state: &TextHostState, point: TextHostTestHook) {
+    let hook = state
+        .test_hook
+        .read()
+        .unwrap_or_else(|poisoned| poisoned.into_inner())
+        .clone();
+    if let Some(hook) = hook {
+        hook(point);
+    }
 }
 
 /// Shapes one run through rustybuzz. The direct form accepts the complete Flight shaping options;

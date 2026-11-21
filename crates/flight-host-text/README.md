@@ -49,8 +49,10 @@ when the final face/callback reference is dropped.
 
 Defaults cap one encoded font and one decoded WOFF at 32 MiB, WOFF directories at 4,096 tables, a
 registry at 64 faces, discovery at 4,096 traversed entries, reverse cmap parsing at 4,096 groups and
-262,144 mapping operations, font size at 512 pixels and one glyph at four million pixels. Size
-arithmetic is checked. WOFF headers, directory ranges and reconstructed size are validated before
+262,144 mapping operations, font size at 512 pixels and one glyph at four million pixels. Reverse
+cmap loading checks the work for format 2 and format 4 before enumerating their mappings. Format 4
+segments must be ordered and non-overlapping. Size arithmetic is checked. WOFF headers, directory
+ranges and reconstructed size are validated before
 inflation; identical compressed streams are inflated only once. A load explanation performs only
 the bounded container preflight, so it never parses a face or inflates WOFF payload data.
 

@@ -47,6 +47,14 @@ fn format(family: &str, size: f32) -> TextFormat {
     };
 }
 
+fn font_source(bytes: Box<[u8]>) -> FontFaceSource {
+    let length = bytes.len();
+    let buffer = create_array_buffer_from_bytes(bytes);
+    let value = create_array_buffer_view(&buffer, 0, length, ArrayBufferViewKind::Uint8Array)
+        .expect("font view");
+    return FontFaceSource::Data(FontFaceSourceData { value });
+}
+
 fn raster_options(family: &str, size: f32) -> GlyphRasterizeOptions {
     return GlyphRasterizeOptions {
         font_family: family.to_string(),
@@ -126,6 +134,131 @@ mod bounded_reverse_cmap {
             .is_none()
         );
     }
+
+    #[test]
+    fn bounds_high_byte_and_trimmed_mappings_at_the_exact_work_limit() {
+        for font in [synthetic_format_2_font(), synthetic_format_6_font()] {
+            let mut options = create_text_host_options();
+            options.max_cmap_operations = 2;
+            let exact = create_text_host(Some(&options));
+            load_font_bytes_with_text_host(&exact, "bmp", &font, None)
+                .expect("font at the mapping limit");
+            let shaper = get_text_host_shaper_capabilities(&exact)
+                .shaper
+                .as_ref()
+                .expect("shaper");
+            assert_eq!(
+                shaper
+                    .get_code_point_for_glyph
+                    .as_ref()
+                    .expect("reverse cmap")(1),
+                65
+            );
+            options.max_cmap_operations = 1;
+            assert!(
+                load_font_bytes_with_text_host(
+                    &create_text_host(Some(&options)),
+                    "bmp",
+                    &font,
+                    None
+                )
+                .is_none()
+            );
+        }
+    }
+
+    #[test]
+    fn preaccounts_format_4_segments_and_preserves_both_mapping_forms() {
+        let overlap = synthetic_format_4_font(&[(65, 66, -64), (66, 67, -65)]);
+        assert!(
+            load_font_bytes_with_text_host(&create_text_host(None), "overlap", &overlap, None)
+                .is_none()
+        );
+
+        let direct = synthetic_format_4_font(&[(65, 68, -64)]);
+        let mut exact_options = create_text_host_options();
+        exact_options.max_cmap_operations = 4;
+        let exact = create_text_host(Some(&exact_options));
+        load_font_bytes_with_text_host(&exact, "direct", &direct, None).expect("exact work cap");
+        let reverse = get_text_host_shaper_capabilities(&exact)
+            .shaper
+            .as_ref()
+            .expect("shaper")
+            .get_code_point_for_glyph
+            .as_ref()
+            .expect("reverse cmap");
+        assert_eq!(reverse(1), 65);
+
+        exact_options.max_cmap_operations = 3;
+        assert!(
+            load_font_bytes_with_text_host(
+                &create_text_host(Some(&exact_options)),
+                "short",
+                &direct,
+                None,
+            )
+            .is_none()
+        );
+
+        let ranged = synthetic_format_4_range_font(4);
+        let ranged_host = create_text_host(None);
+        load_font_bytes_with_text_host(&ranged_host, "ranged", &ranged, None)
+            .expect("idRangeOffset mapping");
+        let reverse = get_text_host_shaper_capabilities(&ranged_host)
+            .shaper
+            .as_ref()
+            .expect("shaper")
+            .get_code_point_for_glyph
+            .as_ref()
+            .expect("reverse cmap");
+        assert_eq!(reverse(1), 65);
+        assert!(
+            load_font_bytes_with_text_host(
+                &create_text_host(None),
+                "overflow",
+                &synthetic_format_4_range_font(u16::MAX),
+                None,
+            )
+            .is_none()
+        );
+    }
+
+    #[test]
+    fn handles_format_13_unicode_limits_and_lowest_reverse_mapping() {
+        let host = create_text_host(None);
+        load_font_bytes_with_text_host(
+            &host,
+            "many-to-one",
+            &synthetic_format_13_font(&[(65, 66, 1), (90, 91, 1)]),
+            None,
+        )
+        .expect("format 13 cmap");
+        let reverse = get_text_host_shaper_capabilities(&host)
+            .shaper
+            .as_ref()
+            .expect("shaper")
+            .get_code_point_for_glyph
+            .as_ref()
+            .expect("reverse cmap");
+        assert_eq!(reverse(1), 65);
+
+        for format in [12, 13] {
+            let invalid = if format == 12 {
+                synthetic_format_12_font(&[(0x11_0000, 0x11_0000, 1)])
+            } else {
+                synthetic_format_13_font(&[(0x11_0000, 0x11_0000, 1)])
+            };
+            assert!(
+                load_font_bytes_with_text_host(
+                    &create_text_host(None),
+                    "outside-unicode",
+                    &invalid,
+                    None,
+                )
+                .is_none()
+            );
+        }
+    }
 }
 
 #[cfg(feature = "system-discovery")]
@@ -194,6 +327,7 @@ mod bounded_system_discovery {
         let mut options = create_text_host_options();
         options.font_directories = roots
             .iter()
+            .rev()
             .map(|root| root.to_string_lossy().into_owned())
             .collect();
         options.max_discovery_files = 4;
@@ -206,6 +340,16 @@ mod bounded_system_discovery {
                 .expect("run")
                 .advance_width,
             12.0
+        );
+
+        options.font_directories = roots
+            .iter()
+            .map(|root| root.join("font.ttf").to_string_lossy().into_owned())
+            .collect();
+        options.max_discovery_files = 1;
+        assert_reason(
+            &explain_text_host_discover(&create_text_host(Some(&options)), "RootOrder"),
+            TextHostOperationExplanationReason::ResourceLimitExceeded,
         );
 
         let families = TestDirectory::create();
@@ -347,6 +491,37 @@ mod bounded_woff_loading {
         overlapping_private_data[40..44].copy_from_slice(&4_u32.to_be_bytes());
         assert_reason(
             &explain_text_host_load(&host, "private", &overlapping_private_data, None),
+            TextHostOperationExplanationReason::MalformedFont,
+        );
+
+        let mut compressed_longer = declared_woff(1, 4).into_vec();
+        compressed_longer[56..60].copy_from_slice(&3_u32.to_be_bytes());
+        assert_reason(
+            &explain_text_host_load(&host, "compressed-length", &compressed_longer, None),
+            TextHostOperationExplanationReason::MalformedFont,
+        );
+
+        let mut conflicting_shared_stream = declared_woff(2, 8).into_vec();
+        conflicting_shared_stream[76..80].copy_from_slice(&4_u32.to_be_bytes());
+        conflicting_shared_stream[16..20].copy_from_slice(&56_u32.to_be_bytes());
+        assert_reason(
+            &explain_text_host_load(&host, "shared-length", &conflicting_shared_stream, None),
+            TextHostOperationExplanationReason::MalformedFont,
+        );
+
+        let mut incomplete_metadata = declared_woff(1, 8).into_vec();
+        incomplete_metadata[24..28].copy_from_slice(&68_u32.to_be_bytes());
+        incomplete_metadata[32..36].copy_from_slice(&4_u32.to_be_bytes());
+        assert_reason(
+            &explain_text_host_load(&host, "metadata-pair", &incomplete_metadata, None),
+            TextHostOperationExplanationReason::MalformedFont,
+        );
+
+        let mut wrong_length = synthetic_woff().into_vec();
+        let declared = u32::try_from(wrong_length.len()).expect("WOFF length") + 1;
+        wrong_length[8..12].copy_from_slice(&declared.to_be_bytes());
+        assert_reason(
+            &explain_text_host_load(&host, "header-length", &wrong_length, None),
             TextHostOperationExplanationReason::MalformedFont,
         );
     }
@@ -688,6 +863,108 @@ mod explain_text_host_shape {
     }
 }
 
+mod face_selection_and_lifecycle_contracts {
+    use super::*;
+
+    #[test]
+    fn enforces_loader_create_add_and_validation_boundaries() {
+        let mut options = create_text_host_options();
+        options.max_faces = 1;
+        let host = create_text_host(Some(&options));
+        let loader = get_text_host_font_capabilities(&host)
+            .loader
+            .as_ref()
+            .expect("loader");
+        let first = (loader.create_font_face)("first", &font_source(synthetic_font()));
+        let second = (loader.create_font_face)("second", &font_source(synthetic_font()));
+        assert!(block_on((loader.load_font_face)(&first)).is_ok());
+        assert!(block_on((loader.load_font_face)(&second)).is_ok());
+        (loader.add_font_face)(&first);
+        (loader.add_font_face)(&second);
+        assert_eq!(
+            block_on((loader.load_font_faces)("1em 'first'"))
+                .expect("first face")
+                .len(),
+            1
+        );
+        assert!(
+            block_on((loader.load_font_faces)("1em 'second'"))
+                .expect("second face")
+                .is_empty()
+        );
+
+        let at_cap = (loader.create_font_face)("third", &font_source(synthetic_font()));
+        assert!(block_on((loader.load_font_face)(&at_cap)).is_err());
+
+        let invalid_host = create_text_host(None);
+        let invalid_loader = get_text_host_font_capabilities(&invalid_host)
+            .loader
+            .as_ref()
+            .expect("invalid loader");
+        let invalid = (invalid_loader.create_font_face)(
+            "invalid",
+            &FontFaceSource::Url(flight_font::FontFaceSourceUrl {
+                value: "url(invalid.ttf)".to_string(),
+            }),
+        );
+        (invalid_loader.add_font_face)(&invalid);
+        assert!(!(invalid_loader.check_font_face)("1em 'invalid'"));
+    }
+
+    #[test]
+    fn selects_the_newest_case_insensitive_family_and_shares_provider_identity() {
+        let host = create_text_host(None);
+        load_font_bytes_with_text_host(&host, "Family", &synthetic_font_with_advance(600.0), None)
+            .expect("first face");
+        load_font_bytes_with_text_host(&host, "family", &synthetic_font_with_advance(900.0), None)
+            .expect("second face");
+        let run = shape_text_with_text_host(&host, "A", &format("FAMILY", 20.0), None)
+            .expect("fallback run");
+        assert_eq!(run.read().expect("run").advance_width, 18.0);
+
+        let loader = get_text_host_font_capabilities(&host)
+            .loader
+            .as_ref()
+            .expect("loader");
+        let rasterizer = get_text_host_glyph_capabilities(&host)
+            .rasterizer
+            .as_ref()
+            .expect("rasterizer");
+        let shaper = get_text_host_shaper_capabilities(&host)
+            .shaper
+            .as_ref()
+            .expect("shaper");
+        assert!(Arc::ptr_eq(&loader.provider, &rasterizer.provider));
+        assert!(Arc::ptr_eq(&loader.provider, &shaper.provider));
+    }
+
+    #[test]
+    fn disposed_loader_rejects_create_add_and_load_before_font_work() {
+        let mut host = create_text_host(None);
+        let loader = get_text_host_font_capabilities(&host)
+            .loader
+            .as_ref()
+            .expect("loader")
+            .clone();
+        dispose_text_host(&mut host);
+        let malicious = synthetic_format_12_font(&[(0, u32::MAX, 0)]);
+        let length = malicious.len();
+        let buffer = create_array_buffer_from_bytes(malicious);
+        let view = create_array_buffer_view(&buffer, 0, length, ArrayBufferViewKind::Uint8Array)
+            .expect("font view");
+        let started = Instant::now();
+        let face = (loader.create_font_face)(
+            "disposed",
+            &FontFaceSource::Data(FontFaceSourceData { value: view }),
+        );
+        assert!(started.elapsed() < Duration::from_millis(100));
+        assert!(block_on((loader.load_font_face)(&face)).is_err());
+        (loader.add_font_face)(&face);
+        assert!(!(loader.check_font_face)("1em 'disposed'"));
+        assert!(block_on((loader.load_font_faces)("1em 'disposed'")).is_err());
+    }
+}
+
 mod get_text_host_font_capabilities {
     use super::*;
 
@@ -929,6 +1206,78 @@ mod measure_font_with_text_host {
     }
 }
 
+mod raster_coordinate_and_limit_contracts {
+    use super::*;
+
+    #[test]
+    fn keeps_rows_top_first_bearings_y_down_metrics_scaled_and_caps_exact() {
+        let host = create_text_host(None);
+        load_font_bytes_with_text_host(&host, "asymmetric", &synthetic_asymmetric_font(), None)
+            .expect("asymmetric face");
+        let bitmap =
+            rasterize_glyph_with_text_host(&host, 'L' as u32, &raster_options("asymmetric", 100.0))
+                .expect("asymmetric raster");
+        let width = bitmap.width as usize;
+        let row_ink = |row: usize| {
+            bitmap.pixels[row * width * 4..(row + 1) * width * 4]
+                .as_chunks::<4>()
+                .0
+                .iter()
+                .filter(|pixel| pixel[3] > 128)
+                .count()
+        };
+        assert!(row_ink(bitmap.height as usize - 2) > row_ink(1) * 2);
+        assert!(bitmap.bearing_y > 0);
+
+        let shaper = get_text_host_shaper_capabilities(&host)
+            .shaper
+            .as_ref()
+            .expect("shaper");
+        let extents =
+            (shaper.get_glyph_extents.as_ref().expect("extents"))(1).expect("glyph extents");
+        assert_eq!(extents.x_bearing, 0.0);
+        assert_eq!(extents.y_bearing, -7.8);
+        assert_eq!((extents.width, extents.height), (6.0, 7.8));
+
+        let metrics = (get_text_host_glyph_capabilities(&host)
+            .rasterizer
+            .as_ref()
+            .expect("rasterizer")
+            .measure_metrics
+            .as_ref()
+            .expect("metrics"))(&raster_options("asymmetric", 20.0))
+        .expect("scaled metrics");
+        assert_eq!((metrics.ascent, metrics.descent), (16.0, 4.0));
+
+        let pixel_count = bitmap.width as usize * bitmap.height as usize;
+        let mut exact_options = create_text_host_options();
+        exact_options.max_glyph_pixels = pixel_count;
+        let exact = create_text_host(Some(&exact_options));
+        load_font_bytes_with_text_host(&exact, "asymmetric", &synthetic_asymmetric_font(), None)
+            .expect("exact face");
+        assert!(
+            rasterize_glyph_with_text_host(
+                &exact,
+                'L' as u32,
+                &raster_options("asymmetric", 100.0),
+            )
+            .is_some()
+        );
+        exact_options.max_glyph_pixels -= 1;
+        let short = create_text_host(Some(&exact_options));
+        load_font_bytes_with_text_host(&short, "asymmetric", &synthetic_asymmetric_font(), None)
+            .expect("short face");
+        assert!(
+            rasterize_glyph_with_text_host(
+                &short,
+                'L' as u32,
+                &raster_options("asymmetric", 100.0),
+            )
+            .is_none()
+        );
+    }
+}
+
 mod rasterize_glyph_with_text_host {
     use super::*;
 
@@ -1016,254 +1365,6 @@ mod rasterize_glyph_with_text_host {
         for thread in threads {
             assert_eq!(thread.join().expect("parallel raster"), expected);
         }
-    }
-}
-
-mod reviewed_face_and_lifecycle_invariants {
-    use super::*;
-
-    #[test]
-    fn selects_the_newest_case_insensitive_family_and_shares_provider_identity() {
-        let host = create_text_host(None);
-        load_font_bytes_with_text_host(&host, "Family", &synthetic_font_with_advance(600.0), None)
-            .expect("first face");
-        load_font_bytes_with_text_host(&host, "family", &synthetic_font_with_advance(900.0), None)
-            .expect("second face");
-        let run = shape_text_with_text_host(&host, "A", &format("FAMILY", 20.0), None)
-            .expect("fallback run");
-        assert_eq!(run.read().expect("run").advance_width, 18.0);
-
-        let loader = get_text_host_font_capabilities(&host)
-            .loader
-            .as_ref()
-            .expect("loader");
-        let rasterizer = get_text_host_glyph_capabilities(&host)
-            .rasterizer
-            .as_ref()
-            .expect("rasterizer");
-        let shaper = get_text_host_shaper_capabilities(&host)
-            .shaper
-            .as_ref()
-            .expect("shaper");
-        assert!(Arc::ptr_eq(&loader.provider, &rasterizer.provider));
-        assert!(Arc::ptr_eq(&loader.provider, &shaper.provider));
-    }
-
-    #[test]
-    fn disposed_loader_rejects_create_add_and_load_before_font_work() {
-        let mut host = create_text_host(None);
-        let loader = get_text_host_font_capabilities(&host)
-            .loader
-            .as_ref()
-            .expect("loader")
-            .clone();
-        dispose_text_host(&mut host);
-        let malicious = synthetic_format_12_font(&[(0, u32::MAX, 0)]);
-        let length = malicious.len();
-        let buffer = create_array_buffer_from_bytes(malicious);
-        let view = create_array_buffer_view(&buffer, 0, length, ArrayBufferViewKind::Uint8Array)
-            .expect("font view");
-        let started = Instant::now();
-        let face = (loader.create_font_face)(
-            "disposed",
-            &FontFaceSource::Data(FontFaceSourceData { value: view }),
-        );
-        assert!(started.elapsed() < Duration::from_millis(100));
-        assert!(block_on((loader.load_font_face)(&face)).is_err());
-        (loader.add_font_face)(&face);
-        assert!(!(loader.check_font_face)("1em 'disposed'"));
-        assert!(block_on((loader.load_font_faces)("1em 'disposed'")).is_err());
-    }
-}
-
-mod reviewed_raster_invariants {
-    use super::*;
-
-    #[test]
-    fn keeps_rows_top_first_bearings_y_down_metrics_scaled_and_caps_exact() {
-        let host = create_text_host(None);
-        load_font_bytes_with_text_host(&host, "asymmetric", &synthetic_asymmetric_font(), None)
-            .expect("asymmetric face");
-        let bitmap =
-            rasterize_glyph_with_text_host(&host, 'L' as u32, &raster_options("asymmetric", 100.0))
-                .expect("asymmetric raster");
-        let width = bitmap.width as usize;
-        let row_ink = |row: usize| {
-            bitmap.pixels[row * width * 4..(row + 1) * width * 4]
-                .chunks_exact(4)
-                .filter(|pixel| pixel[3] > 128)
-                .count()
-        };
-        assert!(row_ink(bitmap.height as usize - 2) > row_ink(1) * 2);
-        assert!(bitmap.bearing_y > 0);
-
-        let shaper = get_text_host_shaper_capabilities(&host)
-            .shaper
-            .as_ref()
-            .expect("shaper");
-        let extents =
-            (shaper.get_glyph_extents.as_ref().expect("extents"))(1).expect("glyph extents");
-        assert_eq!(extents.x_bearing, 0.0);
-        assert_eq!(extents.y_bearing, -7.8);
-        assert_eq!((extents.width, extents.height), (6.0, 7.8));
-
-        let metrics = (get_text_host_glyph_capabilities(&host)
-            .rasterizer
-            .as_ref()
-            .expect("rasterizer")
-            .measure_metrics
-            .as_ref()
-            .expect("metrics"))(&raster_options("asymmetric", 20.0))
-        .expect("scaled metrics");
-        assert_eq!((metrics.ascent, metrics.descent), (16.0, 4.0));
-
-        let pixel_count = bitmap.width as usize * bitmap.height as usize;
-        let mut exact_options = create_text_host_options();
-        exact_options.max_glyph_pixels = pixel_count;
-        let exact = create_text_host(Some(&exact_options));
-        load_font_bytes_with_text_host(&exact, "asymmetric", &synthetic_asymmetric_font(), None)
-            .expect("exact face");
-        assert!(
-            rasterize_glyph_with_text_host(
-                &exact,
-                'L' as u32,
-                &raster_options("asymmetric", 100.0),
-            )
-            .is_some()
-        );
-        exact_options.max_glyph_pixels -= 1;
-        let short = create_text_host(Some(&exact_options));
-        load_font_bytes_with_text_host(&short, "asymmetric", &synthetic_asymmetric_font(), None)
-            .expect("short face");
-        assert!(
-            rasterize_glyph_with_text_host(
-                &short,
-                'L' as u32,
-                &raster_options("asymmetric", 100.0),
-            )
-            .is_none()
-        );
-    }
-}
-
-mod reviewed_shaping_invariants {
-    use super::*;
-
-    #[test]
-    fn converts_vertical_coordinates_and_applies_spacing_on_the_advance_axis() {
-        let host = loaded_synthetic_host();
-        let mut spaced = format("synthetic", 20.0);
-        spaced.letter_spacing = Some(2.0);
-        let horizontal =
-            shape_text_with_text_host(&host, "AA", &spaced, None).expect("horizontal run");
-        let horizontal = horizontal.read().expect("horizontal");
-        assert_eq!(horizontal.advance_width, 28.0);
-        assert_eq!(
-            horizontal
-                .glyphs
-                .iter()
-                .map(|glyph| glyph.x_advance)
-                .sum::<f32>(),
-            horizontal.advance_width
-        );
-        let measure = (get_text_host_shaper_capabilities(&host)
-            .shaper
-            .as_ref()
-            .expect("shaper")
-            .measure_text)("AA", &spaced);
-        assert_eq!(measure, horizontal.advance_width);
-
-        let vertical = shape_text_with_text_host(
-            &host,
-            "AA",
-            &spaced,
-            Some(&TextShaperOptions {
-                direction: Some(TextDirection::TopToBottom),
-                script: Some("Cyrl".to_string()),
-                ..shaper_options()
-            }),
-        )
-        .expect("vertical run");
-        let vertical = vertical.read().expect("vertical");
-        assert_eq!(vertical.direction, TextDirection::TopToBottom);
-        assert_eq!(vertical.script, "Cyrl");
-        assert!(vertical.glyphs.iter().all(|glyph| glyph.y_advance > 0.0));
-        assert_eq!(
-            vertical
-                .glyphs
-                .iter()
-                .map(|glyph| glyph.y_advance)
-                .sum::<f32>(),
-            vertical.advance_width
-        );
-        let unspaced_vertical = shape_text_with_text_host(
-            &host,
-            "AA",
-            &format("synthetic", 20.0),
-            Some(&TextShaperOptions {
-                direction: Some(TextDirection::TopToBottom),
-                script: Some("Cyrl".to_string()),
-                ..shaper_options()
-            }),
-        )
-        .expect("unspaced vertical run");
-        assert_eq!(
-            vertical.advance_width
-                - unspaced_vertical
-                    .read()
-                    .expect("unspaced vertical")
-                    .advance_width,
-            4.0
-        );
-    }
-
-    #[test]
-    fn reports_resolved_script_and_rejects_an_invalid_language_hint() {
-        let host = loaded_synthetic_host();
-        let explicit = shape_text_with_text_host(
-            &host,
-            "A",
-            &format("synthetic", 20.0),
-            Some(&TextShaperOptions {
-                language: Some("en".to_string()),
-                script: Some("Cyrl".to_string()),
-                ..shaper_options()
-            }),
-        )
-        .expect("explicit properties");
-        assert_eq!(explicit.read().expect("run").script, "Cyrl");
-
-        let invalid = TextShaperOptions {
-            language: Some(String::new()),
-            ..shaper_options()
-        };
-        assert!(
-            shape_text_with_text_host(&host, "A", &format("synthetic", 20.0), Some(&invalid),)
-                .is_none()
-        );
-
-        let localized = create_text_host(None);
-        load_font_bytes_with_text_host(&localized, "language", &synthetic_language_font(), None)
-            .expect("language fixture");
-        let shape_for = |language: &str| {
-            shape_text_with_text_host(
-                &localized,
-                "A",
-                &format("language", 20.0),
-                Some(&TextShaperOptions {
-                    language: Some(language.to_string()),
-                    script: Some("Latn".to_string()),
-                    ..shaper_options()
-                }),
-            )
-            .expect("localized run")
-            .read()
-            .expect("localized run")
-            .glyphs[0]
-                .glyph_id
-        };
-        assert_eq!(shape_for("en"), 1);
-        assert_eq!(shape_for("tr"), 2);
     }
 }
 
@@ -1463,17 +1564,6 @@ mod shape_text_with_text_host {
         let automatic = automatic.read().expect("automatic run");
         assert_eq!(automatic.direction, TextDirection::RightToLeft);
         assert_eq!(automatic.script, "Arab");
-
-        let marked = shape_text_with_text_host(&host, "x\u{301}", &format("complex", 28.0), None)
-            .expect("positioned mark run");
-        let marked = marked.read().expect("marked run");
-        let mark = marked
-            .glyphs
-            .iter()
-            .find(|glyph| glyph.x_advance == 0.0)
-            .expect("zero-advance mark");
-        assert!(mark.x_offset < -1.0);
-        assert!(mark.y_offset < 0.0 && mark.y_offset > -0.5);
     }
 
     #[test]
@@ -1561,5 +1651,222 @@ mod shape_text_with_text_host {
         assert_eq!(run.direction, TextDirection::TopToBottom);
         assert_eq!(run.script, "Cyrl");
         assert!(run.glyphs[0].y_advance > 0.0);
+    }
+}
+
+mod shaping_coordinate_and_hint_contracts {
+    use super::*;
+
+    #[test]
+    fn converts_vertical_coordinates_and_applies_spacing_on_the_advance_axis() {
+        let host = loaded_synthetic_host();
+        let mut spaced = format("synthetic", 20.0);
+        spaced.letter_spacing = Some(2.0);
+        let horizontal =
+            shape_text_with_text_host(&host, "AA", &spaced, None).expect("horizontal run");
+        let horizontal = horizontal.read().expect("horizontal");
+        assert_eq!(horizontal.advance_width, 28.0);
+        assert_eq!(
+            horizontal
+                .glyphs
+                .iter()
+                .map(|glyph| glyph.x_advance)
+                .sum::<f32>(),
+            horizontal.advance_width
+        );
+        let measure = (get_text_host_shaper_capabilities(&host)
+            .shaper
+            .as_ref()
+            .expect("shaper")
+            .measure_text)("AA", &spaced);
+        assert_eq!(measure, horizontal.advance_width);
+
+        let vertical = shape_text_with_text_host(
+            &host,
+            "AA",
+            &spaced,
+            Some(&TextShaperOptions {
+                direction: Some(TextDirection::TopToBottom),
+                script: Some("Cyrl".to_string()),
+                ..shaper_options()
+            }),
+        )
+        .expect("vertical run");
+        let vertical = vertical.read().expect("vertical");
+        assert_eq!(vertical.direction, TextDirection::TopToBottom);
+        assert_eq!(vertical.script, "Cyrl");
+        assert!(vertical.glyphs.iter().all(|glyph| glyph.y_advance > 0.0));
+        assert_eq!(
+            vertical
+                .glyphs
+                .iter()
+                .map(|glyph| glyph.y_advance)
+                .sum::<f32>(),
+            vertical.advance_width
+        );
+        let unspaced_vertical = shape_text_with_text_host(
+            &host,
+            "AA",
+            &format("synthetic", 20.0),
+            Some(&TextShaperOptions {
+                direction: Some(TextDirection::TopToBottom),
+                script: Some("Cyrl".to_string()),
+                ..shaper_options()
+            }),
+        )
+        .expect("unspaced vertical run");
+        let unspaced_vertical = unspaced_vertical.read().expect("unspaced vertical");
+        assert_eq!(
+            vertical.advance_width - unspaced_vertical.advance_width,
+            4.0
+        );
+        for (spaced_glyph, unspaced_glyph) in vertical.glyphs.iter().zip(&unspaced_vertical.glyphs)
+        {
+            assert_eq!(spaced_glyph.x_advance, unspaced_glyph.x_advance);
+            assert_eq!(spaced_glyph.y_advance - unspaced_glyph.y_advance, 2.0);
+        }
+    }
+
+    #[test]
+    fn reports_resolved_script_and_rejects_an_invalid_language_hint() {
+        let host = loaded_synthetic_host();
+        let explicit = shape_text_with_text_host(
+            &host,
+            "A",
+            &format("synthetic", 20.0),
+            Some(&TextShaperOptions {
+                language: Some("en".to_string()),
+                script: Some("Cyrl".to_string()),
+                ..shaper_options()
+            }),
+        )
+        .expect("explicit properties");
+        assert_eq!(explicit.read().expect("run").script, "Cyrl");
+
+        let invalid = TextShaperOptions {
+            language: Some(String::new()),
+            ..shaper_options()
+        };
+        assert!(
+            shape_text_with_text_host(&host, "A", &format("synthetic", 20.0), Some(&invalid),)
+                .is_none()
+        );
+
+        let localized = create_text_host(None);
+        load_font_bytes_with_text_host(&localized, "language", &synthetic_language_font(), None)
+            .expect("language fixture");
+        let shape_for = |language: &str| {
+            shape_text_with_text_host(
+                &localized,
+                "A",
+                &format("language", 20.0),
+                Some(&TextShaperOptions {
+                    language: Some(language.to_string()),
+                    script: Some("Latn".to_string()),
+                    ..shaper_options()
+                }),
+            )
+            .expect("localized run")
+            .read()
+            .expect("localized run")
+            .glyphs[0]
+                .glyph_id
+        };
+        assert_eq!(shape_for("en"), 1);
+        assert_eq!(shape_for("tr"), 2);
+    }
+
+    #[test]
+    fn applies_generated_ligature_ranges_direction_and_mark_positioning() {
+        let ligatures = create_text_host(None);
+        load_font_bytes_with_text_host(&ligatures, "ligatures", &synthetic_ligature_font(), None)
+            .expect("ligature fixture");
+        let liga = |value, text: &str, start, end, direction| {
+            shape_text_with_text_host(
+                &ligatures,
+                text,
+                &format("ligatures", 20.0),
+                Some(&TextShaperOptions {
+                    direction,
+                    features: Some(vec![TextFeature {
+                        end,
+                        start,
+                        tag: "liga".to_string(),
+                        value,
+                    }]),
+                    language: Some("en".to_string()),
+                    script: Some("Latn".to_string()),
+                    variations: None,
+                }),
+            )
+            .expect("ligature run")
+        };
+        let disabled = liga(0, "fi", None, None, Some(TextDirection::LeftToRight));
+        let enabled = liga(1, "fi", None, None, Some(TextDirection::LeftToRight));
+        assert_eq!(
+            disabled
+                .read()
+                .expect("disabled")
+                .glyphs
+                .iter()
+                .map(|glyph| glyph.glyph_id)
+                .collect::<Vec<_>>(),
+            vec![1, 2]
+        );
+        assert_eq!(enabled.read().expect("enabled").glyphs[0].glyph_id, 3);
+        assert_eq!(enabled.read().expect("enabled").glyph_count, 1);
+
+        let ranged = liga(0, "fifi", Some(0), Some(2), None);
+        assert_eq!(
+            ranged
+                .read()
+                .expect("ranged")
+                .glyphs
+                .iter()
+                .map(|glyph| glyph.glyph_id)
+                .collect::<Vec<_>>(),
+            vec![1, 2, 3]
+        );
+        let rtl = liga(0, "fi", None, None, Some(TextDirection::RightToLeft));
+        let rtl = rtl.read().expect("rtl");
+        assert_eq!(rtl.direction, TextDirection::RightToLeft);
+        assert_eq!(
+            rtl.glyphs
+                .iter()
+                .map(|glyph| (glyph.glyph_id, glyph.cluster))
+                .collect::<Vec<_>>(),
+            vec![(2, 1), (1, 0)]
+        );
+
+        let positioned = create_text_host(None);
+        load_font_bytes_with_text_host(
+            &positioned,
+            "positioning",
+            &synthetic_positioning_font(),
+            None,
+        )
+        .expect("positioning fixture");
+        let run = shape_text_with_text_host(
+            &positioned,
+            "A\u{301}",
+            &format("positioning", 20.0),
+            Some(&TextShaperOptions {
+                direction: Some(TextDirection::LeftToRight),
+                language: Some("en".to_string()),
+                script: Some("Latn".to_string()),
+                ..shaper_options()
+            }),
+        )
+        .expect("positioned mark");
+        let run = run.read().expect("positioned mark");
+        let mark = run
+            .glyphs
+            .iter()
+            .find(|glyph| glyph.glyph_id == 2)
+            .expect("mark glyph");
+        assert_eq!(
+            (mark.x_advance, mark.x_offset, mark.y_offset),
+            (0.0, 2.0, -4.0)
+        );
     }
 }

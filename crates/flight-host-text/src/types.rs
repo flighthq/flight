@@ -68,4 +68,14 @@ pub struct TextHostOperationExplanation {
 pub(crate) struct TextHostState {
     pub(crate) alive: AtomicBool,
     pub(crate) faces: RwLock<Vec<Arc<FontFace>>>,
+    #[cfg(test)]
+    pub(crate) test_hook: RwLock<Option<Arc<dyn Fn(TextHostTestHook) + Send + Sync>>>,
+}
+
+#[cfg(test)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub(crate) enum TextHostTestHook {
+    AddAfterPrecheck,
+    CreateAfterParse,
+    CreateAfterPrecheck,
 }

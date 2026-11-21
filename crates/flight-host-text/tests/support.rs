@@ -175,6 +175,113 @@ pub(crate) fn synthetic_language_font() -> Box<[u8]> {
     return assemble_sfnt_font(0x0001_0000, &tables);
 }
 
+pub(crate) fn synthetic_ligature_font() -> Box<[u8]> {
+    let base = create_synthetic_font(Some(&SyntheticFontOptions {
+        advances: Some(vec![500.0, 300.0, 300.0, 500.0]),
+        codepoints: Some(vec![(102.0, 1.0), (105.0, 2.0)]),
+        glyphs: Some(vec![
+            empty_synthetic_glyph(),
+            square_synthetic_glyph(500.0),
+            square_synthetic_glyph(400.0),
+            square_synthetic_glyph(700.0),
+        ]),
+        units_per_em: Some(1_000.0),
+        ..SyntheticFontOptions::default()
+    }));
+    let mut tables = read_sfnt_tables(&base);
+    let mut gsub = vec![0_u8; 80];
+    put_u16(&mut gsub, 0, 1);
+    put_u16(&mut gsub, 4, 10);
+    put_u16(&mut gsub, 6, 30);
+    put_u16(&mut gsub, 8, 44);
+    put_u16(&mut gsub, 10, 1);
+    gsub[12..16].copy_from_slice(b"latn");
+    put_u16(&mut gsub, 16, 8);
+    put_u16(&mut gsub, 18, 4);
+    put_u16(&mut gsub, 22, 0);
+    put_u16(&mut gsub, 24, u16::MAX);
+    put_u16(&mut gsub, 26, 1);
+    put_u16(&mut gsub, 28, 0);
+    put_u16(&mut gsub, 30, 1);
+    gsub[32..36].copy_from_slice(b"liga");
+    put_u16(&mut gsub, 36, 8);
+    put_u16(&mut gsub, 40, 1);
+    put_u16(&mut gsub, 42, 0);
+    put_u16(&mut gsub, 44, 1);
+    put_u16(&mut gsub, 46, 4);
+    put_u16(&mut gsub, 48, 4);
+    put_u16(&mut gsub, 52, 1);
+    put_u16(&mut gsub, 54, 8);
+    put_u16(&mut gsub, 56, 1);
+    put_u16(&mut gsub, 58, 18);
+    put_u16(&mut gsub, 60, 1);
+    put_u16(&mut gsub, 62, 8);
+    put_u16(&mut gsub, 64, 1);
+    put_u16(&mut gsub, 66, 4);
+    put_u16(&mut gsub, 68, 3);
+    put_u16(&mut gsub, 70, 2);
+    put_u16(&mut gsub, 72, 2);
+    put_u16(&mut gsub, 74, 1);
+    put_u16(&mut gsub, 76, 1);
+    put_u16(&mut gsub, 78, 1);
+    tables.push(SfntFontTable {
+        data: gsub.into_boxed_slice(),
+        tag: u32::from_be_bytes(*b"GSUB"),
+    });
+    return assemble_sfnt_font(0x0001_0000, &tables);
+}
+
+pub(crate) fn synthetic_positioning_font() -> Box<[u8]> {
+    let base = create_synthetic_font(Some(&SyntheticFontOptions {
+        advances: Some(vec![500.0, 600.0, 0.0]),
+        codepoints: Some(vec![(65.0, 1.0), (769.0, 2.0)]),
+        glyphs: Some(vec![
+            empty_synthetic_glyph(),
+            square_synthetic_glyph(700.0),
+            square_synthetic_glyph(200.0),
+        ]),
+        units_per_em: Some(1_000.0),
+        ..SyntheticFontOptions::default()
+    }));
+    let mut tables = read_sfnt_tables(&base);
+    let mut gpos = vec![0_u8; 72];
+    put_u16(&mut gpos, 0, 1);
+    put_u16(&mut gpos, 4, 10);
+    put_u16(&mut gpos, 6, 30);
+    put_u16(&mut gpos, 8, 44);
+    put_u16(&mut gpos, 10, 1);
+    gpos[12..16].copy_from_slice(b"latn");
+    put_u16(&mut gpos, 16, 8);
+    put_u16(&mut gpos, 18, 4);
+    put_u16(&mut gpos, 22, 0);
+    put_u16(&mut gpos, 24, u16::MAX);
+    put_u16(&mut gpos, 26, 1);
+    put_u16(&mut gpos, 28, 0);
+    put_u16(&mut gpos, 30, 1);
+    gpos[32..36].copy_from_slice(b"mark");
+    put_u16(&mut gpos, 36, 8);
+    put_u16(&mut gpos, 40, 1);
+    put_u16(&mut gpos, 42, 0);
+    put_u16(&mut gpos, 44, 1);
+    put_u16(&mut gpos, 46, 4);
+    put_u16(&mut gpos, 48, 1);
+    put_u16(&mut gpos, 52, 1);
+    put_u16(&mut gpos, 54, 8);
+    put_u16(&mut gpos, 56, 1);
+    put_u16(&mut gpos, 58, 10);
+    put_u16(&mut gpos, 60, 3);
+    gpos[62..64].copy_from_slice(&100_i16.to_be_bytes());
+    gpos[64..66].copy_from_slice(&200_i16.to_be_bytes());
+    put_u16(&mut gpos, 66, 1);
+    put_u16(&mut gpos, 68, 1);
+    put_u16(&mut gpos, 70, 2);
+    tables.push(SfntFontTable {
+        data: gpos.into_boxed_slice(),
+        tag: u32::from_be_bytes(*b"GPOS"),
+    });
+    return assemble_sfnt_font(0x0001_0000, &tables);
+}
+
 pub(crate) fn synthetic_variable_font() -> Box<[u8]> {
     let base = synthetic_font();
     let mut tables = read_sfnt_tables(&base);
@@ -226,6 +333,95 @@ pub(crate) fn synthetic_woff() -> Box<[u8]> {
 }
 
 pub(crate) fn synthetic_format_12_font(groups: &[(u32, u32, u32)]) -> Box<[u8]> {
+    return synthetic_grouped_font(12, groups);
+}
+
+pub(crate) fn synthetic_format_13_font(groups: &[(u32, u32, u32)]) -> Box<[u8]> {
+    return synthetic_grouped_font(13, groups);
+}
+
+pub(crate) fn synthetic_format_2_font() -> Box<[u8]> {
+    let mut subtable = vec![0_u8; 538];
+    put_u16(&mut subtable, 0, 2);
+    put_u16(&mut subtable, 2, 538);
+    put_u16(&mut subtable, 8, 8); // Lead byte 1 uses the second subheader.
+    put_u16(&mut subtable, 518, 65);
+    put_u16(&mut subtable, 520, 1);
+    put_u16(&mut subtable, 524, 10);
+    put_u16(&mut subtable, 528, 1);
+    put_u16(&mut subtable, 532, 4);
+    put_u16(&mut subtable, 534, 1);
+    put_u16(&mut subtable, 536, 1);
+    return synthetic_font_with_bmp_cmap(&subtable);
+}
+
+pub(crate) fn synthetic_format_4_font(segments: &[(u16, u16, i16)]) -> Box<[u8]> {
+    return synthetic_format_4_with_range_offset(segments, 0, &[]);
+}
+
+pub(crate) fn synthetic_format_4_range_font(range_offset: u16) -> Box<[u8]> {
+    return synthetic_format_4_with_range_offset(&[(65, 66, 0)], range_offset, &[1, 1]);
+}
+
+pub(crate) fn synthetic_format_6_font() -> Box<[u8]> {
+    let mut subtable = [0_u8; 14];
+    put_u16(&mut subtable, 0, 6);
+    put_u16(&mut subtable, 2, 14);
+    put_u16(&mut subtable, 6, 65);
+    put_u16(&mut subtable, 8, 2);
+    put_u16(&mut subtable, 10, 1);
+    put_u16(&mut subtable, 12, 1);
+    return synthetic_font_with_bmp_cmap(&subtable);
+}
+
+fn synthetic_format_4_with_range_offset(
+    segments: &[(u16, u16, i16)],
+    first_range_offset: u16,
+    glyphs: &[u16],
+) -> Box<[u8]> {
+    let base = synthetic_font();
+    let mut tables = read_sfnt_tables(&base);
+    tables.retain(|table| table.tag != u32::from_be_bytes(*b"cmap"));
+    let segment_count = segments.len() + 1;
+    let body_length = 16 + segment_count * 8 + glyphs.len() * 2;
+    let mut cmap = vec![0_u8; 12 + body_length];
+    put_u16(&mut cmap, 2, 1);
+    put_u16(&mut cmap, 4, 3);
+    put_u16(&mut cmap, 6, 1);
+    put_u32(&mut cmap, 8, 12);
+    put_u16(&mut cmap, 12, 4);
+    put_u16(&mut cmap, 14, body_length as u16);
+    put_u16(&mut cmap, 18, (segment_count * 2) as u16);
+    let end_codes = 26;
+    let reserved_pad = end_codes + segment_count * 2;
+    let start_codes = reserved_pad + 2;
+    let id_deltas = start_codes + segment_count * 2;
+    let id_range_offsets = id_deltas + segment_count * 2;
+    let glyph_array = id_range_offsets + segment_count * 2;
+    for (index, (start, end, delta)) in segments.iter().copied().enumerate() {
+        put_u16(&mut cmap, end_codes + index * 2, end);
+        put_u16(&mut cmap, start_codes + index * 2, start);
+        cmap[id_deltas + index * 2..id_deltas + index * 2 + 2]
+            .copy_from_slice(&delta.to_be_bytes());
+        if index == 0 {
+            put_u16(&mut cmap, id_range_offsets, first_range_offset);
+        }
+    }
+    let sentinel = segment_count - 1;
+    put_u16(&mut cmap, end_codes + sentinel * 2, u16::MAX);
+    put_u16(&mut cmap, start_codes + sentinel * 2, u16::MAX);
+    put_u16(&mut cmap, id_deltas + sentinel * 2, 1);
+    for (index, glyph) in glyphs.iter().copied().enumerate() {
+        put_u16(&mut cmap, glyph_array + index * 2, glyph);
+    }
+    tables.push(SfntFontTable {
+        data: cmap.into_boxed_slice(),
+        tag: u32::from_be_bytes(*b"cmap"),
+    });
+    return assemble_sfnt_font(0x0001_0000, &tables);
+}
+
+fn synthetic_grouped_font(format: u16, groups: &[(u32, u32, u32)]) -> Box<[u8]> {
     let base = synthetic_font();
     let mut tables = read_sfnt_tables(&base);
     tables.retain(|table| table.tag != u32::from_be_bytes(*b"cmap"));
@@ -234,7 +430,7 @@ pub(crate) fn synthetic_format_12_font(groups: &[(u32, u32, u32)]) -> Box<[u8]> 
     put_u16(&mut cmap, 4, 3);
     put_u16(&mut cmap, 6, 10);
     put_u32(&mut cmap, 8, 12);
-    put_u16(&mut cmap, 12, 12);
+    put_u16(&mut cmap, 12, format);
     put_u32(&mut cmap, 16, (16 + groups.len() * 12) as u32);
     put_u32(&mut cmap, 24, groups.len() as u32);
     for (index, (start, end, glyph)) in groups.iter().copied().enumerate() {
@@ -246,6 +442,23 @@ pub(crate) fn synthetic_format_12_font(groups: &[(u32, u32, u32)]) -> Box<[u8]> 
     tables.push(SfntFontTable {
         data: cmap.into_boxed_slice(),
         tag: u32::from_be_bytes(*b"cmap"),
+    });
+    return assemble_sfnt_font(0x0001_0000, &tables);
+}
+
+fn synthetic_font_with_bmp_cmap(subtable: &[u8]) -> Box<[u8]> {
+    let mut tables = read_sfnt_tables(&synthetic_font());
+    let tag = u32::from_be_bytes(*b"cmap");
+    tables.retain(|table| table.tag != tag);
+    let mut cmap = vec![0_u8; 12 + subtable.len()];
+    put_u16(&mut cmap, 2, 1);
+    put_u16(&mut cmap, 4, 3);
+    put_u16(&mut cmap, 6, 1);
+    put_u32(&mut cmap, 8, 12);
+    cmap[12..].copy_from_slice(subtable);
+    tables.push(SfntFontTable {
+        data: cmap.into_boxed_slice(),
+        tag,
     });
     return assemble_sfnt_font(0x0001_0000, &tables);
 }

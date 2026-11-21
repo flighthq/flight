@@ -6,7 +6,7 @@ use flight_compression::{CompressionFraming, Decompressor, SDK_HOST_DECOMPRESS_D
 use flight_entity::Ref;
 use flight_font::{
     FontFace, FontFormatData, FontFormatUint8Array, FontVariationAxis, GlyphMetrics,
-    GlyphOutlineMetrics, GlyphRasterizeOptions, GlyphRasterizedBitmap,
+    GlyphOutlineMetrics, GlyphOutlineSource, GlyphRasterizeOptions, GlyphRasterizedBitmap,
     allocate_glyph_rasterizer_backend_from_glyph_outline_source, create_font_resource,
     create_glyph_outline_source, detect_font_format,
 };
@@ -25,7 +25,10 @@ use flight_textshaper::{
 use rustybuzz::{
     Direction, Face as ShapingFace, Feature, Language, Script, UnicodeBuffer, Variation,
 };
-use ttf_parser::{Face, GlyphId, OutlineBuilder, Tag, cmap::Format};
+use ttf_parser::{
+    Face, GlyphId, OutlineBuilder, Tag,
+    cmap::{Format, Subtable2},
+};
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub(crate) enum BackendFailure {
@@ -44,7 +47,12 @@ pub(crate) enum RasterFailure {
 
 #[cfg(test)]
 mod tests {
+    use std::cell::Cell;
     use std::sync::atomic::{AtomicUsize, Ordering};
+
+    use flight_font_formats::{
+        SyntheticFontOptions, create_synthetic_font, empty_synthetic_glyph, square_synthetic_glyph,
+    };
 
     use super::*;
 
@@ -86,6 +94,64 @@ mod tests {
         .expect("bounded WOFF normalization");
         assert_eq!(normalized.len(), 52);
         assert_eq!(calls.load(Ordering::Relaxed), 1);
+    }
+
+    #[test]
+    fn raster_cap_precedes_backing_entry_and_postcheck_rejects_oversize_output() {
+        let bytes = create_synthetic_font(Some(&SyntheticFontOptions {
+            advances: Some(vec![500.0, 600.0]),
+            codepoints: Some(vec![(65.0, 1.0)]),
+            glyphs: Some(vec![empty_synthetic_glyph(), square_synthetic_glyph(700.0)]),
+            units_per_em: Some(1_000.0),
+            charstrings: None,
+            cid: None,
+            flavor: None,
+            omit_table: None,
+        }));
+        let provider: ProviderRef = Arc::new(());
+        let face = create_face(
+            &provider,
+            "raster",
+            &bytes,
+            0,
+            BackendLimits {
+                max_cmap_groups: 16,
+                max_cmap_operations: 1_024,
+                max_woff_decoded_bytes: 1_024 * 1_024,
+                max_woff_tables: 16,
+            },
+        )
+        .expect("face");
+        let options = GlyphRasterizeOptions {
+            font_family: "raster".to_string(),
+            font_size: 20.0,
+            font_style: None,
+            font_weight: None,
+        };
+        let backing_entries = Cell::new(0);
+        let make_bitmap = |_| {
+            backing_entries.set(backing_entries.get() + 1);
+            return Some(GlyphRasterizedBitmap {
+                advance: 0.0,
+                bearing_x: 0,
+                bearing_y: 0,
+                height: 20,
+                pixels: vec![0; 20 * 20 * 4].into_boxed_slice(),
+                width: 20,
+            });
+        };
+        assert_eq!(
+            rasterize_with_backing(&face, 65, &options, 1, make_bitmap),
+            Err(RasterFailure::ResourceLimitExceeded)
+        );
+        assert_eq!(backing_entries.get(), 0);
+        assert_eq!(
+            rasterize_with_backing(&face, 65, &options, 399, make_bitmap),
+            Err(RasterFailure::ResourceLimitExceeded)
+        );
+        assert_eq!(backing_entries.get(), 1);
+        assert!(rasterize_with_backing(&face, 65, &options, 400, make_bitmap).is_ok());
+        assert_eq!(backing_entries.get(), 2);
     }
 
     fn put_u16(bytes: &mut [u8], at: usize, value: u16) {
@@ -244,7 +310,7 @@ fn create_outline_source(face: &Arc<FontFace>) -> Option<Arc<flight_font::GlyphO
     )));
 }
 
-fn apply_grouped_cmaps(
+fn apply_bounded_cmaps(
     cmap: &[u8],
     reverse: &mut [i32],
     limits: BackendLimits,
@@ -274,9 +340,38 @@ fn apply_grouped_cmaps(
             usize::try_from(read_u32(cmap, record + 4).ok_or(BackendFailure::MalformedFont)?)
                 .map_err(|_| BackendFailure::MalformedFont)?;
         let format = read_u16(cmap, offset).ok_or(BackendFailure::MalformedFont)?;
-        let unicode = platform == 0
-            || (platform == 3 && (encoding == 1 || (encoding == 10 && matches!(format, 12 | 13))));
-        if !unicode || !matches!(format, 12 | 13) || !seen_offsets.insert(offset) {
+        if !is_unicode_cmap(platform, encoding, format)
+            || !matches!(format, 2 | 4 | 12 | 13)
+            || !seen_offsets.insert(offset)
+        {
+            continue;
+        }
+        if format == 2 {
+            let subtable = short_cmap_subtable(cmap, offset)?;
+            operations = operations
+                .checked_add(format_2_work(subtable)?)
+                .ok_or(BackendFailure::ResourceLimitExceeded)?;
+            if operations > limits.max_cmap_operations {
+                return Err(BackendFailure::ResourceLimitExceeded);
+            }
+            let parsed = Subtable2::parse(subtable).ok_or(BackendFailure::MalformedFont)?;
+            parsed.codepoints(|candidate| {
+                if let Some(glyph) = parsed.glyph_index(candidate) {
+                    set_reverse_mapping(reverse, glyph.0, candidate);
+                }
+            });
+            continue;
+        }
+        if format == 4 {
+            let subtable = short_cmap_subtable(cmap, offset)?;
+            let segments = usize::from(read_u16(subtable, 6).ok_or(BackendFailure::MalformedFont)?);
+            groups_seen = groups_seen
+                .checked_add(segments / 2)
+                .ok_or(BackendFailure::ResourceLimitExceeded)?;
+            if groups_seen > limits.max_cmap_groups {
+                return Err(BackendFailure::ResourceLimitExceeded);
+            }
+            operations = apply_format_4(subtable, reverse, operations, limits.max_cmap_operations)?;
             continue;
         }
         let length =
@@ -359,6 +454,81 @@ fn apply_grouped_cmaps(
     return Ok(operations);
 }
 
+fn apply_format_4(
+    cmap: &[u8],
+    reverse: &mut [i32],
+    mut operations: usize,
+    max_operations: usize,
+) -> Result<usize, BackendFailure> {
+    let segment_bytes = usize::from(read_u16(cmap, 6).ok_or(BackendFailure::MalformedFont)?);
+    if segment_bytes < 2 || !segment_bytes.is_multiple_of(2) {
+        return Err(BackendFailure::MalformedFont);
+    }
+    let end_codes = 14;
+    let reserved_pad = end_codes + segment_bytes;
+    let start_codes = reserved_pad + 2;
+    let id_deltas = start_codes + segment_bytes;
+    let id_range_offsets = id_deltas + segment_bytes;
+    let glyph_array = id_range_offsets + segment_bytes;
+    if glyph_array > cmap.len() || read_u16(cmap, reserved_pad) != Some(0) {
+        return Err(BackendFailure::MalformedFont);
+    }
+
+    // Validate and charge the complete segment list before walking any code points.
+    let mut previous_end = None;
+    for index in (0..segment_bytes).step_by(2) {
+        let start = read_u16(cmap, start_codes + index).ok_or(BackendFailure::MalformedFont)?;
+        let range_end = read_u16(cmap, end_codes + index).ok_or(BackendFailure::MalformedFont)?;
+        let is_last = index + 2 == segment_bytes;
+        if start > range_end || previous_end.is_some_and(|previous| start <= previous) {
+            return Err(BackendFailure::MalformedFont);
+        }
+        if (start == u16::MAX && range_end == u16::MAX) != is_last {
+            return Err(BackendFailure::MalformedFont);
+        }
+        previous_end = Some(range_end);
+        if !is_last {
+            operations = operations
+                .checked_add(usize::from(range_end - start) + 1)
+                .ok_or(BackendFailure::ResourceLimitExceeded)?;
+            if operations > max_operations {
+                return Err(BackendFailure::ResourceLimitExceeded);
+            }
+        }
+    }
+
+    for index in (0..segment_bytes - 2).step_by(2) {
+        let start = read_u16(cmap, start_codes + index).ok_or(BackendFailure::MalformedFont)?;
+        let range_end = read_u16(cmap, end_codes + index).ok_or(BackendFailure::MalformedFont)?;
+        let delta = read_u16(cmap, id_deltas + index).ok_or(BackendFailure::MalformedFont)?;
+        let range_word = id_range_offsets + index;
+        let range_offset =
+            usize::from(read_u16(cmap, range_word).ok_or(BackendFailure::MalformedFont)?);
+        let first_glyph = range_word + range_offset;
+        if range_offset != 0
+            && (!range_offset.is_multiple_of(2)
+                || first_glyph < glyph_array
+                || first_glyph + (usize::from(range_end - start) + 1) * 2 > cmap.len())
+        {
+            return Err(BackendFailure::MalformedFont);
+        }
+        for code_point in start..=range_end {
+            let glyph = if range_offset == 0 {
+                code_point
+            } else {
+                let word = first_glyph + usize::from(code_point - start) * 2;
+                let glyph = read_u16(cmap, word).ok_or(BackendFailure::MalformedFont)?;
+                if glyph == 0 {
+                    continue;
+                }
+                glyph
+            };
+            set_reverse_mapping(reverse, glyph.wrapping_add(delta), u32::from(code_point));
+        }
+    }
+    return Ok(operations);
+}
+
 fn apply_ttf_variations(face: &mut Face<'_>, variations: &[FontVariation]) {
     for variation in variations {
         let _ = face.set_variation(
@@ -380,7 +550,7 @@ fn build_reverse_cmap(
     let Some(cmap_bytes) = face.raw_face().table(Tag::from_bytes(b"cmap")) else {
         return Ok(reverse.into_boxed_slice());
     };
-    let mut operations = apply_grouped_cmaps(cmap_bytes, &mut reverse, limits)?;
+    let mut operations = apply_bounded_cmaps(cmap_bytes, &mut reverse, limits)?;
     let Some(cmap) = face.tables().cmap else {
         return Ok(reverse.into_boxed_slice());
     };
@@ -391,21 +561,20 @@ fn build_reverse_cmap(
         if !subtable.is_unicode()
             || matches!(
                 subtable.format,
-                Format::SegmentedCoverage(_) | Format::ManyToOneRangeMappings(_)
+                Format::HighByteMappingThroughTable(_)
+                    | Format::SegmentMappingToDeltaValues(_)
+                    | Format::SegmentedCoverage(_)
+                    | Format::ManyToOneRangeMappings(_)
             )
         {
             continue;
         }
         let declared_work = match subtable.format {
             Format::ByteEncodingTable(_) => 256,
-            Format::HighByteMappingThroughTable(_) | Format::SegmentMappingToDeltaValues(_) => {
-                65_536
-            }
             Format::TrimmedTableMapping(table) => usize::from(table.glyphs.len()),
             Format::TrimmedArray(table) => usize::try_from(table.glyphs.len())
                 .map_err(|_| BackendFailure::ResourceLimitExceeded)?,
-            Format::MixedCoverage | Format::UnicodeVariationSequences(_) => 0,
-            Format::SegmentedCoverage(_) | Format::ManyToOneRangeMappings(_) => 0,
+            _ => 0,
         };
         if declared_work > limits.max_cmap_operations.saturating_sub(operations) {
             return Err(BackendFailure::ResourceLimitExceeded);
@@ -453,6 +622,33 @@ fn first_scalar_in_range(start: u32, end: u32) -> Option<u32> {
         return Some(0xe000);
     }
     return None;
+}
+
+fn format_2_work(subtable: &[u8]) -> Result<usize, BackendFailure> {
+    let mut work = 0_usize;
+    for first_byte in 0_u16..256 {
+        let key = usize::from(
+            read_u16(subtable, 6 + usize::from(first_byte) * 2)
+                .ok_or(BackendFailure::MalformedFont)?,
+        );
+        let subheader = 518 + key;
+        if !key.is_multiple_of(8) || subheader + 8 > subtable.len() {
+            return Err(BackendFailure::MalformedFont);
+        }
+        let first_code = read_u16(subtable, subheader).ok_or(BackendFailure::MalformedFont)?;
+        let entry_count = read_u16(subtable, subheader + 2).ok_or(BackendFailure::MalformedFont)?;
+        let range_end = first_code
+            .checked_add(entry_count)
+            .filter(|end| *end <= 256)
+            .ok_or(BackendFailure::MalformedFont)?;
+        let count = if key == 0 {
+            usize::from((first_code..range_end).contains(&first_byte))
+        } else {
+            usize::from(entry_count)
+        };
+        work += count;
+    }
+    return Ok(work);
 }
 
 fn from_rustybuzz_direction(direction: Direction) -> TextDirection {
@@ -634,6 +830,11 @@ fn inspect_sfnt_directory(bytes: &[u8], offset: usize) -> Result<(), BackendFail
     }
     let _ = directory_end;
     return Ok(());
+}
+
+fn is_unicode_cmap(platform: u16, encoding: u16, format: u16) -> bool {
+    return platform == 0
+        || (platform == 3 && (encoding == 1 || (encoding == 10 && matches!(format, 12 | 13))));
 }
 
 #[cfg(feature = "system-discovery")]
@@ -874,12 +1075,25 @@ fn parse_woff_plan(bytes: &[u8], limits: BackendLimits) -> Result<WoffPlan, Back
     });
 }
 
-// flight-lint: allow(f64) raster bounds are Flight Path f64 values widened from font coordinates
 pub(crate) fn rasterize(
     face: &Arc<FontFace>,
     code_point: u32,
     options: &GlyphRasterizeOptions,
     max_glyph_pixels: usize,
+) -> Result<GlyphRasterizedBitmap, RasterFailure> {
+    return rasterize_with_backing(face, code_point, options, max_glyph_pixels, |source| {
+        return allocate_glyph_rasterizer_backend_from_glyph_outline_source(source)
+            .rasterize(code_point, options);
+    });
+}
+
+// flight-lint: allow(f64) raster bounds are Flight Path f64 values widened from font coordinates
+fn rasterize_with_backing(
+    face: &Arc<FontFace>,
+    code_point: u32,
+    options: &GlyphRasterizeOptions,
+    max_glyph_pixels: usize,
+    backing: impl FnOnce(Arc<GlyphOutlineSource>) -> Option<GlyphRasterizedBitmap>,
 ) -> Result<GlyphRasterizedBitmap, RasterFailure> {
     let backend = backend_face(face).ok_or(RasterFailure::GlyphNotFound)?;
     let parsed = Face::parse(&backend.bytes, backend.face_index)
@@ -919,10 +1133,7 @@ pub(crate) fn rasterize(
             return Err(RasterFailure::ResourceLimitExceeded);
         }
     }
-    let capability = allocate_glyph_rasterizer_backend_from_glyph_outline_source(source);
-    let bitmap = capability
-        .rasterize(code_point, options)
-        .ok_or(RasterFailure::GlyphNotFound)?;
+    let bitmap = backing(source).ok_or(RasterFailure::GlyphNotFound)?;
     let pixels = usize::try_from(bitmap.width)
         .ok()
         .and_then(|width| usize::try_from(bitmap.height).ok()?.checked_mul(width))
@@ -1050,6 +1261,12 @@ pub(crate) fn shape(
         run.script = script;
     }
     return Ok(run);
+}
+
+fn short_cmap_subtable(cmap: &[u8], offset: usize) -> Result<&[u8], BackendFailure> {
+    let tail = cmap.get(offset..).ok_or(BackendFailure::MalformedFont)?;
+    let length = usize::from(read_u16(tail, 2).ok_or(BackendFailure::MalformedFont)?);
+    return tail.get(..length).ok_or(BackendFailure::MalformedFont);
 }
 
 fn to_rustybuzz_direction(direction: TextDirection) -> Direction {
