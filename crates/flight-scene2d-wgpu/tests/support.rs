@@ -1163,6 +1163,16 @@ pub fn is_test_texture_destroyed(native: &WgpuNativeDevice, texture: &wgpu::Text
     return block_on(scope.pop()).is_some();
 }
 
+/// Leaves `lock` poisoned, as a panic contained while writing under it (a failed GPU write inside a
+/// draw) leaves it.
+pub fn poison_test_lock<T: ?Sized>(lock: &std::sync::RwLock<T>) {
+    let poisoned = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
+        let _writing = lock.write().unwrap();
+        panic!("a write under the lock failed");
+    }));
+    assert!(poisoned.is_err() && lock.is_poisoned());
+}
+
 /// Installs the test canvas host and an image host whose surface images are not yet ready, so a
 /// raster path allocates its surface but never acquires a GPU cache entry.
 pub fn set_test_hosts_with_unready_images(

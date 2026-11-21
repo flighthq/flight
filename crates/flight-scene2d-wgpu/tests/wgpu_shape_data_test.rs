@@ -177,6 +177,65 @@ mod destroy_wgpu_shape_data {
         );
     }
 
+    // A contained draw panic can leave the shape cache, its image, its raster surface, the device
+    // runtime and the cached texture entry poisoned; teardown recovers each lock and still frees the
+    // texture, the cache key and the surface.
+    #[test]
+    fn frees_the_texture_and_surface_of_a_cache_whose_locks_a_panic_poisoned() {
+        let mut state = create_test_state_in_pass();
+        let record = set_test_hosts(&mut state);
+        let node: NodeRef = create_test_solid_shape();
+        let mut proxy = create_test_shape_proxy(&mut state, &node);
+        let (rasterizer, _) = create_test_counting_rasterizer();
+        register_wgpu_shape_rasterizer(&mut state, Some(rasterizer));
+        register_wgpu_standard_material(&mut state);
+        draw_wgpu_raster_shape(&mut state, &proxy);
+        let data = proxy.renderer_data.take().unwrap();
+        let (image, surface) = {
+            let mut guard = data.write().unwrap();
+            let shape_data = get_wgpu_shape_data(&mut *guard).unwrap();
+            (
+                shape_data.image.clone().unwrap(),
+                shape_data.surface.clone().unwrap(),
+            )
+        };
+        let image_id = get_entity_id(&*image.read().unwrap());
+        let context = get_wgpu_render_state_runtime(&state).context.clone();
+        let entry = context
+            .read()
+            .unwrap()
+            .texture_source_premultiplied_texture_cache
+            .get(&image_id)
+            .cloned()
+            .expect("the raster upload is cached");
+        submit_wgpu_frame(&mut state);
+        let native = get_wgpu_render_state_native_device(&state);
+        let destroyed_before = record.destroyed_count();
+        poison_test_lock(&data);
+        poison_test_lock(&image);
+        poison_test_lock(&surface);
+        poison_test_lock(&context);
+        poison_test_lock(&entry);
+
+        destroy_wgpu_shape_data(&mut state, data);
+
+        assert!(
+            !context
+                .read()
+                .unwrap_or_else(std::sync::PoisonError::into_inner)
+                .texture_source_premultiplied_texture_cache
+                .contains_key(&image_id)
+        );
+        assert!(is_test_texture_destroyed(
+            &native,
+            &entry
+                .read()
+                .unwrap_or_else(std::sync::PoisonError::into_inner)
+                .texture
+        ));
+        assert_eq!(record.destroyed_count(), destroyed_before + 1);
+    }
+
     #[test]
     fn destroys_a_raster_surface_even_when_it_never_acquired_a_gpu_cache_entry() {
         let mut state = create_test_state_in_pass();

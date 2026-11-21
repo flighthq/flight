@@ -69,6 +69,31 @@ mod create_wgpu_cache_state {
         assert!(!is_test_buffer_destroyed(&native, &screen_uniforms));
     }
 
+    // A contained panic inside a cache bake can leave the cache state poisoned; the owner's
+    // teardown recovers it and still destroys the cache state and its share of the device tier.
+    #[test]
+    fn destroys_a_cache_state_a_contained_panic_poisoned_with_its_owner() {
+        let mut screen = create_wgpu_render_state_for_test(None);
+        let calls = Arc::new(AtomicU32::new(0));
+        let counter = calls.clone();
+        register_wgpu_device_teardown(
+            &screen,
+            Arc::new(move |_device: &WgpuNativeDevice| {
+                counter.fetch_add(1, Ordering::SeqCst);
+            }),
+        );
+        let cache_state = create_cache_state(&mut screen, None);
+        poison_test_lock(&cache_state);
+
+        destroy_wgpu_render_state(&mut screen, &mut proxies());
+
+        let cache_state = cache_state
+            .read()
+            .unwrap_or_else(std::sync::PoisonError::into_inner);
+        assert!(get_wgpu_render_state_runtime(&cache_state).destroyed);
+        assert_eq!(calls.load(Ordering::SeqCst), 1);
+    }
+
     #[test]
     fn does_not_retain_the_device_tier_when_an_owned_cache_state_is_left_undisposed() {
         let mut screen = create_wgpu_render_state_for_test(None);
@@ -262,6 +287,26 @@ mod ensure_wgpu_render_cache_target {
         ));
         assert!(get_wgpu_render_cache_target(&state, &first_cache).is_none());
         assert!(get_wgpu_render_cache_target(&state, &second_cache).is_none());
+    }
+
+    // A cache target a contained panic poisoned is still destroyed with its state.
+    #[test]
+    fn destroys_an_owned_target_a_contained_panic_poisoned() {
+        let mut state = create_wgpu_render_state_for_test(None);
+        let native = get_wgpu_render_state_native_device(&state);
+        let cache = create_render_cache();
+        let target = ensure_wgpu_render_cache_target(&mut state, &cache, 8.0, 8.0);
+        poison_test_lock(&target);
+
+        destroy_wgpu_render_state(&mut state, &mut proxies());
+
+        assert!(is_test_texture_destroyed(
+            &native,
+            &target
+                .read()
+                .unwrap_or_else(std::sync::PoisonError::into_inner)
+                .texture
+        ));
     }
 }
 

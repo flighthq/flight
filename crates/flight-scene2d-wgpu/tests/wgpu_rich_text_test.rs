@@ -50,6 +50,8 @@ mod destroy_wgpu_rich_text_data {
             .unwrap();
         submit_wgpu_frame(&mut state);
         let destroyed_before = record.destroyed_count();
+        // A contained draw panic can leave the cache poisoned; teardown still frees everything.
+        poison_test_lock(&data);
 
         destroy_wgpu_rich_text_data(&mut state, data);
 
