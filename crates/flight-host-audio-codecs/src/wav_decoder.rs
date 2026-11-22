@@ -41,6 +41,90 @@ mod tests {
         return (reason, WAV_BACKING_OPENS.with(|count| return count.get()));
     }
 
+    // A 16-bit stereo PCM file of `samples` with one extra chunk of `extra_id` and `extra_body`
+    // immediately before `data`. Every chunk body has even length, so no RIFF pad byte occurs.
+    fn encode_wav_with_chunk_before_data(
+        extra_id: &[u8; 4],
+        extra_body: &[u8],
+        samples: &[i16],
+    ) -> Vec<u8> {
+        assert!(extra_body.len().is_multiple_of(2));
+        let data = interleave_i16(samples);
+        let mut bytes = Vec::new();
+        bytes.extend_from_slice(b"RIFF");
+        let riff_length = 4 + (8 + 16) + (8 + extra_body.len()) + (8 + data.len());
+        bytes.extend_from_slice(&(riff_length as u32).to_le_bytes());
+        bytes.extend_from_slice(b"WAVE");
+        bytes.extend_from_slice(b"fmt ");
+        bytes.extend_from_slice(&16_u32.to_le_bytes());
+        bytes.extend_from_slice(&1_u16.to_le_bytes());
+        bytes.extend_from_slice(&2_u16.to_le_bytes());
+        bytes.extend_from_slice(&8_000_u32.to_le_bytes());
+        bytes.extend_from_slice(&32_000_u32.to_le_bytes());
+        bytes.extend_from_slice(&4_u16.to_le_bytes());
+        bytes.extend_from_slice(&16_u16.to_le_bytes());
+        bytes.extend_from_slice(extra_id);
+        bytes.extend_from_slice(&(extra_body.len() as u32).to_le_bytes());
+        bytes.extend_from_slice(extra_body);
+        bytes.extend_from_slice(b"data");
+        bytes.extend_from_slice(&(data.len() as u32).to_le_bytes());
+        bytes.extend_from_slice(&data);
+        return bytes;
+    }
+
+    // A valid PCM file whose `fact` chunk declares no body sits between the RIFF chunk walk the
+    // preflight performs and the backing reader, which reads a fact sample count whatever the
+    // chunk declares. The preflight admits it; the backing reader consumes the `data` tag as that
+    // count, takes the data length and the first two samples as a phantom chunk header, and runs
+    // out of input skipping that chunk. The I/O failure is truncation, decided once at the backing
+    // entry. The fixture's layout is pinned below so the phantom header cannot drift by accident.
+    #[test]
+    fn a_zero_length_fact_chunk_before_data_reaches_the_backing_reader_once_as_truncation() {
+        let samples = [1, 2, 3, 4];
+        let bytes = encode_wav_with_chunk_before_data(b"fact", &[], &samples);
+        assert_eq!(bytes.len(), 60);
+        assert_eq!(&bytes[12..20], b"fmt \x10\0\0\0");
+        assert_eq!(&bytes[36..44], b"fact\0\0\0\0");
+        assert_eq!(&bytes[44..52], b"data\x08\0\0\0");
+        assert_eq!(
+            u32::from_le_bytes(bytes[4..8].try_into().unwrap()) as usize + 8,
+            bytes.len()
+        );
+        let phantom_kind = &bytes[48..52];
+        let phantom_length = u32::from_le_bytes(bytes[52..56].try_into().unwrap()) as usize;
+        assert!(![b"fmt ", b"fact", b"data"].contains(&phantom_kind.try_into().unwrap()));
+        assert!(phantom_length > bytes.len() - 56);
+
+        let options = create_audio_codecs_host_options();
+        let Ok(layout) = preflight_wav(&options, &bytes) else {
+            panic!("the preflight admits the file");
+        };
+        assert_eq!(
+            (layout.channels, layout.frames, layout.sample_rate),
+            (2, 2, 8_000)
+        );
+        assert!(matches!(open_wav_backing(&bytes), Err(Error::IoError(_))));
+        assert_eq!(
+            decode_counting_backing(&options, &bytes),
+            (AudioCodecsHostDecodeExplanationReason::TruncatedInput, 1)
+        );
+    }
+
+    #[test]
+    fn a_fact_chunk_with_its_count_or_an_empty_unknown_chunk_before_data_decodes() {
+        let samples = [1, 2, 3, 4];
+        let options = create_audio_codecs_host_options();
+        for bytes in [
+            encode_wav_with_chunk_before_data(b"fact", &2_u32.to_le_bytes(), &samples),
+            encode_wav_with_chunk_before_data(b"LIST", &[], &samples),
+        ] {
+            assert_eq!(
+                decode_counting_backing(&options, &bytes),
+                (AudioCodecsHostDecodeExplanationReason::Ready, 1)
+            );
+        }
+    }
+
     #[test]
     fn accepted_declarations_open_the_backing_reader_once() {
         let at_cap = AudioCodecsHostOptions {
