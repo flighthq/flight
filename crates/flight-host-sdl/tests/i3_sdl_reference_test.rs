@@ -1,3 +1,4 @@
+use std::collections::BTreeMap;
 use std::path::Path;
 use std::sync::{Arc, Mutex, RwLock};
 
@@ -12,8 +13,9 @@ use flight_buffer::{
 use flight_compression::SDK_HOST_DECOMPRESS_DEFLATE;
 use flight_font::allocate_glyph_rasterizer_backend_from_glyph_outline_source;
 use flight_font_formats::{
-    SyntheticFontOptions, SyntheticGlyph, SyntheticGlyphPoint,
-    create_glyph_outline_source_from_open_type_font, create_synthetic_font,
+    SfntFontTable, SyntheticFontOptions, SyntheticGlyph, SyntheticGlyphPoint, assemble_sfnt_font,
+    compute_sfnt_table_checksum, create_glyph_outline_source_from_open_type_font,
+    create_synthetic_font, pack_sfnt_tag, read_sfnt_table_directory,
 };
 use flight_geometry::create_rectangle;
 use flight_glyphatlas::{
@@ -70,8 +72,8 @@ use glow::{HasContext, PixelPackData};
 const WIDTH: u32 = 480;
 const HEIGHT: u32 = 320;
 const BACKGROUND: u32 = 0x101827ff;
-const FONT_BYTE_LENGTH: usize = 2684;
-const FONT_FNV1A32: u32 = 0xf5d71ca9;
+const FONT_BYTE_LENGTH: usize = 3096;
+const FONT_FNV1A32: u32 = 0x29fd2e97;
 // Production BitmapText is rasterized independently by glow and wgpu; a bounded per-channel
 // allowance covers their edge-alpha rounding while the glyph/geometry anchors below stay strict.
 const CHANNEL_TOLERANCE: u8 = 24;
@@ -204,8 +206,10 @@ fn reference_scene(probe: Option<&str>) -> ReferenceScene {
                 min_x.is_finite() && min_y.is_finite(),
                 "visible glyph bounds"
             );
-            text.x = f64::from(24.0 - min_x);
-            text.y = f64::from(218.0 - min_y);
+            // BitmapText positions quads at glyph bearings while RichText positions a CSS line box.
+            // Anchor the first native ink pixel to the same (26, 221) contract the browser paths use.
+            text.x = f64::from(25.0 - min_x);
+            text.y = f64::from(220.0 - min_y);
             let atlas_ink = get_glyph_atlas_bitmap(&glyph_atlas)
                 .read()
                 .unwrap()
@@ -416,13 +420,15 @@ fn reference_font_fixture() -> (
         codepoints.push((letter.as_bytes()[0] as f32, glyphs.len() as f32));
         glyphs.push(pattern_glyph(&pattern));
     }
-    let bytes = create_synthetic_font(Some(&SyntheticFontOptions {
+    let glyph_count = glyphs.len();
+    let minimal = create_synthetic_font(Some(&SyntheticFontOptions {
         advances: Some(vec![24.0; glyphs.len()]),
         codepoints: Some(codepoints),
         glyphs: Some(glyphs),
         units_per_em: Some(28.0),
         ..Default::default()
     }));
+    let bytes = complete_browser_font(&minimal, glyph_count);
     let length = bytes.len();
     let buffer = create_array_buffer_from_bytes(bytes.clone());
     let view = create_array_buffer_view(&buffer, 0, length, ArrayBufferViewKind::Uint8Array)
@@ -445,6 +451,180 @@ fn reference_font_fixture() -> (
         width: 256,
     });
     return (bytes, create_glyph_source_from_glyph_atlas(&atlas), atlas);
+}
+
+fn complete_browser_font(minimal: &[u8], glyph_count: usize) -> Box<[u8]> {
+    let directory = read_sfnt_table_directory(minimal).expect("generated SFNT directory");
+    let mut tables = BTreeMap::<String, Vec<u8>>::new();
+    for (tag, range) in directory.tables {
+        tables.insert(
+            tag,
+            minimal[range.offset..range.offset + range.length].to_vec(),
+        );
+    }
+
+    let head = tables.get_mut("head").unwrap();
+    put_u32(head, 4, 0x00010000);
+    put_u32(head, 12, 0x5f0f3cf5);
+    put_u16(head, 16, 3);
+    put_i16(head, 36, 0);
+    put_i16(head, 38, 0);
+    put_i16(head, 40, 19);
+    put_i16(head, 42, 27);
+    put_u16(head, 46, 8);
+    put_i16(head, 48, 2);
+
+    let hhea = tables.get_mut("hhea").unwrap();
+    put_u32(hhea, 0, 0x00010000);
+    put_i16(hhea, 4, 28);
+    put_i16(hhea, 6, 0);
+    put_i16(hhea, 8, 0);
+    put_u16(hhea, 10, 24);
+    put_i16(hhea, 12, 0);
+    put_i16(hhea, 14, 5);
+    put_i16(hhea, 16, 19);
+    put_i16(hhea, 18, 1);
+
+    let cmap = tables.get_mut("cmap").unwrap();
+    let format4_offset = read_u32(cmap, 8) as usize;
+    let segment_count = usize::from(read_u16(cmap, format4_offset + 6)) / 2;
+    let segment_power_of_two = 1usize << segment_count.ilog2();
+    put_u16(cmap, format4_offset + 8, (segment_power_of_two * 2) as u16);
+    put_u16(
+        cmap,
+        format4_offset + 10,
+        segment_power_of_two.ilog2() as u16,
+    );
+    put_u16(
+        cmap,
+        format4_offset + 12,
+        (segment_count * 2 - segment_power_of_two * 2) as u16,
+    );
+
+    let mut maxp = vec![0; 32];
+    put_u32(&mut maxp, 0, 0x00010000);
+    put_u16(&mut maxp, 4, glyph_count as u16);
+    put_u16(&mut maxp, 6, 128);
+    put_u16(&mut maxp, 8, 32);
+    put_u16(&mut maxp, 14, 1);
+    tables.insert("maxp".to_string(), maxp);
+
+    let loca = tables.get("loca").unwrap().clone();
+    let glyf = tables.get_mut("glyf").unwrap();
+    for glyph in 0..glyph_count {
+        let start = read_u32(&loca, glyph * 4) as usize;
+        let end = read_u32(&loca, (glyph + 1) * 4) as usize;
+        if start == end {
+            continue;
+        }
+        put_i16(glyf, start + 2, 0);
+        put_i16(glyf, start + 4, 0);
+        put_i16(glyf, start + 6, 19);
+        put_i16(glyf, start + 8, 27);
+    }
+    tables.insert("name".to_string(), encode_reference_name_table());
+    tables.insert("OS/2".to_string(), encode_reference_os2_table());
+    let mut post = vec![0; 32];
+    put_u32(&mut post, 0, 0x00030000);
+    tables.insert("post".to_string(), post);
+
+    let sfnt_tables = tables
+        .into_iter()
+        .map(|(tag, data)| SfntFontTable {
+            data: data.into_boxed_slice(),
+            tag: pack_sfnt_tag(&tag),
+        })
+        .collect::<Vec<_>>();
+    let mut font = assemble_sfnt_font(0x00010000, &sfnt_tables);
+    let table_count = sfnt_tables.len();
+    let maximum_power_of_two = 1usize << table_count.ilog2();
+    put_u16(&mut font, 6, (maximum_power_of_two * 16) as u16);
+    put_u16(&mut font, 8, maximum_power_of_two.ilog2() as u16);
+    put_u16(
+        &mut font,
+        10,
+        (table_count * 16 - maximum_power_of_two * 16) as u16,
+    );
+    let completed = read_sfnt_table_directory(&font).expect("completed SFNT directory");
+    let head_offset = completed.tables.get("head").unwrap().offset;
+    put_u32(&mut font, head_offset + 8, 0);
+    let adjustment = 0xb1b0afba_u32.wrapping_sub(compute_sfnt_table_checksum(&font, None));
+    put_u32(&mut font, head_offset + 8, adjustment);
+    return font;
+}
+
+fn encode_reference_name_table() -> Vec<u8> {
+    let names = [
+        (1_u16, "FlightReferenceSynthetic"),
+        (2, "Regular"),
+        (4, "FlightReferenceSynthetic"),
+        (6, "FlightReferenceSynthetic-Regular"),
+    ];
+    let encoded = names
+        .iter()
+        .map(|(id, value)| {
+            let bytes = value
+                .encode_utf16()
+                .flat_map(u16::to_be_bytes)
+                .collect::<Vec<_>>();
+            return (*id, bytes);
+        })
+        .collect::<Vec<_>>();
+    let string_offset = 6 + encoded.len() * 12;
+    let mut out =
+        vec![0; string_offset + encoded.iter().map(|(_, bytes)| bytes.len()).sum::<usize>()];
+    put_u16(&mut out, 2, encoded.len() as u16);
+    put_u16(&mut out, 4, string_offset as u16);
+    let mut offset = 0;
+    for (index, (id, bytes)) in encoded.iter().enumerate() {
+        let record = 6 + index * 12;
+        put_u16(&mut out, record, 3);
+        put_u16(&mut out, record + 2, 1);
+        put_u16(&mut out, record + 4, 0x0409);
+        put_u16(&mut out, record + 6, *id);
+        put_u16(&mut out, record + 8, bytes.len() as u16);
+        put_u16(&mut out, record + 10, offset as u16);
+        out[string_offset + offset..string_offset + offset + bytes.len()].copy_from_slice(bytes);
+        offset += bytes.len();
+    }
+    return out;
+}
+
+fn encode_reference_os2_table() -> Vec<u8> {
+    let mut out = vec![0; 78];
+    put_i16(&mut out, 2, 24);
+    put_u16(&mut out, 4, 400);
+    put_u16(&mut out, 6, 5);
+    out[58..62].copy_from_slice(b"FLIT");
+    put_u16(&mut out, 62, 0x0040);
+    put_u16(&mut out, 64, 0x0020);
+    put_u16(&mut out, 66, 0x0054);
+    put_i16(&mut out, 68, 28);
+    put_i16(&mut out, 70, 0);
+    put_i16(&mut out, 72, 0);
+    put_u16(&mut out, 74, 28);
+    put_u16(&mut out, 76, 0);
+    return out;
+}
+
+fn read_u16(bytes: &[u8], offset: usize) -> u16 {
+    return u16::from_be_bytes(bytes[offset..offset + 2].try_into().unwrap());
+}
+
+fn read_u32(bytes: &[u8], offset: usize) -> u32 {
+    return u32::from_be_bytes(bytes[offset..offset + 4].try_into().unwrap());
+}
+
+fn put_i16(bytes: &mut [u8], offset: usize, value: i16) {
+    bytes[offset..offset + 2].copy_from_slice(&value.to_be_bytes());
+}
+
+fn put_u16(bytes: &mut [u8], offset: usize, value: u16) {
+    bytes[offset..offset + 2].copy_from_slice(&value.to_be_bytes());
+}
+
+fn put_u32(bytes: &mut [u8], offset: usize, value: u32) {
+    bytes[offset..offset + 4].copy_from_slice(&value.to_be_bytes());
 }
 
 fn empty_glyph() -> SyntheticGlyph {

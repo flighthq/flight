@@ -55,9 +55,8 @@ export interface ReferenceRendererCaptureReport {
 
 /**
  * Applies the reference scene's full-resolution acceptance policy. Canvas is the one canonical raster;
- * GL and WGPU compare to it through the repository's existing decoded-pixel mismatch primitive. DOM is
- * deliberately not forced through that raster equivalence: its capture must be the functional suite's
- * registered-element screenshot, with the page-side bitmap oracle invoked on those supplied pixels.
+ * DOM, GL and WGPU compare to it through the repository's decoded-pixel mismatch primitive, while the
+ * feature oracle separately pins glyphs, sprite extent, geometry and the pointer-state delta.
  */
 export function compareReferenceRendererCaptures(
   captures: ReferenceRendererCaptureSet,
@@ -270,7 +269,7 @@ function validateNativeCapture(
     if (status['devicePixelRatio'] !== 1 || status['colorSpace'] !== 'srgb') {
       failures.push(`${renderer}: ${label} DPR/color space does not match the scene contract`);
     }
-    if (status['fontBytes'] !== 2684 || status['fontFnv1a32'] !== 'f5d71ca9') {
+    if (status['fontBytes'] !== 3096 || status['fontFnv1a32'] !== '29fd2e97') {
       failures.push(`${renderer}: ${label} did not load the pinned generated SFNT bytes`);
     }
     if (renderer === 'rust-gl') {

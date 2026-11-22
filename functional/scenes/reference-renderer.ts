@@ -40,6 +40,15 @@ import {
 declareAntialiasingPolicy('aa');
 
 const scene = REFERENCE_RENDERER_SCENE;
+const probe = (import.meta as ImportMeta & { env?: Readonly<Record<string, string | undefined>> }).env?.[
+  'VITE_FLIGHT_REFERENCE_PROBE'
+];
+if (
+  probe !== undefined &&
+  !['glyph-drop', 'ink-floor-one', 'sprite-shift-1', 'text-two-glyphs', 'triangle-shift-1'].includes(probe)
+) {
+  throw new Error(`[reference-renderer] unsupported probe ${probe}`);
+}
 assertReferenceRendererEnvironment(window.devicePixelRatio);
 
 const target = await createFunctionalTarget({
@@ -74,11 +83,12 @@ appendShapeEndFill(filledRectangle);
 addNodeChild(root, filledRectangle);
 
 const triangle = createShape();
+const triangleOffsetX = probe === 'triangle-shift-1' ? 1 : 0;
 appendShapeBeginFill(triangle, scene.filledTriangle.color, 1);
-appendShapeMoveTo(triangle, scene.filledTriangle.points[0][0], scene.filledTriangle.points[0][1]);
-appendShapeLineTo(triangle, scene.filledTriangle.points[1][0], scene.filledTriangle.points[1][1]);
-appendShapeLineTo(triangle, scene.filledTriangle.points[2][0], scene.filledTriangle.points[2][1]);
-appendShapeLineTo(triangle, scene.filledTriangle.points[0][0], scene.filledTriangle.points[0][1]);
+appendShapeMoveTo(triangle, scene.filledTriangle.points[0][0] + triangleOffsetX, scene.filledTriangle.points[0][1]);
+appendShapeLineTo(triangle, scene.filledTriangle.points[1][0] + triangleOffsetX, scene.filledTriangle.points[1][1]);
+appendShapeLineTo(triangle, scene.filledTriangle.points[2][0] + triangleOffsetX, scene.filledTriangle.points[2][1]);
+appendShapeLineTo(triangle, scene.filledTriangle.points[0][0] + triangleOffsetX, scene.filledTriangle.points[0][1]);
 appendShapeEndFill(triangle);
 addNodeChild(root, triangle);
 
@@ -120,7 +130,7 @@ sprite.data.texture = createTexture({
   sampler: createPixelArtSampler(),
   source: createWebImageResourceFromCanvas(spriteCanvas),
 });
-sprite.x = scene.sprite.x;
+sprite.x = scene.sprite.x + (probe === 'sprite-shift-1' ? 1 : 0);
 sprite.y = scene.sprite.y;
 addNodeChild(root, sprite);
 
@@ -137,7 +147,12 @@ label.data.multiline = false;
 label.data.wordWrap = false;
 label.data.width = scene.text.width;
 label.data.height = scene.text.height;
-label.data.text = scene.text.value;
+label.data.text =
+  probe === 'glyph-drop'
+    ? 'FLIGH TS'
+    : probe === 'text-two-glyphs' || probe === 'ink-floor-one'
+      ? 'FL'
+      : scene.text.value;
 label.x = scene.text.x;
 label.y = scene.text.y;
 addNodeChild(root, label);
@@ -184,7 +199,7 @@ dispatchInteractionPointerUp(
 target.render(root);
 
 export function assertRender(bitmap: Readonly<Bitmap>): void {
-  assertReferenceRendererScene(bitmap, interactionTransitions);
+  assertReferenceRendererScene(bitmap, interactionTransitions, probe === 'ink-floor-one' ? 1 : 850);
 }
 
 function createControl(color: number, marker: boolean) {
@@ -212,7 +227,7 @@ function createControl(color: number, marker: boolean) {
 function assertBackendIdentity(value: typeof target): void {
   const expected = REFERENCE_BROWSER_ENVIRONMENT_DESCRIPTOR;
   if (value.kind === 'canvas') {
-    const identity = value.state.context.constructor.name.toLowerCase();
+    const identity = value.screen.context.constructor.name.toLowerCase();
     if (!identity.includes('canvasrenderingcontext2d')) {
       throw new Error(`[reference-renderer] canvas identity ${identity} does not match ${expected}`);
     }

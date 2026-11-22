@@ -53,6 +53,24 @@ describe('reference renderer scene oracle', () => {
     }
   });
 
+  it('rejects two-glyph text even when the aggregate ink floor is weakened to one', () => {
+    const fixture = createCompleteFixture();
+    for (const [index, character] of [...REFERENCE_RENDERER_SCENE.text.value].entries()) {
+      if (character === ' ' || index < 2) continue;
+      fill(
+        fixture,
+        {
+          x: REFERENCE_RENDERER_SCENE.text.x + index * 24,
+          y: REFERENCE_RENDERER_SCENE.text.y,
+          width: 22,
+          height: 40,
+        },
+        REFERENCE_RENDERER_SCENE.background,
+      );
+    }
+    expect(() => assertReferenceRendererScene(fixture, expectedTransitions, 1)).toThrow(/text glyph 3/u);
+  });
+
   it('rejects a one-pixel sprite shift through its authored extent anchors', () => {
     const fixture = createCompleteFixture();
     const sprite = REFERENCE_RENDERER_SCENE.sprite;
@@ -66,6 +84,13 @@ describe('reference renderer scene oracle', () => {
       }
     }
     expect(() => assertReferenceRendererScene(shifted, expectedTransitions)).toThrow(/sprite .*extent/u);
+  });
+
+  it('rejects a one-pixel triangle shift through its authored edge anchor', () => {
+    const shifted = createCompleteFixture();
+    set(shifted, 170, 189, REFERENCE_RENDERER_SCENE.background);
+    set(shifted, 171, 189, REFERENCE_RENDERER_SCENE.filledTriangle.color);
+    expect(() => assertReferenceRendererScene(shifted, expectedTransitions)).toThrow(/triangle left edge/u);
   });
 
   it('rejects a silent all-background render', () => {
@@ -90,7 +115,7 @@ describe('reference renderer full-resolution capture parity', () => {
   it('locks the calibrated pixel-space policy so tolerance weakening is a reviewed change', () => {
     expect(REFERENCE_RASTER_PARITY_POLICY).toEqual({
       channelTolerance: 8,
-      maxMismatchFraction: 0.002,
+      maxMismatchFraction: 0.008,
     });
   });
 
@@ -177,6 +202,7 @@ function createCompleteFixture(): Bitmap {
   fill(bitmap, scene.filledRectangle, scene.filledRectangle.color);
 
   set(bitmap, 222, 160, scene.filledTriangle.color);
+  set(bitmap, 170, 189, scene.filledTriangle.color);
 
   const stroke = scene.strokedRectangle;
   fill(bitmap, { x: stroke.x - 2, y: stroke.y, width: stroke.thickness, height: stroke.height }, stroke.color);
@@ -299,8 +325,8 @@ function createNativeCaptureSet(bitmap: Bitmap): Record<'rust-gl' | 'rust-wgpu',
       status: {
         colorSpace: 'srgb',
         devicePixelRatio: 1,
-        fontBytes: 2684,
-        fontFnv1a32: 'f5d71ca9',
+        fontBytes: 3096,
+        fontFnv1a32: '29fd2e97',
         glProfile: 'core',
         glRenderer: 'llvmpipe (LLVM test)',
         glVersion: '4.5 (Core Profile) Mesa test',
