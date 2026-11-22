@@ -214,6 +214,36 @@ mod tests {
         assert_eq!(read_setup_bits(&mut last, 1).ok(), Some(1));
     }
 
+    // 2^61 bytes is the first length whose bit count leaves u64, and still below the 2^63 - 1
+    // bytes a 64-bit slice may span, so the scan must refuse it before the backing parser.
+    #[cfg(target_pointer_width = "64")]
+    #[test]
+    fn setup_bit_budget_refuses_the_first_length_whose_bits_leave_u64_before_the_backing_parser() {
+        let below = usize::try_from((1_u64 << 61) - 1).unwrap();
+        let first_unaddressable = usize::try_from(1_u64 << 61).unwrap();
+        let bit_total = u64::try_from(below).unwrap() * 8;
+        VORBIS_SETUP_PARSES.with(|count| count.set(0));
+        let budget = |byte_count, position| {
+            return get_vorbis_setup_remaining_bit_budget(byte_count, position)
+                .map_err(|failure| return failure.reason);
+        };
+        assert_eq!(budget(below, 0), Ok(bit_total));
+        assert_eq!(budget(below, bit_total - 1), Ok(1));
+        assert_eq!(budget(below, bit_total), Ok(0));
+        assert_eq!(budget(below, bit_total + 1), Ok(0));
+        assert_eq!(budget(below, u64::MAX), Ok(0));
+        for byte_count in [first_unaddressable, first_unaddressable + 1, usize::MAX] {
+            for position in [0, bit_total, u64::MAX] {
+                assert_eq!(
+                    budget(byte_count, position),
+                    Err(AudioCodecsHostDecodeExplanationReason::ResourceLimitExceeded),
+                    "{byte_count} bytes at bit {position}"
+                );
+            }
+        }
+        assert_eq!(VORBIS_SETUP_PARSES.with(|count| return count.get()), 0);
+    }
+
     #[test]
     fn setup_remaining_bits_widen_every_usize_byte_count_before_multiplying() {
         let cases = [
@@ -411,6 +441,19 @@ fn get_vorbis_lookup1_value_count(entries: u64, dimensions: u32) -> u64 {
 /// Bits left after `position` in a Vorbis setup header of `byte_count` bytes, or `None` when the
 /// header holds more bits than u64 counts. Counting in u64 keeps the result exact on every pointer
 /// width, where `byte_count * 8` in usize wraps above `usize::MAX / 8` bytes.
+/// The setup scan's answer for a header of `byte_count` bytes at bit `position`: the bits left, or
+/// `ResourceLimitExceeded` when the header holds more bits than u64 counts. The scan calls it with
+/// its slice's real length; a test can pass any length without allocating one.
+fn get_vorbis_setup_remaining_bit_budget(
+    byte_count: usize,
+    position: u64,
+) -> Result<u64, DecodeFailure> {
+    return match get_vorbis_setup_remaining_bits(byte_count, position) {
+        Some(remaining) => Ok(remaining),
+        None => Err(setup_header_too_long()),
+    };
+}
+
 fn get_vorbis_setup_remaining_bits(byte_count: usize, position: u64) -> Option<u64> {
     return u64::try_from(byte_count).ok().and_then(|byte_count| {
         return get_vorbis_setup_remaining_bits_in_u64(byte_count, position);
@@ -628,10 +671,7 @@ fn scan_vorbis_codebook_tables(packet: &[u8]) -> Result<(), DecodeFailure> {
         } else {
             entries * dimensions
         };
-        let Some(remaining) = get_vorbis_setup_remaining_bits(bits.bytes.len(), bits.position)
-        else {
-            return Err(setup_header_too_long());
-        };
+        let remaining = get_vorbis_setup_remaining_bit_budget(bits.bytes.len(), bits.position)?;
         let skipped = value_count * value_bits;
         if skipped > remaining {
             return Err(malformed("the Vorbis setup header ends inside a codebook"));
