@@ -36,8 +36,9 @@ use flight_interaction::{
 };
 use flight_node::{NodeRef, add_node_child, set_node_color_adjustments_tint, set_node_enabled};
 use flight_render::{
-    RenderProxies2D, RenderTargetClear, RenderTargetDescriptor, destroy_render_state,
-    explain_scene_2d_pipeline_coverage, prepare_scene_2d_render, register_node_renderer,
+    RenderProxies2D, RenderTargetClear, RenderTargetDescriptor, Scene2DPipelineCoverageExplanation,
+    destroy_render_state, explain_scene_2d_pipeline_coverage, prepare_scene_2d_render,
+    register_node_renderer,
 };
 use flight_render_gl::{
     GlRenderState, begin_gl_render_pass, create_gl_context, create_gl_context_state,
@@ -672,7 +673,14 @@ fn pattern_glyph(pattern: &[&str; 7]) -> SyntheticGlyph {
     return SyntheticGlyph { end_points, points };
 }
 
-fn render_gl_reference(probe: Option<&str>) -> (FramePair, ReferenceScene, GlIdentity) {
+fn render_gl_reference(
+    probe: Option<&str>,
+) -> (
+    FramePair,
+    ReferenceScene,
+    GlIdentity,
+    Scene2DPipelineCoverageExplanation,
+) {
     let creator_thread = std::thread::current().id();
     let host = create_sdl_host(&create_sdl_host_options(
         "Flight GL reference",
@@ -742,7 +750,7 @@ fn render_gl_reference(probe: Option<&str>) -> (FramePair, ReferenceScene, GlIde
         .expect("allocate GL reference target")
         .expect("supported GL reference target");
     let scene = reference_scene(probe);
-    assert_registry(&state, &scene.root, "gl");
+    let coverage = explain_scene_2d_pipeline_coverage(&state, &scene.root);
     let mut proxies = RenderProxies2D::<GlRenderState>::default();
     render_gl_frame(&mut state, &mut proxies, &target, &scene.root);
     let initial = read_gl_frame(&gl, Some(target.framebuffer));
@@ -767,6 +775,7 @@ fn render_gl_reference(probe: Option<&str>) -> (FramePair, ReferenceScene, GlIde
         },
         scene,
         identity,
+        coverage,
     );
 }
 
@@ -811,7 +820,15 @@ fn read_gl_frame(gl: &glow::Context, framebuffer: Option<glow::NativeFramebuffer
     return top_down;
 }
 
-fn render_wgpu_reference(probe: Option<&str>) -> (FramePair, ReferenceScene, String, String) {
+fn render_wgpu_reference(
+    probe: Option<&str>,
+) -> (
+    FramePair,
+    ReferenceScene,
+    String,
+    String,
+    Scene2DPipelineCoverageExplanation,
+) {
     let mut host = create_headless_host(None).expect(
         "no headless wgpu adapter; install/enable Mesa lavapipe before running the reference capture",
     );
@@ -839,7 +856,7 @@ fn render_wgpu_reference(probe: Option<&str>) -> (FramePair, ReferenceScene, Str
     };
     let screen = screen.clone();
     let scene = reference_scene(probe);
-    assert_registry(&state, &scene.root, "wgpu");
+    let coverage = explain_scene_2d_pipeline_coverage(&state, &scene.root);
     let mut proxies = RenderProxies2D::<WgpuRenderState>::default();
     render_wgpu_frame(&mut state, &mut proxies, &target, &scene.root);
     let initial = create_bitmap_from_headless_screen_render_target(&screen, Some(10_000))
@@ -867,6 +884,7 @@ fn render_wgpu_reference(probe: Option<&str>) -> (FramePair, ReferenceScene, Str
         scene,
         adapter_name,
         adapter_backend,
+        coverage,
     );
 }
 
@@ -882,8 +900,7 @@ fn render_wgpu_frame(
     end_wgpu_render_pass(pass);
 }
 
-fn assert_registry<S: flight_render::RenderState>(state: &S, root: &NodeRef, backend: &str) {
-    let coverage = explain_scene_2d_pipeline_coverage(state, root);
+fn assert_registry(coverage: &Scene2DPipelineCoverageExplanation, backend: &str) {
     assert!(
         coverage.uncovered_kinds.is_empty(),
         "{backend} registry misses: {:?}",
@@ -1186,8 +1203,9 @@ fn main() {
     } else {
         probe.as_deref()
     };
-    let (gl, gl_scene, gl_identity) = render_gl_reference(gl_probe);
-    let (mut wgpu, wgpu_scene, adapter_name, adapter_backend) = render_wgpu_reference(wgpu_probe);
+    let (gl, gl_scene, gl_identity, gl_coverage) = render_gl_reference(gl_probe);
+    let (mut wgpu, wgpu_scene, adapter_name, adapter_backend, wgpu_coverage) =
+        render_wgpu_reference(wgpu_probe);
     if probe.as_deref() == Some("blank") {
         wgpu.final_frame.fill(0);
     }
@@ -1202,6 +1220,10 @@ fn main() {
             &gl_identity,
         );
     }
+    // Inventory controls must inspect completed real renders, not terminate either backend before
+    // both readbacks and their evidence have been produced.
+    assert_registry(&gl_coverage, "gl");
+    assert_registry(&wgpu_coverage, "wgpu");
     assert_gl_identity(&gl_identity);
     assert_wgpu_identity(
         &adapter_name,
