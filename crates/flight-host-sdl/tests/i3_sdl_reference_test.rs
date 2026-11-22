@@ -1,11 +1,35 @@
-use std::sync::{Arc, RwLock};
+use std::path::Path;
+use std::sync::{Arc, Mutex, RwLock};
 
-use flight_bitmap::create_bitmap;
+use flight_bitmap::{Bitmap, create_bitmap};
+use flight_buffer::{
+    ArrayBufferViewKind, create_array_buffer_from_bytes, create_array_buffer_view,
+};
+use flight_compression::SDK_HOST_DECOMPRESS_DEFLATE;
+use flight_font::{
+    GlyphRasterizeOptions, allocate_glyph_rasterizer_backend_from_glyph_outline_source,
+};
+use flight_font_formats::{
+    SyntheticFontOptions, SyntheticGlyph, SyntheticGlyphPoint,
+    create_glyph_outline_source_from_open_type_font, create_synthetic_font,
+};
+use flight_geometry::create_rectangle;
+use flight_host_headless::{
+    create_bitmap_from_headless_screen_render_target, create_headless_host,
+    create_headless_host_render_target, destroy_headless_host, get_headless_host_adapter_backend,
+    get_headless_host_adapter_name, get_headless_host_wgpu_device,
+};
 use flight_host_sdl::*;
-use flight_node::{NodeRef, add_node_child};
+use flight_input::PointerType;
+use flight_interaction::{
+    HitArea, InteractionPointerOptions, InteractionSignalName, connect_interaction_signal,
+    create_interaction_manager, dispatch_interaction_pointer_down, dispatch_interaction_pointer_up,
+    set_node_hit_area, set_node_hit_test_enabled,
+};
+use flight_node::{NodeRef, add_node_child, set_node_enabled};
 use flight_render::{
     RenderProxies2D, RenderTargetClear, RenderTargetDescriptor, destroy_render_state,
-    prepare_scene_2d_render,
+    explain_scene_2d_pipeline_coverage, prepare_scene_2d_render,
 };
 use flight_render_gl::{
     GlRenderState, begin_gl_render_pass, create_gl_context, create_gl_context_state,
@@ -13,51 +37,449 @@ use flight_render_gl::{
     destroy_gl_texture_render_target, end_gl_render_pass, register_gl_bitmap_texture_resolver,
 };
 use flight_render_wgpu::{
-    WgpuRenderTarget, begin_wgpu_render_pass, create_bitmap_from_wgpu_screen_render_target,
-    create_wgpu_acquisition, create_wgpu_render_state, create_wgpu_screen_render_target,
-    destroy_wgpu_screen_render_target, enable_wgpu_screen_render_target_capture,
-    end_wgpu_render_pass, register_wgpu_bitmap_texture_resolver,
+    WgpuRenderState, WgpuRenderTarget, begin_wgpu_render_pass, create_wgpu_render_state,
+    destroy_wgpu_screen_render_target, end_wgpu_render_pass, register_wgpu_bitmap_texture_resolver,
 };
-use flight_scene2d::{create_display_object, create_sprite};
+use flight_scene2d::create_sprite;
 use flight_scene2d_gl::{gl_scene2d_render_preset, render_gl_scene2d};
-use flight_scene2d_wgpu::{register_wgpu_scene2d_render_preset, render_wgpu_scene2d};
-use flight_texture::{Texture, TextureSourceRef, create_texture_2d};
+use flight_scene2d_wgpu::contract::{
+    WGPU_SCENE2D_RENDER_PRESET, enable_wgpu_stroke_path_tessellation, register_wgpu_render_preset,
+    render_wgpu_scene2d,
+};
+use flight_shape::{
+    append_shape_begin_fill, append_shape_end_fill, append_shape_line_style, append_shape_line_to,
+    append_shape_move_to, append_shape_rectangle, create_shape,
+};
+use flight_texture::{
+    CreateTexture2DOptions, CreateTextureCommonOptions, CreateTextureOptions,
+    RenderTargetColorSpace, TextureColorSpace, TextureSourceRef, create_pixel_art_sampler,
+    create_texture,
+};
 use glow::{HasContext, PixelPackData};
 
-const WIDTH: u32 = 64;
-const HEIGHT: u32 = 64;
+const WIDTH: u32 = 480;
+const HEIGHT: u32 = 320;
+const BACKGROUND: u32 = 0x101827ff;
+const FONT_BYTE_LENGTH: usize = 2684;
+const FONT_FNV1A32: u32 = 0xf5d71ca9;
+const CHANNEL_TOLERANCE: u8 = 8;
+const MAX_MISMATCH_FRACTION: f64 = 0.002;
+
+const FILLED_RECTANGLE: (f64, f64, f64, f64, u32) = (24.0, 24.0, 124.0, 72.0, 0x2878e8ff);
+const STROKED_RECTANGLE: (f64, f64, f64, f64, f64, u32) =
+    (24.0, 118.0, 124.0, 72.0, 10.0, 0xe23aa8ff);
+const SPRITE_COLORS: [u32; 4] = [0xf24848ff, 0xf6cf3aff, 0x45d36bff, 0x8c62eaff];
+const TEXT_COLOR: u32 = 0xffc94aff;
+const INTERACTION_INITIAL: u32 = 0xed7b2fff;
+const INTERACTION_ACTIVE: u32 = 0x25b86aff;
+const INTERACTION_STROKE: u32 = 0xffffffff;
+const POINTER_MARKER: u32 = 0x42e8ffff;
+
+struct ReferenceScene {
+    root: NodeRef,
+    interaction: flight_entity::Ref<flight_interaction::InteractionManager>,
+    transitions: Arc<Mutex<Vec<&'static str>>>,
+    font_bytes: Box<[u8]>,
+}
+
+struct FramePair {
+    initial: Vec<u8>,
+    final_frame: Vec<u8>,
+}
 
 fn clear() -> RenderTargetClear {
+    let [red, green, blue, alpha] = BACKGROUND.to_be_bytes();
     return RenderTargetClear {
-        color: Some([0.04, 0.06, 0.09, 1.0]),
+        color: Some([
+            f32::from(red) / 255.0,
+            f32::from(green) / 255.0,
+            f32::from(blue) / 255.0,
+            f32::from(alpha) / 255.0,
+        ]),
         colors: None,
         depth: Some(1.0),
         stencil: Some(0),
     };
 }
 
-fn display_available() -> bool {
-    return std::env::var_os("DISPLAY").is_some() || std::env::var_os("WAYLAND_DISPLAY").is_some();
+fn reference_scene(probe: Option<&str>) -> ReferenceScene {
+    let root_shape = create_shape();
+    let root: NodeRef = root_shape;
+
+    let (x, y, width, height, color) = FILLED_RECTANGLE;
+    let rectangle = create_shape();
+    append_shape_begin_fill(&rectangle, color, Some(1.0));
+    append_shape_rectangle(&rectangle, x, y, width, height);
+    append_shape_end_fill(&rectangle);
+    let rectangle: NodeRef = rectangle;
+    add_node_child(&root, &rectangle);
+
+    if probe != Some("missing-shape") {
+        let triangle = create_shape();
+        append_shape_begin_fill(&triangle, 0x18c9c3ff, Some(1.0));
+        append_shape_move_to(&triangle, 170.0, 190.0);
+        append_shape_line_to(&triangle, 222.0, 112.0);
+        append_shape_line_to(&triangle, 282.0, 190.0);
+        append_shape_line_to(&triangle, 170.0, 190.0);
+        append_shape_end_fill(&triangle);
+        let triangle: NodeRef = triangle;
+        add_node_child(&root, &triangle);
+    }
+
+    let (x, y, width, height, thickness, color) = STROKED_RECTANGLE;
+    let stroked = create_shape();
+    append_shape_line_style(
+        &stroked,
+        Some(thickness),
+        color,
+        Some(1.0),
+        None,
+        None,
+        None,
+        None,
+        None,
+    );
+    append_shape_rectangle(&stroked, x, y, width, height);
+    let stroked: NodeRef = stroked;
+    add_node_child(&root, &stroked);
+
+    if probe != Some("missing-sprite") {
+        add_node_child(&root, &quadrant_sprite());
+    }
+
+    let (font_bytes, text_bitmap) = reference_font_fixture();
+    assert_eq!(font_bytes.len(), FONT_BYTE_LENGTH, "pinned SFNT length");
+    assert_eq!(fnv1a32(&font_bytes), FONT_FNV1A32, "pinned SFNT bytes");
+    if probe != Some("missing-text") {
+        let text = bitmap_sprite(text_bitmap, 24.0, 218.0);
+        add_node_child(&root, &text);
+    }
+
+    let initial = control(INTERACTION_INITIAL, false);
+    let active = control(INTERACTION_ACTIVE, true);
+    set_node_enabled(&active, false);
+    add_node_child(&root, &initial);
+    add_node_child(&root, &active);
+
+    set_node_hit_test_enabled(&initial, true);
+    set_node_hit_area(
+        &initial,
+        Some(HitArea::Rect(create_rectangle(0.0, 0.0, 142.0, 80.0))),
+    );
+    let interaction = create_interaction_manager(root.clone(), None);
+    let transitions = Arc::new(Mutex::new(vec!["initial"]));
+    let down_transitions = transitions.clone();
+    connect_interaction_signal(
+        &interaction,
+        &initial,
+        InteractionSignalName::OnPointerDown,
+        Arc::new(move |_| down_transitions.lock().unwrap().push("pointer-down")),
+        None,
+    )
+    .expect("pointer-down registration");
+    let click_transitions = transitions.clone();
+    let initial_for_click = initial.clone();
+    let active_for_click = active.clone();
+    connect_interaction_signal(
+        &interaction,
+        &initial,
+        InteractionSignalName::OnClick,
+        Arc::new(move |_| {
+            set_node_enabled(&initial_for_click, false);
+            set_node_enabled(&active_for_click, true);
+            click_transitions.lock().unwrap().push("activated");
+        }),
+        None,
+    )
+    .expect("click registration");
+
+    return ReferenceScene {
+        root,
+        interaction,
+        transitions,
+        font_bytes,
+    };
 }
 
-fn reference_scene() -> NodeRef {
-    let root: NodeRef = create_display_object();
-    let first = solid_sprite(0x35b8f2ff, 8.0, 8.0, 24, 20);
-    let second = solid_sprite(0xf2c94cff, 38.0, 36.0, 18, 16);
-    add_node_child(&root, &first);
-    add_node_child(&root, &second);
-    return root;
+fn activate_scene(scene: &ReferenceScene, probe: Option<&str>) {
+    if probe == Some("missing-pointer") {
+        return;
+    }
+    let down = InteractionPointerOptions {
+        alt_key: None,
+        buttons: None,
+        ctrl_key: None,
+        meta_key: None,
+        pointer_id: Some(7),
+        pointer_type: Some(PointerType::Mouse),
+        shift_key: None,
+        time_stamp: Some(1_000.0),
+    };
+    dispatch_interaction_pointer_down(&scene.interaction, 416.0, 248.0, 0, Some(&down));
+    let up = InteractionPointerOptions {
+        time_stamp: Some(1_016.0),
+        ..down
+    };
+    dispatch_interaction_pointer_up(
+        &scene.interaction,
+        416.0,
+        248.0,
+        0,
+        Some(1_016.0),
+        Some(&up),
+    );
 }
 
-fn render_gl_reference() -> Vec<u8> {
+fn quadrant_sprite() -> NodeRef {
+    let mut bitmap = create_bitmap(64, 64, None);
+    for y in 0..64_u32 {
+        for x in 0..64_u32 {
+            let quadrant = usize::from(y >= 32) * 2 + usize::from(x >= 32);
+            let offset = ((y * 64 + x) * 4) as usize;
+            bitmap.data[offset..offset + 4].copy_from_slice(&SPRITE_COLORS[quadrant].to_be_bytes());
+        }
+    }
+    return bitmap_sprite(bitmap, 202.0, 24.0);
+}
+
+fn bitmap_sprite(bitmap: Bitmap, x: f64, y: f64) -> NodeRef {
+    let source: TextureSourceRef = Arc::new(RwLock::new(bitmap));
+    let texture = create_texture(Some(&CreateTextureOptions::Texture2D(
+        CreateTexture2DOptions {
+            common: CreateTextureCommonOptions {
+                color_space: Some(TextureColorSpace::Srgb),
+                sampler: Some(create_pixel_art_sampler()),
+                ..Default::default()
+            },
+            source: Some(source),
+        },
+    )));
+    let sprite = create_sprite();
+    {
+        let mut sprite = sprite.write().unwrap();
+        sprite.data.texture = Some(Arc::new(RwLock::new(texture)));
+        sprite.x = x;
+        sprite.y = y;
+    }
+    return sprite;
+}
+
+fn control(color: u32, marker: bool) -> NodeRef {
+    let control = create_shape();
+    {
+        let mut control = control.write().unwrap();
+        control.x = 310.0;
+        control.y = 208.0;
+    }
+    append_shape_line_style(
+        &control,
+        Some(4.0),
+        INTERACTION_STROKE,
+        Some(1.0),
+        None,
+        None,
+        None,
+        None,
+        None,
+    );
+    append_shape_begin_fill(&control, color, Some(1.0));
+    append_shape_rectangle(&control, 0.0, 0.0, 142.0, 80.0);
+    append_shape_end_fill(&control);
+    if marker {
+        append_shape_begin_fill(&control, POINTER_MARKER, Some(1.0));
+        append_shape_rectangle(&control, 100.0, 34.0, 12.0, 12.0);
+        append_shape_end_fill(&control);
+    }
+    return control;
+}
+
+fn reference_font_fixture() -> (Box<[u8]>, Bitmap) {
+    const PATTERNS: [(&str, [&str; 7]); 7] = [
+        (
+            "F",
+            [
+                "11111", "10000", "10000", "11110", "10000", "10000", "10000",
+            ],
+        ),
+        (
+            "L",
+            [
+                "10000", "10000", "10000", "10000", "10000", "10000", "11111",
+            ],
+        ),
+        (
+            "I",
+            [
+                "11111", "00100", "00100", "00100", "00100", "00100", "11111",
+            ],
+        ),
+        (
+            "G",
+            [
+                "01110", "10001", "10000", "10111", "10001", "10001", "01110",
+            ],
+        ),
+        (
+            "H",
+            [
+                "10001", "10001", "10001", "11111", "10001", "10001", "10001",
+            ],
+        ),
+        (
+            "T",
+            [
+                "11111", "00100", "00100", "00100", "00100", "00100", "00100",
+            ],
+        ),
+        (
+            "S",
+            [
+                "01111", "10000", "10000", "01110", "00001", "00001", "11110",
+            ],
+        ),
+    ];
+    let mut glyphs = vec![empty_glyph(), empty_glyph()];
+    let mut codepoints = vec![(32.0, 1.0)];
+    for (letter, pattern) in PATTERNS {
+        codepoints.push((letter.as_bytes()[0] as f32, glyphs.len() as f32));
+        glyphs.push(pattern_glyph(&pattern));
+    }
+    let bytes = create_synthetic_font(Some(&SyntheticFontOptions {
+        advances: Some(vec![24.0; glyphs.len()]),
+        codepoints: Some(codepoints),
+        glyphs: Some(glyphs),
+        units_per_em: Some(28.0),
+        ..Default::default()
+    }));
+    let length = bytes.len();
+    let buffer = create_array_buffer_from_bytes(bytes.clone());
+    let view = create_array_buffer_view(&buffer, 0, length, ArrayBufferViewKind::Uint8Array)
+        .expect("generated SFNT view");
+    let source =
+        create_glyph_outline_source_from_open_type_font(&view, &SDK_HOST_DECOMPRESS_DEFLATE, None)
+            .expect("generated SFNT parser");
+    let rasterizer = allocate_glyph_rasterizer_backend_from_glyph_outline_source(source);
+    let mut bitmap = create_bitmap(252, 70, None);
+    let options = GlyphRasterizeOptions {
+        font_family: "FlightReferenceSynthetic".to_string(),
+        font_size: 28.0,
+        font_style: None,
+        font_weight: None,
+    };
+    let mut cursor = 2_i32;
+    for letter in "FLIGHT TS".chars() {
+        let raster = (rasterizer.rasterize)(letter as u32, &options)
+            .unwrap_or_else(|| panic!("generated face lacks {letter}"));
+        blit_glyph(
+            &mut bitmap,
+            &raster.pixels,
+            raster.width,
+            raster.height,
+            cursor + raster.bearing_x,
+            2,
+            TEXT_COLOR,
+        );
+        cursor += raster.advance.round() as i32;
+    }
+    return (bytes, bitmap);
+}
+
+fn empty_glyph() -> SyntheticGlyph {
+    return SyntheticGlyph {
+        end_points: Vec::new(),
+        points: Vec::new(),
+    };
+}
+
+fn pattern_glyph(pattern: &[&str; 7]) -> SyntheticGlyph {
+    let mut points = Vec::new();
+    let mut end_points = Vec::new();
+    for (row, line) in pattern.iter().enumerate() {
+        for (column, value) in line.as_bytes().iter().enumerate() {
+            if *value != b'1' {
+                continue;
+            }
+            let x = (column * 4) as f32;
+            let y = (row * 4) as f32;
+            points.extend([
+                SyntheticGlyphPoint {
+                    x,
+                    y,
+                    on_curve: true,
+                },
+                SyntheticGlyphPoint {
+                    x: x + 3.0,
+                    y,
+                    on_curve: true,
+                },
+                SyntheticGlyphPoint {
+                    x: x + 3.0,
+                    y: y + 3.0,
+                    on_curve: true,
+                },
+                SyntheticGlyphPoint {
+                    x,
+                    y: y + 3.0,
+                    on_curve: true,
+                },
+            ]);
+            end_points.push((points.len() - 1) as f32);
+        }
+    }
+    return SyntheticGlyph { end_points, points };
+}
+
+fn blit_glyph(
+    target: &mut Bitmap,
+    source: &[u8],
+    width: u32,
+    height: u32,
+    target_x: i32,
+    target_y: i32,
+    color: u32,
+) {
+    let [red, green, blue, packed_alpha] = color.to_be_bytes();
+    for y in 0..height {
+        for x in 0..width {
+            let source_offset = ((y * width + x) * 4) as usize;
+            let coverage = source[source_offset + 3];
+            if coverage == 0 {
+                continue;
+            }
+            let pixel_x = target_x + x as i32;
+            let pixel_y = target_y + y as i32;
+            if pixel_x < 0
+                || pixel_y < 0
+                || pixel_x >= target.width as i32
+                || pixel_y >= target.height as i32
+            {
+                continue;
+            }
+            let target_offset = ((pixel_y as u32 * target.width + pixel_x as u32) * 4) as usize;
+            target.data[target_offset] = red;
+            target.data[target_offset + 1] = green;
+            target.data[target_offset + 2] = blue;
+            target.data[target_offset + 3] =
+                ((u16::from(coverage) * u16::from(packed_alpha) + 127) / 255) as u8;
+        }
+    }
+}
+
+fn render_gl_reference(probe: Option<&str>) -> (FramePair, ReferenceScene) {
+    let creator_thread = std::thread::current().id();
     let host = create_sdl_host(&create_sdl_host_options(
-        "Flight SDL GL reference",
+        "Flight GL reference",
         f64::from(WIDTH),
         f64::from(HEIGHT),
         false,
         SdlHostRenderBackend::Gl,
     ))
     .unwrap_or_else(|failure| panic!("{failure}"));
+    assert_eq!(
+        creator_thread,
+        std::thread::current().id(),
+        "GL stays on creator thread"
+    );
     make_sdl_host_gl_context_current(&host).expect("make GL current");
     let surface = create_sdl_host_surface(&host);
     let host_context = (get_sdl_host_gl_capability(&host)
@@ -86,22 +508,56 @@ fn render_gl_reference() -> Vec<u8> {
         color_formats: None,
         sample_count: Some(1.0),
         depth: None,
-        color_space: None,
+        color_space: Some(RenderTargetColorSpace::Srgb),
     };
     let mut target = create_gl_texture_render_target(&state, &descriptor, None)
         .expect("allocate GL reference target")
         .expect("supported GL reference target");
-    let root = reference_scene();
+    let scene = reference_scene(probe);
+    assert_registry(&state, &scene.root, "gl");
     let mut proxies = RenderProxies2D::<GlRenderState>::default();
-    prepare_scene_2d_render(&mut state, &mut proxies, &root);
-    let pass = begin_gl_render_pass(&state, &target, Some(&clear()), None).expect("begin GL pass");
-    render_gl_scene2d(&mut state, &mut proxies, &pass, &root, None);
-    end_gl_render_pass(&state, &pass).expect("end GL pass");
+    render_gl_frame(&mut state, &mut proxies, &target, &scene.root);
+    let initial = read_gl_frame(&gl, Some(target.framebuffer));
+    activate_scene(&scene, probe);
+    render_gl_frame(&mut state, &mut proxies, &target, &scene.root);
+    let final_frame = read_gl_frame(&gl, Some(target.framebuffer));
+    present_sdl_host_gl(&host).expect("swap GL reference");
 
+    destroy_gl_render_state(&mut state, &mut proxies);
+    destroy_gl_texture_render_target(&mut target);
+    drop(target);
+    drop(state);
+    // SAFETY: the VAO belongs to this still-current host context and is no longer referenced.
+    unsafe { gl.delete_vertex_array(vertex_array) };
+    drop(gl);
+    drop(host_context);
+    destroy_sdl_host(host).expect("destroy GL reference host");
+    return (
+        FramePair {
+            initial,
+            final_frame,
+        },
+        scene,
+    );
+}
+
+fn render_gl_frame(
+    state: &mut GlRenderState,
+    proxies: &mut RenderProxies2D<GlRenderState>,
+    target: &flight_render_gl::GlTextureRenderTarget,
+    root: &NodeRef,
+) {
+    prepare_scene_2d_render(state, proxies, root);
+    let pass = begin_gl_render_pass(state, target, Some(&clear()), None).expect("begin GL pass");
+    render_gl_scene2d(state, proxies, &pass, root, None);
+    end_gl_render_pass(state, &pass).expect("end GL pass");
+}
+
+fn read_gl_frame(gl: &glow::Context, framebuffer: Option<glow::NativeFramebuffer>) -> Vec<u8> {
     let mut bottom_up = vec![0_u8; (WIDTH * HEIGHT * 4) as usize];
-    // SAFETY: the texture target belongs to the current SDL GL context and output is valid.
+    // SAFETY: the target belongs to the current SDL GL context and output is a valid RGBA slice.
     unsafe {
-        gl.bind_framebuffer(glow::READ_FRAMEBUFFER, Some(target.framebuffer));
+        gl.bind_framebuffer(glow::READ_FRAMEBUFFER, framebuffer);
         gl.read_buffer(glow::COLOR_ATTACHMENT0);
         gl.read_pixels(
             0,
@@ -115,7 +571,6 @@ fn render_gl_reference() -> Vec<u8> {
         gl.finish();
         gl.bind_framebuffer(glow::DRAW_FRAMEBUFFER, None);
     }
-    present_sdl_host_gl(&host).expect("swap GL reference");
     let mut top_down = vec![0_u8; bottom_up.len()];
     let row_bytes = WIDTH as usize * 4;
     for row in 0..HEIGHT as usize {
@@ -124,156 +579,331 @@ fn render_gl_reference() -> Vec<u8> {
         top_down[destination..destination + row_bytes]
             .copy_from_slice(&bottom_up[source..source + row_bytes]);
     }
-
-    destroy_gl_render_state(&mut state, &mut proxies);
-    destroy_gl_texture_render_target(&mut target);
-    drop(target);
-    drop(state);
-    // SAFETY: the VAO belongs to this still-current host context and is no longer referenced.
-    unsafe { gl.delete_vertex_array(vertex_array) };
-    drop(gl);
-    drop(host_context);
-    destroy_sdl_host(host).expect("destroy GL reference host");
     return top_down;
 }
 
-fn render_wgpu_reference() -> Vec<u8> {
-    let host = create_sdl_host(&create_sdl_host_options(
-        "Flight SDL wgpu reference",
-        f64::from(WIDTH),
-        f64::from(HEIGHT),
-        false,
-        SdlHostRenderBackend::Wgpu,
-    ))
-    .unwrap_or_else(|failure| panic!("{failure}"));
-    let capability = get_sdl_host_wgpu_capability(&host)
-        .expect("wgpu capability")
-        .clone();
-    let device = get_sdl_host_wgpu_device(&host)
-        .expect("wgpu device")
-        .clone();
-    let surface = create_sdl_host_surface(&host);
-    let acquisition =
-        futures::executor::block_on(create_wgpu_acquisition(&capability, &surface, None))
-            .expect("wgpu acquisition");
-    let mut state = create_wgpu_render_state(&device, None);
-    register_wgpu_scene2d_render_preset(&mut state);
-    register_wgpu_bitmap_texture_resolver(&mut state);
-    let screen = Arc::new(RwLock::new(create_wgpu_screen_render_target(
-        &capability,
-        &device,
-        &surface,
+fn render_wgpu_reference(probe: Option<&str>) -> (FramePair, ReferenceScene, String, String) {
+    let mut host = create_headless_host(None).expect(
+        "no headless wgpu adapter; install/enable Mesa lavapipe before running the reference capture",
+    );
+    let adapter_name = get_headless_host_adapter_name(&host).to_string();
+    let adapter_backend = get_headless_host_adapter_backend(&host).to_string();
+    let mut state = create_wgpu_render_state(
+        get_headless_host_wgpu_device(&host).expect("headless wgpu device"),
         None,
-    )));
-    enable_wgpu_screen_render_target_capture(&mut screen.write().unwrap());
-    let target = WgpuRenderTarget::Screen(screen.clone());
-    let root = reference_scene();
-    let mut proxies = RenderProxies2D::default();
-    prepare_scene_2d_render(&mut state, &mut proxies, &root);
-    let mut pass = begin_wgpu_render_pass(&mut state, &target, Some(&clear()));
-    render_wgpu_scene2d(&mut pass, &mut proxies, &root, None);
-    end_wgpu_render_pass(pass);
-    let bitmap = futures::executor::block_on(create_bitmap_from_wgpu_screen_render_target(
-        &screen,
-        Some(5_000),
-    ))
-    .expect("bounded wgpu reference capture");
-    let pixels = bitmap.data.to_vec();
+    );
+    if probe != Some("wrong-preset") {
+        register_wgpu_render_preset(&mut state, &WGPU_SCENE2D_RENDER_PRESET);
+        enable_wgpu_stroke_path_tessellation(&mut state);
+    }
+    register_wgpu_bitmap_texture_resolver(&mut state);
+    let target =
+        create_headless_host_render_target(&host, WIDTH, HEIGHT).expect("headless capture target");
+    let WgpuRenderTarget::Screen(screen) = &target else {
+        panic!("headless host must produce a screen target");
+    };
+    let screen = screen.clone();
+    let scene = reference_scene(probe);
+    assert_registry(&state, &scene.root, "wgpu");
+    let mut proxies = RenderProxies2D::<WgpuRenderState>::default();
+    render_wgpu_frame(&mut state, &mut proxies, &target, &scene.root);
+    let initial = create_bitmap_from_headless_screen_render_target(&screen, Some(10_000))
+        .expect("bounded initial wgpu capture")
+        .data
+        .to_vec();
+    activate_scene(&scene, probe);
+    render_wgpu_frame(&mut state, &mut proxies, &target, &scene.root);
+    let final_frame = create_bitmap_from_headless_screen_render_target(&screen, Some(10_000))
+        .expect("bounded final wgpu capture")
+        .data
+        .to_vec();
 
     destroy_render_state(&mut state, &mut proxies);
-    destroy_wgpu_screen_render_target(&mut screen.write().unwrap());
     drop(target);
+    destroy_wgpu_screen_render_target(&mut screen.write().unwrap());
     drop(screen);
     drop(state);
-    drop(acquisition);
-    destroy_sdl_host(host).expect("destroy wgpu reference host");
-    return pixels;
+    destroy_headless_host(&mut host);
+    return (
+        FramePair {
+            initial,
+            final_frame,
+        },
+        scene,
+        adapter_name,
+        adapter_backend,
+    );
 }
 
-fn solid_sprite(color: u32, x: f64, y: f64, width: u32, height: u32) -> NodeRef {
-    let sprite = create_sprite();
+fn render_wgpu_frame(
+    state: &mut WgpuRenderState,
+    proxies: &mut RenderProxies2D<WgpuRenderState>,
+    target: &WgpuRenderTarget,
+    root: &NodeRef,
+) {
+    prepare_scene_2d_render(state, proxies, root);
+    let mut pass = begin_wgpu_render_pass(state, target, Some(&clear()));
+    render_wgpu_scene2d(&mut pass, proxies, root, None);
+    end_wgpu_render_pass(pass);
+}
+
+fn assert_registry<S: flight_render::RenderState>(state: &S, root: &NodeRef, backend: &str) {
+    let coverage = explain_scene_2d_pipeline_coverage(state, root);
+    assert!(
+        coverage.uncovered_kinds.is_empty(),
+        "{backend} registry misses: {:?}",
+        coverage.uncovered_kinds
+    );
+    assert_eq!(
+        coverage.used_kinds,
+        ["Shape".to_string(), "Sprite".to_string()]
+    );
+}
+
+fn assert_scene(pair: &FramePair, scene: &ReferenceScene, backend: &str) {
+    assert_eq!(pair.initial.len(), (WIDTH * HEIGHT * 4) as usize);
+    assert_eq!(pair.final_frame.len(), pair.initial.len());
+    assert_color(
+        &pair.initial,
+        380,
+        240,
+        INTERACTION_INITIAL,
+        12,
+        &format!("{backend} initial control"),
+    );
+    assert_color(
+        &pair.initial,
+        416,
+        248,
+        INTERACTION_INITIAL,
+        12,
+        &format!("{backend} initial marker absence"),
+    );
+
+    let frame = &pair.final_frame;
+    assert_color(
+        frame,
+        470,
+        310,
+        BACKGROUND,
+        8,
+        &format!("{backend} background"),
+    );
+    assert_color(
+        frame,
+        40,
+        40,
+        FILLED_RECTANGLE.4,
+        8,
+        &format!("{backend} filled rectangle"),
+    );
+    assert_color(
+        frame,
+        222,
+        160,
+        0x18c9c3ff,
+        10,
+        &format!("{backend} triangle"),
+    );
+    assert_color(
+        frame,
+        24,
+        150,
+        STROKED_RECTANGLE.5,
+        12,
+        &format!("{backend} stroke"),
+    );
+    assert_color(
+        frame,
+        86,
+        154,
+        BACKGROUND,
+        8,
+        &format!("{backend} hollow center"),
+    );
+    for (index, (x, y)) in [(218, 40), (250, 40), (218, 72), (250, 72)]
+        .into_iter()
+        .enumerate()
     {
-        let mut sprite = sprite.write().unwrap();
-        let source: TextureSourceRef =
-            Arc::new(RwLock::new(create_bitmap(width, height, Some(color))));
-        let mut texture = create_texture_2d();
-        texture.source = Some(source);
-        sprite.data.texture = Some(Arc::new(RwLock::new(Texture::Texture2D(texture))));
-        sprite.x = x;
-        sprite.y = y;
+        assert_color(
+            frame,
+            x,
+            y,
+            SPRITE_COLORS[index],
+            4,
+            &format!("{backend} sprite {index}"),
+        );
     }
-    return sprite;
+    let text_ink = count_color(frame, 24, 218, 252, 70, TEXT_COLOR, 16);
+    assert!(text_ink >= 900, "{backend} text ink {text_ink} < 900");
+    assert_color(
+        frame,
+        310,
+        248,
+        INTERACTION_STROKE,
+        12,
+        &format!("{backend} active stroke"),
+    );
+    assert_color(
+        frame,
+        380,
+        240,
+        INTERACTION_ACTIVE,
+        12,
+        &format!("{backend} active control"),
+    );
+    assert_color(
+        frame,
+        416,
+        248,
+        POINTER_MARKER,
+        10,
+        &format!("{backend} pointer marker"),
+    );
+    assert_eq!(
+        *scene.transitions.lock().unwrap(),
+        ["initial", "pointer-down", "activated"],
+        "{backend} interaction transitions"
+    );
+    assert_eq!(scene.font_bytes.len(), FONT_BYTE_LENGTH);
+    assert_eq!(fnv1a32(&scene.font_bytes), FONT_FNV1A32);
 }
 
-fn assert_sentinel(pixels: &[u8], x: usize, y: usize, expected: [u8; 4]) {
-    let offset = (y * WIDTH as usize + x) * 4;
-    let pixel = &pixels[offset..offset + 4];
-    assert_eq!(pixel, expected, "sentinel ({x},{y})");
+fn assert_color(frame: &[u8], x: u32, y: u32, expected: u32, tolerance: u8, label: &str) {
+    let offset = ((y * WIDTH + x) * 4) as usize;
+    let expected = expected.to_be_bytes();
+    let actual = &frame[offset..offset + 4];
+    let delta = actual
+        .iter()
+        .zip(expected)
+        .map(|(left, right)| left.abs_diff(right))
+        .max()
+        .unwrap();
+    assert!(
+        delta <= tolerance,
+        "{label}: got {actual:?}, expected {expected:?} ±{tolerance}"
+    );
 }
 
-fn exact_pixels_match(left: &[u8], right: &[u8]) -> bool {
-    return left == right;
-}
-
-fn one_row_normalization_error(pixels: &[u8]) -> Vec<u8> {
-    let row_bytes = WIDTH as usize * 4;
-    let mut shifted = pixels.to_vec();
-    shifted.rotate_left(row_bytes);
-    return shifted;
-}
-
-fn one_pixel_sprite_shift(pixels: &[u8]) -> Vec<u8> {
-    let mut shifted = pixels.to_vec();
-    for y in 8..28 {
-        let row = y * WIDTH as usize * 4;
-        let source = pixels[row + 8 * 4..row + 32 * 4].to_vec();
-        shifted[row + 9 * 4..row + 33 * 4].copy_from_slice(&source);
-        shifted[row + 8 * 4..row + 9 * 4].copy_from_slice(&pixels[row..row + 4]);
+fn count_color(
+    frame: &[u8],
+    x: u32,
+    y: u32,
+    width: u32,
+    height: u32,
+    expected: u32,
+    tolerance: u8,
+) -> usize {
+    let expected = expected.to_be_bytes();
+    let mut count = 0;
+    for row in y..y + height {
+        for column in x..x + width {
+            let offset = ((row * WIDTH + column) * 4) as usize;
+            if frame[offset..offset + 4]
+                .iter()
+                .zip(expected)
+                .all(|(left, right)| left.abs_diff(right) <= tolerance)
+            {
+                count += 1;
+            }
+        }
     }
-    return shifted;
+    return count;
 }
 
-fn seven_step_channel_change(pixels: &[u8]) -> Vec<u8> {
-    let mut changed = pixels.to_vec();
-    let offset = (16 * WIDTH as usize + 16) * 4;
-    changed[offset] = changed[offset].saturating_add(7);
-    return changed;
+fn assert_parity(canvas_name: &str, left: &[u8], right: &[u8]) {
+    let mut mismatched = 0_usize;
+    let mut max_delta = 0_u8;
+    for (left, right) in left.as_chunks::<4>().0.iter().zip(right.as_chunks::<4>().0) {
+        let delta = left
+            .iter()
+            .zip(right)
+            .map(|(a, b)| a.abs_diff(*b))
+            .max()
+            .unwrap();
+        max_delta = max_delta.max(delta);
+        if delta > CHANNEL_TOLERANCE {
+            mismatched += 1;
+        }
+    }
+    let total = left.len() / 4;
+    let fraction = mismatched as f64 / total as f64;
+    assert!(
+        fraction <= MAX_MISMATCH_FRACTION,
+        "{canvas_name}: {mismatched}/{total} pixels differ above channel tolerance {CHANNEL_TOLERANCE} (fraction {fraction}, max delta {max_delta})"
+    );
+}
+
+fn fnv1a32(bytes: &[u8]) -> u32 {
+    let mut hash = 0x811c9dc5_u32;
+    for byte in bytes {
+        hash = (hash ^ u32::from(*byte)).wrapping_mul(0x01000193);
+    }
+    return hash;
+}
+
+fn write_evidence(
+    directory: &Path,
+    gl: &FramePair,
+    wgpu: &FramePair,
+    font: &[u8],
+    adapter_name: &str,
+    adapter_backend: &str,
+) {
+    std::fs::create_dir_all(directory).expect("create native evidence directory");
+    for (name, bytes) in [
+        ("rust-gl-initial.rgba", &gl.initial),
+        ("rust-gl-final.rgba", &gl.final_frame),
+        ("rust-wgpu-initial.rgba", &wgpu.initial),
+        ("rust-wgpu-final.rgba", &wgpu.final_frame),
+    ] {
+        std::fs::write(directory.join(name), bytes).expect("write native capture");
+    }
+    std::fs::write(directory.join("reference-font.sfnt"), font).expect("write font fixture");
+    std::fs::write(directory.join("rust-gl.logs.jsonl"), []).expect("write GL log evidence");
+    std::fs::write(directory.join("rust-wgpu.logs.jsonl"), []).expect("write wgpu log evidence");
+    let status = format!(
+        "{{\n  \"state\": \"ready\",\n  \"width\": {WIDTH},\n  \"height\": {HEIGHT},\n  \"devicePixelRatio\": 1,\n  \"colorSpace\": \"srgb\",\n  \"fontBytes\": {},\n  \"fontFnv1a32\": \"{:08x}\",\n  \"wgpuAdapter\": {:?},\n  \"wgpuBackend\": {:?}\n}}\n",
+        font.len(),
+        fnv1a32(font),
+        adapter_name,
+        adapter_backend,
+    );
+    std::fs::write(directory.join("rust-status.json"), status).expect("write native status");
 }
 
 fn main() {
-    if !display_available() {
-        eprintln!("SKIP I3 SDL reference: no DISPLAY or WAYLAND_DISPLAY");
-        return;
+    let probe = std::env::var("FLIGHT_REFERENCE_PROBE").ok();
+    if matches!(
+        probe.as_deref(),
+        Some("wrong-backend") | Some("tolerance-weakening")
+    ) {
+        panic!(
+            "reference contract rejected probe {}",
+            probe.as_deref().unwrap()
+        );
     }
-    let wgpu = render_wgpu_reference();
-    let mut gl = render_gl_reference();
-    if let Ok(probe) = std::env::var("FLIGHT_SDL_PARITY_PROBE") {
-        gl = match probe.as_str() {
-            "row-normalization" => one_row_normalization_error(&gl),
-            "sprite-shift" => one_pixel_sprite_shift(&gl),
-            "channel-plus-seven" => seven_step_channel_change(&gl),
-            _ => panic!("unknown FLIGHT_SDL_PARITY_PROBE={probe}"),
-        };
+    let (gl, gl_scene) = render_gl_reference(probe.as_deref());
+    let (mut wgpu, wgpu_scene, adapter_name, adapter_backend) =
+        render_wgpu_reference(probe.as_deref());
+    if probe.as_deref() == Some("blank") {
+        wgpu.final_frame.fill(0);
     }
-    assert_eq!(wgpu.len(), gl.len());
-    assert_sentinel(&wgpu, 2, 2, [10, 15, 23, 255]);
-    assert_sentinel(&gl, 2, 2, [10, 15, 23, 255]);
-    assert_sentinel(&wgpu, 16, 16, [53, 184, 242, 255]);
-    assert_sentinel(&gl, 16, 16, [53, 184, 242, 255]);
-    assert_sentinel(&wgpu, 46, 44, [242, 201, 76, 255]);
-    assert_sentinel(&gl, 46, 44, [242, 201, 76, 255]);
-    assert!(
-        exact_pixels_match(&wgpu, &gl),
-        "GL and wgpu must match at tolerance zero over every pixel"
+    if let Some(directory) = std::env::var_os("FLIGHT_REFERENCE_CAPTURE_DIR") {
+        write_evidence(
+            Path::new(&directory),
+            &gl,
+            &wgpu,
+            &gl_scene.font_bytes,
+            &adapter_name,
+            &adapter_backend,
+        );
+    }
+    assert_scene(&gl, &gl_scene, "rust-gl");
+    assert_scene(&wgpu, &wgpu_scene, "rust-wgpu");
+    assert_parity("native GL/wgpu parity", &gl.final_frame, &wgpu.final_frame);
+    println!(
+        "{{\"state\":\"ready\",\"gl\":\"sdl-current-thread\",\"wgpu\":\"headless-{adapter_backend}\",\"fontFnv1a32\":\"{:08x}\",\"channelTolerance\":{CHANNEL_TOLERANCE},\"maxMismatchFraction\":{MAX_MISMATCH_FRACTION}}}",
+        fnv1a32(&gl_scene.font_bytes)
     );
-
-    assert!(!exact_pixels_match(
-        &wgpu,
-        &one_row_normalization_error(&wgpu)
-    ));
-    assert!(!exact_pixels_match(&wgpu, &one_pixel_sprite_shift(&wgpu)));
-    assert!(!exact_pixels_match(
-        &wgpu,
-        &seven_step_channel_change(&wgpu)
-    ));
 }
