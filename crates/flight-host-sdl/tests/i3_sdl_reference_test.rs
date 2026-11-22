@@ -1265,7 +1265,12 @@ fn assert_gl_identity(identity: &GlIdentity) {
 }
 
 fn assert_wgpu_identity(adapter_name: &str, adapter_backend: &str, expected_path: &str) {
-    let observed_path = "rust-wgpu";
+    let backend = adapter_backend.to_lowercase();
+    let observed_path = if backend == "vulkan" {
+        "rust-wgpu".to_string()
+    } else {
+        format!("rust-wgpu-{backend}")
+    };
     assert_eq!(
         observed_path, expected_path,
         "observed backend {observed_path} does not match requested path {expected_path}"
@@ -1275,8 +1280,7 @@ fn assert_wgpu_identity(adapter_name: &str, adapter_backend: &str, expected_path
         "reference wgpu adapter is not pinned llvmpipe: {adapter_name}"
     );
     assert_eq!(
-        adapter_backend.to_lowercase(),
-        "vulkan",
+        backend, "vulkan",
         "reference wgpu backend is not pinned Vulkan"
     );
 }
