@@ -14,7 +14,6 @@ import {
   createRectangle,
   createShape,
   createSprite,
-  createTextLabel,
   createTexture,
   dispatchInteractionPointerDown,
   dispatchInteractionPointerUp,
@@ -22,10 +21,10 @@ import {
   setNodeHitTestEnabled,
   ShapeKind,
   SpriteKind,
-  TextLabelKind,
 } from '@flighthq/sdk';
 import { createFunctionalTarget, declareAntialiasingPolicy } from '@ft/render';
 
+import { createReferenceRendererFontFixture } from '../../scripts/reference-renderer-font.ts';
 import {
   assertReferenceRenderer,
   assertReferenceRendererEnvironment,
@@ -37,16 +36,12 @@ declareAntialiasingPolicy('aa');
 
 const scene = REFERENCE_RENDERER_SCENE;
 assertReferenceRendererEnvironment(window.devicePixelRatio);
-await document.fonts.ready;
-if (!document.fonts.check(`${scene.text.size}px ${scene.text.font}`, scene.text.value)) {
-  throw new Error(`[reference-renderer] pinned ${scene.text.font} font is unavailable`);
-}
 
 const target = await createFunctionalTarget({
   width: scene.width,
   height: scene.height,
   background: scene.background,
-  kinds: [ShapeKind, SpriteKind, TextLabelKind],
+  kinds: [ShapeKind, SpriteKind],
   expectedImageDescription:
     'A 480x320 opaque dark-navy sRGB field contains a solid blue rectangle at upper left; beneath it ' +
     'a hollow magenta stroked rectangle; a cyan triangular fill near the centre; a 64x64 four-colour ' +
@@ -123,16 +118,15 @@ sprite.x = scene.sprite.x;
 sprite.y = scene.sprite.y;
 addNodeChild(root, sprite);
 
-const label = createTextLabel();
-label.data.text = scene.text.value;
-label.data.textFormat = {
-  color: scene.text.color,
-  font: scene.text.font,
-  kerning: false,
-  size: scene.text.size,
-};
-label.data.width = scene.text.width;
-label.data.height = scene.text.height;
+const fontFixture = createReferenceRendererFontFixture(scene.text.color);
+if (fontFixture.text !== scene.text.value) throw new Error('[reference-renderer] font fixture text drifted');
+const label = createSprite();
+label.data.texture = createTexture({
+  colorSpace: scene.colorSpace,
+  dimension: '2d',
+  sampler: createPixelArtSampler(),
+  source: fontFixture.bitmap,
+});
 label.x = scene.text.x;
 label.y = scene.text.y;
 addNodeChild(root, label);

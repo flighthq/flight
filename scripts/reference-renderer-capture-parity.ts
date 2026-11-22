@@ -5,6 +5,7 @@ import { fileURLToPath } from 'node:url';
 import { getBitmapMismatch } from '../packages/bitmap/src/bitmapCompare.ts';
 import { decodeOraclePng } from './reference-image-png.ts';
 import type { DecodedPng } from './reference-image-png.ts';
+import { createReferenceRendererFontFixture } from './reference-renderer-font.ts';
 import {
   REFERENCE_RASTER_PARITY_POLICY,
   REFERENCE_RENDERERS,
@@ -20,11 +21,22 @@ export interface ReferenceRendererCapture {
 
 export type ReferenceRendererCaptureSet = Readonly<Record<ReferenceRenderer, ReferenceRendererCapture>>;
 
+export type NativeReferenceRenderer = 'rust-gl' | 'rust-wgpu';
+
+export interface NativeReferenceRendererCapture extends ReferenceRendererCapture {
+  readonly fontBytes: Readonly<Uint8Array>;
+  readonly initialImage: DecodedPng;
+}
+
+export type NativeReferenceRendererCaptureSet = Readonly<
+  Record<NativeReferenceRenderer, NativeReferenceRendererCapture>
+>;
+
 export interface ReferenceRendererParityMeasurement {
   readonly fraction: number;
   readonly maxChannelDelta: number;
   readonly mismatchedPixels: number;
-  readonly renderer: 'webgl' | 'webgpu';
+  readonly renderer: 'webgl' | 'webgpu' | NativeReferenceRenderer;
   readonly totalPixels: number;
 }
 
@@ -34,6 +46,7 @@ export interface ReferenceRendererCaptureReport {
   readonly domRepresentation: 'registered-element-screenshot';
   readonly failures: readonly string[];
   readonly parity: readonly ReferenceRendererParityMeasurement[];
+  readonly nativeDeterminism: Readonly<Record<NativeReferenceRenderer, number>> | null;
   readonly passed: boolean;
   readonly policy: typeof REFERENCE_RASTER_PARITY_POLICY;
 }
@@ -47,11 +60,13 @@ export interface ReferenceRendererCaptureReport {
 export function compareReferenceRendererCaptures(
   captures: ReferenceRendererCaptureSet,
   repeat: ReferenceRendererCaptureSet | null = null,
+  native: NativeReferenceRendererCaptureSet | null = null,
+  nativeRepeat: NativeReferenceRendererCaptureSet | null = null,
 ): ReferenceRendererCaptureReport {
   const failures: string[] = [];
   for (const renderer of REFERENCE_RENDERERS) validateCapture(renderer, captures[renderer], failures);
 
-  const parity = (['webgl', 'webgpu'] as const).map((renderer): ReferenceRendererParityMeasurement => {
+  const parity: ReferenceRendererParityMeasurement[] = (['webgl', 'webgpu'] as const).map((renderer) => {
     const mismatch = getBitmapMismatch(
       captures.canvas.image,
       captures[renderer].image,
@@ -66,6 +81,25 @@ export function compareReferenceRendererCaptures(
     }
     return { renderer, ...mismatch };
   });
+
+  if (native !== null) {
+    for (const renderer of ['rust-gl', 'rust-wgpu'] as const) {
+      validateNativeCapture(renderer, native[renderer], failures);
+      const mismatch = getBitmapMismatch(
+        captures.canvas.image,
+        native[renderer].image,
+        REFERENCE_RASTER_PARITY_POLICY.channelTolerance,
+      );
+      if (mismatch.fraction > REFERENCE_RASTER_PARITY_POLICY.maxMismatchFraction) {
+        failures.push(
+          `${renderer}: decoded-pixel mismatch fraction ${mismatch.fraction} exceeds ` +
+            `${REFERENCE_RASTER_PARITY_POLICY.maxMismatchFraction} at channel tolerance ` +
+            REFERENCE_RASTER_PARITY_POLICY.channelTolerance,
+        );
+      }
+      parity.push({ renderer, ...mismatch });
+    }
+  }
 
   let determinism: Record<ReferenceRenderer, number> | null = null;
   if (repeat !== null) {
@@ -82,14 +116,59 @@ export function compareReferenceRendererCaptures(
     }
   }
 
+  let nativeDeterminism: Record<NativeReferenceRenderer, number> | null = null;
+  if (nativeRepeat !== null) {
+    if (native === null) throw new Error('native repeat supplied without a first native capture');
+    nativeDeterminism = {} as Record<NativeReferenceRenderer, number>;
+    for (const renderer of ['rust-gl', 'rust-wgpu'] as const) {
+      validateNativeCapture(renderer, nativeRepeat[renderer], failures, 'repeat');
+      const mismatch = getBitmapMismatch(native[renderer].image, nativeRepeat[renderer].image, 0);
+      nativeDeterminism[renderer] = mismatch.fraction;
+      if (mismatch.mismatchedPixels !== 0) {
+        failures.push(
+          `${renderer}: repeat capture changed ${mismatch.mismatchedPixels}/${mismatch.totalPixels} decoded pixels`,
+        );
+      }
+    }
+  }
+
   return {
     canonical: 'canvas',
     determinism,
     domRepresentation: 'registered-element-screenshot',
     failures,
+    nativeDeterminism,
     parity,
     passed: failures.length === 0,
     policy: REFERENCE_RASTER_PARITY_POLICY,
+  };
+}
+
+export function readNativeReferenceRendererCaptures(directory: string): NativeReferenceRendererCaptureSet {
+  const status = JSON.parse(readFileSync(join(directory, 'rust-status.json'), 'utf8')) as unknown;
+  const fontBytes = readFileSync(join(directory, 'reference-font.sfnt'));
+  const captures = {} as Record<NativeReferenceRenderer, NativeReferenceRendererCapture>;
+  for (const renderer of ['rust-gl', 'rust-wgpu'] as const) {
+    const stem = renderer === 'rust-gl' ? 'rust-gl' : 'rust-wgpu';
+    captures[renderer] = {
+      fontBytes,
+      image: readRawRgba(join(directory, `${stem}-final.rgba`)),
+      initialImage: readRawRgba(join(directory, `${stem}-initial.rgba`)),
+      logs: readFileSync(join(directory, `${stem}.logs.jsonl`), 'utf8'),
+      status,
+    };
+  }
+  return captures;
+}
+
+function readRawRgba(path: string): DecodedPng {
+  const data = readFileSync(path);
+  const expected = REFERENCE_RENDERER_SCENE.width * REFERENCE_RENDERER_SCENE.height * 4;
+  if (data.byteLength !== expected) throw new Error(`${path}: ${data.byteLength} bytes, expected ${expected}`);
+  return {
+    data: new Uint8Array(data.buffer, data.byteOffset, data.byteLength),
+    height: REFERENCE_RENDERER_SCENE.height,
+    width: REFERENCE_RENDERER_SCENE.width,
   };
 }
 
@@ -140,6 +219,45 @@ function validateCapture(
   }
 }
 
+function validateNativeCapture(
+  renderer: NativeReferenceRenderer,
+  capture: NativeReferenceRendererCapture,
+  failures: string[],
+  label: string = 'capture',
+): void {
+  const expectedFontBytes = createReferenceRendererFontFixture(REFERENCE_RENDERER_SCENE.text.color).bytes;
+  const status = capture.status;
+  if (!isRecord(status)) {
+    failures.push(`${renderer}: ${label} status is not an object`);
+  } else {
+    if (status['state'] !== 'ready') failures.push(`${renderer}: ${label} state is not ready`);
+    if (status['width'] !== REFERENCE_RENDERER_SCENE.width || status['height'] !== REFERENCE_RENDERER_SCENE.height) {
+      failures.push(`${renderer}: ${label} status dimensions do not match the scene contract`);
+    }
+    if (status['devicePixelRatio'] !== 1 || status['colorSpace'] !== 'srgb') {
+      failures.push(`${renderer}: ${label} DPR/color space does not match the scene contract`);
+    }
+    if (status['fontBytes'] !== 2684 || status['fontFnv1a32'] !== 'f5d71ca9') {
+      failures.push(`${renderer}: ${label} did not load the pinned generated SFNT bytes`);
+    }
+  }
+  if (!equalBytes(capture.fontBytes, expectedFontBytes)) {
+    failures.push(`${renderer}: ${label} SFNT bytes differ from the TypeScript fixture`);
+  }
+  if (capture.logs.trim() !== '') failures.push(`${renderer}: ${label} carries unexpected backend logs`);
+  if (getBitmapMismatch(capture.initialImage, capture.image, 0).mismatchedPixels === 0) {
+    failures.push(`${renderer}: ${label} initial and activated frames are identical`);
+  }
+}
+
+function equalBytes(left: Readonly<Uint8Array>, right: Readonly<Uint8Array>): boolean {
+  if (left.byteLength !== right.byteLength) return false;
+  for (let index = 0; index < left.byteLength; index++) {
+    if (left[index] !== right[index]) return false;
+  }
+  return true;
+}
+
 function isRecord(value: unknown): value is Readonly<Record<string, unknown>> {
   return typeof value === 'object' && value !== null && !Array.isArray(value);
 }
@@ -148,12 +266,22 @@ const scriptPath = fileURLToPath(import.meta.url);
 if (resolve(process.argv[1] ?? '') === resolve(scriptPath)) {
   const captureDirectory = process.argv[2];
   if (captureDirectory === undefined) {
-    throw new Error('usage: tsx scripts/reference-renderer-capture-parity.ts <capture-entry-dir> [repeat-entry-dir]');
+    throw new Error(
+      'usage: tsx scripts/reference-renderer-capture-parity.ts <capture-entry-dir> ' +
+        '[repeat-entry-dir] [native-dir native-repeat-dir]',
+    );
   }
   const repeatDirectory = process.argv[3];
+  const nativeDirectory = process.argv[4];
+  const nativeRepeatDirectory = process.argv[5];
+  if ((nativeDirectory === undefined) !== (nativeRepeatDirectory === undefined)) {
+    throw new Error('native capture and native repeat directories must be supplied together');
+  }
   const report = compareReferenceRendererCaptures(
     readReferenceRendererCaptures(resolve(captureDirectory)),
     repeatDirectory === undefined ? null : readReferenceRendererCaptures(resolve(repeatDirectory)),
+    nativeDirectory === undefined ? null : readNativeReferenceRendererCaptures(resolve(nativeDirectory)),
+    nativeRepeatDirectory === undefined ? null : readNativeReferenceRendererCaptures(resolve(nativeRepeatDirectory)),
   );
   process.stdout.write(`${JSON.stringify(report, null, 2)}\n`);
   if (!report.passed) process.exitCode = 1;

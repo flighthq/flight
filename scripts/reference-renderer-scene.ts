@@ -39,8 +39,8 @@ export const REFERENCE_RENDERER_SCENE = {
     width: 252,
     height: 70,
     value: 'FLIGHT TS',
-    font: 'monospace',
-    size: 36,
+    font: 'FlightReferenceSynthetic',
+    size: 28,
     color: 0xffc94aff,
   },
   interaction: {

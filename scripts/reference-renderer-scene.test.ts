@@ -1,7 +1,8 @@
 import { cloneBitmap, createBitmap } from '../packages/bitmap/src/bitmap.ts';
 import type { Bitmap } from '../packages/bitmap/src/types.ts';
 import { compareReferenceRendererCaptures } from './reference-renderer-capture-parity.ts';
-import type { ReferenceRendererCapture, ReferenceRendererCaptureSet } from './reference-renderer-capture-parity.ts';
+import type { NativeReferenceRendererCapture, ReferenceRendererCapture } from './reference-renderer-capture-parity.ts';
+import { createReferenceRendererFontFixture } from './reference-renderer-font.ts';
 import {
   assertReferenceRenderer,
   assertReferenceRendererEnvironment,
@@ -71,6 +72,24 @@ describe('reference renderer full-resolution capture parity', () => {
     });
     expect(result.parity.map(({ renderer }) => renderer)).toEqual(['webgl', 'webgpu']);
     expect(result.determinism).toEqual({ canvas: 0, dom: 0, webgl: 0, webgpu: 0 });
+  });
+
+  it('accepts native GL and wgpu only with the exact TypeScript-generated SFNT bytes', () => {
+    const bitmap = createCompleteFixture();
+    const captures = createCaptureSet(bitmap);
+    const native = createNativeCaptureSet(bitmap);
+
+    const result = compareReferenceRendererCaptures(captures, captures, native, native);
+    expect(result.passed).toBe(true);
+    expect(result.parity.map(({ renderer }) => renderer)).toEqual(['webgl', 'webgpu', 'rust-gl', 'rust-wgpu']);
+    expect(result.nativeDeterminism).toEqual({ 'rust-gl': 0, 'rust-wgpu': 0 });
+
+    const changedFont = new Uint8Array(native['rust-gl'].fontBytes);
+    changedFont[0] ^= 1;
+    native['rust-gl'] = { ...native['rust-gl'], fontBytes: changedFont };
+    expect(compareReferenceRendererCaptures(captures, null, native).failures).toContain(
+      'rust-gl: capture SFNT bytes differ from the TypeScript fixture',
+    );
   });
 
   it('fails a raster change just beyond both fixed tolerance axes', () => {
@@ -233,6 +252,34 @@ function createCaptureSet(bitmap: Bitmap): Record<ReferenceRenderer, ReferenceRe
       },
     ]),
   ) as Record<ReferenceRenderer, ReferenceRendererCapture>;
+}
+
+function createNativeCaptureSet(bitmap: Bitmap): Record<'rust-gl' | 'rust-wgpu', NativeReferenceRendererCapture> {
+  const fontBytes = createReferenceRendererFontFixture(REFERENCE_RENDERER_SCENE.text.color).bytes;
+  return Object.fromEntries(
+    (['rust-gl', 'rust-wgpu'] as const).map((renderer) => {
+      const initialImage = cloneBitmap(bitmap);
+      initialImage.data[0] ^= 1;
+      return [
+        renderer,
+        {
+          fontBytes,
+          image: cloneBitmap(bitmap),
+          initialImage,
+          logs: '',
+          status: {
+            colorSpace: 'srgb',
+            devicePixelRatio: 1,
+            fontBytes: 2684,
+            fontFnv1a32: 'f5d71ca9',
+            height: REFERENCE_RENDERER_SCENE.height,
+            state: 'ready',
+            width: REFERENCE_RENDERER_SCENE.width,
+          },
+        },
+      ];
+    }),
+  ) as Record<'rust-gl' | 'rust-wgpu', NativeReferenceRendererCapture>;
 }
 
 function readyStatus(renderer: ReferenceRenderer): unknown {
