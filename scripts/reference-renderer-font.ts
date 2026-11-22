@@ -1,7 +1,4 @@
-import { createBitmap } from '@flighthq/bitmap';
-import type { Bitmap } from '@flighthq/bitmap/contract';
 import { sdkHostDecompressDeflate } from '@flighthq/compression';
-import { allocateGlyphRasterizerBackendFromGlyphOutlineSource } from '@flighthq/font';
 import { createGlyphOutlineSourceFromOpenTypeFont, createSyntheticFont } from '@flighthq/font-formats';
 import type { SyntheticGlyph } from '@flighthq/font-formats';
 
@@ -16,7 +13,6 @@ const PATTERNS = {
 } as const;
 
 const TEXT = 'FLIGHT TS';
-const FONT_SIZE = 28;
 const FONT_UNITS_PER_EM = 28;
 const FONT_ADVANCE = 24;
 const GLYPH_CELL = 4;
@@ -26,15 +22,14 @@ export interface ReferenceRendererFontFixture {
   readonly bytes: Uint8Array;
   readonly fnv1a32: number;
   readonly text: string;
-  readonly bitmap: Bitmap;
 }
 
 /**
- * Generates and parses Flight-owned SFNT bytes, then rasterizes the pinned glyph outlines through
- * the portable font backend shared by browser and native targets. The bitmap is the authored text
- * component, not a substitute pattern: every amber pixel comes from the loaded face's outlines.
+ * Generates Flight-owned SFNT bytes for the production browser/native text paths. This helper owns
+ * only the face data: layout, glyph rasterization and drawing deliberately remain the responsibility
+ * of the SDK text node and its registered backend renderer.
  */
-export function createReferenceRendererFontFixture(color: number): ReferenceRendererFontFixture {
+export function createReferenceRendererFontFixture(): ReferenceRendererFontFixture {
   const glyphEntries = Object.entries(PATTERNS);
   const glyphs: SyntheticGlyph[] = [
     { endPoints: [], points: [] },
@@ -53,19 +48,7 @@ export function createReferenceRendererFontFixture(color: number): ReferenceRend
   });
   const source = createGlyphOutlineSourceFromOpenTypeFont(bytes, sdkHostDecompressDeflate);
   if (source === null) throw new Error('[reference-renderer] generated SFNT face was rejected');
-  const rasterizer = allocateGlyphRasterizerBackendFromGlyphOutlineSource(source);
-  const bitmap = createBitmap(252, 70);
-  let cursor = 2;
-  for (const letter of TEXT) {
-    const raster = rasterizer.rasterize(letter.codePointAt(0)!, {
-      fontFamily: 'FlightReferenceSynthetic',
-      fontSize: FONT_SIZE,
-    });
-    if (raster === null) throw new Error(`[reference-renderer] generated face lacks ${letter}`);
-    blitGlyph(bitmap, raster.pixels, raster.width, raster.height, cursor + raster.bearingX, 2, color);
-    cursor += raster.advance;
-  }
-  return { bitmap, bytes, fnv1a32: fnv1a(bytes), text: TEXT };
+  return { bytes, fnv1a32: fnv1a(bytes), text: TEXT };
 }
 
 function patternGlyph(pattern: readonly string[]): SyntheticGlyph {
@@ -86,35 +69,6 @@ function patternGlyph(pattern: readonly string[]): SyntheticGlyph {
     }
   }
   return { endPoints, points };
-}
-
-function blitGlyph(
-  target: Bitmap,
-  source: Readonly<Uint8Array>,
-  width: number,
-  height: number,
-  targetX: number,
-  targetY: number,
-  color: number,
-): void {
-  const [red, green, blue, packedAlpha] = [color >>> 24, color >>> 16, color >>> 8, color].map(
-    (component) => component & 0xff,
-  );
-  for (let y = 0; y < height; y++) {
-    for (let x = 0; x < width; x++) {
-      const sourceOffset = (y * width + x) * 4;
-      const coverage = source[sourceOffset + 3]!;
-      if (coverage === 0) continue;
-      const pixelX = Math.round(targetX) + x;
-      const pixelY = Math.round(targetY) + y;
-      if (pixelX < 0 || pixelY < 0 || pixelX >= target.width || pixelY >= target.height) continue;
-      const targetOffset = (pixelY * target.width + pixelX) * 4;
-      target.data[targetOffset] = red!;
-      target.data[targetOffset + 1] = green!;
-      target.data[targetOffset + 2] = blue!;
-      target.data[targetOffset + 3] = Math.round((coverage * packedAlpha!) / 255);
-    }
-  }
 }
 
 function fnv1a(bytes: Readonly<Uint8Array>): number {

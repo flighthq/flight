@@ -1,4 +1,4 @@
-import { createWebImageResourceFromCanvas } from '@flighthq/host-web';
+import { createWebImageResourceFromCanvas, webHostFontLoading } from '@flighthq/host-web';
 import type { Bitmap } from '@flighthq/sdk';
 import {
   addNodeChild,
@@ -12,11 +12,15 @@ import {
   createInteractionManager,
   createPixelArtSampler,
   createRectangle,
+  createFontResource,
+  createRichText,
   createShape,
   createSprite,
   createTexture,
   dispatchInteractionPointerDown,
   dispatchInteractionPointerUp,
+  loadFontResourceFromBytes,
+  RichTextKind,
   setNodeHitArea,
   setNodeHitTestEnabled,
   ShapeKind,
@@ -29,6 +33,7 @@ import {
   assertReferenceRenderer,
   assertReferenceRendererEnvironment,
   assertReferenceRendererScene,
+  REFERENCE_BROWSER_ENVIRONMENT_DESCRIPTOR,
   REFERENCE_RENDERER_SCENE,
 } from '../../scripts/reference-renderer-scene.ts';
 
@@ -41,7 +46,7 @@ const target = await createFunctionalTarget({
   width: scene.width,
   height: scene.height,
   background: scene.background,
-  kinds: [ShapeKind, SpriteKind],
+  kinds: [ShapeKind, SpriteKind, RichTextKind],
   expectedImageDescription:
     'A 480x320 opaque dark-navy sRGB field contains a solid blue rectangle at upper left; beneath it ' +
     'a hollow magenta stroked rectangle; a cyan triangular fill near the centre; a 64x64 four-colour ' +
@@ -50,6 +55,7 @@ const target = await createFunctionalTarget({
     'pointer position. The activated control must be green, not its pre-click orange state.',
 });
 assertReferenceRenderer(target.kind, (window as typeof window & { __ftBackend?: string }).__ftBackend);
+assertBackendIdentity(target);
 
 // A Shape is also the generic Node2D container here. Keeping the root on an explicitly requested kind
 // makes an omitted/wrong renderer a loud registry miss instead of relying on a backend's implicit root.
@@ -118,15 +124,20 @@ sprite.x = scene.sprite.x;
 sprite.y = scene.sprite.y;
 addNodeChild(root, sprite);
 
-const fontFixture = createReferenceRendererFontFixture(scene.text.color);
+const fontFixture = createReferenceRendererFontFixture();
 if (fontFixture.text !== scene.text.value) throw new Error('[reference-renderer] font fixture text drifted');
-const label = createSprite();
-label.data.texture = createTexture({
-  colorSpace: scene.colorSpace,
-  dimension: '2d',
-  sampler: createPixelArtSampler(),
-  source: fontFixture.bitmap,
-});
+const font = createFontResource(scene.text.font);
+await loadFontResourceFromBytes(webHostFontLoading, font, fontFixture.bytes);
+if (font.face === null)
+  throw new Error('[reference-renderer] production font loader did not retain the generated face');
+const label = createRichText();
+label.data.defaultTextFormat = { font: font.family, size: scene.text.size };
+label.data.textColor = scene.text.color;
+label.data.multiline = false;
+label.data.wordWrap = false;
+label.data.width = scene.text.width;
+label.data.height = scene.text.height;
+label.data.text = scene.text.value;
 label.x = scene.text.x;
 label.y = scene.text.y;
 addNodeChild(root, label);
@@ -196,4 +207,39 @@ function createControl(color: number, marker: boolean) {
     appendShapeEndFill(control);
   }
   return control;
+}
+
+function assertBackendIdentity(value: typeof target): void {
+  const expected = REFERENCE_BROWSER_ENVIRONMENT_DESCRIPTOR;
+  if (value.kind === 'canvas') {
+    const identity = value.state.context.constructor.name.toLowerCase();
+    if (!identity.includes('canvasrenderingcontext2d')) {
+      throw new Error(`[reference-renderer] canvas identity ${identity} does not match ${expected}`);
+    }
+    return;
+  }
+  if (value.kind === 'dom') {
+    if (!(value.state.element instanceof HTMLDivElement)) {
+      throw new Error(`[reference-renderer] DOM identity is not Blink HTMLDivElement (${expected})`);
+    }
+    return;
+  }
+  if (value.kind === 'webgl') {
+    const gl = value.state.gl;
+    const extension = gl.getExtension('WEBGL_debug_renderer_info');
+    const renderer =
+      extension === null ? '' : String(gl.getParameter(extension.UNMASKED_RENDERER_WEBGL) ?? '').toLowerCase();
+    if (!(gl instanceof WebGL2RenderingContext) || !renderer.includes('swiftshader')) {
+      throw new Error(`[reference-renderer] WebGL identity ${renderer || '(unavailable)'} does not match ${expected}`);
+    }
+    return;
+  }
+  const adapterInfo = (value.state.device as unknown as { adapterInfo?: GPUAdapterInfo }).adapterInfo;
+  const identity = [adapterInfo?.vendor, adapterInfo?.architecture, adapterInfo?.device, adapterInfo?.description]
+    .filter(Boolean)
+    .join(' ')
+    .toLowerCase();
+  if (!identity.includes('swiftshader')) {
+    throw new Error(`[reference-renderer] WebGPU identity ${identity || '(unavailable)'} does not match ${expected}`);
+  }
 }

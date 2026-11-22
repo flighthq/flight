@@ -64,6 +64,9 @@ export const REFERENCE_RENDERER_SCENE = {
 
 export const REFERENCE_RENDERERS: readonly ReferenceRenderer[] = ['canvas', 'dom', 'webgl', 'webgpu'];
 
+export const REFERENCE_BROWSER_ENVIRONMENT_DESCRIPTOR =
+  'browser=playwright-chromium;canvas=skia;dom=blink;webgl=angle-swiftshader;webgpu=dawn-swiftshader-vulkan';
+
 // Calibrated in full-resolution decoded-pixel space, not inherited from the 16x16 fingerprint gate.
 // The small channel allowance absorbs renderer edge/glyph coverage rounding; the fraction cap keeps
 // omissions of any authored component far outside the accepted band.
@@ -71,6 +74,46 @@ export const REFERENCE_RASTER_PARITY_POLICY = {
   channelTolerance: 8,
   maxMismatchFraction: 0.002,
 } as const;
+
+// The full-frame cap catches missing whole components; these feature policies prevent a small but
+// meaningful defect from spending the unused part of that global budget. Regions deliberately hug
+// the authored feature, so their budgets scale with one glyph/edge rather than the 480x320 frame.
+export const REFERENCE_RASTER_FEATURE_POLICIES = [
+  {
+    label: 'sprite extent',
+    region: {
+      x: REFERENCE_RENDERER_SCENE.sprite.x,
+      y: REFERENCE_RENDERER_SCENE.sprite.y,
+      width: REFERENCE_RENDERER_SCENE.sprite.size,
+      height: REFERENCE_RENDERER_SCENE.sprite.size,
+    },
+    channelTolerance: 0,
+    maxMismatchedPixels: 0,
+  },
+  {
+    label: 'triangle geometry',
+    region: { x: 166, y: 108, width: 121, height: 87 },
+    channelTolerance: 8,
+    maxMismatchedPixels: 180,
+  },
+  ...REFERENCE_RENDERER_SCENE.text.value.split('').flatMap((character, index) =>
+    character === ' '
+      ? []
+      : [
+          {
+            label: `text glyph ${index + 1}`,
+            region: {
+              x: REFERENCE_RENDERER_SCENE.text.x + index * 24,
+              y: REFERENCE_RENDERER_SCENE.text.y,
+              width: 22,
+              height: 40,
+            },
+            channelTolerance: 16,
+            maxMismatchedPixels: 48,
+          },
+        ],
+  ),
+] as const;
 
 export function assertReferenceRenderer(
   actual: string,
@@ -147,11 +190,36 @@ export function assertReferenceRendererScene(
   for (const [index, sample] of spriteSamples.entries()) {
     requireColor(`sprite quadrant ${index + 1}`, pixel(sample[0], sample[1]), sprite.colors[index]!, 4);
   }
+  for (const [label, x, y, color] of [
+    ['top-left', sprite.x, sprite.y, sprite.colors[0]],
+    ['top-right', sprite.x + sprite.size - 1, sprite.y, sprite.colors[1]],
+    ['bottom-left', sprite.x, sprite.y + sprite.size - 1, sprite.colors[2]],
+    ['bottom-right', sprite.x + sprite.size - 1, sprite.y + sprite.size - 1, sprite.colors[3]],
+  ] as const) {
+    requireColor(`sprite ${label} extent`, pixel(x, y), color, 4);
+  }
+  requireColor('sprite left anchor', pixel(sprite.x - 1, sprite.y + sprite.size / 2), scene.background, 8);
+  requireColor('sprite right anchor', pixel(sprite.x + sprite.size, sprite.y + sprite.size / 2), scene.background, 8);
 
   const text = scene.text;
-  const textInk = countRegionColor(pixel, text, text.color, 80, 2);
-  if (textInk < 32) {
-    throw new Error(`[reference-renderer] text: ${textInk} matching samples, expected at least 32`);
+  const textInk = countRegionColor(pixel, text, text.color, 80, 1);
+  if (textInk < 850 || textInk > 1_600) {
+    throw new Error(`[reference-renderer] text: ${textInk} matching pixels, expected 850..1600`);
+  }
+  for (const [index, character] of [...text.value].entries()) {
+    if (character === ' ') continue;
+    const glyphInk = countRegionColor(
+      pixel,
+      { x: text.x + index * 24, y: text.y, width: 22, height: 40 },
+      text.color,
+      80,
+      1,
+    );
+    if (glyphInk < 60) {
+      throw new Error(
+        `[reference-renderer] text glyph ${index + 1} (${character}): ${glyphInk} matching pixels, expected at least 60`,
+      );
+    }
   }
 
   const interaction = scene.interaction;

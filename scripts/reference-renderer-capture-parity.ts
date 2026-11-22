@@ -8,6 +8,8 @@ import type { DecodedPng } from './reference-image-png.ts';
 import { createReferenceRendererFontFixture } from './reference-renderer-font.ts';
 import {
   REFERENCE_RASTER_PARITY_POLICY,
+  REFERENCE_RASTER_FEATURE_POLICIES,
+  REFERENCE_BROWSER_ENVIRONMENT_DESCRIPTOR,
   REFERENCE_RENDERERS,
   REFERENCE_RENDERER_SCENE,
 } from './reference-renderer-scene.ts';
@@ -36,7 +38,7 @@ export interface ReferenceRendererParityMeasurement {
   readonly fraction: number;
   readonly maxChannelDelta: number;
   readonly mismatchedPixels: number;
-  readonly renderer: 'webgl' | 'webgpu' | NativeReferenceRenderer;
+  readonly renderer: 'dom' | 'webgl' | 'webgpu' | NativeReferenceRenderer;
   readonly totalPixels: number;
 }
 
@@ -66,7 +68,7 @@ export function compareReferenceRendererCaptures(
   const failures: string[] = [];
   for (const renderer of REFERENCE_RENDERERS) validateCapture(renderer, captures[renderer], failures);
 
-  const parity: ReferenceRendererParityMeasurement[] = (['webgl', 'webgpu'] as const).map((renderer) => {
+  const parity: ReferenceRendererParityMeasurement[] = (['dom', 'webgl', 'webgpu'] as const).map((renderer) => {
     const mismatch = getBitmapMismatch(
       captures.canvas.image,
       captures[renderer].image,
@@ -79,6 +81,7 @@ export function compareReferenceRendererCaptures(
           REFERENCE_RASTER_PARITY_POLICY.channelTolerance,
       );
     }
+    validateFeatureParity(renderer, captures.canvas.image, captures[renderer].image, failures);
     return { renderer, ...mismatch };
   });
 
@@ -97,6 +100,7 @@ export function compareReferenceRendererCaptures(
             REFERENCE_RASTER_PARITY_POLICY.channelTolerance,
         );
       }
+      validateFeatureParity(renderer, captures.canvas.image, native[renderer].image, failures);
       parity.push({ renderer, ...mismatch });
     }
   }
@@ -142,6 +146,33 @@ export function compareReferenceRendererCaptures(
     passed: failures.length === 0,
     policy: REFERENCE_RASTER_PARITY_POLICY,
   };
+}
+
+function validateFeatureParity(
+  renderer: Exclude<ReferenceRendererParityMeasurement['renderer'], 'canvas'>,
+  canonical: DecodedPng,
+  actual: DecodedPng,
+  failures: string[],
+): void {
+  for (const policy of REFERENCE_RASTER_FEATURE_POLICIES) {
+    let mismatchedPixels = 0;
+    for (let y = policy.region.y; y < policy.region.y + policy.region.height; y++) {
+      for (let x = policy.region.x; x < policy.region.x + policy.region.width; x++) {
+        const offset = (y * canonical.width + x) * 4;
+        let delta = 0;
+        for (let channel = 0; channel < 4; channel++) {
+          delta = Math.max(delta, Math.abs(canonical.data[offset + channel]! - actual.data[offset + channel]!));
+        }
+        if (delta > policy.channelTolerance) mismatchedPixels++;
+      }
+    }
+    if (mismatchedPixels > policy.maxMismatchedPixels) {
+      failures.push(
+        `${renderer}: ${policy.label} differs at ${mismatchedPixels} pixels, expected at most ` +
+          `${policy.maxMismatchedPixels} above channel tolerance ${policy.channelTolerance}`,
+      );
+    }
+  }
 }
 
 export function readNativeReferenceRendererCaptures(directory: string): NativeReferenceRendererCaptureSet {
@@ -203,6 +234,8 @@ function validateCapture(
     const provenance = status['provenance'];
     if (!isRecord(provenance) || provenance['targetKind'] !== renderer) {
       failures.push(`${renderer}: ${label} target kind does not match its route`);
+    } else if (provenance['environmentDescriptor'] !== REFERENCE_BROWSER_ENVIRONMENT_DESCRIPTOR) {
+      failures.push(`${renderer}: ${label} browser environment descriptor is not pinned`);
     }
   }
   if (
@@ -225,7 +258,7 @@ function validateNativeCapture(
   failures: string[],
   label: string = 'capture',
 ): void {
-  const expectedFontBytes = createReferenceRendererFontFixture(REFERENCE_RENDERER_SCENE.text.color).bytes;
+  const expectedFontBytes = createReferenceRendererFontFixture().bytes;
   const status = capture.status;
   if (!isRecord(status)) {
     failures.push(`${renderer}: ${label} status is not an object`);
@@ -239,6 +272,23 @@ function validateNativeCapture(
     }
     if (status['fontBytes'] !== 2684 || status['fontFnv1a32'] !== 'f5d71ca9') {
       failures.push(`${renderer}: ${label} did not load the pinned generated SFNT bytes`);
+    }
+    if (renderer === 'rust-gl') {
+      if (
+        typeof status['glVersion'] !== 'string' ||
+        !status['glVersion'].includes('4.5') ||
+        status['glProfile'] !== 'core' ||
+        typeof status['glRenderer'] !== 'string' ||
+        !status['glRenderer'].toLowerCase().includes('llvmpipe')
+      ) {
+        failures.push(`${renderer}: ${label} did not use the pinned Mesa llvmpipe GL 4.5 core renderer`);
+      }
+    } else if (
+      typeof status['wgpuAdapter'] !== 'string' ||
+      !status['wgpuAdapter'].toLowerCase().includes('llvmpipe') ||
+      String(status['wgpuBackend']).toLowerCase() !== 'vulkan'
+    ) {
+      failures.push(`${renderer}: ${label} did not use the pinned llvmpipe Vulkan adapter`);
     }
   }
   if (!equalBytes(capture.fontBytes, expectedFontBytes)) {

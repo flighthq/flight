@@ -8,6 +8,7 @@ import {
   assertReferenceRendererEnvironment,
   assertReferenceRendererScene,
   REFERENCE_RASTER_PARITY_POLICY,
+  REFERENCE_BROWSER_ENVIRONMENT_DESCRIPTOR,
   REFERENCE_RENDERER_SCENE,
 } from './reference-renderer-scene.ts';
 import type { ReferenceRenderer } from './reference-renderer-scene.ts';
@@ -32,6 +33,39 @@ describe('reference renderer scene oracle', () => {
 
   it('rejects omission of the pointer event even when final-looking pixels are supplied', () => {
     expect(() => assertReferenceRendererScene(createCompleteFixture(), ['initial'])).toThrow(/pointer transition/u);
+  });
+
+  it('rejects every individually dropped glyph instead of accepting a partial line', () => {
+    for (const [index, character] of [...REFERENCE_RENDERER_SCENE.text.value].entries()) {
+      if (character === ' ') continue;
+      const fixture = createCompleteFixture();
+      fill(
+        fixture,
+        {
+          x: REFERENCE_RENDERER_SCENE.text.x + index * 24,
+          y: REFERENCE_RENDERER_SCENE.text.y,
+          width: 22,
+          height: 40,
+        },
+        REFERENCE_RENDERER_SCENE.background,
+      );
+      expect(() => assertReferenceRendererScene(fixture, expectedTransitions)).toThrow(/text(?: glyph)?:/u);
+    }
+  });
+
+  it('rejects a one-pixel sprite shift through its authored extent anchors', () => {
+    const fixture = createCompleteFixture();
+    const sprite = REFERENCE_RENDERER_SCENE.sprite;
+    const shifted = cloneBitmap(fixture);
+    clearSprite(shifted);
+    for (let y = 0; y < sprite.size; y++) {
+      for (let x = 0; x < sprite.size; x++) {
+        const source = ((sprite.y + y) * fixture.width + sprite.x + x) * 4;
+        const target = ((sprite.y + y) * fixture.width + sprite.x + x + 1) * 4;
+        shifted.data.set(fixture.data.subarray(source, source + 4), target);
+      }
+    }
+    expect(() => assertReferenceRendererScene(shifted, expectedTransitions)).toThrow(/sprite .*extent/u);
   });
 
   it('rejects a silent all-background render', () => {
@@ -70,7 +104,7 @@ describe('reference renderer full-resolution capture parity', () => {
       failures: [],
       passed: true,
     });
-    expect(result.parity.map(({ renderer }) => renderer)).toEqual(['webgl', 'webgpu']);
+    expect(result.parity.map(({ renderer }) => renderer)).toEqual(['dom', 'webgl', 'webgpu']);
     expect(result.determinism).toEqual({ canvas: 0, dom: 0, webgl: 0, webgpu: 0 });
   });
 
@@ -81,7 +115,7 @@ describe('reference renderer full-resolution capture parity', () => {
 
     const result = compareReferenceRendererCaptures(captures, captures, native, native);
     expect(result.passed).toBe(true);
-    expect(result.parity.map(({ renderer }) => renderer)).toEqual(['webgl', 'webgpu', 'rust-gl', 'rust-wgpu']);
+    expect(result.parity.map(({ renderer }) => renderer)).toEqual(['dom', 'webgl', 'webgpu', 'rust-gl', 'rust-wgpu']);
     expect(result.nativeDeterminism).toEqual({ 'rust-gl': 0, 'rust-wgpu': 0 });
 
     const changedFont = new Uint8Array(native['rust-gl'].fontBytes);
@@ -154,11 +188,9 @@ function createCompleteFixture(): Bitmap {
   fill(bitmap, { x: sprite.x, y: sprite.y + half, width: half, height: half }, sprite.colors[2]);
   fill(bitmap, { x: sprite.x + half, y: sprite.y + half, width: half, height: half }, sprite.colors[3]);
 
-  let ink = 0;
-  for (let y = scene.text.y; y < scene.text.y + scene.text.height && ink < 40; y += 2) {
-    for (let x = scene.text.x; x < scene.text.x + scene.text.width && ink < 40; x += 2) {
-      set(bitmap, x, y, scene.text.color);
-      ink++;
+  for (const [index, character] of [...scene.text.value].entries()) {
+    if (character !== ' ') {
+      fill(bitmap, { x: scene.text.x + index * 24, y: scene.text.y + 4, width: 11, height: 11 }, scene.text.color);
     }
   }
 
@@ -255,38 +287,39 @@ function createCaptureSet(bitmap: Bitmap): Record<ReferenceRenderer, ReferenceRe
 }
 
 function createNativeCaptureSet(bitmap: Bitmap): Record<'rust-gl' | 'rust-wgpu', NativeReferenceRendererCapture> {
-  const fontBytes = createReferenceRendererFontFixture(REFERENCE_RENDERER_SCENE.text.color).bytes;
-  return Object.fromEntries(
-    (['rust-gl', 'rust-wgpu'] as const).map((renderer) => {
-      const initialImage = cloneBitmap(bitmap);
-      initialImage.data[0] ^= 1;
-      return [
-        renderer,
-        {
-          fontBytes,
-          image: cloneBitmap(bitmap),
-          initialImage,
-          logs: '',
-          status: {
-            colorSpace: 'srgb',
-            devicePixelRatio: 1,
-            fontBytes: 2684,
-            fontFnv1a32: 'f5d71ca9',
-            height: REFERENCE_RENDERER_SCENE.height,
-            state: 'ready',
-            width: REFERENCE_RENDERER_SCENE.width,
-          },
-        },
-      ];
-    }),
-  ) as Record<'rust-gl' | 'rust-wgpu', NativeReferenceRendererCapture>;
+  const fontBytes = createReferenceRendererFontFixture().bytes;
+  const capture = (): NativeReferenceRendererCapture => {
+    const initialImage = cloneBitmap(bitmap);
+    initialImage.data[0] ^= 1;
+    return {
+      fontBytes,
+      image: cloneBitmap(bitmap),
+      initialImage,
+      logs: '',
+      status: {
+        colorSpace: 'srgb',
+        devicePixelRatio: 1,
+        fontBytes: 2684,
+        fontFnv1a32: 'f5d71ca9',
+        glProfile: 'core',
+        glRenderer: 'llvmpipe (LLVM test)',
+        glVersion: '4.5 (Core Profile) Mesa test',
+        height: REFERENCE_RENDERER_SCENE.height,
+        state: 'ready',
+        wgpuAdapter: 'llvmpipe (LLVM test)',
+        wgpuBackend: 'Vulkan',
+        width: REFERENCE_RENDERER_SCENE.width,
+      },
+    };
+  };
+  return { 'rust-gl': capture(), 'rust-wgpu': capture() };
 }
 
 function readyStatus(renderer: ReferenceRenderer): unknown {
   return {
     error: null,
     oracle: 'invoked',
-    provenance: { targetKind: renderer },
+    provenance: { environmentDescriptor: REFERENCE_BROWSER_ENVIRONMENT_DESCRIPTOR, targetKind: renderer },
     state: 'ready',
   };
 }
