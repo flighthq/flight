@@ -52,6 +52,10 @@ name = "i3_sdl_gl_test"
 harness = false
 
 [[test]]
+name = "i3_sdl_gl_shape_contexts_test"
+harness = false
+
+[[test]]
 name = "i3_sdl_input_test"
 harness = false
 
