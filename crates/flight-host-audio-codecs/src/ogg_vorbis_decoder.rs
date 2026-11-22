@@ -22,10 +22,14 @@ mod tests {
     use std::sync::atomic::AtomicBool;
 
     use super::*;
-    use crate::audio_codecs_host::create_audio_codecs_host_options;
+    use crate::audio_codecs_host::{
+        create_audio_codecs_host, create_audio_codecs_host_options,
+        explain_audio_codecs_host_decode,
+    };
     use crate::generated_media::{
         VorbisChannelContent, create_vorbis_stream_shape, encode_ogg_vorbis,
-        encode_ogg_vorbis_with_single_codebook, encode_vorbis_setup_with_single_codebook,
+        encode_ogg_vorbis_with_setup_packet, encode_ogg_vorbis_with_single_codebook,
+        encode_vorbis_setup_with_single_codebook,
     };
     use crate::types::AudioCodecsHostState;
 
@@ -124,13 +128,168 @@ mod tests {
             );
         }
     }
+
+    // The setup packet of `encode_vorbis_setup_with_single_codebook(1, 66, 1)` holds 158 bits of
+    // codebook fields and then 66 one-bit lookup values: the values end exactly at bit 224, the
+    // last bit of the 28th byte after the 7-byte packet prefix, so a packet cut there leaves no
+    // bit to spare.
+    const LOOKUP_VALUES_END_BYTES: usize = 7 + 28;
+
+    fn lookup_values_setup_packet() -> Vec<u8> {
+        let packet = encode_vorbis_setup_with_single_codebook(1, 66, 1);
+        assert!(packet.len() > LOOKUP_VALUES_END_BYTES);
+        return packet;
+    }
+
+    // The exact bit count of `byte_count` bytes less `position`, computed in u128 so it never
+    // shares the arithmetic under test; `None` where the count leaves u64.
+    fn exact_remaining_bits(byte_count: u64, position: u64) -> Option<u64> {
+        let bit_count = u128::from(byte_count) * 8;
+        let remaining = bit_count.saturating_sub(u128::from(position));
+        return u64::try_from(bit_count)
+            .ok()
+            .map(|_| return remaining as u64);
+    }
+
+    #[test]
+    fn lifted_encoded_caps_reject_an_overrunning_setup_before_the_backing_parser() {
+        let stream = encode_ogg_vorbis_with_setup_packet(
+            &lookup_values_setup_packet()[..LOOKUP_VALUES_END_BYTES - 1],
+        );
+        let caps = [
+            usize::MAX / 8,
+            usize::MAX / 8 + 1,
+            usize::MAX,
+            usize::try_from(u64::from(u32::MAX)).unwrap_or(usize::MAX),
+            usize::try_from(u64::from(u32::MAX) + 1).unwrap_or(usize::MAX),
+        ];
+        for max_encoded_bytes in caps {
+            let options = AudioCodecsHostOptions {
+                max_encoded_bytes,
+                ..create_audio_codecs_host_options()
+            };
+            let host = create_audio_codecs_host(Some(&options))
+                .expect("a nonzero max_encoded_bytes is valid at any width");
+            VORBIS_SETUP_PARSES.with(|count| count.set(0));
+            let explanation = explain_audio_codecs_host_decode(&host, &stream, "audio/ogg", None);
+            assert_eq!(
+                (
+                    explanation.reason,
+                    VORBIS_SETUP_PARSES.with(|count| return count.get())
+                ),
+                (AudioCodecsHostDecodeExplanationReason::MalformedInput, 0),
+                "max_encoded_bytes {max_encoded_bytes}"
+            );
+        }
+    }
+
+    #[test]
+    fn lookup_values_that_end_at_the_packet_end_fit_and_one_byte_less_does_not() {
+        let packet = lookup_values_setup_packet();
+        assert!(scan_vorbis_codebook_tables(&packet[..LOOKUP_VALUES_END_BYTES]).is_ok());
+        assert_eq!(
+            scan_vorbis_codebook_tables(&packet[..LOOKUP_VALUES_END_BYTES - 1])
+                .map_err(|failure| return failure.reason),
+            Err(AudioCodecsHostDecodeExplanationReason::MalformedInput)
+        );
+    }
+
+    #[test]
+    fn setup_bit_reads_past_any_addressable_byte_fail_closed() {
+        for position in [8, u64::from(u32::MAX) * 8, 1 << 35, u64::MAX - 7, u64::MAX] {
+            let mut bits = SetupBits {
+                bytes: &[0xff],
+                position,
+            };
+            assert_eq!(
+                read_setup_bits(&mut bits, 1).map_err(|failure| return failure.reason),
+                Err(AudioCodecsHostDecodeExplanationReason::MalformedInput),
+                "position {position}"
+            );
+        }
+        let mut last = SetupBits {
+            bytes: &[0x80],
+            position: 7,
+        };
+        assert_eq!(read_setup_bits(&mut last, 1).ok(), Some(1));
+    }
+
+    #[test]
+    fn setup_remaining_bits_widen_every_usize_byte_count_before_multiplying() {
+        let cases = [
+            (0, 0),
+            (1, 3),
+            (usize::MAX / 8, 0),
+            (usize::MAX / 8, u64::MAX),
+            (usize::MAX / 8 + 1, 0),
+            (usize::MAX / 8 + 1, 1),
+            (usize::MAX - 1, 0),
+            (usize::MAX, 0),
+            (usize::MAX, u64::MAX),
+        ];
+        for (byte_count, position) in cases {
+            let widened = u64::try_from(byte_count).unwrap();
+            assert_eq!(
+                get_vorbis_setup_remaining_bits(byte_count, position),
+                exact_remaining_bits(widened, position),
+                "{byte_count} bytes at bit {position}"
+            );
+        }
+    }
+
+    #[test]
+    fn setup_remaining_bits_are_exact_at_every_width_limit() {
+        let u64_byte_limit = u64::MAX / 8;
+        let u32_bit_limit_bytes = (u64::from(u32::MAX) + 1) / 8;
+        let usize_byte_limit = u64::try_from(usize::MAX / 8).unwrap();
+        let usize_max = u64::try_from(usize::MAX).unwrap();
+        let cases = [
+            (0, 0),
+            (1, 0),
+            (1, 7),
+            (1, 8),
+            (1, 9),
+            (1, u64::MAX),
+            (u32_bit_limit_bytes - 1, 0),
+            (u32_bit_limit_bytes, 0),
+            (u32_bit_limit_bytes, 1 << 32),
+            (u32_bit_limit_bytes + 1, (1 << 32) - 1),
+            (usize_byte_limit, 0),
+            (usize_byte_limit + 1, 0),
+            (usize_max, 0),
+            (u64_byte_limit, 0),
+            (u64_byte_limit, u64::MAX),
+            (u64_byte_limit + 1, 0),
+            (u64::MAX, 0),
+        ];
+        for (byte_count, position) in cases {
+            assert_eq!(
+                get_vorbis_setup_remaining_bits_in_u64(byte_count, position),
+                exact_remaining_bits(byte_count, position),
+                "{byte_count} bytes at bit {position}"
+            );
+        }
+        assert_eq!(
+            get_vorbis_setup_remaining_bits_in_u64(u64_byte_limit, 0),
+            Some(u64::MAX - 7)
+        );
+        assert_eq!(
+            get_vorbis_setup_remaining_bits_in_u64(u64_byte_limit + 1, 0),
+            None
+        );
+        assert_eq!(
+            get_vorbis_setup_remaining_bits_in_u64(u32_bit_limit_bytes, 0),
+            Some(1 << 32)
+        );
+    }
 }
 
 /// A little-endian bit cursor over a Vorbis setup header, as the Vorbis bitstream packs fields
-/// from the least significant bit of each byte.
+/// from the least significant bit of each byte. The position counts bits in u64, so a header of
+/// any addressable length has a bit position that cannot wrap on any pointer width.
 struct SetupBits<'a> {
     bytes: &'a [u8],
-    position: usize,
+    position: u64,
 }
 
 /// Codebook entries plus lookup-table values summed over every codebook of one setup header. Real
@@ -249,6 +408,22 @@ fn get_vorbis_lookup1_value_count(entries: u64, dimensions: u32) -> u64 {
     return low;
 }
 
+/// Bits left after `position` in a Vorbis setup header of `byte_count` bytes, or `None` when the
+/// header holds more bits than u64 counts. Counting in u64 keeps the result exact on every pointer
+/// width, where `byte_count * 8` in usize wraps above `usize::MAX / 8` bytes.
+fn get_vorbis_setup_remaining_bits(byte_count: usize, position: u64) -> Option<u64> {
+    return u64::try_from(byte_count).ok().and_then(|byte_count| {
+        return get_vorbis_setup_remaining_bits_in_u64(byte_count, position);
+    });
+}
+
+/// `get_vorbis_setup_remaining_bits` for a byte count already widened to u64.
+fn get_vorbis_setup_remaining_bits_in_u64(byte_count: u64, position: u64) -> Option<u64> {
+    return byte_count
+        .checked_mul(8)
+        .map(|bit_count| return bit_count.saturating_sub(position));
+}
+
 fn get_vorbis_value_bit_count(value: u64) -> u32 {
     return u64::BITS - value.leading_zeros();
 }
@@ -362,9 +537,9 @@ fn open_vorbis_setup(packet: &[u8], ident: &IdentHeader) -> Result<SetupHeader, 
 fn read_setup_bits(bits: &mut SetupBits<'_>, count: u32) -> Result<u64, DecodeFailure> {
     let mut value: u64 = 0;
     for offset in 0..count {
-        let byte = bits
-            .bytes
-            .get(bits.position / 8)
+        let byte = usize::try_from(bits.position / 8)
+            .ok()
+            .and_then(|index| return bits.bytes.get(index))
             .ok_or_else(|| return malformed("the Vorbis setup header ends inside a codebook"))?;
         let bit = (byte >> (bits.position % 8)) & 1;
         value |= u64::from(bit) << offset;
@@ -453,14 +628,24 @@ fn scan_vorbis_codebook_tables(packet: &[u8]) -> Result<(), DecodeFailure> {
         } else {
             entries * dimensions
         };
-        let remaining = (bits.bytes.len() * 8).saturating_sub(bits.position) as u64;
+        let Some(remaining) = get_vorbis_setup_remaining_bits(bits.bytes.len(), bits.position)
+        else {
+            return Err(setup_header_too_long());
+        };
         let skipped = value_count * value_bits;
         if skipped > remaining {
             return Err(malformed("the Vorbis setup header ends inside a codebook"));
         }
-        bits.position += skipped as usize;
+        bits.position += skipped;
     }
     return Ok(());
+}
+
+fn setup_header_too_long() -> DecodeFailure {
+    return create_decode_failure(
+        AudioCodecsHostDecodeExplanationReason::ResourceLimitExceeded,
+        "the Vorbis setup header holds more bits than its bit cursor counts",
+    );
 }
 
 // flight-lint: allow(hidden-state) test-only probe counting backing-parser entries; compiled out of the library

@@ -150,19 +150,28 @@ pub(crate) fn encode_ogg_with_foreign_codec() -> Vec<u8> {
     return stream.bytes;
 }
 
+/// A mono 22,050 Hz Ogg stream carrying the identification and comment headers and then `setup` as
+/// its setup packet, with no audio packets.
+pub(crate) fn encode_ogg_vorbis_with_setup_packet(setup: &[u8]) -> Vec<u8> {
+    let ident = encode_vorbis_identification_header(1, 22_050);
+    let comment = encode_vorbis_comment_header();
+    let mut stream = OggStreamWriter::new(3);
+    stream.write_page(&[&ident], 0, OGG_FIRST_PAGE);
+    stream.write_page(&[&comment, setup], 0, OGG_LAST_PAGE);
+    return stream.bytes;
+}
+
 /// An Ogg Vorbis stream whose setup header is `encode_vorbis_setup_with_single_codebook`.
 pub(crate) fn encode_ogg_vorbis_with_single_codebook(
     dimensions: u16,
     entries: u32,
     lookup_type: u8,
 ) -> Vec<u8> {
-    let ident = encode_vorbis_identification_header(1, 22_050);
-    let comment = encode_vorbis_comment_header();
-    let setup = encode_vorbis_setup_with_single_codebook(dimensions, entries, lookup_type);
-    let mut stream = OggStreamWriter::new(3);
-    stream.write_page(&[&ident], 0, OGG_FIRST_PAGE);
-    stream.write_page(&[&comment, &setup], 0, OGG_LAST_PAGE);
-    return stream.bytes;
+    return encode_ogg_vorbis_with_setup_packet(&encode_vorbis_setup_with_single_codebook(
+        dimensions,
+        entries,
+        lookup_type,
+    ));
 }
 
 /// A setup header whose single codebook declares `entries` entries of `dimensions` dimensions,
