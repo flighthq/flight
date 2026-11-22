@@ -20,8 +20,8 @@ use crate::gl_quad_batch_writer::{
 // program, transformed by the node world transform in the vertex shader so it stays crisp at any
 // zoom. Gradient/texture styles and pathological stroke centerlines still take the raster path.
 
-const VERTEX_SOURCE: &str = "
-attribute vec2 a_position;
+const VERTEX_SOURCE: &str = "#version 300 es
+in vec2 a_position;
 uniform mat3 u_matrix;
 void main() {
   vec3 p = u_matrix * vec3(a_position, 1.0);
@@ -29,10 +29,11 @@ void main() {
 }
 ";
 
-const FRAGMENT_SOURCE: &str = "
+const FRAGMENT_SOURCE: &str = "#version 300 es
 precision mediump float;
 uniform vec4 u_color;
-void main() { gl_FragColor = u_color; }
+out vec4 fragColor;
+void main() { fragColor = u_color; }
 ";
 
 // Draws the shape's tessellated fill meshes through `binding`. Flushes the quad-batch writer first
