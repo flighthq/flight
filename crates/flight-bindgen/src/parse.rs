@@ -47,6 +47,7 @@ pub const SCAN_CRATES: &[&str] = &[
     "flight-dialog",
     "flight-easing",
     "flight-effects",
+    "flight-effects-wgpu",
     "flight-encoding",
     "flight-entity",
     "flight-filesystem",
@@ -105,6 +106,7 @@ pub const SCAN_CRATES: &[&str] = &[
     "flight-regexp",
     "flight-registry",
     "flight-render",
+    "flight-render-wgpu",
     "flight-requirement",
     "flight-requirement-catalog",
     "flight-requirement-codegen",
@@ -113,9 +115,11 @@ pub const SCAN_CRATES: &[&str] = &[
     "flight-scene2d",
     "flight-scene2d-formats",
     "flight-scene2d-resources",
+    "flight-scene2d-wgpu",
     "flight-scene3d",
     "flight-scene3d-formats",
     "flight-scene3d-resources",
+    "flight-scene3d-wgpu",
     "flight-screen",
     "flight-selection",
     "flight-sensors",
@@ -2332,9 +2336,9 @@ mod native_abi_tests {
                 }
             }
         }
-        assert_eq!(synthesized_count, 413);
-        assert_eq!(unique_owner_count, 180);
-        assert_eq!(zero_owner_count, 233);
+        assert_eq!(synthesized_count, 419);
+        assert_eq!(unique_owner_count, 183);
+        assert_eq!(zero_owner_count, 236);
         assert_eq!(multiple_owner_count, 0);
         assert_eq!(mismatches, Vec::new());
 
