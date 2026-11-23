@@ -31,7 +31,7 @@ stand-in-wgpu-host = ["dep:wgpu"]
 host-headless = ["dep:flight-host-headless"]
 
 [dependencies]
-flight-host-headless = { path = "../flight-host-headless", optional = true }
+flight-host-headless = { path = "../flight-host-headless", version = "0.6.0", optional = true }
 flight-sdk = { workspace = true }
 serde_json = { version = "1", default-features = false, features = ["std"] }
 wgpu = { version = "30.0.1", default-features = false, features = ["std", "wgsl", "noop"], optional = true }

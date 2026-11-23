@@ -183,7 +183,9 @@ jobs:
       - uses: dtolnay/rust-toolchain@stable
       - uses: Swatinem/rust-cache@v2
       # flight-host-sdl is explicitly unpublished and its source build needs native SDK packages.
-      - run: cargo package --workspace --exclude flight-host-sdl --no-verify
+      # flight-bindgen is unpublished and depends on flight-compiler, which is unpublished too and so
+      # is absent from the overlay registry the other crates resolve against.
+      - run: cargo package --workspace --exclude flight-host-sdl --exclude flight-bindgen --no-verify
 
   # The four wasm npm packages are compiled Rust: wasm-pack builds each crate for the wasm32 target —
   # the only job that compiles these crates for the target they ship to — and their npm builds wrap
