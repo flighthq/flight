@@ -457,9 +457,13 @@ const BACKEND_SCAN_MONOMORPHIZED_EXTRAS: usize = 8;
 // or char literals that hid later functions from brace counting). It adds these sources.
 // Fourteen of them are explicit-state seam constructors: non-public, generated, never skipped.
 const ROOT_DISCOVERY_TOTAL_SOURCES: usize = 1206 + STATE_SEAM_SOURCES;
-const ROOT_DISCOVERY_GENERATED_SOURCES: usize = 910 + STATE_SEAM_SOURCES;
+const ROOT_DISCOVERY_GENERATED_SOURCES: usize =
+    910 + STATE_SEAM_SOURCES - CANONICAL_CARRIER_SKIPPED_SOURCES;
+// Canonical carriers have no borrowed `&T` return or `&[&T]` element form; these three sources
+// became actionable skips when C began holding them only as their one shared handle.
+const CANONICAL_CARRIER_SKIPPED_SOURCES: usize = 3;
 const STATE_SEAM_SOURCES: usize = 14;
-const ROOT_DISCOVERY_SKIPPED_SOURCES: usize = 296;
+const ROOT_DISCOVERY_SKIPPED_SOURCES: usize = 296 + CANONICAL_CARRIER_SKIPPED_SOURCES;
 const ROOT_DISCOVERY_MONOMORPHIZED_EXTRAS: usize = 142;
 #[allow(dead_code)]
 const ROOT_DISCOVERY_PUBLIC_SOURCES: usize = 935;
@@ -472,7 +476,7 @@ const ROOT_DISCOVERY_NON_PUBLIC_GENERATED: usize = STATE_SEAM_SOURCES;
 #[allow(dead_code)]
 const ROOT_DISCOVERY_PUBLIC_POLICY_SKIPS: usize = 8;
 #[allow(dead_code)]
-const ROOT_DISCOVERY_PUBLIC_ACTIONABLE_SKIPS: usize = 17;
+const ROOT_DISCOVERY_PUBLIC_ACTIONABLE_SKIPS: usize = 17 + CANONICAL_CARRIER_SKIPPED_SOURCES;
 const BACKEND_SCAN_PUBLIC_POLICY_SKIPS: usize =
     BACKEND_SCAN_SKIPPED_SOURCES - BACKEND_SCAN_NON_PUBLIC_SOURCES;
 // Item D adds one TypeScript-public source, `share_bitmap`, which generates. It is added to the

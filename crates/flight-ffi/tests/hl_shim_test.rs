@@ -685,7 +685,6 @@ fn slice_and_fixed_array_carriers_have_exact_c_and_hashlink_shapes() {
         "void flight_set_clip_region_to_contours(void * arg0, const void * const * arg1, void * arg2, size_t arg3, uint32_t arg4);",
         "void flight_resolve_path_regions(void * arg0, void * arg1, const void * const * arg2, void * arg3, size_t arg4, uint32_t arg5);",
         "void flight_write_path_boolean_contours(void * arg0, const void * const * arg1, void * arg2, size_t arg3);",
-        "void flight_union_all_paths(void * arg0, void * arg1, const void * const * arg2, size_t arg3, void * arg4);",
         "void * flight_merge_requirement_sets(const void * const * arg0, size_t arg1);",
         "void flight_destroy_power_keep_awake(const void * const * arg0, size_t arg1, void * arg2);",
         "void * flight_fuse_color_matrices(const void * const * arg0, size_t arg1);",
@@ -1214,7 +1213,7 @@ fn native_contract_docs_stay_attached_to_native_symbols() {
             "HL_PRIM void HL_NAME(flight_write_file_atomic)(vbyte * arg0, vbyte * arg1, int arg2, vbyte * arg3, int arg4, vbyte * arg5, vbyte * arg6, vbyte * arg7) { flight_write_file_atomic((void *)arg0, (const char *)arg1, (uint32_t)arg2, (const uint8_t *)arg3, (size_t)arg4, (void *)arg5, (void (*)(void *, bool, char *))arg6, (void *)arg7); }",
         ),
         (
-            "Segment kind: 0 move, 1 line, 2 quadratic, 3 cubic, 4 close; unused coordinates are zero. Callback and context are valid only until this function returns and must not be retained.",
+            "Segment kind: 0 move, 1 line, 2 quadratic, 3 cubic, 4 close; unused coordinates are zero. The path is visited as it was when the call began. Callback and context are valid only until this function returns and must not be retained.",
             None,
             "bool flight_for_each_path_segment(void * arg0, bool (*arg1)(void *, uint32_t, double, double, double, double, double, double), void * arg2);",
             "HL_PRIM bool HL_NAME(flight_for_each_path_segment)(vbyte * arg0, vbyte * arg1, vbyte * arg2) { return (bool)flight_for_each_path_segment((void *)arg0, (bool (*)(void *, uint32_t, double, double, double, double, double, double))arg1, (void *)arg2); }",
@@ -1287,7 +1286,7 @@ fn by_value_parameters_follow_rust_ownership() {
     );
     assert_line(
         &wrappers,
-        "pub unsafe extern \"C\" fn flight_get_bitmap_pixel_channel(source: *const flight_sdk::Bitmap, x: u32, y: u32, channel: *const flight_sdk::ImageChannel) -> u8 {",
+        "pub unsafe extern \"C\" fn flight_get_bitmap_pixel_channel(source: *const std::ffi::c_void, x: u32, y: u32, channel: *const flight_sdk::ImageChannel) -> u8 {",
     );
     // Every consumed parameter carries a transfer note on its wrapper.
     let mut notes: Vec<&str> = Vec::new();

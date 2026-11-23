@@ -396,9 +396,11 @@ static void check_by_value_ownership(void) {
   expect(reused != NULL, "acquire_vector2 returns a vector after a release");
   flight_free_vector2(reused);
 
-  /* share_bitmap consumes the owned bitmap; only the returned Ref handle is freed afterwards. */
+  /* share_bitmap returns a second handle holding a clone; both handles are released. */
   void *bitmap = flight_create_bitmap(2, 2, 0x11223344);
   void *shared = flight_share_bitmap(bitmap);
+  /* Sharing clones from the caller's handle, which stays the caller's to release. */
+  flight_free_bitmap_ref(bitmap);
   expect(shared != NULL, "share_bitmap returns an owned Ref handle");
   void *region = flight_create_bitmap_region(shared, 0, 0, 1, 1);
   expect(region != NULL, "create_bitmap_region shares the Ref without consuming it");
@@ -411,6 +413,8 @@ static void check_by_value_ownership(void) {
 static void check_shared_bitmap_regions(void) {
   void *bitmap = flight_create_bitmap(2, 1, 0x000000ff);
   void *shared = flight_share_bitmap(bitmap);
+  /* Sharing clones from the caller's handle, which stays the caller's to release. */
+  flight_free_bitmap_ref(bitmap);
   void *writer = flight_create_bitmap_region(shared, 1, 0, 1, 1);
   void *reader = flight_create_bitmap_region(shared, 0, 0, 2, 1);
   expect(writer != NULL && reader != NULL, "two regions share one bitmap");

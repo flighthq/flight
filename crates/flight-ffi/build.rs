@@ -10208,7 +10208,7 @@ fn map_param_to_ffi(name: &str, ty: &str) -> Option<MappedParam> {
         }
         let clean = get_binding_name(name);
         let mut mapped = map_ref_only_borrow(name, &format!("&{ty}"))?;
-        mapped.call_expr = format!("Clone::clone(&*guard_{clean})");
+        mapped.call_expr = format!("(*guard_{clean}).clone()");
         return Some(mapped);
     }
     if let Some(mapped) = map_ref_only_borrow(name, ty) {

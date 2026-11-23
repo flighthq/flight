@@ -1,5 +1,5 @@
 # task-s capability inventory v1
-# structs=242 root_public=237 contract_only=5 fields=795 callbacks=438 required=360 optional=78 families=304
+# structs=242 root_public=242 contract_only=0 fields=795 callbacks=438 required=360 optional=78 families=304
 kind	crate	source	struct	root_lane	field_index	field	requirement	type_or_signature	arguments	return	async	borrow	carrier
 struct	flight-accessibility	crates/flight-accessibility/src/types.rs	HostAccessibilityCapabilities	public				1 fields
 field	flight-accessibility	crates/flight-accessibility/src/types.rs	HostAccessibilityCapabilities	public	0	tree	non-callback	Option < HostAccessibilityCapability >
@@ -610,11 +610,11 @@ callback	flight-midi	crates/flight-midi/src/types.rs	HostMidiAccessCapability	pu
 struct	flight-midi	crates/flight-midi/src/types.rs	HostMidiCapabilities	public				2 fields
 field	flight-midi	crates/flight-midi/src/types.rs	HostMidiCapabilities	public	0	access	non-callback	Option < HostMidiAccessCapability >
 field	flight-midi	crates/flight-midi/src/types.rs	HostMidiCapabilities	public	1	permission	non-callback	Option < HostMidiPermissionCapability >
-struct	flight-net	crates/flight-net/src/types.rs	HostNetCapabilities	contract-only				1 fields
-field	flight-net	crates/flight-net/src/types.rs	HostNetCapabilities	contract-only	0	http	non-callback	Option < HostNetCapability >
-struct	flight-net	crates/flight-net/src/types.rs	HostNetCapability	contract-only				2 fields
-field	flight-net	crates/flight-net/src/types.rs	HostNetCapability	contract-only	0	provider	non-callback	ProviderRef
-callback	flight-net	crates/flight-net/src/types.rs	HostNetCapability	contract-only	1	send_net_request	required	fn(Ref < NetRequest >, Option < Ref < NetRequestOptions > >) -> NetResponseFuture	Ref < NetRequest >, Option < Ref < NetRequestOptions > >	NetResponseFuture	yes	none	unsupported:future
+struct	flight-net	crates/flight-net/src/types.rs	HostNetCapabilities	public				1 fields
+field	flight-net	crates/flight-net/src/types.rs	HostNetCapabilities	public	0	http	non-callback	Option < HostNetCapability >
+struct	flight-net	crates/flight-net/src/types.rs	HostNetCapability	public				2 fields
+field	flight-net	crates/flight-net/src/types.rs	HostNetCapability	public	0	provider	non-callback	ProviderRef
+callback	flight-net	crates/flight-net/src/types.rs	HostNetCapability	public	1	send_net_request	required	fn(Ref < NetRequest >, Option < Ref < NetRequestOptions > >) -> NetResponseFuture	Ref < NetRequest >, Option < Ref < NetRequestOptions > >	NetResponseFuture	yes	none	unsupported:future
 struct	flight-notification	crates/flight-notification/src/types.rs	HostNotificationActionCapability	public				2 fields
 callback	flight-notification	crates/flight-notification/src/types.rs	HostNotificationActionCapability	public	0	attach	required	fn(NotificationActionListener) -> NotificationEventBackendAttachFuture	NotificationActionListener	NotificationEventBackendAttachFuture	yes	none	unsupported:future
 field	flight-notification	crates/flight-notification/src/types.rs	HostNotificationActionCapability	public	1	provider	non-callback	ProviderRef
@@ -808,19 +808,19 @@ callback	flight-sensors	crates/flight-sensors/src/types.rs	HostSensorsCapability
 callback	flight-sensors	crates/flight-sensors/src/types.rs	HostSensorsCapability	public	19	subscribe_orientation	required	fn(OrientationListener, Option < SensorSubscribeOptions >) -> SensorUnsubscribe	OrientationListener, Option < SensorSubscribeOptions >	SensorUnsubscribe	no	none	needs:nested-callback
 callback	flight-sensors	crates/flight-sensors/src/types.rs	HostSensorsCapability	public	20	subscribe_proximity	required	fn(ProximityListener, Option < SensorSubscribeOptions >) -> SensorUnsubscribe	ProximityListener, Option < SensorSubscribeOptions >	SensorUnsubscribe	no	none	needs:nested-callback
 callback	flight-sensors	crates/flight-sensors/src/types.rs	HostSensorsCapability	public	21	subscribe_quaternion	required	fn(QuaternionListener, Option < SensorSubscribeOptions >) -> SensorUnsubscribe	QuaternionListener, Option < SensorSubscribeOptions >	SensorUnsubscribe	no	none	needs:nested-callback
-struct	flight-share	crates/flight-share/src/types.rs	HostShareCapabilities	contract-only				2 fields
-field	flight-share	crates/flight-share/src/types.rs	HostShareCapabilities	contract-only	0	content	non-callback	Option < HostShareContentCapability >
-field	flight-share	crates/flight-share/src/types.rs	HostShareCapabilities	contract-only	1	files	non-callback	Option < HostShareFilesCapability >
-struct	flight-share	crates/flight-share/src/types.rs	HostShareContentCapability	contract-only				4 fields
-field	flight-share	crates/flight-share/src/types.rs	HostShareContentCapability	contract-only	0	provider	non-callback	ProviderRef
-callback	flight-share	crates/flight-share/src/types.rs	HostShareContentCapability	contract-only	1	can_share_content	required	fn(Ref < ShareContent >) -> bool	Ref < ShareContent >	bool	no	none	mapped:scalar
-callback	flight-share	crates/flight-share/src/types.rs	HostShareContentCapability	contract-only	2	share_content	required	fn(Ref < ShareContent >) -> ShareBoolFuture	Ref < ShareContent >	ShareBoolFuture	yes	none	unsupported:future
-callback	flight-share	crates/flight-share/src/types.rs	HostShareContentCapability	contract-only	3	share_content_with_result	required	fn(Ref < ShareContent >) -> ShareResultFuture	Ref < ShareContent >	ShareResultFuture	yes	none	unsupported:future
-struct	flight-share	crates/flight-share/src/types.rs	HostShareFilesCapability	contract-only				4 fields
-field	flight-share	crates/flight-share/src/types.rs	HostShareFilesCapability	contract-only	0	provider	non-callback	ProviderRef
-callback	flight-share	crates/flight-share/src/types.rs	HostShareFilesCapability	contract-only	1	can_share_content	required	fn(Ref < ShareFilesContent >) -> bool	Ref < ShareFilesContent >	bool	no	none	mapped:scalar
-callback	flight-share	crates/flight-share/src/types.rs	HostShareFilesCapability	contract-only	2	share_content	required	fn(Ref < ShareFilesContent >) -> ShareBoolFuture	Ref < ShareFilesContent >	ShareBoolFuture	yes	none	unsupported:future
-callback	flight-share	crates/flight-share/src/types.rs	HostShareFilesCapability	contract-only	3	share_content_with_result	required	fn(Ref < ShareFilesContent >) -> ShareResultFuture	Ref < ShareFilesContent >	ShareResultFuture	yes	none	unsupported:future
+struct	flight-share	crates/flight-share/src/types.rs	HostShareCapabilities	public				2 fields
+field	flight-share	crates/flight-share/src/types.rs	HostShareCapabilities	public	0	content	non-callback	Option < HostShareContentCapability >
+field	flight-share	crates/flight-share/src/types.rs	HostShareCapabilities	public	1	files	non-callback	Option < HostShareFilesCapability >
+struct	flight-share	crates/flight-share/src/types.rs	HostShareContentCapability	public				4 fields
+field	flight-share	crates/flight-share/src/types.rs	HostShareContentCapability	public	0	provider	non-callback	ProviderRef
+callback	flight-share	crates/flight-share/src/types.rs	HostShareContentCapability	public	1	can_share_content	required	fn(Ref < ShareContent >) -> bool	Ref < ShareContent >	bool	no	none	mapped:scalar
+callback	flight-share	crates/flight-share/src/types.rs	HostShareContentCapability	public	2	share_content	required	fn(Ref < ShareContent >) -> ShareBoolFuture	Ref < ShareContent >	ShareBoolFuture	yes	none	unsupported:future
+callback	flight-share	crates/flight-share/src/types.rs	HostShareContentCapability	public	3	share_content_with_result	required	fn(Ref < ShareContent >) -> ShareResultFuture	Ref < ShareContent >	ShareResultFuture	yes	none	unsupported:future
+struct	flight-share	crates/flight-share/src/types.rs	HostShareFilesCapability	public				4 fields
+field	flight-share	crates/flight-share/src/types.rs	HostShareFilesCapability	public	0	provider	non-callback	ProviderRef
+callback	flight-share	crates/flight-share/src/types.rs	HostShareFilesCapability	public	1	can_share_content	required	fn(Ref < ShareFilesContent >) -> bool	Ref < ShareFilesContent >	bool	no	none	mapped:scalar
+callback	flight-share	crates/flight-share/src/types.rs	HostShareFilesCapability	public	2	share_content	required	fn(Ref < ShareFilesContent >) -> ShareBoolFuture	Ref < ShareFilesContent >	ShareBoolFuture	yes	none	unsupported:future
+callback	flight-share	crates/flight-share/src/types.rs	HostShareFilesCapability	public	3	share_content_with_result	required	fn(Ref < ShareFilesContent >) -> ShareResultFuture	Ref < ShareFilesContent >	ShareResultFuture	yes	none	unsupported:future
 struct	flight-shell	crates/flight-shell/src/types.rs	HostShellBeepCapability	public				1 fields
 callback	flight-shell	crates/flight-shell/src/types.rs	HostShellBeepCapability	public	0	beep	required	fn() -> ()		()	no	none	mapped:scalar
 struct	flight-shell	crates/flight-shell/src/types.rs	HostShellCapabilities	public				7 fields

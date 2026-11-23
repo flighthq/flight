@@ -192,15 +192,13 @@ fn collect_items(crate_name: &str, source: &str, items: &[Item], index: &mut Sou
                     Fields::Unit => Vec::new(),
                 };
                 let name = item_struct.ident.to_string();
-                // The net/share capability carriers are contract-lane declarations even though
-                // their crates expose the surrounding types module. They are not constructor
-                // candidates in flight-ffi's public SDK scan.
-                let contract_only = crate_name == "flight-net" || crate_name == "flight-share";
+                // Every capability carrier is re-exported at its crate root, the net and share
+                // carriers through their crates' `types` globs.
                 index.capabilities.push(Capability {
                     crate_name: crate_name.to_string(),
                     source: source.to_string(),
                     name,
-                    root_public: !contract_only,
+                    root_public: true,
                     fields,
                 });
             }
@@ -596,7 +594,7 @@ fn structural_inventory_has_the_exact_accepted_census() {
     assert_eq!(capabilities.len(), 242);
     assert_eq!(
         capabilities.iter().filter(|item| item.root_public).count(),
-        237
+        242
     );
     assert_eq!(fields, 795);
     assert_eq!(callbacks.len(), 438);
