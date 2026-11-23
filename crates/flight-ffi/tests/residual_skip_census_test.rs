@@ -830,7 +830,8 @@ fn residual_skip_baseline_census_has_no_undocumented_public_gap() {
         + BACKEND_SCAN_GENERATED_SOURCES
         + ROOT_DISCOVERY_GENERATED_SOURCES;
     let final_generated = baseline_generated + generated_additions;
-    let final_skipped = PRE_RESIDUAL_SKIP_SKIPPED_SOURCES + interaction_signal_skipped - generated_additions
+    let final_skipped = PRE_RESIDUAL_SKIP_SKIPPED_SOURCES + interaction_signal_skipped
+        - generated_additions
         + BACKEND_SCAN_SKIPPED_SOURCES
         + ROOT_DISCOVERY_SKIPPED_SOURCES;
     assert!(
@@ -915,7 +916,8 @@ fn residual_skip_final_public_skip_set_is_only_named_policy() {
         + generated_additions
         + BACKEND_SCAN_GENERATED_SOURCES
         + ROOT_DISCOVERY_GENERATED_SOURCES;
-    let expected_skipped = PRE_RESIDUAL_SKIP_SKIPPED_SOURCES + interaction_signal_skipped - generated_additions
+    let expected_skipped = PRE_RESIDUAL_SKIP_SKIPPED_SOURCES + interaction_signal_skipped
+        - generated_additions
         + BACKEND_SCAN_SKIPPED_SOURCES
         + ROOT_DISCOVERY_SKIPPED_SOURCES;
     assert_eq!(

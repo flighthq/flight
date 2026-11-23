@@ -352,11 +352,18 @@ pub fn validate_kind(failure: &str) -> String {
 // runs in the order its contract states, and reads the kind it bound instead.
 fn take_generated_kind(wrapper: &str, name: &str) -> String {
     let opening = "    let Some(ffi_text_kind) = (unsafe { ffi_c_str(kind) }) else { ";
-    assert_eq!(wrapper.matches(opening).count(), 1, "{name}: its kind check changed shape");
+    assert_eq!(
+        wrapper.matches(opening).count(),
+        1,
+        "{name}: its kind check changed shape"
+    );
     let start = wrapper.find(opening).unwrap();
     let end = start + wrapper[start..].find(" };\n").unwrap() + " };\n".len();
     let stripped = format!("{}{}", &wrapper[..start], &wrapper[end..]);
-    assert!(stripped.contains("ffi_text_kind"), "{name}: its kind is no longer read");
+    assert!(
+        stripped.contains("ffi_text_kind"),
+        "{name}: its kind is no longer read"
+    );
     return stripped.replace("ffi_text_kind", "kind");
 }
 
@@ -520,12 +527,10 @@ pub fn guard_builtin_material_lookups(generated: &str) -> (String, Vec<String>) 
                 .find("\n}\n")
                 .unwrap_or_else(|| panic!("{name} has no body end"));
         let wrapper = take_generated_kind(&out[start..end], name);
-        for (needle, what) in [
-            (
-                ") -> *const flight_sdk::WgpuMeshMaterialRenderer {\n",
-                "body",
-            ),
-        ] {
+        for (needle, what) in [(
+            ") -> *const flight_sdk::WgpuMeshMaterialRenderer {\n",
+            "body",
+        )] {
             assert_eq!(
                 wrapper.matches(needle).count(),
                 1,

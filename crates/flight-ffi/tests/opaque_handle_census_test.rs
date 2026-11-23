@@ -1395,13 +1395,15 @@ fn opaque_handle_source_decision_delta_from_its_baseline_is_exact() {
         .filter(|candidate| candidate.outcome == Outcome::Generated)
         .count();
     let generated_removals = OPAQUE_HANDLE_BASELINE_GENERATED_OWNERSHIP_SKIPS.len();
-    let expected_generated = PRE_OPAQUE_HANDLE_GENERATED_SOURCES + generated_additions - generated_removals
+    let expected_generated = PRE_OPAQUE_HANDLE_GENERATED_SOURCES + generated_additions
+        - generated_removals
         + RESIDUAL_SKIP_GENERATED_SOURCES
         + BITMAP_REGION_GENERATED_SOURCES
         + INTERACTION_SIGNAL_GENERATED_SOURCES
         + BACKEND_SCAN_GENERATED_SOURCES
         + ROOT_DISCOVERY_GENERATED_SOURCES;
-    let expected_skipped = PRE_OPAQUE_HANDLE_SKIPPED_SOURCES - generated_additions + generated_removals
+    let expected_skipped = PRE_OPAQUE_HANDLE_SKIPPED_SOURCES - generated_additions
+        + generated_removals
         - RESIDUAL_SKIP_GENERATED_SOURCES
         + INTERACTION_SIGNAL_SKIPPED_SOURCES
         + BACKEND_SCAN_SKIPPED_SOURCES
