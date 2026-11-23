@@ -126,6 +126,16 @@ fn hit_test_registration_runs_on_real_nodes_under_sanitizers() {
 }
 
 #[test]
+fn text_format_fields_and_registry_handles_run_under_sanitizers() {
+    if let Some(output) = z_compile_link_and_run("text_format.c", "text_format", true, false) {
+        assert_eq!(
+            String::from_utf8_lossy(&output.stdout).trim(),
+            "flight-ffi text format: ok"
+        );
+    }
+}
+
+#[test]
 fn interaction_signal_rejection_links_static_library_and_runs() {
     if let Some(stdout) = z_compile_link_and_run(
         "interaction_signal_rejection.c",

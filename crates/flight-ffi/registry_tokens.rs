@@ -50,6 +50,11 @@ pub const TOKEN_FAMILIES: &[TokenFamily] = &[
         tag_const: "FFI_HEADLESS_RENDER_TARGET_TOKEN_TAG",
         tag: 11,
     },
+    TokenFamily {
+        name: "text format handle",
+        tag_const: "FFI_TEXT_FORMAT_TOKEN_TAG",
+        tag: 13,
+    },
 ];
 
 /// Fails when two families share a tag or a tag is even or does not fit below the sequence.

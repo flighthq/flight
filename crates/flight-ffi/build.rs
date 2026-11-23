@@ -5,6 +5,7 @@ mod native_bindings;
 mod out_alias;
 mod public_perimeter;
 mod reachability;
+mod registry_carrier;
 mod registry_tokens;
 mod render_pass_bracket;
 mod root_census;
@@ -135,6 +136,11 @@ fn collect_type_lanes(crates_dir: &Path) -> (BTreeSet<String>, BTreeMap<String, 
 // SDK types every definition of which derives `Clone` (or `Copy`): an out-parameter wrapper can
 // snapshot an aliased input of such a type before the call.
 fn collect_clone_types(crates_dir: &Path) -> BTreeSet<String> {
+    return collect_derive_types(crates_dir, &["Clone", "Copy"]);
+}
+
+// SDK types every definition of which derives one of `derives`.
+fn collect_derive_types(crates_dir: &Path, derives: &[&str]) -> BTreeSet<String> {
     let mut verdicts: BTreeMap<String, bool> = BTreeMap::new();
     for dir_name in SCAN_CRATES {
         let Ok(entries) = fs::read_dir(crates_dir.join(dir_name).join("src")) else {
@@ -162,7 +168,7 @@ fn collect_clone_types(crates_dir: &Path) -> BTreeSet<String> {
                             .to_token_stream()
                             .to_string()
                             .split(|c: char| !c.is_alphanumeric())
-                            .any(|word| word == "Clone" || word == "Copy")
+                            .any(|word| derives.contains(&word))
                 });
                 let verdict = verdicts.entry(ident.to_string()).or_insert(true);
                 *verdict &= clone;
@@ -176,6 +182,62 @@ fn collect_clone_types(crates_dir: &Path) -> BTreeSet<String> {
 }
 
 static CLONE_TYPES: OnceLock<BTreeSet<String>> = OnceLock::new();
+// Plain records: public structs whose every field is public and a scalar or `String`, by name, with
+// their fields in declaration order. C can build one from parallel field arrays.
+static RECORD_TYPES: OnceLock<BTreeMap<String, Vec<(String, String)>>> = OnceLock::new();
+
+fn collect_record_types(crates_dir: &Path) -> BTreeMap<String, Vec<(String, String)>> {
+    let mut records: BTreeMap<String, Option<Vec<(String, String)>>> = BTreeMap::new();
+    for dir_name in SCAN_CRATES {
+        let Ok(entries) = fs::read_dir(crates_dir.join(dir_name).join("src")) else {
+            continue;
+        };
+        let mut paths: Vec<_> = entries
+            .filter_map(Result::ok)
+            .map(|entry| entry.path())
+            .filter(|path| root_census::is_library_path(path))
+            .collect();
+        paths.sort();
+        for path in paths {
+            let Ok(file) = syn::parse_file(&fs::read_to_string(&path).unwrap_or_default()) else {
+                continue;
+            };
+            for item in file.items {
+                let syn::Item::Struct(value) = item else {
+                    continue;
+                };
+                if !matches!(value.vis, syn::Visibility::Public(_)) {
+                    continue;
+                }
+                let mut fields = Vec::new();
+                let mut plain = !value.fields.is_empty();
+                for field in &value.fields {
+                    let ty = field.ty.to_token_stream().to_string().replace(' ', "");
+                    match &field.ident {
+                        Some(ident)
+                            if matches!(field.vis, syn::Visibility::Public(_))
+                                && (is_scalar(&ty) || ty == "String") =>
+                        {
+                            fields.push((ident.to_string(), ty));
+                        }
+                        _ => plain = false,
+                    }
+                }
+                let entry = records.entry(value.ident.to_string()).or_insert(None);
+                // A name two crates define is not a record: its identity is ambiguous.
+                *entry = if entry.is_none() && plain {
+                    Some(fields)
+                } else {
+                    None
+                };
+            }
+        }
+    }
+    return records
+        .into_iter()
+        .filter_map(|(name, fields)| Some((name, fields?)))
+        .collect();
+}
 
 static TYPE_DEFINITIONS: OnceLock<BTreeMap<String, Vec<(bool, TypeDefinition)>>> = OnceLock::new();
 
@@ -1623,6 +1685,7 @@ fn main() {
     let mut stats_public_skips = BTreeMap::new();
     let mut census_decisions = root_census::Decisions::default();
     let mut state_seam_constructors = Vec::new();
+    let mut canonical_constructors = Vec::new();
     let mut stats_skipped: std::collections::BTreeMap<String, usize> =
         std::collections::BTreeMap::new();
 
@@ -1684,6 +1747,7 @@ fn main() {
     let _ = KNOWN_ENUMS.set(known_enums);
     let _ = TYPE_DEFINITIONS.set(type_definitions);
     let _ = CLONE_TYPES.set(collect_clone_types(crates_dir));
+    let _ = RECORD_TYPES.set(collect_record_types(crates_dir));
     let (root_type_names, contract_only_type_modules) = collect_type_lanes(crates_dir);
     let _ = ROOT_TYPE_NAMES.set(root_type_names);
     let _ = CONTRACT_ONLY_TYPE_MODULES.set(contract_only_type_modules);
@@ -1952,6 +2016,24 @@ fn main() {
         }
         bracket_state_wrappers.extend(names);
     }
+    // A canonical carrier that derives `Default` and has no generated `create_*` gets a default
+    // constructor returning its one shared handle, so C can make one to fill field by field.
+    let default_types = collect_derive_types(crates_dir, &["Default"]);
+    writeln!(all_output, "// canonical carrier constructors").unwrap();
+    for carrier in CANONICAL_REF_CARRIERS {
+        let snake = to_snake_case(carrier);
+        let name = format!("flight_create_{snake}");
+        if !default_types.contains(*carrier) || !seen_names.insert(name.clone()) {
+            continue;
+        }
+        let qualified = qualify_type(carrier);
+        writeln!(
+            all_output,
+            "#[doc = \"flight-ffi contract|Creates a {carrier} with every field at its default (every optional field absent) and returns its one shared handle.\"]\n#[doc = \"flight-ffi ownership|owned-return|flight_free_{snake}_ref|flight_sdk::Ref<{qualified}>\"]\n#[unsafe(no_mangle)]\npub unsafe extern \"C\" fn {name}() -> *mut std::ffi::c_void {{\n    let value: {qualified} = Default::default();\n    return Box::into_raw(Box::new(std::sync::Arc::new(std::sync::RwLock::new(value)))) as *mut std::ffi::c_void;\n}}"
+        )
+        .unwrap();
+        canonical_constructors.push(name);
+    }
     let (aliased, alias_guarded) =
         out_alias::guard_out_parameter_aliases(&all_output, CLONE_TYPES.get().unwrap());
     all_output = aliased;
@@ -2101,6 +2183,9 @@ fn main() {
         claim_guard::CLAIM_GUARDED_CARRIERS.join(", ")
     )
     .unwrap();
+    for name in &canonical_constructors {
+        writeln!(stats_file, "  canonical constructor: {name}").unwrap();
+    }
     writeln!(
         stats_file,
         "FFI state seam constructors: {}",
@@ -2220,6 +2305,17 @@ fn main() {
         all_output.push_str(&section.output);
     }
 
+    let (registered, registry_guarded) = registry_carrier::guard_registry_carriers(&all_output);
+    all_output = registered;
+    all_output.push_str(&registry_carrier::generate_support());
+    for carrier in registry_carrier::REGISTRY_CARRIERS {
+        all_output.push_str(&registry_tokens::family_tag_const(carrier.tag_const));
+    }
+    let raw_registry_reads = registry_carrier::find_raw_registry_reads(&all_output);
+    assert!(
+        raw_registry_reads.is_empty(),
+        "registry carriers must be resolved through their registry: {raw_registry_reads:?}"
+    );
     let (claimed, claim_guarded) = claim_guard::guard_claimed_carriers(&all_output);
     all_output = claimed;
     all_output.push_str(claim_guard::CLAIM_SUPPORT);
@@ -2294,6 +2390,9 @@ fn main() {
     for name in &claim_guarded {
         writeln!(stats_file, "  claim guard: {name}").unwrap();
     }
+    for name in &registry_guarded {
+        writeln!(stats_file, "  registry carrier: {name}").unwrap();
+    }
     fs::write(out_dir.join("ffi_stats.txt"), &stats_file).unwrap();
 
     let mut offsets_src = String::new();
@@ -2309,7 +2408,8 @@ fn main() {
         }
         let structs = collect_pub_structs(&src_dir);
         for s in &structs {
-            if s.fields.is_empty() {
+            // Offsets describe scalar layout only; optional fields have no C layout.
+            if !s.fields.iter().any(|field| is_scalar(&field.ty)) {
                 continue;
             }
             let qualified = qualify_type(&s.name);
@@ -2329,7 +2429,7 @@ fn main() {
                 "    out.push_str(&format!(\"\\\"_size\\\": {{}}\", std::mem::size_of::<{qualified}>()));"
             )
             .unwrap();
-            for field in &s.fields {
+            for field in s.fields.iter().filter(|field| is_scalar(&field.ty)) {
                 writeln!(
                     offsets_src,
                     "    out.push_str(&format!(\", \\\"{field_name}\\\": {{}}\", std::mem::offset_of!({qualified}, {field_name})));",
@@ -3281,32 +3381,8 @@ fn collect_pub_structs(src_dir: &Path) -> Vec<ParsedStruct> {
 }
 
 fn collect_exported_type_names(lib_path: &Path, src_dir: &Path) -> BTreeSet<String> {
-    let content = fs::read_to_string(lib_path).unwrap();
-    let mut names = BTreeSet::new();
-
-    for line in content.lines() {
-        let line = line.trim();
-        if line.starts_with("pub use ") {
-            if let Some(rest) = line.strip_prefix("pub use ") {
-                let rest = rest.trim_end_matches(';').trim();
-                if rest.ends_with("::*") {
-                    let mod_path = rest.trim_end_matches("::*");
-                    let mod_name = mod_path.rsplit("::").next().unwrap_or(mod_path);
-                    let mod_file = src_dir.join(format!("{mod_name}.rs"));
-                    if mod_file.exists() {
-                        collect_glob_type_names(&mod_file, src_dir, &mut names);
-                    }
-                } else if let Some(name) = rest.rsplit("::").next() {
-                    if name.chars().next().is_some_and(|c| c.is_uppercase()) {
-                        names.insert(name.to_string());
-                    }
-                }
-            }
-        }
-    }
-    names
+    return root_census::collect_module_exports(src_dir, lib_path).types;
 }
-
 fn collect_glob_type_names(file: &Path, src_dir: &Path, names: &mut BTreeSet<String>) {
     let content = match fs::read_to_string(file) {
         Ok(c) => c,
@@ -3341,48 +3417,48 @@ fn collect_glob_type_names(file: &Path, src_dir: &Path, names: &mut BTreeSet<Str
 }
 
 fn parse_pub_structs(content: &str, out: &mut Vec<ParsedStruct>) {
-    let lines: Vec<&str> = content.lines().collect();
-    let mut i = 0;
-    while i < lines.len() {
-        let line = lines[i].trim();
-        if !line.starts_with("pub struct ") {
-            i += 1;
+    let Ok(file) = syn::parse_file(content) else {
+        return;
+    };
+    for item in &file.items {
+        let syn::Item::Struct(value) = item else {
+            continue;
+        };
+        if !matches!(value.vis, syn::Visibility::Public(_)) || !value.generics.params.is_empty() {
             continue;
         }
-        let after = &line["pub struct ".len()..];
-        let name_end = after
-            .find(|c: char| c == '{' || c == '(' || c == '<' || c == ' ')
-            .unwrap_or(after.len());
-        let name = after[..name_end].trim().to_string();
-
-        if after[name_end..].trim_start().starts_with('<') {
-            i += 1;
+        let syn::Fields::Named(named) = &value.fields else {
             continue;
-        }
-
-        if !after.contains('{') {
-            i += 1;
-            continue;
-        }
-
-        let mut fields = Vec::new();
-        i += 1;
-        while i < lines.len() {
-            let fline = lines[i].trim();
-            if fline.starts_with('}') {
-                break;
-            }
-            if let Some(field) = parse_struct_field(fline) {
-                fields.push(field);
-            }
-            i += 1;
-        }
-        i += 1;
-
-        if !fields.is_empty() {
-            out.push(ParsedStruct { name, fields });
-        }
+        };
+        let fields = named
+            .named
+            .iter()
+            .filter(|field| matches!(field.vis, syn::Visibility::Public(_)))
+            .filter_map(|field| {
+                let name = field.ident.as_ref()?.to_string();
+                let ty = normalize_token_type(&field.ty.to_token_stream().to_string());
+                (is_scalar(&ty) || ty.starts_with("Option<")).then_some(StructField { name, ty })
+            })
+            .collect();
+        out.push(ParsedStruct {
+            name: value.ident.to_string(),
+            fields,
+        });
     }
+}
+
+// A type's token text in source spelling: `Option < Vec < f32 > >` -> `Option<Vec<f32>>`.
+fn normalize_token_type(tokens: &str) -> String {
+    let mut out = String::new();
+    for word in tokens.split_whitespace() {
+        let joins = out.ends_with(|c: char| c.is_alphanumeric() || c == '_' || c == '\'')
+            && word.starts_with(|c: char| c.is_alphanumeric() || c == '_');
+        if joins {
+            out.push(' ');
+        }
+        out.push_str(word);
+    }
+    return out.replace(",", ", ");
 }
 
 fn parse_struct_field(line: &str) -> Option<StructField> {
@@ -3394,7 +3470,7 @@ fn parse_struct_field(line: &str) -> Option<StructField> {
     let colon = after_pub.find(':')?;
     let name = after_pub[..colon].trim().to_string();
     let ty = after_pub[colon + 1..].trim().to_string();
-    if is_scalar(&ty) {
+    if is_scalar(&ty) || ty.starts_with("Option<") {
         Some(StructField { name, ty })
     } else {
         None
@@ -4699,7 +4775,16 @@ fn generate_field_accessors(
     seen_names: &mut BTreeSet<String>,
 ) -> String {
     if matches!(struct_name, "NodeFields" | "Node2DFields" | "Node3DFields") {
-        return generate_node_field_accessors(struct_name, fields, seen_names);
+        // Node views have their own accessors, including their optional fields.
+        let scalar_fields: Vec<StructField> = fields
+            .iter()
+            .filter(|field| is_scalar(&field.ty))
+            .map(|field| StructField {
+                name: field.name.clone(),
+                ty: field.ty.clone(),
+            })
+            .collect();
+        return generate_node_field_accessors(struct_name, &scalar_fields, seen_names);
     }
     let snake = to_snake_case(struct_name);
     let qualified = qualify_type(struct_name);
@@ -4707,6 +4792,21 @@ fn generate_field_accessors(
     let mut output = String::new();
 
     for field in fields {
+        if field.ty.starts_with("Option<") {
+            for (name, code) in generate_optional_field_accessors(
+                &snake,
+                &qualified,
+                ref_only,
+                &field.name,
+                &field.ty,
+            ) {
+                if seen_names.insert(name) {
+                    output.push_str(&code);
+                    output.push('\n');
+                }
+            }
+            continue;
+        }
         let getter_name = format!("flight_get_{snake}_{}", field.name);
         let setter_name = format!("flight_set_{snake}_{}", field.name);
 
@@ -4748,6 +4848,214 @@ fn generate_field_accessors(
         }
     }
     output
+}
+
+// Accessors for one optional field: `has`, `get`, `set` and `clear`, so C can tell an absent value
+// from a present false, zero or empty string. Every accessor returns false (or NULL) for a NULL
+// handle and changes nothing. Scalars, enums (as their u32 discriminant), strings, scalar lists and
+// lists of plain records lower; any other optional shape has no accessors.
+fn generate_optional_field_accessors(
+    snake: &str,
+    qualified: &str,
+    ref_only: bool,
+    field: &str,
+    ty: &str,
+) -> Vec<(String, String)> {
+    let resolved = strip_crate_paths(&resolve_type_alias(ty.trim()));
+    let Some(inner) = resolved
+        .strip_prefix("Option<")
+        .and_then(|rest| rest.strip_suffix('>'))
+        .map(str::trim)
+    else {
+        return Vec::new();
+    };
+    let handle = |mutable: bool| -> (String, String) {
+        if ref_only {
+            let pointer = if mutable { "*mut" } else { "*const" };
+            let lock = if mutable { "write" } else { "read" };
+            let binding = if mutable { "mut " } else { "" };
+            return (
+                format!("ptr: {pointer} std::ffi::c_void"),
+                format!(
+                    "    if ptr.is_null() {{ return FAIL; }}\n    let {binding}value = unsafe {{ &*(ptr as *const flight_sdk::Ref<{qualified}>) }}.{lock}().unwrap_or_else(std::sync::PoisonError::into_inner);\n"
+                ),
+            );
+        }
+        if mutable {
+            return (
+                format!("ptr: *mut {qualified}"),
+                "    if ptr.is_null() { return FAIL; }\n    let value = unsafe { &mut *ptr };\n"
+                    .to_string(),
+            );
+        }
+        return (
+            format!("ptr: *const {qualified}"),
+            "    if ptr.is_null() { return FAIL; }\n    let value = unsafe { &*ptr };\n"
+                .to_string(),
+        );
+    };
+    let wrapper = |name: &str, mutable: bool, params: &str, ret: &str, fail: &str, body: &str| {
+        let (handle_param, access) = handle(mutable);
+        let params = if params.is_empty() {
+            handle_param
+        } else {
+            format!("{handle_param}, {params}")
+        };
+        let access = access.replace("FAIL", fail);
+        let ownership = if ret == "*mut std::ffi::c_char" {
+            "#[doc = \"flight-ffi ownership|owned-return|flight_free_string|std::ffi::c_char\"]\n"
+        } else {
+            ""
+        };
+        return (
+            name.to_string(),
+            format!(
+                "{ownership}#[unsafe(no_mangle)]\npub unsafe extern \"C\" fn {name}({params}) -> {ret} {{\n{access}{body}\n}}"
+            ),
+        );
+    };
+    let has = format!("flight_has_{snake}_{field}");
+    let get = format!("flight_get_{snake}_{field}");
+    let set = format!("flight_set_{snake}_{field}");
+    let clear = format!("flight_clear_{snake}_{field}");
+    let mut out = vec![
+        wrapper(
+            &has,
+            false,
+            "",
+            "bool",
+            "false",
+            &format!("    value.{field}.is_some()"),
+        ),
+        wrapper(
+            &clear,
+            true,
+            "",
+            "bool",
+            "false",
+            &format!("    value.{field} = None;\n    true"),
+        ),
+    ];
+    if is_scalar(inner) {
+        out.push(wrapper(&get, false, &format!("out: *mut {inner}"), "bool", "false", &format!(
+            "    match value.{field} {{\n        Some(present) => {{ if !out.is_null() {{ unsafe {{ *out = present; }} }} true }}\n        None => false,\n    }}"
+        )));
+        out.push(wrapper(
+            &set,
+            true,
+            &format!("present: {inner}"),
+            "bool",
+            "false",
+            &format!("    value.{field} = Some(present);\n    true"),
+        ));
+        return out;
+    }
+    if is_known_enum(inner) {
+        let conversion = get_enum_conversion(inner, "present");
+        out.push(wrapper(&get, false, "out: *mut u32", "bool", "false", &format!(
+            "    match &value.{field} {{\n        // A known enum is a fieldless `#[repr(u32)]` enum: its value is its u32 discriminant.\n        Some(present) => {{ if !out.is_null() {{ unsafe {{ *out = *(present as *const _ as *const u32); }} }} true }}\n        None => false,\n    }}"
+        )));
+        out.push(wrapper(&set, true, "present: u32", "bool", "false", &format!(
+            "    let Some(present) = {conversion} else {{ return false; }};\n    value.{field} = Some(present);\n    true"
+        )));
+        return out;
+    }
+    if inner == "String" {
+        out.push(wrapper(&get, false, "", "*mut std::ffi::c_char", "std::ptr::null_mut()", &format!(
+            "    match &value.{field} {{\n        Some(present) => std::ffi::CString::new(present.as_str()).unwrap_or_default().into_raw(),\n        None => std::ptr::null_mut(),\n    }}"
+        )));
+        // The text is read before the handle is locked: NULL or invalid UTF-8 changes nothing.
+        let (handle_param, access) = handle(true);
+        let access = access.replace("FAIL", "false");
+        out.push((set.clone(), format!(
+            "#[unsafe(no_mangle)]\npub unsafe extern \"C\" fn {set}({handle_param}, present: *const std::ffi::c_char) -> bool {{\n    let Some(present) = (unsafe {{ ffi_c_str(present) }}) else {{ return false; }};\n{access}    value.{field} = Some(present.to_string());\n    true\n}}"
+        )));
+        return out;
+    }
+    let (list, shared) = match inner
+        .strip_prefix("Arc<")
+        .and_then(|rest| rest.strip_suffix('>'))
+    {
+        Some(list) => (list.trim(), true),
+        None => (inner, false),
+    };
+    let Some(element) = list
+        .strip_prefix("Vec<")
+        .and_then(|rest| rest.strip_suffix('>'))
+        .map(str::trim)
+    else {
+        return Vec::new();
+    };
+    let wrap = |expression: String| {
+        if shared {
+            format!("std::sync::Arc::new({expression})")
+        } else {
+            expression
+        }
+    };
+    if is_scalar(element) {
+        out.push(wrapper(&get, false, &format!("out: *mut {element}, capacity: usize, len: *mut usize"), "bool", "false", &format!(
+            "    let Some(present) = &value.{field} else {{ return false; }};\n    if !len.is_null() {{ unsafe {{ *len = present.len(); }} }}\n    if !out.is_null() {{\n        for (index, item) in present.iter().take(capacity).enumerate() {{ unsafe {{ *out.add(index) = *item; }} }}\n    }}\n    true"
+        )));
+        let values = wrap("unsafe { ffi_slice_from_raw_parts(values, len) }.to_vec()".to_string());
+        let (handle_param, access) = handle(true);
+        let access = access.replace("FAIL", "false");
+        out.push((set.clone(), format!(
+            "#[unsafe(no_mangle)]\npub unsafe extern \"C\" fn {set}({handle_param}, values: *const {element}, len: usize) -> bool {{\n    if values.is_null() && len != 0 {{ return false; }}\n{access}    value.{field} = Some({values});\n    true\n}}"
+        )));
+        return out;
+    }
+    let Some(record) = RECORD_TYPES.get().and_then(|records| records.get(element)) else {
+        return Vec::new();
+    };
+    let record_ty = qualify_type(element);
+    out.push(wrapper(&format!("{get}_len"), false, "len: *mut usize", "bool", "false", &format!(
+        "    let Some(present) = &value.{field} else {{ return false; }};\n    if !len.is_null() {{ unsafe {{ *len = present.len(); }} }}\n    true"
+    )));
+    let mut set_params = Vec::new();
+    let mut set_reads = Vec::new();
+    let mut set_fields = Vec::new();
+    for (sub, sub_ty) in record {
+        if sub_ty == "String" {
+            out.push(wrapper(&format!("{get}_{sub}"), false, "index: usize", "*mut std::ffi::c_char", "std::ptr::null_mut()", &format!(
+                "    match value.{field}.as_ref().and_then(|present| present.get(index)) {{\n        Some(item) => std::ffi::CString::new(item.{sub}.as_str()).unwrap_or_default().into_raw(),\n        None => std::ptr::null_mut(),\n    }}"
+            )));
+            set_params.push(format!("{sub}: *const *const std::ffi::c_char"));
+            set_reads.push(format!(
+                "    let mut ffi_{sub} = Vec::with_capacity(len);\n    for index in 0..len {{\n        let Some(text) = (unsafe {{ ffi_c_str(*{sub}.add(index)) }}) else {{ return false; }};\n        ffi_{sub}.push(text.to_string());\n    }}"
+            ));
+        } else {
+            out.push(wrapper(&format!("{get}_{sub}"), false, &format!("index: usize, out: *mut {sub_ty}"), "bool", "false", &format!(
+                "    match value.{field}.as_ref().and_then(|present| present.get(index)) {{\n        Some(item) => {{ if !out.is_null() {{ unsafe {{ *out = item.{sub}; }} }} true }}\n        None => false,\n    }}"
+            )));
+            set_params.push(format!("{sub}: *const {sub_ty}"));
+            set_reads.push(format!(
+                "    let ffi_{sub} = unsafe {{ ffi_slice_from_raw_parts({sub}, len) }}.to_vec();"
+            ));
+        }
+        set_fields.push(sub.clone());
+    }
+    let null_checks: Vec<String> = set_fields
+        .iter()
+        .map(|sub| format!("{sub}.is_null()"))
+        .collect();
+    let construct: Vec<String> = set_fields
+        .iter()
+        .map(|sub| format!("{sub}: ffi_{sub}[index].clone()"))
+        .collect();
+    let items = wrap(format!(
+        "(0..len).map(|index| {record_ty} {{ {} }}).collect::<Vec<_>>()",
+        construct.join(", ")
+    ));
+    let (handle_param, access) = handle(true);
+    let access = access.replace("FAIL", "false");
+    out.push((set.clone(), format!(
+        "#[doc = \"flight-ffi contract|Sets the list from parallel arrays of len items, one per record field in declaration order; a NULL array with len 0 sets an empty list, and NULL or invalid UTF-8 text refuses the call without change.\"]\n#[unsafe(no_mangle)]\npub unsafe extern \"C\" fn {set}({handle_param}, {}, len: usize) -> bool {{\n    if len != 0 && ({}) {{ return false; }}\n{}\n{access}    value.{field} = Some({items});\n    true\n}}",
+        set_params.join(", "),
+        null_checks.join(" || "),
+        set_reads.join("\n")
+    )));
+    return out;
 }
 
 fn generate_node_field_accessors(
