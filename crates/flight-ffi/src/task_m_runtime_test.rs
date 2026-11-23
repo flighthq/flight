@@ -26,7 +26,7 @@ fn an_aliased_retained_callback_lowers_to_a_released_triple() {
     unsafe {
         crate::flight_start_input_key_repeat_timer(
             timer,
-            z_record_repeat,
+            Some(z_record_repeat),
             (&mut repeats as *mut Recorded<()>).cast(),
             Some(z_record_release::<()>),
             0.0,
@@ -198,7 +198,7 @@ fn retained_callbacks_have_explicit_signal_and_geolocation_teardown() {
     let id = unsafe {
         crate::flight_watch_geolocation_position(
             &host,
-            z_geolocation_position,
+            Some(z_geolocation_position),
             (&mut positions as *mut Recorded<f32>).cast(),
             Some(z_record_release::<f32>),
             std::ptr::null(),

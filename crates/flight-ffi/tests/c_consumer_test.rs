@@ -111,6 +111,21 @@ fn color_scale_bias_operations_and_aliasing_run_under_sanitizers() {
 }
 
 #[test]
+fn hit_test_registration_runs_on_real_nodes_under_sanitizers() {
+    if let Some(output) = z_compile_link_and_run(
+        "hit_test_registration.c",
+        "hit_test_registration",
+        true,
+        false,
+    ) {
+        assert_eq!(
+            String::from_utf8_lossy(&output.stdout).trim(),
+            "flight-ffi hit test registration: ok"
+        );
+    }
+}
+
+#[test]
 fn interaction_signal_rejection_links_static_library_and_runs() {
     if let Some(stdout) = z_compile_link_and_run(
         "interaction_signal_rejection.c",

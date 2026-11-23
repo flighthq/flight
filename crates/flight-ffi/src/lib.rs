@@ -17,6 +17,8 @@ mod declared_instantiation_test;
 mod enum_parameter_test;
 #[cfg(test)]
 mod generic_carrier_test;
+#[cfg(test)]
+mod hit_test_claim_runtime_test;
 #[cfg(all(test, feature = "host-headless"))]
 mod host_seam_runtime_test;
 #[cfg(test)]

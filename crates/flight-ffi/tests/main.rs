@@ -3,6 +3,8 @@
 mod flight_ffi_c_consumer_test;
 #[path = "callback_alias_test.rs"]
 mod flight_ffi_callback_alias_test;
+#[path = "claim_guard_test.rs"]
+mod flight_ffi_claim_guard_test;
 #[path = "declared_instantiation_test.rs"]
 mod flight_ffi_declared_instantiation_test;
 #[path = "hl_shim_test.rs"]

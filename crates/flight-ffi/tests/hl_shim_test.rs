@@ -880,9 +880,12 @@ fn every_wrapper_requires_a_public_ts_export() {
     assert_eq!(*generated_wrappers, wrapper_sources + monomorphized_extras);
     assert_eq!(generated_sources, wrapper_sources);
     assert_eq!(public + non_public, *total);
+    // Every non-public source is a no-export or internal-contract skip, except the explicit-state
+    // seam constructors, which generate so public functions that borrow their state are callable.
     assert_eq!(
         stats.matches("no_ts_public_export(").count()
-            + stats.matches("sdk_internal_contract_export(").count(),
+            + stats.matches("sdk_internal_contract_export(").count()
+            + stats.matches("  state seam: ").count(),
         *non_public
     );
 }

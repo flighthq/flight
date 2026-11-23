@@ -455,14 +455,18 @@ const BACKEND_SCAN_MONOMORPHIZED_EXTRAS: usize = 8;
 // The TypeScript-root census fixed scanner discovery (braced, globbed and renamed crate-root
 // re-exports, contract-only TypeScript-root functions, library files named like tests, and string
 // or char literals that hid later functions from brace counting). It adds these sources.
-const ROOT_DISCOVERY_TOTAL_SOURCES: usize = 1206;
-const ROOT_DISCOVERY_GENERATED_SOURCES: usize = 910;
+// Fourteen of them are explicit-state seam constructors: non-public, generated, never skipped.
+const ROOT_DISCOVERY_TOTAL_SOURCES: usize = 1206 + STATE_SEAM_SOURCES;
+const ROOT_DISCOVERY_GENERATED_SOURCES: usize = 910 + STATE_SEAM_SOURCES;
+const STATE_SEAM_SOURCES: usize = 14;
 const ROOT_DISCOVERY_SKIPPED_SOURCES: usize = 296;
 const ROOT_DISCOVERY_MONOMORPHIZED_EXTRAS: usize = 142;
 #[allow(dead_code)]
 const ROOT_DISCOVERY_PUBLIC_SOURCES: usize = 935;
 #[allow(dead_code)]
 const ROOT_DISCOVERY_NON_PUBLIC_SOURCES: usize = 271;
+#[allow(dead_code)]
+const ROOT_DISCOVERY_NON_PUBLIC_GENERATED: usize = STATE_SEAM_SOURCES;
 // Of the 25 public skips discovery adds, 8 are ownership policy and 17 are actionable lowering
 // gaps, each recorded in the root census residual.
 #[allow(dead_code)]
@@ -842,6 +846,7 @@ fn task_m_pre_m_census_has_no_undocumented_public_gap() {
             PRE_M_NON_PUBLIC_SOURCES
                 + BACKEND_SCAN_NON_PUBLIC_SOURCES
                 + ROOT_DISCOVERY_NON_PUBLIC_SOURCES
+                + ROOT_DISCOVERY_NON_PUBLIC_GENERATED
         )
     );
 

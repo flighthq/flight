@@ -450,6 +450,11 @@ pub(crate) fn get_ffi_async_error_string(error: &flight_sdk::FlightError) -> *mu
     return into_ffi_async_c_string(flight_sdk::unknown_to_js_string(&error));
 }
 
+// The error an async wrapper completes with when it refuses an argument before starting.
+pub(crate) fn get_ffi_async_refusal_string() -> *mut std::ffi::c_char {
+    return into_ffi_async_c_string("invalid argument".to_string());
+}
+
 pub(crate) fn get_ffi_async_panic_string(payload: Box<dyn Any + Send>) -> *mut std::ffi::c_char {
     // A thrown `Unknown` (an abort reason) is the rejection value itself; message panics carry text.
     let payload = match payload.downcast::<flight_sdk::Unknown>() {

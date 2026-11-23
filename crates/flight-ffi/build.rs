@@ -1,4 +1,5 @@
 mod callback_alias;
+mod claim_guard;
 mod host_seam;
 mod native_bindings;
 mod out_alias;
@@ -87,6 +88,8 @@ fn get_binding_name(name: &str) -> String {
 const LOWERED_CALLBACK_ALIASES: &[&str] = &[
     "AnyInteractionSignalSlot",
     "FileWatchListener",
+    "HitTestFunction",
+    "HitTestPreciseFunction",
     "InputRepeatCallback",
     "SignalSlot",
 ];
@@ -1441,6 +1444,24 @@ fn collect_borrow_production(crates_dir: &Path) -> BorrowProduction {
     return out;
 }
 
+// `create_X() -> X` with no parameters, where public functions borrow `X` and no public function
+// produces it. TypeScript keeps such state in its module; Rust makes it an explicit value, and C
+// needs the one constructor to call the public functions at all.
+fn is_state_seam_constructor(func: &ParsedFn) -> bool {
+    if !func.name.starts_with("create_") || !func.params.is_empty() {
+        return false;
+    }
+    let Some(ty) = func.ret.as_deref().and_then(simple_owned_return) else {
+        return false;
+    };
+    let Some(inventory) = BORROW_PRODUCTION.get() else {
+        return false;
+    };
+    return inventory.borrowers.contains_key(&ty)
+        && !inventory.ref_producers.contains_key(&ty)
+        && !inventory.owned_producers.contains_key(&ty);
+}
+
 fn is_ref_only_borrow_type(ty: &str) -> bool {
     let Some(inventory) = BORROW_PRODUCTION.get() else {
         return false;
@@ -1496,6 +1517,7 @@ fn main() {
 
     let mut all_output = String::from("use flight_sdk;\n\n");
     all_output.push_str(generate_checked_slice_support());
+    all_output.push_str(FFI_C_STR_SUPPORT);
     all_output.push_str(generate_node_handle_support());
     all_output.push_str(generate_shape_bounds_context_support());
     all_output.push_str(generate_owned_byte_reader_support());
@@ -1512,6 +1534,7 @@ fn main() {
     let mut stats_sdk_contract_decisions = BTreeMap::new();
     let mut stats_public_skips = BTreeMap::new();
     let mut census_decisions = root_census::Decisions::default();
+    let mut state_seam_constructors = Vec::new();
     let mut stats_skipped: std::collections::BTreeMap<String, usize> =
         std::collections::BTreeMap::new();
 
@@ -1776,6 +1799,9 @@ fn main() {
                     actual_consumed_types.extend(owned_consumed_types(func));
                     stats_generated_sources += 1;
                     stats_generated_wrappers += 1;
+                    if func.state_seam {
+                        state_seam_constructors.push(ffi_name.clone());
+                    }
                     census_decisions.generated.insert(
                         format!("{dir_name}|{}", func.name),
                         BTreeSet::from([ffi_name]),
@@ -1982,6 +2008,21 @@ fn main() {
     }
     writeln!(
         stats_file,
+        "FFI claim-guarded carriers: {}",
+        claim_guard::CLAIM_GUARDED_CARRIERS.join(", ")
+    )
+    .unwrap();
+    writeln!(
+        stats_file,
+        "FFI state seam constructors: {}",
+        state_seam_constructors.len()
+    )
+    .unwrap();
+    for name in &state_seam_constructors {
+        writeln!(stats_file, "  state seam: {name}").unwrap();
+    }
+    writeln!(
+        stats_file,
         "FFI out-parameter alias guards: {} wrappers",
         alias_guarded.len()
     )
@@ -2090,6 +2131,9 @@ fn main() {
         all_output.push_str(&section.output);
     }
 
+    let (claimed, claim_guarded) = claim_guard::guard_claimed_carriers(&all_output);
+    all_output = claimed;
+    all_output.push_str(claim_guard::CLAIM_SUPPORT);
     let caller_producible = collect_caller_producible_value_types(crates_dir);
     let reachability_aliases = collect_reachability_aliases();
     fs::write(out_dir.join("ffi_generated.rs"), &all_output).unwrap();
@@ -2152,6 +2196,9 @@ fn main() {
         census_rows.len()
     )
     .unwrap();
+    for name in &claim_guarded {
+        writeln!(stats_file, "  claim guard: {name}").unwrap();
+    }
     fs::write(out_dir.join("ffi_stats.txt"), &stats_file).unwrap();
 
     let mut offsets_src = String::new();
@@ -2220,6 +2267,9 @@ struct ParsedFn {
     // discovery only and never authorizes a generated public ABI. Explicit SDK contract
     // promotions join the package root; named internal promotions remain non-public.
     lacks_public_export: bool,
+    // A non-public zero-argument `create_*` that is the only producer of a carrier public
+    // functions borrow: the explicit-state seam Rust adds where TypeScript keeps module state.
+    state_seam: bool,
 }
 
 #[derive(Default)]
@@ -2379,6 +2429,16 @@ fn collect_pub_fns(src_dir: &Path) -> Vec<ParsedFn> {
                 f.sdk_contract_export = ts_exports.sdk_public.contains(&export_key);
                 f.sdk_contract_module =
                     (f.sdk_contract_export || contract_only).then(|| package_module_name(src_dir));
+                fns.push(f);
+            } else if !f.is_async
+                && !ts_exports.public.contains(&export_key)
+                && (exported_names.contains(&f.name) || contract_names.contains(&f.name))
+                && is_state_seam_constructor(&f)
+            {
+                f.lacks_public_export = true;
+                f.state_seam = true;
+                f.sdk_contract_module =
+                    (!exported_names.contains(&f.name)).then(|| package_module_name(src_dir));
                 fns.push(f);
             }
         }
@@ -3008,6 +3068,7 @@ fn parse_fn_signature(sig: &str) -> Option<ParsedFn> {
         sdk_contract_export: false,
         sdk_contract_module: None,
         lacks_public_export: false,
+        state_seam: false,
     })
 }
 
@@ -5067,7 +5128,7 @@ fn generate_ffi_wrapper(func: &ParsedFn) -> Option<(String, Option<String>)> {
     if explicit_skip_category(&func.name).is_some() {
         return None;
     }
-    if func.lacks_public_export {
+    if func.lacks_public_export && !func.state_seam {
         return None;
     }
     if func.name == "connect_signal_at_frame_rate" {
@@ -5713,10 +5774,10 @@ fn append_async_callback_params(ffi_params: &mut Vec<String>, call_wrap: &FfiRet
 fn invalid_parameter_return(value: &FfiReturn) -> &'static str {
     match value {
         FfiReturn::SharedClone(value) => invalid_parameter_return(value),
-        FfiReturn::Void
-        | FfiReturn::TupleReturn(_)
-        | FfiReturn::AsyncCallback(_)
-        | FfiReturn::ArrayOutReturn(_) => "return;",
+        // An async wrapper refuses inside the closure that builds its future, then completes the
+        // callback once with the refusal.
+        FfiReturn::AsyncCallback(_) => "return None;",
+        FfiReturn::Void | FfiReturn::TupleReturn(_) | FfiReturn::ArrayOutReturn(_) => "return;",
         FfiReturn::OptionTupleReturn(_) => "return false;",
         FfiReturn::BorrowedSliceReturn => "return std::ptr::null();",
         FfiReturn::OptionEnumReturn | FfiReturn::OptionU32Return | FfiReturn::OptionBoolReturn => {
@@ -5796,8 +5857,12 @@ fn generate_async_callback_body(spec: &AsyncCallbackSpec, call: &str, preamble: 
     // provider panicking before it returns a future) completes the callback once, here, and nothing
     // is driven; so the parameter preamble runs inside the same guarded closure as the call.
     format!(
-        "    let future = match std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {{\n{preamble}    {call}\n    }})) {{\n        \
-                 Ok(future) => future,\n        \
+        "    let future = match std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {{\n{preamble}    Some({call})\n    }})) {{\n        \
+                 Ok(Some(future)) => future,\n        \
+                 Ok(None) => {{\n            \
+                     complete_fn(complete_ctx, {empty}, crate::async_callback::get_ffi_async_refusal_string());\n            \
+                     return;\n        \
+                 }}\n        \
                  Err(payload) => {{\n            \
                      complete_fn(complete_ctx, {empty}, crate::async_callback::get_ffi_async_panic_string(payload));\n            \
                      return;\n        \
@@ -8799,6 +8864,23 @@ fn alias_borrow_call_expr(pair: &AliasBorrowPair, index: usize) -> String {
     return alias_borrow_guard_expr(&pair.second, pair.second.name.trim_start_matches('_'));
 }
 
+// A required C string: the wrapper returns its failure sentinel for NULL or invalid UTF-8 before
+// any SDK call, so no text is ever silently replaced.
+fn required_text_param(name: &str, owned: bool) -> MappedParam {
+    let clean = name.trim_start_matches('_');
+    return MappedParam {
+        ffi_params: vec![(name.to_string(), "*const std::ffi::c_char".to_string())],
+        bindings: vec![format!(
+            "    let Some(ffi_text_{clean}) = (unsafe {{ ffi_c_str({name}) }}) else {{ {INVALID_NODE_RETURN} }};"
+        )],
+        call_expr: if owned {
+            format!("ffi_text_{clean}.to_string()")
+        } else {
+            format!("ffi_text_{clean}")
+        },
+    };
+}
+
 fn mapped_single(name: &str, ffi_ty: &str, call_expr: String) -> Option<MappedParam> {
     Some(MappedParam {
         ffi_params: vec![(name.to_string(), ffi_ty.to_string())],
@@ -9134,6 +9216,9 @@ fn map_opaque_fallback_param(name: &str, ty: &str) -> Option<MappedParam> {
 }
 
 const INVALID_NODE_RETURN: &str = "__FLIGHT_INVALID_NODE_RETURN__";
+
+// Reads a C string parameter: `None` for NULL or invalid UTF-8.
+const FFI_C_STR_SUPPORT: &str = "// A C string parameter as text: None for NULL or invalid UTF-8, which callers refuse.\nunsafe fn ffi_c_str<'a>(text: *const std::ffi::c_char) -> Option<&'a str> {\n    if text.is_null() {\n        return None;\n    }\n    return unsafe { std::ffi::CStr::from_ptr(text) }.to_str().ok();\n}\n\n";
 
 fn node_param_selection(name: &str, inner: &str) -> Option<(NodeReturnSpec, Vec<String>, String)> {
     let spec = node_return_spec(inner)?;
@@ -9680,13 +9765,9 @@ fn map_param_to_ffi(name: &str, ty: &str) -> Option<MappedParam> {
         });
     }
 
-    // &str / &'static str -> *const c_char
+    // &str / &'static str -> *const c_char; NULL or invalid UTF-8 is refused, never read as "".
     if ty == "&str" || ty == "&'static str" {
-        return mapped_single(
-            name,
-            "*const std::ffi::c_char",
-            format!("unsafe {{ std::ffi::CStr::from_ptr({name}) }}.to_str().unwrap_or(\"\")"),
-        );
+        return Some(required_text_param(name, false));
     }
 
     // Option<f64> -> f64 with NaN sentinel
@@ -9716,26 +9797,21 @@ fn map_param_to_ffi(name: &str, ty: &str) -> Option<MappedParam> {
         );
     }
 
-    // Option<&str> -> nullable *const c_char
-    if ty == "Option<&str>" {
-        return mapped_single(
-            name,
-            "*const std::ffi::c_char",
-            format!(
-                "if {name}.is_null() {{ None }} else {{ Some(unsafe {{ std::ffi::CStr::from_ptr({name}) }}.to_str().unwrap_or(\"\")) }}"
-            ),
-        );
-    }
-
-    // Option<String> param -> nullable *const c_char
-    if ty == "Option<String>" {
-        return mapped_single(
-            name,
-            "*const std::ffi::c_char",
-            format!(
-                "if {name}.is_null() {{ None }} else {{ Some(unsafe {{ std::ffi::CStr::from_ptr({name}) }}.to_str().unwrap_or(\"\").to_string()) }}"
-            ),
-        );
+    // Option<&str> / Option<String> -> nullable *const c_char: NULL is None; invalid UTF-8 is
+    // refused with the wrapper's sentinel.
+    if ty == "Option<&str>" || ty == "Option<String>" {
+        let clean = name.trim_start_matches('_');
+        return Some(MappedParam {
+            ffi_params: vec![(name.to_string(), "*const std::ffi::c_char".to_string())],
+            bindings: vec![format!(
+                "    let ffi_text_{clean} = if {name}.is_null() {{ None }} else {{ match unsafe {{ ffi_c_str({name}) }} {{ Some(text) => Some(text), None => {{ {INVALID_NODE_RETURN} }} }} }};"
+            )],
+            call_expr: if ty == "Option<String>" {
+                format!("ffi_text_{clean}.map(str::to_string)")
+            } else {
+                format!("ffi_text_{clean}")
+            },
+        });
     }
 
     // Option<&[T]> -> nullable pointer + length for scalar T
@@ -10561,8 +10637,13 @@ fn map_param_to_ffi(name: &str, ty: &str) -> Option<MappedParam> {
         } else {
             format!("&|{outer_params_str}| {direct_callback_call}")
         };
+        // A NULL callback is refused before anything is retained, so its context stays the
+        // caller's and its release never runs.
+        let bindings = vec![format!(
+            "    let Some({fn_name}) = {fn_name} else {{ {INVALID_NODE_RETURN} }};"
+        )];
         let mut ffi_params = vec![
-            (fn_name, ffi_fn_sig),
+            (fn_name, format!("Option<{ffi_fn_sig}>")),
             (ctx_name, "*mut std::ffi::c_void".to_string()),
         ];
         if parsed.is_arc {
@@ -10570,7 +10651,7 @@ fn map_param_to_ffi(name: &str, ty: &str) -> Option<MappedParam> {
         }
         return Some(MappedParam {
             ffi_params,
-            bindings: Vec::new(),
+            bindings,
             call_expr: closure_body,
         });
     }
@@ -10615,15 +10696,9 @@ fn map_param_to_ffi(name: &str, ty: &str) -> Option<MappedParam> {
         );
     }
 
-    // String param -> *const c_char
+    // String param -> *const c_char; NULL or invalid UTF-8 is refused, never read as "".
     if ty == "String" {
-        return mapped_single(
-            name,
-            "*const std::ffi::c_char",
-            format!(
-                "unsafe {{ std::ffi::CStr::from_ptr({name}) }}.to_str().unwrap_or(\"\").to_string()"
-            ),
-        );
+        return Some(required_text_param(name, true));
     }
 
     // Scalar types pass through
