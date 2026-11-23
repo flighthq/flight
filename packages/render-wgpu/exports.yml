@@ -37,7 +37,6 @@ protected:
   - drawWgpuQuadWithTransform
   - drawWgpuTextureRenderTargetResult
   - encodeWgpuScreenRenderTargetCapture
-  - endWgpuScreenRenderTargetFrame
   - generateWgpuMipmaps
   - getActiveWgpuPipeline
   - getWgpuActiveRenderPass
@@ -97,7 +96,6 @@ protected:
   - setWgpuShader
   - submitWgpuQuadDraw
   - suspendWgpuRenderPass
-  - syncWgpuScreenRenderTargetExtent
   - testWgpuHost
   - tryCopyWgpuExternalImageToTexture
   - updateWgpuTextureEntry
