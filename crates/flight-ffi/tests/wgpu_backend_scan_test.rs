@@ -40,7 +40,10 @@ fn scan_membership_is_literal_and_excludes_gl_backends() {
 
 #[test]
 fn backend_policy_partition_is_named_reasoned_and_closed() {
-    assert!(STATS.contains("FFI public skip partition: 165 by-design, 0 actionable"));
+    // Backend policy skips are recorded, not accepted: the root census lists each one as an
+    // actionable residual row under its skip category.
+    assert!(STATS.contains("FFI root census: "));
+    assert!(!STATS.contains("FFI public skip partition"));
     let backend_skips = STATS
         .lines()
         .filter_map(|line| line.strip_prefix("  public skip: "))

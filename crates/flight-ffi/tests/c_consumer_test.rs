@@ -99,6 +99,18 @@ fn sanitizer_probe_proves_a_live_flight_node_leak_is_detected() {
 }
 
 #[test]
+fn color_scale_bias_operations_and_aliasing_run_under_sanitizers() {
+    if let Some(output) =
+        z_compile_link_and_run("color_scale_bias.c", "color_scale_bias", true, false)
+    {
+        assert_eq!(
+            String::from_utf8_lossy(&output.stdout).trim(),
+            "flight-ffi color scale bias: ok"
+        );
+    }
+}
+
+#[test]
 fn interaction_signal_rejection_links_static_library_and_runs() {
     if let Some(stdout) = z_compile_link_and_run(
         "interaction_signal_rejection.c",

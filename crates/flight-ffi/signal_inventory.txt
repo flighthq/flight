@@ -394,29 +394,29 @@ producer|flight-gizmo|GizmoSignals.on_scale|skip|payload has no connect wrapper
 producer|flight-gizmo|GizmoSignals.on_transform_begin|get
 producer|flight-gizmo|GizmoSignals.on_transform_end|get
 producer|flight-gizmo|GizmoSignals.on_translate|skip|payload has no connect wrapper
-producer|flight-gui|ButtonControllerSignals.on_click|get
-producer|flight-gui|ButtonControllerSignals.on_press|get
-producer|flight-gui|ButtonControllerSignals.on_release|get
-producer|flight-gui|ComboBoxControllerSignals.on_change|get
-producer|flight-gui|ComboBoxControllerSignals.on_open_change|get
+producer|flight-gui|ButtonControllerSignals.on_click|ref-connect
+producer|flight-gui|ButtonControllerSignals.on_press|ref-connect
+producer|flight-gui|ButtonControllerSignals.on_release|ref-connect
+producer|flight-gui|ComboBoxControllerSignals.on_change|ref-connect
+producer|flight-gui|ComboBoxControllerSignals.on_open_change|ref-connect
 producer|flight-gui|GuiDialogSignals.on_active_change|skip|payload has no connect wrapper
-producer|flight-gui|GuiDialogSignals.on_close|get
-producer|flight-gui|GuiDialogSignals.on_queue_change|get
-producer|flight-gui|ListControllerSignals.on_activate|get
-producer|flight-gui|ListControllerSignals.on_select|get
-producer|flight-gui|RadioGroupControllerSignals.on_change|get
-producer|flight-gui|ScrollBarControllerSignals.on_change|get
+producer|flight-gui|GuiDialogSignals.on_close|ref-connect
+producer|flight-gui|GuiDialogSignals.on_queue_change|ref-connect
+producer|flight-gui|ListControllerSignals.on_activate|ref-connect
+producer|flight-gui|ListControllerSignals.on_select|ref-connect
+producer|flight-gui|RadioGroupControllerSignals.on_change|ref-connect
+producer|flight-gui|ScrollBarControllerSignals.on_change|ref-connect
 producer|flight-gui|ScrollViewControllerSignals.on_scroll|skip|payload has no connect wrapper
-producer|flight-gui|SliderControllerSignals.on_change|get
-producer|flight-gui|SplitPaneControllerSignals.on_change|get
-producer|flight-gui|TabBarControllerSignals.on_change|get
+producer|flight-gui|SliderControllerSignals.on_change|ref-connect
+producer|flight-gui|SplitPaneControllerSignals.on_change|ref-connect
+producer|flight-gui|TabBarControllerSignals.on_change|ref-connect
 producer|flight-gui|TextInputControllerSignals.on_change|skip|payload has no connect wrapper
 producer|flight-gui|TextInputControllerSignals.on_submit|skip|payload has no connect wrapper
-producer|flight-gui|ToggleControllerSignals.on_change|get
-producer|flight-gui|TreeViewControllerSignals.on_activate|get
+producer|flight-gui|ToggleControllerSignals.on_change|ref-connect
+producer|flight-gui|TreeViewControllerSignals.on_activate|ref-connect
 producer|flight-gui|TreeViewControllerSignals.on_expand_change|skip|payload has no connect wrapper
 producer|flight-gui|TreeViewControllerSignals.on_select|skip|payload has no connect wrapper
-producer|flight-gui|WindowControllerSignals.on_close|get
+producer|flight-gui|WindowControllerSignals.on_close|ref-connect
 producer|flight-gui|WindowControllerSignals.on_move|skip|payload has no connect wrapper
 producer|flight-gui|WindowControllerSignals.on_resize|skip|payload has no connect wrapper
 producer|flight-input|InputManager.on_gamepad_axis_move|ref-connect
@@ -479,12 +479,12 @@ producer|flight-lifecycle|AppLifecycle.on_resume|get
 producer|flight-lifecycle|AppLifecycle.on_save_state|skip|payload has no connect wrapper
 producer|flight-lifecycle|AppLifecycle.on_state_change|get
 producer|flight-loader|LoadOptions.progress|get+enable
-producer|flight-loader|ResourceLoader.on_cancel|get
+producer|flight-loader|ResourceLoader.on_cancel|ref-connect
 producer|flight-loader|ResourceLoader.on_complete|skip|payload has no connect wrapper
 producer|flight-loader|ResourceLoader.on_error|skip|payload has no connect wrapper
-producer|flight-loader|ResourceLoader.on_pause|get
-producer|flight-loader|ResourceLoader.on_progress|get
-producer|flight-loader|ResourceLoader.on_resume|get
+producer|flight-loader|ResourceLoader.on_pause|ref-connect
+producer|flight-loader|ResourceLoader.on_progress|ref-connect
+producer|flight-loader|ResourceLoader.on_resume|ref-connect
 producer|flight-loader|ResourceLoaderItemSignals.on_item_complete|skip|payload has no connect wrapper
 producer|flight-loader|ResourceLoaderItemSignals.on_item_error|skip|payload has no connect wrapper
 producer|flight-loader|ResourceLoaderItemSignals.on_item_retry|skip|payload has no connect wrapper
@@ -547,9 +547,9 @@ producer|flight-scene2d|Scene2DSignals.on_resize|ref-connect
 producer|flight-scene2d-resources|LoadScene2DAudioResourcesOptions.progress|get+enable
 producer|flight-scene2d-resources|LoadScene2DImageResourcesOptions.progress|get+enable
 producer|flight-scene2d-resources|Scene2DDocumentLoadOptions.progress|get+enable
-producer|flight-scene3d|InstancedMeshSignals.on_cleared|get
-producer|flight-scene3d|InstancedMeshSignals.on_instance_appended|get
-producer|flight-scene3d|InstancedMeshSignals.on_instance_removed|get
+producer|flight-scene3d|InstancedMeshSignals.on_cleared|ref-connect
+producer|flight-scene3d|InstancedMeshSignals.on_instance_appended|ref-connect
+producer|flight-scene3d|InstancedMeshSignals.on_instance_removed|ref-connect
 producer|flight-scene3d-resources|GltfScene3DDocumentLoadOptions.progress|get+enable
 producer|flight-scene3d-resources|LoadScene3DResourcesOptions.progress|get+enable
 producer|flight-scene3d-resources|Scene3DDocumentLoadOptions.progress|get+enable
@@ -572,7 +572,7 @@ producer|flight-sensors|Sensors.on_magnetometer|get
 producer|flight-sensors|Sensors.on_orientation|get
 producer|flight-sensors|Sensors.on_proximity|get
 producer|flight-sensors|Sensors.on_quaternion|get
-producer|flight-share|ShareSignals.on_share_result|get
+producer|flight-share|ShareSignals.on_share_result|ref-connect
 producer|flight-shortcut|GlobalShortcut.on_trigger|get
 producer|flight-signals|fn connect_signal_at_frame_rate(source)|function
 producer|flight-socket|SocketSignals.on_socket_close|ref-connect

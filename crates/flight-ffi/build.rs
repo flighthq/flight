@@ -1,10 +1,12 @@
 mod callback_alias;
 mod host_seam;
 mod native_bindings;
+mod out_alias;
 mod public_perimeter;
 mod reachability;
 mod registry_tokens;
 mod render_pass_bracket;
+mod root_census;
 mod signal_identity;
 mod signal_ref_connect;
 use std::collections::{BTreeMap, BTreeSet};
@@ -95,6 +97,81 @@ static CALLBACK_ALIASES: OnceLock<BTreeMap<String, callback_alias::CallbackAlias
 
 // Every named type's definitions, from source, for by-value ownership; each is flagged with whether
 // its crate root re-exports it by name, which picks the SDK's meaning when two crates share a name.
+// Type names that some scanned crate's root re-exports, and type names reachable only through one
+// crate's contract module, keyed to that module. A signature type that is contract-only must be
+// named through `flight_sdk::<module>::contract`, since the SDK root glob never sees it.
+static ROOT_TYPE_NAMES: OnceLock<BTreeSet<String>> = OnceLock::new();
+static CONTRACT_ONLY_TYPE_MODULES: OnceLock<BTreeMap<String, String>> = OnceLock::new();
+
+fn collect_type_lanes(crates_dir: &Path) -> (BTreeSet<String>, BTreeMap<String, String>) {
+    let mut root = BTreeSet::new();
+    let mut contract: BTreeMap<String, BTreeSet<String>> = BTreeMap::new();
+    for dir_name in SCAN_CRATES {
+        let src_dir = crates_dir.join(dir_name).join("src");
+        let lib = src_dir.join("lib.rs");
+        if !lib.exists() {
+            continue;
+        }
+        root.extend(root_census::collect_module_exports(&src_dir, &lib).types);
+        let contract_path = src_dir.join("contract.rs");
+        if contract_path.exists() {
+            let module = package_module_name(&src_dir);
+            for name in root_census::collect_module_exports(&src_dir, &contract_path).types {
+                contract.entry(name).or_default().insert(module.clone());
+            }
+        }
+    }
+    let contract_only = contract
+        .into_iter()
+        .filter(|(name, modules)| !root.contains(name) && modules.len() == 1)
+        .map(|(name, modules)| (name, modules.into_iter().next().unwrap()))
+        .collect();
+    return (root, contract_only);
+}
+
+// SDK types every definition of which derives `Clone` (or `Copy`): an out-parameter wrapper can
+// snapshot an aliased input of such a type before the call.
+fn collect_clone_types(crates_dir: &Path) -> BTreeSet<String> {
+    let mut verdicts: BTreeMap<String, bool> = BTreeMap::new();
+    for dir_name in SCAN_CRATES {
+        let Ok(entries) = fs::read_dir(crates_dir.join(dir_name).join("src")) else {
+            continue;
+        };
+        let mut paths: Vec<_> = entries
+            .filter_map(Result::ok)
+            .map(|entry| entry.path())
+            .filter(|path| root_census::is_library_path(path))
+            .collect();
+        paths.sort();
+        for path in paths {
+            let Ok(file) = syn::parse_file(&fs::read_to_string(&path).unwrap_or_default()) else {
+                continue;
+            };
+            for item in file.items {
+                let (ident, attrs) = match &item {
+                    syn::Item::Struct(value) => (&value.ident, &value.attrs),
+                    syn::Item::Enum(value) => (&value.ident, &value.attrs),
+                    _ => continue,
+                };
+                let clone = attrs.iter().any(|attribute| {
+                    attribute.path().is_ident("derive")
+                        && attribute
+                            .to_token_stream()
+                            .to_string()
+                            .split(|c: char| !c.is_alphanumeric())
+                            .any(|word| word == "Clone" || word == "Copy")
+                });
+                let verdict = verdicts.entry(ident.to_string()).or_insert(true);
+                *verdict &= clone;
+            }
+        }
+    }
+    return verdicts
+        .into_iter()
+        .filter_map(|(name, clone)| clone.then_some(name))
+        .collect();
+}
+
 static TYPE_DEFINITIONS: OnceLock<BTreeMap<String, Vec<(bool, TypeDefinition)>>> = OnceLock::new();
 
 // Exact Rust types C can hold as an owned box because some generated wrapper produces that box.
@@ -1434,6 +1511,7 @@ fn main() {
     let mut stats_generated_wrappers = 0usize;
     let mut stats_sdk_contract_decisions = BTreeMap::new();
     let mut stats_public_skips = BTreeMap::new();
+    let mut census_decisions = root_census::Decisions::default();
     let mut stats_skipped: std::collections::BTreeMap<String, usize> =
         std::collections::BTreeMap::new();
 
@@ -1456,7 +1534,7 @@ fn main() {
             .filter_map(|e| e.ok())
             .filter(|e| {
                 e.path().extension().is_some_and(|ext| ext == "rs")
-                    && !e.file_name().to_string_lossy().contains("test")
+                    && root_census::is_library_path(&e.path())
             })
             .collect();
         entries.sort_by_key(|e| e.file_name());
@@ -1494,6 +1572,9 @@ fn main() {
     }
     let _ = KNOWN_ENUMS.set(known_enums);
     let _ = TYPE_DEFINITIONS.set(type_definitions);
+    let (root_type_names, contract_only_type_modules) = collect_type_lanes(crates_dir);
+    let _ = ROOT_TYPE_NAMES.set(root_type_names);
+    let _ = CONTRACT_ONLY_TYPE_MODULES.set(contract_only_type_modules);
     let _ = NODE_TYPES.set(collect_node_types(crates_dir));
     let borrow_production = collect_borrow_production(crates_dir);
     fs::write(
@@ -1618,13 +1699,18 @@ fn main() {
                         stats_sdk_contract_decisions
                             .insert(func.name.clone(), format!("skipped: {skip_reason}"));
                     }
+                    census_decisions
+                        .skipped
+                        .insert(format!("{dir_name}|{}", func.name), skip_reason.clone());
                     *stats_skipped.entry(skip_reason).or_insert(0) += 1;
                 } else {
                     let mut emitted = false;
                     let mut emitted_wrappers = 0usize;
+                    let mut emitted_names = BTreeSet::new();
                     for (ffi_name, wrapper, boxed_ty) in wrappers {
                         if !seen_names.contains(&ffi_name) {
                             writeln!(crate_output, "{wrapper}").unwrap();
+                            emitted_names.insert(ffi_name.clone());
                             seen_names.insert(ffi_name);
                             crate_used = true;
                             emitted = true;
@@ -1639,6 +1725,9 @@ fn main() {
                         actual_produced_types.extend(owned_producer_types(func));
                         actual_consumed_types.extend(owned_consumed_types(func));
                         stats_generated_sources += 1;
+                        census_decisions
+                            .generated
+                            .insert(format!("{dir_name}|{}", func.name), emitted_names);
                         if func.sdk_contract_export {
                             stats_sdk_contract_decisions.insert(
                                 func.name.clone(),
@@ -1655,6 +1744,9 @@ fn main() {
                             stats_sdk_contract_decisions
                                 .insert(func.name.clone(), format!("skipped: {skip_reason}"));
                         }
+                        census_decisions
+                            .skipped
+                            .insert(format!("{dir_name}|{}", func.name), skip_reason.clone());
                         *stats_skipped.entry(skip_reason).or_insert(0) += 1;
                     }
                 }
@@ -1669,18 +1761,25 @@ fn main() {
                         stats_sdk_contract_decisions
                             .insert(func.name.clone(), format!("skipped: {skip_reason}"));
                     }
+                    census_decisions
+                        .skipped
+                        .insert(format!("{dir_name}|{}", func.name), skip_reason.clone());
                     *stats_skipped.entry(skip_reason).or_insert(0) += 1;
                     continue;
                 }
                 if let Some((wrapper, boxed_ty)) = generate_ffi_wrapper(func) {
                     writeln!(crate_output, "{wrapper}").unwrap();
-                    seen_names.insert(ffi_name);
+                    seen_names.insert(ffi_name.clone());
                     crate_used = true;
                     collect_vec_ref_handle_specs(func, &mut vec_ref_handle_specs);
                     actual_produced_types.extend(owned_producer_types(func));
                     actual_consumed_types.extend(owned_consumed_types(func));
                     stats_generated_sources += 1;
                     stats_generated_wrappers += 1;
+                    census_decisions.generated.insert(
+                        format!("{dir_name}|{}", func.name),
+                        BTreeSet::from([ffi_name]),
+                    );
                     if func.sdk_contract_export {
                         stats_sdk_contract_decisions
                             .insert(func.name.clone(), "generated: 1 wrapper(s)".to_string());
@@ -1697,6 +1796,9 @@ fn main() {
                         stats_sdk_contract_decisions
                             .insert(func.name.clone(), format!("skipped: {skip_reason}"));
                     }
+                    census_decisions
+                        .skipped
+                        .insert(format!("{dir_name}|{}", func.name), skip_reason.clone());
                     *stats_skipped.entry(skip_reason).or_insert(0) += 1;
                 }
             }
@@ -1735,6 +1837,9 @@ fn main() {
         }
         bracket_state_wrappers.extend(names);
     }
+    let (aliased, alias_guarded) =
+        out_alias::guard_out_parameter_aliases(&all_output, &collect_clone_types(crates_dir));
+    all_output = aliased;
     writeln!(all_output, "// registry tokens").unwrap();
     all_output.push_str(&registry_tokens::generate_registry_token_support());
     let brackets = generate_borrow_erased_brackets(crates_dir, &mut seen_names);
@@ -1800,16 +1905,30 @@ fn main() {
             "{name} must remain an exact public {category} decision"
         );
     }
-    let actionable_public_skips: Vec<_> = stats_public_skips
-        .iter()
-        .filter(|(_, reason)| !is_by_design_public_skip(reason))
-        .map(|(name, reason)| format!("{name}: {reason}"))
-        .collect();
-    assert!(
-        actionable_public_skips.is_empty(),
-        "public FFI skips remain actionable: {actionable_public_skips:?}"
-    );
-
+    for bracket in render_pass_bracket::BORROW_ERASED_BRACKETS {
+        for (function, ffi_name) in [
+            (bracket.begin, bracket.ffi_begin),
+            (bracket.end, bracket.ffi_end),
+        ] {
+            census_decisions.generated.insert(
+                format!("{}|{function}", bracket.crate_dir),
+                BTreeSet::from([ffi_name.to_string()]),
+            );
+        }
+        for consumer in bracket.consumers {
+            census_decisions.generated.insert(
+                format!("{}|{}", consumer.crate_dir, consumer.function),
+                BTreeSet::from([consumer.ffi_name.to_string()]),
+            );
+        }
+    }
+    for entry in DECLARED_INSTANTIATIONS {
+        census_decisions
+            .generated
+            .entry(format!("{}|{}", entry.crate_dir, entry.function))
+            .or_default()
+            .insert(entry.ffi_name.to_string());
+    }
     let stats_skipped_total: usize = stats_skipped.values().sum();
     let stats_monomorphized_extras = stats_generated_wrappers
         .checked_sub(stats_generated_sources)
@@ -1840,13 +1959,6 @@ fn main() {
     .unwrap();
     writeln!(
         stats_file,
-        "FFI public skip partition: {} by-design, {} actionable",
-        stats_public_skips.len() - actionable_public_skips.len(),
-        actionable_public_skips.len()
-    )
-    .unwrap();
-    writeln!(
-        stats_file,
         "FFI declared instantiations: {} wrappers, {} carriers",
         DECLARED_INSTANTIATIONS.len(),
         DECLARED_CARRIERS.len()
@@ -1867,6 +1979,15 @@ fn main() {
     .unwrap();
     for name in &bracket_state_wrappers {
         writeln!(stats_file, "  bracket state claim: {name}").unwrap();
+    }
+    writeln!(
+        stats_file,
+        "FFI out-parameter alias guards: {} wrappers",
+        alias_guarded.len()
+    )
+    .unwrap();
+    for name in &alias_guarded {
+        writeln!(stats_file, "  alias guard: {name}").unwrap();
     }
     for line in &brackets.report {
         writeln!(stats_file, "  bracket: {line}").unwrap();
@@ -1971,6 +2092,7 @@ fn main() {
 
     let caller_producible = collect_caller_producible_value_types(crates_dir);
     let reachability_aliases = collect_reachability_aliases();
+    fs::write(out_dir.join("ffi_generated.rs"), &all_output).unwrap();
     native_bindings::emit(
         &all_output,
         &out_dir,
@@ -1979,6 +2101,58 @@ fn main() {
         &reachability_surface,
     );
     fs::write(out_dir.join("ffi_generated.rs"), all_output).unwrap();
+    let reachability_baseline =
+        fs::read_to_string(out_dir.join("ffi_reachability_baseline.tsv")).unwrap();
+    let unreachable_wrappers: BTreeSet<String> = reachability_baseline
+        .lines()
+        .filter_map(|line| line.strip_prefix("unreachable|"))
+        .filter_map(|rest| rest.split('|').next())
+        .map(str::to_string)
+        .collect();
+    let packages_dir = crates_dir.parent().unwrap().join("packages");
+    let by_design_path = manifest_dir.join("tests/ffi_root_census_by_design.tsv");
+    println!("cargo::rerun-if-changed={}", by_design_path.display());
+    let by_design = root_census::parse_by_design(&fs::read_to_string(&by_design_path).unwrap())
+        .unwrap_or_else(|error| panic!("{error}"));
+    let census_rows = root_census::classify(
+        &packages_dir,
+        crates_dir,
+        SCAN_CRATES,
+        &census_decisions,
+        &unreachable_wrappers,
+        &by_design,
+    );
+    let node_type_names: BTreeSet<String> = NODE_TYPES.get().unwrap().keys().cloned().collect();
+    let node_data_fields =
+        root_census::collect_node_data_fields(crates_dir, SCAN_CRATES, &node_type_names);
+    let mut census_rows = census_rows;
+    census_rows.extend(root_census::classify_node_data_fields(
+        &node_data_fields,
+        &reachability_surface,
+        &unreachable_wrappers,
+    ));
+    census_rows.sort();
+    root_census::check_by_design_coverage(&census_rows, &by_design)
+        .unwrap_or_else(|error| panic!("{error}"));
+    fs::write(
+        out_dir.join("ffi_root_census.tsv"),
+        root_census::render_census(&census_rows),
+    )
+    .unwrap();
+    fs::write(
+        out_dir.join("ffi_root_census_residual.tsv"),
+        root_census::render_residual(&census_rows),
+    )
+    .unwrap();
+    let (census_generated, census_by_design, census_actionable) =
+        root_census::count_by_status(&census_rows);
+    writeln!(
+        stats_file,
+        "FFI root census: {} TypeScript root values, {census_generated} generated, {census_by_design} by-design, {census_actionable} actionable",
+        census_rows.len()
+    )
+    .unwrap();
+    fs::write(out_dir.join("ffi_stats.txt"), &stats_file).unwrap();
 
     let mut offsets_src = String::new();
     writeln!(offsets_src, "fn main() {{").unwrap();
@@ -2157,6 +2331,12 @@ fn collect_pub_fns(src_dir: &Path) -> Vec<ParsedFn> {
         .cloned()
         .collect();
     let exported_names = collect_exported_names(&lib_path, src_dir, &discoverable_exports);
+    let contract_path = src_dir.join("contract.rs");
+    let contract_names = if contract_path.exists() {
+        root_census::collect_module_function_exports(src_dir, &contract_path)
+    } else {
+        BTreeSet::new()
+    };
     if exported_names.is_empty()
         && ts_exports.sdk_public.is_empty()
         && ts_exports.internal.is_empty()
@@ -2168,10 +2348,7 @@ fn collect_pub_fns(src_dir: &Path) -> Vec<ParsedFn> {
     let mut entries: Vec<_> = fs::read_dir(src_dir)
         .unwrap()
         .filter_map(|e| e.ok())
-        .filter(|e| {
-            e.path().extension().is_some_and(|ext| ext == "rs")
-                && !e.file_name().to_string_lossy().contains("test")
-        })
+        .filter(|e| root_census::is_library_path(&e.path()))
         .collect();
     entries.sort_by_key(|e| e.file_name());
 
@@ -2186,15 +2363,22 @@ fn collect_pub_fns(src_dir: &Path) -> Vec<ParsedFn> {
         for mut f in all_fns {
             let export_key = public_perimeter::get_export_key(&f.name);
             let internal_sdk_export = ts_exports.internal.contains(&export_key);
+            // A TypeScript-root function its crate root does not re-export is still public: the
+            // SDK reaches it through the crate's contract module, which the census requires.
+            let contract_only = !exported_names.contains(&f.name)
+                && ts_exports.public.contains(&export_key)
+                && contract_names.contains(&f.name);
             if (!f.is_async
                 && (exported_names.contains(&f.name)
-                    || ts_exports.sdk_public.contains(&export_key)))
+                    || ts_exports.sdk_public.contains(&export_key)
+                    || contract_only))
                 || internal_sdk_export
             {
                 f.lacks_public_export =
                     internal_sdk_export || !ts_exports.public.contains(&export_key);
                 f.sdk_contract_export = ts_exports.sdk_public.contains(&export_key);
-                f.sdk_contract_module = f.sdk_contract_export.then(|| package_module_name(src_dir));
+                f.sdk_contract_module =
+                    (f.sdk_contract_export || contract_only).then(|| package_module_name(src_dir));
                 fns.push(f);
             }
         }
@@ -2260,110 +2444,9 @@ fn collect_ts_exports(src_dir: &Path) -> TsExportPerimeter {
 fn collect_exported_names(
     lib_path: &Path,
     src_dir: &Path,
-    ts_exports: &BTreeSet<String>,
+    _ts_exports: &BTreeSet<String>,
 ) -> BTreeSet<String> {
-    let content = fs::read_to_string(lib_path).unwrap();
-    let mut names = BTreeSet::new();
-
-    for line in content.lines() {
-        let line = line.trim();
-
-        // pub use contract::foo_bar; or pub use sugar::foo_bar;
-        if line.starts_with("pub use ") {
-            if let Some(rest) = line.strip_prefix("pub use ") {
-                let rest = rest.trim_end_matches(';').trim();
-                if rest.ends_with("::*") {
-                    // glob re-export: pub use contract::* — resolve the module
-                    let mod_path = rest.trim_end_matches("::*");
-                    // e.g. "contract" or "super::foo"
-                    let mod_name = mod_path.rsplit("::").next().unwrap_or(mod_path);
-                    let mod_file = src_dir.join(format!("{mod_name}.rs"));
-                    if mod_file.exists() {
-                        collect_glob_names(&mod_file, src_dir, ts_exports, &mut names);
-                    }
-                } else if let Some(name) = rest.rsplit("::").next() {
-                    // named re-export
-                    if name.chars().next().is_some_and(|c| c.is_lowercase()) {
-                        names.insert(name.to_string());
-                    }
-                }
-            }
-        }
-    }
-    names
-}
-
-fn collect_glob_names(
-    file: &Path,
-    src_dir: &Path,
-    ts_exports: &BTreeSet<String>,
-    names: &mut BTreeSet<String>,
-) {
-    let content = match fs::read_to_string(file) {
-        Ok(c) => c,
-        Err(_) => return,
-    };
-    for line in content.lines() {
-        let line = line.trim();
-        // pub use super::module_name::*;  (contract.rs pattern)
-        if line.starts_with("pub use super::") && line.ends_with("::*;") {
-            let inner = line
-                .strip_prefix("pub use super::")
-                .unwrap()
-                .strip_suffix("::*;")
-                .unwrap();
-            let mod_file = src_dir.join(format!("{inner}.rs"));
-            if mod_file.exists() {
-                let mod_content = fs::read_to_string(&mod_file).unwrap();
-                let mut mod_fns = Vec::new();
-                parse_pub_fns(&mod_content, &mut mod_fns);
-                for f in mod_fns {
-                    if !f.is_async {
-                        names.insert(f.name);
-                    }
-                }
-            }
-        }
-        // pub use super::module_name::specific_fn;
-        if line.starts_with("pub use super::") && !line.ends_with("::*;") {
-            if let Some(name) = line.trim_end_matches(';').rsplit("::").next() {
-                if name.chars().next().is_some_and(|c| c.is_lowercase()) {
-                    names.insert(name.to_string());
-                }
-            }
-        }
-        // Newer contracts use crate-root module re-exports. Unlike the legacy `super` contract
-        // lane, admit these functions only when the package's real TypeScript root exports the
-        // same public name; a broad Rust contract glob must not enlarge the FFI perimeter.
-        if line.starts_with("pub use crate::") && line.ends_with("::*;") {
-            let inner = line
-                .strip_prefix("pub use crate::")
-                .unwrap()
-                .strip_suffix("::*;")
-                .unwrap();
-            let mod_file = src_dir.join(format!("{inner}.rs"));
-            if mod_file.exists() {
-                let mod_content = fs::read_to_string(&mod_file).unwrap();
-                let mut mod_fns = Vec::new();
-                parse_pub_fns(&mod_content, &mut mod_fns);
-                for f in mod_fns {
-                    if !f.is_async
-                        && ts_exports.contains(&public_perimeter::get_export_key(&f.name))
-                    {
-                        names.insert(f.name);
-                    }
-                }
-            }
-        }
-        if line.starts_with("pub use crate::")
-            && !line.ends_with("::*;")
-            && let Some(name) = line.trim_end_matches(';').rsplit("::").next()
-            && name.chars().next().is_some_and(|c| c.is_lowercase())
-            && ts_exports.contains(&public_perimeter::get_export_key(name))
-        {
-            names.insert(name.to_string());
-        }
-    }
+    return root_census::collect_module_function_exports(src_dir, lib_path);
 }
 
 fn parse_pub_fns(content: &str, out: &mut Vec<ParsedFn>) {
@@ -2374,10 +2457,121 @@ fn parse_pub_fns(content: &str, out: &mut Vec<ParsedFn>) {
     }
 }
 
+// The source with every comment and the contents of every string and char literal blanked to
+// spaces, line breaks kept, so brace counting sees only code. Lifetimes (`'a`) are left intact.
+fn mask_literals_and_comments(content: &str) -> String {
+    let chars: Vec<char> = content.chars().collect();
+    let mut out = String::with_capacity(content.len());
+    let blank = |c: char| if c == '\n' { '\n' } else { ' ' };
+    let mut i = 0;
+    while i < chars.len() {
+        let c = chars[i];
+        let next = chars.get(i + 1).copied();
+        if c == '/' && next == Some('/') {
+            while i < chars.len() && chars[i] != '\n' {
+                out.push(' ');
+                i += 1;
+            }
+            continue;
+        }
+        if c == '/' && next == Some('*') {
+            let mut depth = 0;
+            while i < chars.len() {
+                if chars[i] == '/' && chars.get(i + 1) == Some(&'*') {
+                    depth += 1;
+                    out.push_str("  ");
+                    i += 2;
+                } else if chars[i] == '*' && chars.get(i + 1) == Some(&'/') {
+                    depth -= 1;
+                    out.push_str("  ");
+                    i += 2;
+                    if depth == 0 {
+                        break;
+                    }
+                } else {
+                    out.push(blank(chars[i]));
+                    i += 1;
+                }
+            }
+            continue;
+        }
+        let raw_start = (c == 'r' || (c == 'b' && next == Some('r')))
+            && (i == 0 || !(chars[i - 1].is_alphanumeric() || chars[i - 1] == '_'));
+        if raw_start {
+            let mut j = i + if c == 'b' { 2 } else { 1 };
+            let mut hashes = 0;
+            while chars.get(j) == Some(&'#') {
+                hashes += 1;
+                j += 1;
+            }
+            if chars.get(j) == Some(&'"') {
+                for k in i..=j {
+                    out.push(chars[k]);
+                }
+                i = j + 1;
+                while i < chars.len() {
+                    if chars[i] == '"' && (0..hashes).all(|h| chars.get(i + 1 + h) == Some(&'#')) {
+                        out.push('"');
+                        for _ in 0..hashes {
+                            out.push('#');
+                        }
+                        i += 1 + hashes;
+                        break;
+                    }
+                    out.push(blank(chars[i]));
+                    i += 1;
+                }
+                continue;
+            }
+        }
+        if c == '"' {
+            out.push('"');
+            i += 1;
+            while i < chars.len() && chars[i] != '"' {
+                if chars[i] == '\\' {
+                    out.push(' ');
+                    i += 1;
+                }
+                if i < chars.len() {
+                    out.push(blank(chars[i]));
+                    i += 1;
+                }
+            }
+            if i < chars.len() {
+                out.push('"');
+                i += 1;
+            }
+            continue;
+        }
+        if c == '\'' {
+            let char_literal_end = if next == Some('\\') {
+                (i + 2..chars.len().min(i + 12)).find(|&k| chars[k] == '\'')
+            } else if chars.get(i + 2) == Some(&'\'') {
+                Some(i + 2)
+            } else {
+                None
+            };
+            if let Some(end) = char_literal_end {
+                out.push('\'');
+                for _ in i + 1..end {
+                    out.push(' ');
+                }
+                out.push('\'');
+                i = end + 1;
+                continue;
+            }
+        }
+        out.push(c);
+        i += 1;
+    }
+    return out;
+}
+
 // Top-level `pub fn` / `pub async fn` signatures, each joined onto one line up to its opening brace.
 fn collect_pub_fn_signatures(content: &str) -> Vec<String> {
     let mut out = Vec::new();
-    let lines: Vec<&str> = content.lines().collect();
+    let masked = mask_literals_and_comments(content);
+    let lines: Vec<&str> = masked.lines().collect();
     let mut i = 0;
     let mut brace_depth: i32 = 0;
     while i < lines.len() {
@@ -2611,8 +2805,7 @@ fn collect_bracket_crate_signatures(crates_dir: &Path, crate_dir: &str) -> Vec<S
         .filter_map(|e| e.ok())
         .map(|e| e.path())
         .filter(|path| {
-            path.extension().is_some_and(|ext| ext == "rs")
-                && !path.file_name().unwrap().to_string_lossy().contains("test")
+            path.extension().is_some_and(|ext| ext == "rs") && root_census::is_library_path(path)
         })
         .collect();
     files.sort();
@@ -2685,8 +2878,7 @@ fn instantiate_declared_fn(crates_dir: &Path, entry: &DeclaredInstantiation) -> 
         .filter_map(|e| e.ok())
         .map(|e| e.path())
         .filter(|path| {
-            path.extension().is_some_and(|ext| ext == "rs")
-                && !path.file_name().unwrap().to_string_lossy().contains("test")
+            path.extension().is_some_and(|ext| ext == "rs") && root_census::is_library_path(path)
         })
         .collect();
     files.sort();
@@ -2900,7 +3092,7 @@ fn collect_pub_structs(src_dir: &Path) -> Vec<ParsedStruct> {
         .filter_map(|e| e.ok())
         .filter(|e| {
             e.path().extension().is_some_and(|ext| ext == "rs")
-                && !e.file_name().to_string_lossy().contains("test")
+                && root_census::is_library_path(&e.path())
         })
         .collect();
     entries.sort_by_key(|e| e.file_name());
@@ -3162,9 +3354,9 @@ fn collect_rust_source_files(dir: &Path) -> Vec<PathBuf> {
             if path.is_dir() {
                 visit(&path, out);
             } else if path.extension().is_some_and(|extension| extension == "rs")
-                && !path
+                && path
                     .file_name()
-                    .is_some_and(|name| name.to_string_lossy().contains("test"))
+                    .is_some_and(|_| root_census::is_library_path(&path))
             {
                 out.push(path);
             }
@@ -3924,7 +4116,7 @@ fn collect_caller_producible_value_types(crates_dir: &Path) -> BTreeSet<String> 
                     .path()
                     .extension()
                     .is_some_and(|extension| extension == "rs")
-                    && !entry.file_name().to_string_lossy().contains("test")
+                    && root_census::is_library_path(&entry.path())
             })
             .collect();
         entries.sort_by_key(|entry| entry.file_name());
@@ -8043,8 +8235,15 @@ fn validate_required_vec_ref_handle_specs(specs: &BTreeSet<VecRefHandleSpec>) {
     let expected: BTreeSet<_> = [
         ("app_window", "flight_sdk::AppWindow"),
         ("audio_channel", "flight_sdk::AudioChannel"),
+        ("dyn_material3_d", "dyn flight_sdk::Material3D"),
         ("dyn_modifier", "dyn flight_sdk::Modifier"),
         ("flow_state", "flight_sdk::FlowState"),
+        (
+            "gltf_core_feature_handler",
+            "flight_sdk::GltfCoreFeatureHandler",
+        ),
+        ("gltf_extension_handler", "flight_sdk::GltfExtensionHandler"),
+        ("gui_dialog_entry", "flight_sdk::GuiDialogEntry"),
         ("texture", "flight_sdk::Texture"),
         ("texture_atlas_region", "flight_sdk::TextureAtlasRegion"),
         ("tray_icon", "flight_sdk::TrayIcon"),
@@ -8170,7 +8369,7 @@ fn qualify_opaque_type(ty: &str) -> Option<String> {
             .collect::<Option<Vec<_>>>()?;
         let expected_arguments = match outer {
             "Vec" | "Option" | "Box" | "Arc" | "Ref" | "Signal" | "SignalSlot" | "Tween"
-            | "Record" => 1,
+            | "Record" | "HashSet" => 1,
             "HashMap" => 2,
             _ => arguments.len(),
         };
@@ -8181,6 +8380,7 @@ fn qualify_opaque_type(ty: &str) -> Option<String> {
             "Vec" | "Option" | "Box" => outer.to_string(),
             "Arc" => "std::sync::Arc".to_string(),
             "HashMap" => "std::collections::HashMap".to_string(),
+            "HashSet" => "std::collections::HashSet".to_string(),
             _ => format!("{QUALIFIER}::{outer}"),
         };
         return Some(format!("{qualified_outer}<{}>", arguments.join(", ")));
@@ -8196,6 +8396,12 @@ fn qualify_opaque_type(ty: &str) -> Option<String> {
         return Some(format!("{QUALIFIER}::{module}::contract::{name}"));
     }
     if let Some((_, module)) = CONTRACT_LANE_TYPES.iter().find(|(known, _)| *known == name) {
+        return Some(format!("{QUALIFIER}::{module}::contract::{name}"));
+    }
+    if let Some(module) = CONTRACT_ONLY_TYPE_MODULES
+        .get()
+        .and_then(|modules| modules.get(name))
+    {
         return Some(format!("{QUALIFIER}::{module}::contract::{name}"));
     }
     (!name.is_empty()).then(|| format!("{QUALIFIER}::{name}"))
@@ -10848,8 +11054,8 @@ fn map_return_to_ffi(ty: &str) -> Option<(String, FfiReturn)> {
         return Some((" -> i64".to_string(), FfiReturn::OptionI32Return));
     }
 
-    // Option<u32> -> i64 with -1 sentinel
-    if ty == "Option<u32>" {
+    // Option<u32>, Option<u16> and Option<u8> -> i64 with -1 sentinel; every value fits exactly.
+    if matches!(ty, "Option<u32>" | "Option<u16>" | "Option<u8>") {
         return Some((" -> i64".to_string(), FfiReturn::OptionU32Return));
     }
 
@@ -10886,6 +11092,10 @@ fn map_return_to_ffi(ty: &str) -> Option<(String, FfiReturn)> {
             let inner = inner.trim();
             if let Some(borrowed) = inner.strip_prefix('&') {
                 let borrowed = borrowed.trim();
+                // A borrowed trait object is a fat pointer, which has no C representation.
+                if borrowed.starts_with("dyn ") {
+                    return None;
+                }
                 if !borrowed.starts_with('[') && !is_scalar(borrowed) && borrowed != "str" {
                     let qualified = qualify_opaque_type(borrowed)?;
                     return Some((
@@ -10940,9 +11150,11 @@ fn map_return_to_ffi(ty: &str) -> Option<(String, FfiReturn)> {
         }
     }
 
-    // &T reference returns -> *const T (borrowing from input data)
+    // &T and &mut T reference returns -> *const T (borrowing from input data). A `&mut T` return
+    // aliases a parameter the caller already holds mutably, so C reads it back as const.
     if let Some(inner) = ty.strip_prefix('&') {
         let inner = inner.trim();
+        let inner = inner.strip_prefix("mut ").unwrap_or(inner).trim();
         if !inner.starts_with('[') && !is_ffi_incompatible(inner) && !is_scalar(inner) {
             let qualified = qualify_type(inner);
             return Some((format!(" -> *const {qualified}"), FfiReturn::RefReturn));
@@ -10967,6 +11179,11 @@ fn map_return_to_ffi(ty: &str) -> Option<(String, FfiReturn)> {
     }
     if is_known_enum(ty) {
         return Some((" -> u32".to_string(), FfiReturn::EnumReturn));
+    }
+    // An optional the branches above do not lower has no C representation yet; boxing the
+    // `Option` itself would hand C a Rust layout under a non-optional ownership contract.
+    if ty.starts_with("Option<") {
+        return None;
     }
     let qualified = qualify_opaque_type(ty)?;
     Some((format!(" -> *mut {qualified}"), FfiReturn::BoxReturn))

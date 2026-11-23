@@ -188,12 +188,20 @@ fn carrier_graph_preserves_thin_fat_raw_and_policy_distinctions() {
             name.starts_with("flight_get_node3d_") || name.starts_with("flight_set_node3d_")
         })
         .collect();
+    // Root-census discovery adds the SDK's get_node3d_signals, get_node3d_world_alpha,
+    // get_node3d_world_bounds and set_node3d_look_at beside the 25 field accessors.
     assert_eq!(
         node3d_accessors.len(),
-        25,
+        29,
         "the canonical invalidating alpha setter and raw alpha field setter are distinct surfaces"
     );
-    assert!(node3d_accessors.iter().all(|(_, row)| {
+    // get_node3d_world_alpha borrows a Scene3DAppearanceState nothing produces yet; the root
+    // census lists it as an actionable unreachable carrier. Every other accessor is reachable.
+    assert!(node3d_accessors.iter().all(|(name, row)| {
+        if name.to_string() == "flight_get_node3d_world_alpha" {
+            return row.classification == "unreachable"
+                && row.blocker == "*mut flight_sdk::Scene3DAppearanceState";
+        }
         row.kind == "surface" && row.classification == "reachable" && row.blocker == "-"
     }));
 

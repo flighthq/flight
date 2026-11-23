@@ -11,6 +11,8 @@ mod flight_ffi_hl_shim_test;
 mod flight_ffi_host_seam_test;
 #[path = "node_handle_test.rs"]
 mod flight_ffi_node_handle_test;
+#[path = "out_alias_test.rs"]
+mod flight_ffi_out_alias_test;
 #[path = "public_perimeter_test.rs"]
 mod flight_ffi_public_perimeter_test;
 #[path = "reachability_census_test.rs"]
@@ -21,6 +23,8 @@ mod flight_ffi_reachability_unit_test;
 mod flight_ffi_registry_tokens_test;
 #[path = "render_pass_bracket_test.rs"]
 mod flight_ffi_render_pass_bracket_test;
+#[path = "root_census_test.rs"]
+mod flight_ffi_root_census_test;
 #[path = "signal_identity_test.rs"]
 mod flight_ffi_signal_identity_test;
 #[path = "signal_ref_connect_test.rs"]

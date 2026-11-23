@@ -1018,6 +1018,23 @@ const BACKEND_SCAN_TOTAL_SOURCES: usize = 232;
 const BACKEND_SCAN_GENERATED_SOURCES: usize = 167;
 const BACKEND_SCAN_SKIPPED_SOURCES: usize = 65;
 const BACKEND_SCAN_MONOMORPHIZED_EXTRAS: usize = 8;
+// The TypeScript-root census fixed scanner discovery (braced, globbed and renamed crate-root
+// re-exports, contract-only TypeScript-root functions, library files named like tests, and string
+// or char literals that hid later functions from brace counting). It adds these sources.
+const ROOT_DISCOVERY_TOTAL_SOURCES: usize = 1206;
+const ROOT_DISCOVERY_GENERATED_SOURCES: usize = 910;
+const ROOT_DISCOVERY_SKIPPED_SOURCES: usize = 296;
+const ROOT_DISCOVERY_MONOMORPHIZED_EXTRAS: usize = 142;
+#[allow(dead_code)]
+const ROOT_DISCOVERY_PUBLIC_SOURCES: usize = 935;
+#[allow(dead_code)]
+const ROOT_DISCOVERY_NON_PUBLIC_SOURCES: usize = 271;
+// Of the 25 public skips discovery adds, 8 are ownership policy and 17 are actionable lowering
+// gaps, each recorded in the root census residual.
+#[allow(dead_code)]
+const ROOT_DISCOVERY_PUBLIC_POLICY_SKIPS: usize = 8;
+#[allow(dead_code)]
+const ROOT_DISCOVERY_PUBLIC_ACTIONABLE_SKIPS: usize = 17;
 
 // The producer fixed point also finds three pre-K wrappers that consumed boxes no public wrapper
 // could produce. They are removals from the baseline generated set, not members of the original
@@ -1367,11 +1384,13 @@ fn task_k_source_decision_delta_from_pre_k_baseline_is_exact() {
         + TASK_M_GENERATED_SOURCES
         + ITEM_D_GENERATED_SOURCES
         + ITEM_C_INTERACTION_GENERATED_SOURCES
-        + BACKEND_SCAN_GENERATED_SOURCES;
+        + BACKEND_SCAN_GENERATED_SOURCES
+        + ROOT_DISCOVERY_GENERATED_SOURCES;
     let expected_skipped = PRE_K_SKIPPED_SOURCES - generated_additions + generated_removals
         - TASK_M_GENERATED_SOURCES
         + ITEM_C_INTERACTION_SKIPPED_SOURCES
-        + BACKEND_SCAN_SKIPPED_SOURCES;
+        + BACKEND_SCAN_SKIPPED_SOURCES
+        + ROOT_DISCOVERY_SKIPPED_SOURCES;
     assert_eq!(
         source_census(stats),
         (
@@ -1379,7 +1398,8 @@ fn task_k_source_decision_delta_from_pre_k_baseline_is_exact() {
                 + ITEM_D_GENERATED_SOURCES
                 + ITEM_C_INTERACTION_GENERATED_SOURCES
                 + ITEM_C_INTERACTION_SKIPPED_SOURCES
-                + BACKEND_SCAN_TOTAL_SOURCES,
+                + BACKEND_SCAN_TOTAL_SOURCES
+                + ROOT_DISCOVERY_TOTAL_SOURCES,
             expected_generated,
             expected_skipped
         ),
@@ -1388,9 +1408,12 @@ fn task_k_source_decision_delta_from_pre_k_baseline_is_exact() {
     assert_eq!(
         wrapper_census(stats),
         (
-            expected_generated + 97 + BACKEND_SCAN_MONOMORPHIZED_EXTRAS,
+            expected_generated
+                + 97
+                + BACKEND_SCAN_MONOMORPHIZED_EXTRAS
+                + ROOT_DISCOVERY_MONOMORPHIZED_EXTRAS,
             expected_generated,
-            97 + BACKEND_SCAN_MONOMORPHIZED_EXTRAS
+            97 + BACKEND_SCAN_MONOMORPHIZED_EXTRAS + ROOT_DISCOVERY_MONOMORPHIZED_EXTRAS
         ),
         "{heading}: Task K must not change the pre-K monomorphized wrapper extras"
     );

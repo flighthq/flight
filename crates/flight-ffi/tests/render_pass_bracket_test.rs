@@ -612,7 +612,7 @@ mod guard_bracket_state_wrappers {
             .collect();
         reported.sort();
         assert_eq!(guarded, reported);
-        assert_eq!(reported.len(), 163);
+        assert_eq!(reported.len(), 165);
         assert!(reported.contains(&"flight_destroy_wgpu_scene_2d_render"));
         assert!(reported.contains(&"flight_prepare_wgpu_scene_2d_render"));
     }

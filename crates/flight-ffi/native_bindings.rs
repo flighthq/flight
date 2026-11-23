@@ -859,6 +859,11 @@ fn validate_vec_ref_handles(file: &syn::File) {
             "flight_get_audio_mixer_active_channels",
         ),
         (
+            "dyn_material3_d",
+            "FfiVecRefHandle<dyn flight_sdk::Material3D>",
+            "flight_get_scene3d_materials",
+        ),
+        (
             "dyn_modifier",
             "FfiVecRefHandle<dyn flight_sdk::Modifier>",
             "flight_order_modifier_stack",
@@ -867,6 +872,21 @@ fn validate_vec_ref_handles(file: &syn::File) {
             "flow_state",
             "FfiVecRefHandle<flight_sdk::FlowState>",
             "flight_get_flow_stack_visible_states",
+        ),
+        (
+            "gltf_core_feature_handler",
+            "FfiVecRefHandle<flight_sdk::GltfCoreFeatureHandler>",
+            "flight_register_gltf_core_feature_handler",
+        ),
+        (
+            "gltf_extension_handler",
+            "FfiVecRefHandle<flight_sdk::GltfExtensionHandler>",
+            "flight_register_gltf_extension_handler",
+        ),
+        (
+            "gui_dialog_entry",
+            "FfiVecRefHandle<flight_sdk::GuiDialogEntry>",
+            "flight_get_gui_dialog_entries",
         ),
         (
             "texture",

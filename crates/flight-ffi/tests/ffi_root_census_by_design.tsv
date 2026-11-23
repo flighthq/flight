@@ -1,0 +1,13 @@
+# package	export	class: prose — every row must prove the value has no meaning across a C ABI.
+effects-canvas	*	browser_runtime: applies effects through a Canvas 2D context filter string, a browser object
+host-capacitor	*	javascript_runtime: binds Capacitor plugin APIs inside a mobile web view
+host-electron	*	javascript_runtime: binds Electron main and renderer process APIs
+host-tauri	*	javascript_runtime: binds the Tauri JavaScript bridge
+host-web	*	browser_runtime: fills host capabilities from window, document and other browser APIs
+scene2d-canvas	*	browser_runtime: draws through a Canvas 2D rendering context
+scene2d-dom	*	browser_runtime: draws by creating and styling DOM elements
+tool-capture	*	build_tooling: drives browser capture of examples during development
+tool-manifest	*	build_tooling: writes asset manifests at build time
+tool-pipeline	*	build_tooling: runs the asset pipeline at build time
+tool-registry	*	build_tooling: records development tool registrations at build time
+vite-plugin-manifest	*	build_tooling: a Vite bundler plugin

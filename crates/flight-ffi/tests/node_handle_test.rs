@@ -457,8 +457,11 @@ fn ref_only_values_borrow_ref_handles_while_dual_produced_types_stay_pinned() {
     assert_eq!(
         original,
         [
+            "AnimationClip",
             "Bitmap",
             "Path",
+            "Scene3DDocument",
+            "TextFormat",
             "TextLayoutResult",
             "Texture",
             "Texture2D",
