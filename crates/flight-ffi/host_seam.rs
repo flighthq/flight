@@ -477,9 +477,9 @@ const HEADLESS_WRAPPERS: &[HostWrapper] = &[
         name: "flight_create_bitmap_from_headless_screen_render_target",
         surface: true,
         source: r#"#[doc = "flight-ffi contract|Reads the last frame submitted to target back to an owned RGBA bitmap through the SDK's screen-target capture, blocking until it settles; a negative timeout_ms waits without limit, and one longer than 4294967295 milliseconds waits that long. Returns NULL for NULL, for a target no live headless host lent (a destroyed host's targets included), when no frame was captured, or when the read-back fails or outlives timeout_ms; flight_explain_headless_screen_render_target_read_back says which. Headless host calls may come from any thread: one registry lock serializes them, and read-back blocks only its caller. A Rust panic inside the host is contained and returns the call's failure value."]
-#[doc = "flight-ffi ownership|owned-return|flight_free_bitmap|flight_sdk::Bitmap"]
+#[doc = "flight-ffi ownership|owned-return|flight_free_bitmap_ref|flight_sdk::Ref<flight_sdk::Bitmap>"]
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn flight_create_bitmap_from_headless_screen_render_target(target: *const flight_sdk::WgpuRenderTarget, timeout_ms: i64) -> *mut flight_sdk::Bitmap {
+pub unsafe extern "C" fn flight_create_bitmap_from_headless_screen_render_target(target: *const flight_sdk::WgpuRenderTarget, timeout_ms: i64) -> *mut std::ffi::c_void {
     let Some(screen) = ffi_find_headless_screen_render_target(target) else {
         return std::ptr::null_mut();
     };
@@ -488,7 +488,7 @@ pub unsafe extern "C" fn flight_create_bitmap_from_headless_screen_render_target
         return flight_host_headless::create_bitmap_from_headless_screen_render_target(&screen, ffi_optional_timeout_ms(timeout_ms));
     }));
     return match read {
-        Ok(Some(bitmap)) => Box::into_raw(Box::new(bitmap)),
+        Ok(Some(bitmap)) => Box::into_raw(Box::new(std::sync::Arc::new(std::sync::RwLock::new(bitmap)))) as *mut std::ffi::c_void,
         _ => std::ptr::null_mut(),
     };
 }"#,

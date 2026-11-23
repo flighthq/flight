@@ -714,3 +714,68 @@ fn to_snake_case(name: &str) -> String {
     }
     return out;
 }
+
+/// Generated wrappers that name a canonical carrier type outside its one `Ref<..>` carrier, in a
+/// signature, a cast, a box or ownership metadata: each would hand C a second representation.
+pub fn find_mixed_canonical_representations(generated: &str, carriers: &[&str]) -> Vec<String> {
+    let mut found = BTreeSet::new();
+    let mut pending = false;
+    let mut current: Option<String> = None;
+    for line in generated.lines() {
+        let signature = line
+            .strip_prefix("pub unsafe extern \"C\" fn ")
+            .or_else(|| line.strip_prefix("pub extern \"C\" fn "))
+            .and_then(|rest| rest.split('(').next());
+        if let Some(name) = signature {
+            current = Some(name.to_string());
+            if pending {
+                found.insert(name.to_string());
+                pending = false;
+            }
+        }
+        if line == "}" {
+            current = None;
+        }
+        if !mentions_raw_carrier(line, carriers) {
+            continue;
+        }
+        match (&current, line.starts_with("#[doc")) {
+            (Some(name), false) => {
+                found.insert(name.clone());
+            }
+            _ => pending = true,
+        }
+    }
+    return found.into_iter().collect();
+}
+
+fn mentions_raw_carrier(line: &str, carriers: &[&str]) -> bool {
+    for carrier in carriers {
+        let needle = format!("flight_sdk::{carrier}");
+        let mut start = 0;
+        while let Some(found) = line[start..].find(&needle) {
+            let at = start + found;
+            let end = at + needle.len();
+            start = end;
+            let continues = line[end..]
+                .chars()
+                .next()
+                .is_some_and(|c| c.is_alphanumeric() || c == '_');
+            if continues {
+                continue;
+            }
+            // `Ref<T>` is the carrier itself; `FfiVecRefHandle<T>` holds `Ref<T>` elements; inside
+            // any other generic container `T` is an element type, not a C representation of it.
+            let before = line[..at].trim_end();
+            let raw = [
+                "*const", "*mut", "Box<", "&", "&mut", "Vec<", "|", "Option<",
+            ]
+            .iter()
+            .any(|prefix| before.ends_with(prefix));
+            if raw {
+                return true;
+            }
+        }
+    }
+    return false;
+}

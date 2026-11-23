@@ -5,17 +5,22 @@ use crate::*;
 mod flight_create_animation_player {
     use super::*;
 
+    // A canonical carrier by value is cloned from the caller's handle: the caller keeps its handle
+    // and the SDK owns the clone.
     #[test]
-    fn retains_then_drops_the_transferred_clips_arc_payload() {
+    fn clones_the_clip_from_the_callers_handle_and_drops_the_clone_with_the_player() {
         let track = Arc::new(RwLock::new(flight_sdk::create_animation_track()));
         let channel = flight_sdk::create_animation_channel(&track, None);
         let clip = flight_sdk::create_animation_clip(vec![channel], None, &[]);
         assert_eq!(Arc::strong_count(&track), 2);
 
-        let player = unsafe { flight_create_animation_player(Box::into_raw(Box::new(clip))) };
+        let handle = Box::into_raw(Box::new(Arc::new(RwLock::new(clip))));
+        let player = unsafe { flight_create_animation_player(handle.cast()) };
         assert!(!player.is_null());
-        assert_eq!(Arc::strong_count(&track), 2);
+        assert_eq!(Arc::strong_count(&track), 3);
 
+        unsafe { flight_free_animation_clip_ref(handle) };
+        assert_eq!(Arc::strong_count(&track), 2);
         unsafe { flight_free_animation_player(player) };
         assert_eq!(Arc::strong_count(&track), 1);
     }
@@ -77,7 +82,7 @@ mod flight_get_bitmap_pixel_channel {
             0x22
         );
         assert_eq!(channel, flight_sdk::ImageChannel::Green);
-        unsafe { flight_free_bitmap(bitmap) };
+        unsafe { flight_free_bitmap_ref(bitmap.cast()) };
     }
 }
 
@@ -148,13 +153,16 @@ mod flight_release_vector2 {
 mod flight_share_bitmap {
     use super::*;
 
+    // Bitmap is a canonical carrier: sharing reads the caller's handle and returns a second
+    // handle holding a clone; the caller's handle stays valid and is released separately.
     #[test]
-    fn consumes_the_owned_bitmap_box_into_one_shared_ref() {
+    fn shares_a_clone_and_leaves_the_callers_handle_valid() {
         let bitmap = unsafe { flight_create_bitmap(3, 1, 0xaabbccdd) };
         let shared =
             unsafe { flight_share_bitmap(bitmap) } as *mut flight_sdk::Ref<flight_sdk::Bitmap>;
         assert!(!shared.is_null());
-        // The owned box moved into the Ref: same pixels, one holder, nothing left behind to free.
+        let original = bitmap as *mut flight_sdk::Ref<flight_sdk::Bitmap>;
+        assert!(!Arc::ptr_eq(unsafe { &*shared }, unsafe { &*original }));
         let weak = Arc::downgrade(unsafe { &*shared });
         assert_eq!(weak.strong_count(), 1);
         {
@@ -162,36 +170,13 @@ mod flight_share_bitmap {
             assert_eq!((pixels.width, pixels.height), (3, 1));
             assert_eq!(&pixels.data[0..4], &[0xaa, 0xbb, 0xcc, 0xdd]);
         }
-
+        unsafe { flight_free_bitmap_ref(original) };
         unsafe { flight_free_bitmap_ref(shared) };
         assert!(weak.upgrade().is_none());
     }
 
     #[test]
-    #[ignore = "aborts by design; run only by rejects_null_as_a_precondition_violation"]
-    fn null_probe() {
-        unsafe { flight_share_bitmap(std::ptr::null_mut()) };
-    }
-
-    #[test]
-    fn rejects_null_as_a_precondition_violation() {
-        // A NULL transfer is an assert inside an `extern "C"` wrapper, which aborts the process, so
-        // the check runs this module's probe in a child process.
-        let output = std::process::Command::new(std::env::current_exe().unwrap())
-            .args([
-                "--exact",
-                "by_value_ownership_test::flight_share_bitmap::null_probe",
-                "--ignored",
-                "--test-threads=1",
-                "--nocapture",
-            ])
-            .output()
-            .unwrap();
-        let stderr = String::from_utf8_lossy(&output.stderr);
-        assert!(!output.status.success(), "a NULL transfer must not return");
-        assert!(
-            stderr.contains("bitmap must be an owned Bitmap handle"),
-            "{stderr}"
-        );
+    fn refuses_null_with_null() {
+        assert!(unsafe { flight_share_bitmap(std::ptr::null_mut()) }.is_null());
     }
 }

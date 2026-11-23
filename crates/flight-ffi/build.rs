@@ -175,6 +175,8 @@ fn collect_clone_types(crates_dir: &Path) -> BTreeSet<String> {
         .collect();
 }
 
+static CLONE_TYPES: OnceLock<BTreeSet<String>> = OnceLock::new();
+
 static TYPE_DEFINITIONS: OnceLock<BTreeMap<String, Vec<(bool, TypeDefinition)>>> = OnceLock::new();
 
 // Exact Rust types C can hold as an owned box because some generated wrapper produces that box.
@@ -1462,7 +1464,92 @@ fn is_state_seam_constructor(func: &ParsedFn) -> bool {
         && !inventory.owned_producers.contains_key(&ty);
 }
 
+// Types C holds only as one shared `Ref` handle: every producer returns that handle (an owned value
+// is wrapped into a fresh one), every borrower locks it, a by-value consumer clones the value under
+// a read lock, and its one free releases one handle. TextFormat additionally validates every handle
+// against a registry of issued tokens.
+const CANONICAL_REF_CARRIERS: &[&str] = &[
+    "AnimationClip",
+    "Bitmap",
+    "Path",
+    "Scene3DDocument",
+    "TextFormat",
+    "TextLayoutResult",
+    "Texture",
+    "Texture2D",
+    "XmlElement",
+];
+
+fn is_canonical_ref_carrier(ty: &str) -> bool {
+    return CANONICAL_REF_CARRIERS.contains(&ty.trim());
+}
+
+// `T` -> `Ref<T>` and `Option<T>` -> `Option<Ref<T>>` for a canonical carrier `T`.
+fn normalize_canonical_return(mut func: ParsedFn) -> ParsedFn {
+    let Some(ret) = func.ret.clone() else {
+        return func;
+    };
+    let resolved = strip_crate_paths(&strip_lifetimes(&resolve_type_alias(ret.trim())));
+    let (inner, optional) = match resolved
+        .strip_prefix("Option<")
+        .and_then(|rest| rest.strip_suffix('>'))
+    {
+        Some(inner) => (inner.trim().to_string(), true),
+        None => (resolved.trim().to_string(), false),
+    };
+    if !is_canonical_ref_carrier(&inner) {
+        return func;
+    }
+    func.ret = Some(if optional {
+        format!("Option<Ref<{inner}>>")
+    } else {
+        format!("Ref<{inner}>")
+    });
+    func.canonical_wrap = Some(optional);
+    return func;
+}
+
+// A slice, array or vector whose elements are canonical carriers by value or by plain reference:
+// C would hand over raw elements, so the collection has no lowering until it takes handles.
+fn canonical_element_collection(ty: &str) -> bool {
+    let inner = ty
+        .strip_prefix("&mut [")
+        .or_else(|| ty.strip_prefix("&["))
+        .or_else(|| ty.strip_prefix('['))
+        .and_then(|rest| rest.strip_suffix(']'))
+        .map(|rest| rest.split(';').next().unwrap_or(rest))
+        .or_else(|| {
+            ty.strip_prefix("Vec<")
+                .or_else(|| ty.strip_prefix("&Vec<"))
+                .or_else(|| ty.strip_prefix("&mut Vec<"))
+                .and_then(|rest| rest.strip_suffix('>'))
+        });
+    let Some(inner) = inner else {
+        return false;
+    };
+    let inner = inner.trim();
+    let inner = inner
+        .strip_prefix("&mut ")
+        .or_else(|| inner.strip_prefix('&'))
+        .unwrap_or(inner)
+        .trim();
+    return is_canonical_ref_carrier(inner);
+}
+
+fn wrap_canonical_call(func: &ParsedFn, call: String) -> String {
+    return match func.canonical_wrap {
+        None => call,
+        Some(false) => format!("std::sync::Arc::new(std::sync::RwLock::new({call}))"),
+        Some(true) => {
+            format!("({call}).map(|value| std::sync::Arc::new(std::sync::RwLock::new(value)))")
+        }
+    };
+}
+
 fn is_ref_only_borrow_type(ty: &str) -> bool {
+    if is_canonical_ref_carrier(ty) {
+        return true;
+    }
     let Some(inventory) = BORROW_PRODUCTION.get() else {
         return false;
     };
@@ -1518,6 +1605,7 @@ fn main() {
     let mut all_output = String::from("use flight_sdk;\n\n");
     all_output.push_str(generate_checked_slice_support());
     all_output.push_str(FFI_C_STR_SUPPORT);
+    all_output.push_str(FFI_REF_GROUP_SUPPORT);
     all_output.push_str(generate_node_handle_support());
     all_output.push_str(generate_shape_bounds_context_support());
     all_output.push_str(generate_owned_byte_reader_support());
@@ -1595,6 +1683,7 @@ fn main() {
     }
     let _ = KNOWN_ENUMS.set(known_enums);
     let _ = TYPE_DEFINITIONS.set(type_definitions);
+    let _ = CLONE_TYPES.set(collect_clone_types(crates_dir));
     let (root_type_names, contract_only_type_modules) = collect_type_lanes(crates_dir);
     let _ = ROOT_TYPE_NAMES.set(root_type_names);
     let _ = CONTRACT_ONLY_TYPE_MODULES.set(contract_only_type_modules);
@@ -1864,7 +1953,7 @@ fn main() {
         bracket_state_wrappers.extend(names);
     }
     let (aliased, alias_guarded) =
-        out_alias::guard_out_parameter_aliases(&all_output, &collect_clone_types(crates_dir));
+        out_alias::guard_out_parameter_aliases(&all_output, CLONE_TYPES.get().unwrap());
     all_output = aliased;
     writeln!(all_output, "// registry tokens").unwrap();
     all_output.push_str(&registry_tokens::generate_registry_token_support());
@@ -2137,6 +2226,12 @@ fn main() {
     let caller_producible = collect_caller_producible_value_types(crates_dir);
     let reachability_aliases = collect_reachability_aliases();
     fs::write(out_dir.join("ffi_generated.rs"), &all_output).unwrap();
+    let mixed =
+        root_census::find_mixed_canonical_representations(&all_output, CANONICAL_REF_CARRIERS);
+    assert!(
+        mixed.is_empty(),
+        "canonical carriers must cross C only as their one Ref handle; these wrappers mix representations: {mixed:?}"
+    );
     native_bindings::emit(
         &all_output,
         &out_dir,
@@ -2270,6 +2365,9 @@ struct ParsedFn {
     // A non-public zero-argument `create_*` that is the only producer of a carrier public
     // functions borrow: the explicit-state seam Rust adds where TypeScript keeps module state.
     state_seam: bool,
+    // An owned canonical-carrier return rewritten to its `Ref` (`Some(optional)`): the call's value
+    // is wrapped into a fresh shared handle, so C only ever holds the one carrier.
+    canonical_wrap: Option<bool>,
 }
 
 #[derive(Default)]
@@ -3069,7 +3167,9 @@ fn parse_fn_signature(sig: &str) -> Option<ParsedFn> {
         sdk_contract_module: None,
         lacks_public_export: false,
         state_seam: false,
+        canonical_wrap: None,
     })
+    .map(normalize_canonical_return)
 }
 
 fn find_matching_paren(s: &str, open: usize) -> Option<usize> {
@@ -5098,12 +5198,16 @@ pub unsafe extern "C" fn flight_collect_scene2d_requirements(
             assert_eq!(func.params[1].ty, "&mut dyn FnMut(PathSegment)");
             return Some((
                 String::from(
-                    r#"#[doc = "flight-ffi contract|Segment kind: 0 move, 1 line, 2 quadratic, 3 cubic, 4 close; unused coordinates are zero. Callback and context are valid only until this function returns and must not be retained."]
+                    r#"#[doc = "flight-ffi contract|Segment kind: 0 move, 1 line, 2 quadratic, 3 cubic, 4 close; unused coordinates are zero. The path is visited as it was when the call began. Callback and context are valid only until this function returns and must not be retained."]
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn flight_for_each_path_segment(path: *const flight_sdk::Path, visitor_fn: extern "C" fn(*mut std::ffi::c_void, u32, f64, f64, f64, f64, f64, f64) -> bool, visitor_ctx: *mut std::ffi::c_void) -> bool {
+pub unsafe extern "C" fn flight_for_each_path_segment(path: *const std::ffi::c_void, visitor_fn: Option<extern "C" fn(*mut std::ffi::c_void, u32, f64, f64, f64, f64, f64, f64) -> bool>, visitor_ctx: *mut std::ffi::c_void) -> bool {
     if path.is_null() { return false; }
+    let Some(visitor_fn) = visitor_fn else { return false; };
     std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
-        flight_sdk::for_each_path_segment(unsafe { &*path }, &mut |segment| {
+        // The visitor runs on a snapshot, so no lock is held while C code runs and the callback
+        // may use the same path handle.
+        let snapshot = Clone::clone(&*unsafe { &*(path as *const flight_sdk::Ref<flight_sdk::Path>) }.read().unwrap_or_else(std::sync::PoisonError::into_inner));
+        flight_sdk::for_each_path_segment(&snapshot, &mut |segment| {
             let (kind, a, b, c, d, e, f) = match segment {
                 flight_sdk::PathSegment::MoveTo { x, y } => (0, x, y, 0.0, 0.0, 0.0, 0.0),
                 flight_sdk::PathSegment::LineTo { x, y } => (1, x, y, 0.0, 0.0, 0.0, 0.0),
@@ -5161,14 +5265,27 @@ fn generate_ffi_wrapper(func: &ParsedFn) -> Option<(String, Option<String>)> {
         .params
         .iter()
         .find(|param| is_shape_bounds_context(&param.ty))
-        .map(|param| param.name.trim_start_matches('_').to_string());
+        .map(|param| get_binding_name(&param.name).to_string());
 
     // C pointers that lower a Rust `Option`: NULL is a valid argument, so reachability must not
     // treat them as required carriers.
     let mut nullable_params = Vec::new();
     let alias_borrow_pairs = collect_alias_borrow_pairs(func);
+    let alias_borrow_groups = collect_alias_borrow_groups(func);
     for (index, param) in func.params.iter().enumerate() {
         let resolved_ty = strip_crate_paths(&strip_lifetimes(&resolve_type_alias(param.ty.trim())));
+        if let Some(group) = alias_borrow_groups
+            .iter()
+            .find(|group| group.iter().any(|member| member.index == index))
+        {
+            let member = group.iter().find(|member| member.index == index).unwrap();
+            ffi_params.push(format!("{}: {}", param.name, member.pointer));
+            if group[0].index == index {
+                guard_bindings.extend(alias_borrow_group_bindings(group));
+            }
+            call_args.push(alias_borrow_group_call_expr(group, index));
+            continue;
+        }
         if let Some(pair) = alias_borrow_pairs
             .iter()
             .find(|pair| pair.first.index == index || pair.second.index == index)
@@ -5195,7 +5312,7 @@ fn generate_ffi_wrapper(func: &ParsedFn) -> Option<(String, Option<String>)> {
         guard_bindings.extend(mapped.bindings);
         call_args.push(mapped.call_expr);
         if resolved_ty == "&mut ByteReader<>" || resolved_ty == "&mut ByteReader" {
-            let clean = param.name.trim_start_matches('_');
+            let clean = get_binding_name(&param.name);
             reader_writebacks.push(format!(
                 "        ffi_owned_{clean}.offset = sdk_{clean}.offset;"
             ));
@@ -5209,7 +5326,7 @@ fn generate_ffi_wrapper(func: &ParsedFn) -> Option<(String, Option<String>)> {
             if let Some((_, ref_alias)) = DYN_OPAQUE_TRAITS.iter().find(|(n, _)| *n == trait_name) {
                 let qualified_ref = qualify_type(ref_alias);
                 let name = &param.name;
-                let clean = name.trim_start_matches('_');
+                let clean = get_binding_name(name);
                 if ty.starts_with("&mut ") {
                     guard_bindings.push(format!(
                         "    let arc_{clean} = unsafe {{ &*({name} as *const {qualified_ref}) }};\n    \
@@ -5286,10 +5403,13 @@ fn generate_ffi_wrapper(func: &ParsedFn) -> Option<(String, Option<String>)> {
     }
 
     let ffi_name = format!("flight_{}", func.name);
-    let mut call = format!(
-        "{function}({args})",
-        function = sdk_function_path(func),
-        args = call_args.join(", ")
+    let mut call = wrap_canonical_call(
+        func,
+        format!(
+            "{function}({args})",
+            function = sdk_function_path(func),
+            args = call_args.join(", ")
+        ),
     );
     if !reader_writebacks.is_empty() {
         call = format!(
@@ -5495,7 +5615,7 @@ fn generate_mono_wrappers(func: &ParsedFn) -> Vec<(String, String, Option<String
                 let trait_name = mono_dyn_trait(&ty).unwrap();
                 let name = &param.name;
                 if is_ref_only_borrow_type(concrete_ty) {
-                    let clean = name.trim_start_matches('_');
+                    let clean = get_binding_name(name);
                     let mutable = ty.starts_with("&mut ") || ty.starts_with("Option<&mut ");
                     let optional = ty.starts_with("Option<");
                     ffi_params.push(format!(
@@ -5578,10 +5698,13 @@ fn generate_mono_wrappers(func: &ParsedFn) -> Vec<(String, String, Option<String
         append_tuple_out_params(&mut ffi_params, &call_wrap);
         append_borrowed_slice_out_param(&mut ffi_params, &call_wrap);
 
-        let call = format!(
-            "{function}({args})",
-            function = sdk_function_path(func),
-            args = call_args.join(", ")
+        let call = wrap_canonical_call(
+            func,
+            format!(
+                "{function}({args})",
+                function = sdk_function_path(func),
+                args = call_args.join(", ")
+            ),
         );
 
         let preamble = if bindings.is_empty() {
@@ -6037,13 +6160,20 @@ fn generate_return_body(call_wrap: &FfiReturn, call: &str, preamble: &str) -> St
                  return Box::into_raw(Box::new(lists)) as *mut std::ffi::c_void;"
         ),
         // Null `out_values` drops the values; otherwise every slot receives an owned handle.
-        FfiReturn::ArrayOutReturn(_) => format!(
-            "{preamble}    let values = {call};\n    \
-                 if out_values.is_null() {{ return; }}\n    \
-                 for (index, value) in values.into_iter().enumerate() {{\n        \
-                     unsafe {{ *out_values.add(index) = Box::into_raw(Box::new(value)) as *mut std::ffi::c_void; }}\n    \
-                 }}"
-        ),
+        FfiReturn::ArrayOutReturn(element) => {
+            let value = if element.starts_with("flight_sdk::Ref<") {
+                "std::sync::Arc::new(std::sync::RwLock::new(value))"
+            } else {
+                "value"
+            };
+            format!(
+                "{preamble}    let values = {call};\n    \
+                     if out_values.is_null() {{ return; }}\n    \
+                     for (index, value) in values.into_iter().enumerate() {{\n        \
+                         unsafe {{ *out_values.add(index) = Box::into_raw(Box::new({value})) as *mut std::ffi::c_void; }}\n    \
+                     }}"
+            )
+        }
         FfiReturn::OperationOutcomeReturn => format!(
             "{preamble}    match {call} {{\n        \
                  flight_sdk::AccessibilityOperationOutcome::Ok(_) => true,\n        \
@@ -7637,6 +7767,10 @@ fn has_owned_producer(qualified: &str) -> bool {
 fn owned_consumed_type(ty: &str) -> Option<String> {
     let ty = strip_crate_paths(&strip_lifetimes(&resolve_type_alias(ty.trim())));
     let ty = ty.as_str();
+    // A canonical carrier by value clones from the caller's shared handle; nothing is consumed.
+    if is_canonical_ref_carrier(ty) {
+        return None;
+    }
 
     if let Some(parsed) = parse_closure_param(ty) {
         let inner = parsed
@@ -7931,6 +8065,13 @@ fn map_generic_carrier_return(ty: &str) -> Option<Option<(String, FfiReturn)>> {
         if is_scalar(element) {
             return None;
         }
+        // Each canonical element is wrapped into its own fresh shared handle.
+        if is_canonical_ref_carrier(element) {
+            return Some(Some((
+                String::new(),
+                FfiReturn::ArrayOutReturn(format!("flight_sdk::Ref<{}>", qualify_type(element))),
+            )));
+        }
         return Some(is_plain_struct_type(element).then(|| {
             (
                 String::new(),
@@ -8000,7 +8141,7 @@ fn map_generic_carrier_param(name: &str, ty: &str) -> Option<Option<MappedParam>
         .iter()
         .find(|(param_ty, ..)| *param_ty == ty)
     {
-        let clean = name.trim_start_matches('_');
+        let clean = get_binding_name(name);
         return Some(Some(MappedParam {
             ffi_params: vec![(name.to_string(), format!("*mut {handle}"))],
             bindings: vec![format!(
@@ -8745,13 +8886,7 @@ fn collect_alias_borrow_pairs(func: &ParsedFn) -> Vec<AliasBorrowPair> {
     }
 
     let mut pairs = Vec::new();
-    for group in groups.into_values().filter(|group| group.len() >= 2) {
-        assert_eq!(
-            group.len(),
-            2,
-            "{} has more than two aliasable borrows of one allocation type; extend the grouped lowering before emitting it",
-            func.name
-        );
+    for group in groups.into_values().filter(|group| group.len() == 2) {
         pairs.push(AliasBorrowPair {
             first: group[0].clone(),
             second: group[1].clone(),
@@ -8760,8 +8895,133 @@ fn collect_alias_borrow_pairs(func: &ParsedFn) -> Vec<AliasBorrowPair> {
     return pairs;
 }
 
+// Three or more aliasable borrows of one Ref-only allocation type: each distinct allocation is
+// locked once, in address order, through one lock group.
+fn collect_alias_borrow_groups(func: &ParsedFn) -> Vec<Vec<AliasBorrowParam>> {
+    let mut groups: BTreeMap<String, Vec<AliasBorrowParam>> = BTreeMap::new();
+    for (index, param) in func.params.iter().enumerate() {
+        if let Some(param) = alias_borrow_param(index, param) {
+            groups.entry(param.group.clone()).or_default().push(param);
+        }
+    }
+    let groups: Vec<_> = groups
+        .into_values()
+        .filter(|group| group.len() >= 3)
+        .collect();
+    for group in &groups {
+        assert!(
+            group
+                .iter()
+                .all(|param| matches!(param.source, AliasBorrowSource::RefOnly(_))),
+            "{} has three or more aliasable node borrows; extend the grouped lowering before emitting it",
+            func.name
+        );
+    }
+    return groups;
+}
+
+fn alias_borrow_group_bindings(group: &[AliasBorrowParam]) -> Vec<String> {
+    let lead = get_binding_name(&group[0].name);
+    let mut bindings = Vec::new();
+    for param in group {
+        bindings.extend(alias_borrow_arc_binding(param));
+    }
+    let arcs: Vec<String> = group
+        .iter()
+        .map(|param| format!("arc_{}", get_binding_name(&param.name)))
+        .collect();
+    let mutable: Vec<&str> = group
+        .iter()
+        .map(|param| if param.mutable { "true" } else { "false" })
+        .collect();
+    bindings.push(format!(
+        "    let Some(mut ffi_group_{lead}) = ffi_lock_ref_group(&[{}], &[{}]) else {{ {INVALID_NODE_RETURN} }};",
+        arcs.join(", "),
+        mutable.join(", ")
+    ));
+    for (member, param) in group.iter().enumerate() {
+        if param.mutable {
+            bindings.push(format!(
+                "    let mut guard_{} = ffi_group_{lead}.take_write({member});",
+                get_binding_name(&param.name)
+            ));
+        }
+    }
+    return bindings;
+}
+
+fn alias_borrow_group_call_expr(group: &[AliasBorrowParam], index: usize) -> String {
+    let lead = get_binding_name(&group[0].name);
+    let member = group.iter().position(|param| param.index == index).unwrap();
+    let param = &group[member];
+    if param.mutable {
+        return format!("&mut guard_{}", get_binding_name(&param.name));
+    }
+    return format!("ffi_group_{lead}.read({member})");
+}
+
+const FFI_REF_GROUP_SUPPORT: &str = r#"// One lock per distinct allocation of a group of borrowed Ref handles of one type.
+enum FfiRefGuard<'a, T> {
+    Read(std::sync::RwLockReadGuard<'a, T>),
+    Write(std::sync::RwLockWriteGuard<'a, T>),
+}
+struct FfiRefGroup<'a, T> {
+    guards: Vec<Option<FfiRefGuard<'a, T>>>,
+    slots: Vec<usize>,
+}
+// Locks each distinct allocation once, in address order, so two calls never wait on each other in
+// opposite orders. A mutable member that shares its allocation with any other member is refused:
+// one object cannot be written and read through two references at once.
+fn ffi_lock_ref_group<'a, T>(arcs: &[&'a std::sync::Arc<std::sync::RwLock<T>>], mutable: &[bool]) -> Option<FfiRefGroup<'a, T>> {
+    let mut distinct: Vec<usize> = Vec::new();
+    let mut slots = Vec::with_capacity(arcs.len());
+    for (member, arc) in arcs.iter().enumerate() {
+        match distinct.iter().position(|first| std::sync::Arc::ptr_eq(arcs[*first], arc)) {
+            Some(slot) => {
+                if mutable[member] || mutable[distinct[slot]] {
+                    return None;
+                }
+                slots.push(slot);
+            }
+            None => {
+                slots.push(distinct.len());
+                distinct.push(member);
+            }
+        }
+    }
+    let mut order: Vec<usize> = (0..distinct.len()).collect();
+    order.sort_by_key(|slot| std::sync::Arc::as_ptr(arcs[distinct[*slot]]) as *const () as usize);
+    let mut guards: Vec<Option<FfiRefGuard<'a, T>>> = (0..distinct.len()).map(|_| None).collect();
+    for slot in order {
+        let arc = arcs[distinct[slot]];
+        guards[slot] = Some(if mutable[distinct[slot]] {
+            FfiRefGuard::Write(arc.write().unwrap_or_else(std::sync::PoisonError::into_inner))
+        } else {
+            FfiRefGuard::Read(arc.read().unwrap_or_else(std::sync::PoisonError::into_inner))
+        });
+    }
+    return Some(FfiRefGroup { guards, slots });
+}
+impl<'a, T> FfiRefGroup<'a, T> {
+    // Moves a mutable member's write guard out of the group; each is taken once.
+    fn take_write(&mut self, member: usize) -> std::sync::RwLockWriteGuard<'a, T> {
+        match self.guards[self.slots[member]].take() {
+            Some(FfiRefGuard::Write(guard)) => guard,
+            _ => unreachable!("a mutable member owns its own write guard"),
+        }
+    }
+    fn read(&self, member: usize) -> &T {
+        match &self.guards[self.slots[member]] {
+            Some(FfiRefGuard::Read(guard)) => guard,
+            _ => unreachable!("a shared member reads through a read guard"),
+        }
+    }
+}
+
+"#;
+
 fn alias_borrow_arc_binding(param: &AliasBorrowParam) -> Vec<String> {
-    let clean = param.name.trim_start_matches('_');
+    let clean = get_binding_name(&param.name);
     match &param.source {
         AliasBorrowSource::RefOnly(qualified) => vec![
             format!(
@@ -8803,8 +9063,8 @@ fn alias_borrow_arc_binding(param: &AliasBorrowParam) -> Vec<String> {
 }
 
 fn alias_borrow_pair_bindings(pair: &AliasBorrowPair) -> Vec<String> {
-    let first = pair.first.name.trim_start_matches('_');
-    let second = pair.second.name.trim_start_matches('_');
+    let first = get_binding_name(&pair.first.name);
+    let second = get_binding_name(&pair.second.name);
     let mut bindings = alias_borrow_arc_binding(&pair.first);
     bindings.extend(alias_borrow_arc_binding(&pair.second));
     let aliases = format!("std::sync::Arc::ptr_eq(arc_{first}, arc_{second})");
@@ -8849,25 +9109,25 @@ fn alias_borrow_guard_expr(param: &AliasBorrowParam, clean: &str) -> String {
 
 fn alias_borrow_call_expr(pair: &AliasBorrowPair, index: usize) -> String {
     if index == pair.first.index {
-        return alias_borrow_guard_expr(&pair.first, pair.first.name.trim_start_matches('_'));
+        return alias_borrow_guard_expr(&pair.first, &get_binding_name(&pair.first.name));
     }
     assert_eq!(index, pair.second.index);
     if pair.second.mutable {
-        return alias_borrow_guard_expr(&pair.second, pair.second.name.trim_start_matches('_'));
+        return alias_borrow_guard_expr(&pair.second, &get_binding_name(&pair.second.name));
     }
     if !pair.first.mutable {
-        let first = pair.first.name.trim_start_matches('_');
-        let second = pair.second.name.trim_start_matches('_');
-        let fallback = alias_borrow_guard_expr(&pair.first, first);
+        let first = get_binding_name(&pair.first.name);
+        let second = get_binding_name(&pair.second.name);
+        let fallback = alias_borrow_guard_expr(&pair.first, &first);
         return format!("guard_{second}.as_deref().unwrap_or({fallback})");
     }
-    return alias_borrow_guard_expr(&pair.second, pair.second.name.trim_start_matches('_'));
+    return alias_borrow_guard_expr(&pair.second, &get_binding_name(&pair.second.name));
 }
 
 // A required C string: the wrapper returns its failure sentinel for NULL or invalid UTF-8 before
 // any SDK call, so no text is ever silently replaced.
 fn required_text_param(name: &str, owned: bool) -> MappedParam {
-    let clean = name.trim_start_matches('_');
+    let clean = get_binding_name(name);
     return MappedParam {
         ffi_params: vec![(name.to_string(), "*const std::ffi::c_char".to_string())],
         bindings: vec![format!(
@@ -9222,7 +9482,7 @@ const FFI_C_STR_SUPPORT: &str = "// A C string parameter as text: None for NULL 
 
 fn node_param_selection(name: &str, inner: &str) -> Option<(NodeReturnSpec, Vec<String>, String)> {
     let spec = node_return_spec(inner)?;
-    let clean = name.trim_start_matches('_');
+    let clean = get_binding_name(name);
     let handle = format!("ffi_node_{clean}");
     let value = format!("node_{clean}");
     let selected = if let Some(concrete) = &spec.concrete {
@@ -9244,7 +9504,7 @@ fn node_param_selection(name: &str, inner: &str) -> Option<(NodeReturnSpec, Vec<
 }
 
 fn map_node_param(name: &str, ty: &str) -> Option<Option<MappedParam>> {
-    let clean = name.trim_start_matches('_');
+    let clean = get_binding_name(name);
 
     if let Some(inner) = ty
         .strip_prefix("&mut Ref<")
@@ -9547,7 +9807,7 @@ fn map_node_param(name: &str, ty: &str) -> Option<Option<MappedParam>> {
 }
 
 fn map_ref_only_borrow(name: &str, ty: &str) -> Option<MappedParam> {
-    let clean = name.trim_start_matches('_');
+    let clean = get_binding_name(name);
     let (mutable, inner) = if let Some(inner) = ty.strip_prefix("&mut ") {
         (true, inner.trim())
     } else if let Some(inner) = ty.strip_prefix('&') {
@@ -9597,6 +9857,52 @@ fn map_param_to_ffi(name: &str, ty: &str) -> Option<MappedParam> {
     if let Some(mapped) = map_node_param(name, ty) {
         return mapped;
     }
+    if let Some(inner) = ty
+        .strip_prefix("Option<")
+        .and_then(|rest| rest.strip_suffix('>'))
+    {
+        let (mutable, borrowed) = match inner.trim().strip_prefix("&mut ") {
+            Some(rest) => (true, rest.trim()),
+            None => (false, inner.trim().strip_prefix('&').unwrap_or("").trim()),
+        };
+        if is_canonical_ref_carrier(borrowed) {
+            let clean = get_binding_name(name);
+            let qualified = qualify_type(borrowed);
+            let lock = if mutable { "write" } else { "read" };
+            let binding = if mutable { "mut " } else { "" };
+            return Some(MappedParam {
+                ffi_params: vec![(
+                    name.to_string(),
+                    format!(
+                        "*{} std::ffi::c_void",
+                        if mutable { "mut" } else { "const" }
+                    ),
+                )],
+                bindings: vec![format!(
+                    "    let {binding}guard_{clean} = if {name}.is_null() {{ None }} else {{ Some(unsafe {{ &*({name} as *const flight_sdk::Ref<{qualified}>) }}.{lock}().unwrap_or_else(std::sync::PoisonError::into_inner)) }};"
+                )],
+                call_expr: if mutable {
+                    format!("guard_{clean}.as_deref_mut()")
+                } else {
+                    format!("guard_{clean}.as_deref()")
+                },
+            });
+        }
+    }
+    if canonical_element_collection(ty) {
+        return None;
+    }
+    if is_canonical_ref_carrier(ty) {
+        // A by-value consumer gets a clone of the value; a type that cannot be cloned has no
+        // by-value lowering from a shared handle.
+        if !CLONE_TYPES.get().is_some_and(|types| types.contains(ty)) {
+            return None;
+        }
+        let clean = get_binding_name(name);
+        let mut mapped = map_ref_only_borrow(name, &format!("&{ty}"))?;
+        mapped.call_expr = format!("Clone::clone(&*guard_{clean})");
+        return Some(mapped);
+    }
     if let Some(mapped) = map_ref_only_borrow(name, ty) {
         return Some(mapped);
     }
@@ -9607,7 +9913,7 @@ fn map_param_to_ffi(name: &str, ty: &str) -> Option<MappedParam> {
         if let Some(inner) = ty.strip_prefix(prefix)
             && REF_LOCKED_PARAM_TYPES.contains(&inner)
         {
-            let clean = name.trim_start_matches('_');
+            let clean = get_binding_name(name);
             let qualified = qualify_type(inner);
             let lock = if write { "write" } else { "read" };
             let borrow = if write { "&mut " } else { "&" };
@@ -9625,7 +9931,7 @@ fn map_param_to_ffi(name: &str, ty: &str) -> Option<MappedParam> {
     // The handle owns bytes and cursor, but never an SDK ByteReader. Borrow its bytes into a
     // transient view for exactly one call; mutable wrappers write the resulting cursor back.
     if ty == "&ByteReader<>" || ty == "&ByteReader" {
-        let clean = name.trim_start_matches('_');
+        let clean = get_binding_name(name);
         return Some(MappedParam {
             ffi_params: vec![(name.to_string(), "*const FfiOwnedByteReader".to_string())],
             bindings: vec![
@@ -9639,7 +9945,7 @@ fn map_param_to_ffi(name: &str, ty: &str) -> Option<MappedParam> {
         });
     }
     if ty == "&mut ByteReader<>" || ty == "&mut ByteReader" {
-        let clean = name.trim_start_matches('_');
+        let clean = get_binding_name(name);
         return Some(MappedParam {
             ffi_params: vec![(name.to_string(), "*mut FfiOwnedByteReader".to_string())],
             bindings: vec![
@@ -9747,7 +10053,7 @@ fn map_param_to_ffi(name: &str, ty: &str) -> Option<MappedParam> {
     // ShapeBoundsContext is an open, stateful public trait. Its C carrier is a caller-owned context
     // pointer plus a complete typed vtable; validation happens before any callback can mutate it.
     if ty == "&mut dyn ShapeBoundsContext" {
-        let clean = name.trim_start_matches('_');
+        let clean = get_binding_name(name);
         let context_ptr = format!("{name}_ptr");
         let vtable = format!("{name}_vtable");
         return Some(MappedParam {
@@ -9800,7 +10106,7 @@ fn map_param_to_ffi(name: &str, ty: &str) -> Option<MappedParam> {
     // Option<&str> / Option<String> -> nullable *const c_char: NULL is None; invalid UTF-8 is
     // refused with the wrapper's sentinel.
     if ty == "Option<&str>" || ty == "Option<String>" {
-        let clean = name.trim_start_matches('_');
+        let clean = get_binding_name(name);
         return Some(MappedParam {
             ffi_params: vec![(name.to_string(), "*const std::ffi::c_char".to_string())],
             bindings: vec![format!(
@@ -10220,7 +10526,7 @@ fn map_param_to_ffi(name: &str, ty: &str) -> Option<MappedParam> {
     // them in generate_ffi_wrapper's body generation.
     if let Some(trait_name) = extract_dyn_trait(ty) {
         if DYN_OPAQUE_TRAITS.iter().any(|(n, _)| *n == trait_name) {
-            let clean = name.trim_start_matches('_');
+            let clean = get_binding_name(name);
             return Some(MappedParam {
                 ffi_params: vec![(
                     name.to_string(),
@@ -11167,8 +11473,9 @@ fn map_return_to_ffi(ty: &str) -> Option<(String, FfiReturn)> {
             let inner = inner.trim();
             if let Some(borrowed) = inner.strip_prefix('&') {
                 let borrowed = borrowed.trim();
-                // A borrowed trait object is a fat pointer, which has no C representation.
-                if borrowed.starts_with("dyn ") {
+                // A borrowed trait object is a fat pointer, which has no C representation; a
+                // canonical carrier has no borrowed form.
+                if borrowed.starts_with("dyn ") || is_canonical_ref_carrier(borrowed) {
                     return None;
                 }
                 if !borrowed.starts_with('[') && !is_scalar(borrowed) && borrowed != "str" {
@@ -11226,10 +11533,14 @@ fn map_return_to_ffi(ty: &str) -> Option<(String, FfiReturn)> {
     }
 
     // &T and &mut T reference returns -> *const T (borrowing from input data). A `&mut T` return
-    // aliases a parameter the caller already holds mutably, so C reads it back as const.
+    // aliases a parameter the caller already holds mutably, so C reads it back as const. A
+    // canonical carrier has no borrowed form: C holds it only as its shared handle.
     if let Some(inner) = ty.strip_prefix('&') {
         let inner = inner.trim();
         let inner = inner.strip_prefix("mut ").unwrap_or(inner).trim();
+        if is_canonical_ref_carrier(inner) {
+            return None;
+        }
         if !inner.starts_with('[') && !is_ffi_incompatible(inner) && !is_scalar(inner) {
             let qualified = qualify_type(inner);
             return Some((format!(" -> *const {qualified}"), FfiReturn::RefReturn));

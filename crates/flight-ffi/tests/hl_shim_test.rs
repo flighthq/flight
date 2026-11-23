@@ -293,18 +293,18 @@ fn ownership_contracts_name_real_frees_and_borrow_anchors() {
         "/* Caller owns the return value; call flight_free_command_history_ref when done. */",
         "void * flight_create_command_history(void);",
         "void flight_free_command_history_ref(void * arg0);",
-        "void flight_free_bitmap(void * arg0);",
         "void flight_free_bitmap_ref(void * arg0);",
         "/* Borrowed return; do not free; valid while the machine input handle remains alive. */",
     ] {
         assert_line(&header, line);
     }
-    for line in [
-        "pub unsafe extern \"C\" fn flight_free_bitmap(ptr: *mut flight_sdk::Bitmap) {",
+    // Bitmap is a canonical carrier: its one shared-handle free, and no raw-value free.
+    assert_line(
+        &wrappers,
         "pub unsafe extern \"C\" fn flight_free_bitmap_ref(ptr: *mut flight_sdk::Ref<flight_sdk::Bitmap>) {",
-    ] {
-        assert_line(&wrappers, line);
-    }
+    );
+    assert!(!wrappers.contains("fn flight_free_bitmap(ptr"));
+    assert!(!header.contains("void flight_free_bitmap(void * arg0);"));
     for line in [
         "DEFINE_PRIM(_BYTES, flight_create_command_history, _NO_ARG);",
         "DEFINE_PRIM(_VOID, flight_free_command_history_ref, _BYTES);",

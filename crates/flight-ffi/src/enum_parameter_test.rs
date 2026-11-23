@@ -11,8 +11,9 @@ mod flight_create_path {
             (1, flight_sdk::PathWinding::EvenOdd),
         ] {
             let path = unsafe { flight_create_path(winding) };
-            assert_eq!(unsafe { &*path }.winding, expected);
-            unsafe { flight_free_path(path) };
+            let shared = unsafe { &*(path as *const flight_sdk::Ref<flight_sdk::Path>) };
+            assert_eq!(shared.read().unwrap().winding, expected);
+            unsafe { flight_free_path_ref(path.cast()) };
         }
     }
 

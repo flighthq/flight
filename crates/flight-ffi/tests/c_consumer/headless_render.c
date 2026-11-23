@@ -96,7 +96,7 @@ int main(int argc, char **argv) {
     }
   }
   CHECK(fclose(out) == 0);
-  flight_free_bitmap(bitmap);
+  flight_free_bitmap_ref(bitmap);
 
   /* Destroy the host while the render state still holds its device: the lent target is freed
    * with the host and refused afterwards, and the state stays a valid value to release. */

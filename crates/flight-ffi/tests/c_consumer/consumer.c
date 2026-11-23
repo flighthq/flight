@@ -252,7 +252,7 @@ static void check_slice_carriers(void) {
   expect(flight_flatten_path_result_get(flattened, 0) != NULL, "a non-empty contour has a base pointer");
   expect(flight_flatten_path_result_get(flattened, 1) == NULL, "an out-of-range contour reads NULL");
   flight_flatten_path_result_free(flattened);
-  flight_free_path(path);
+  flight_free_path_ref(path);
 
   /* Fixed-array elements pass as a pointer array; the fixed-array result has a typed free. */
   float identity[20] = {0};
@@ -268,10 +268,10 @@ static void check_slice_carriers(void) {
   flight_split_bitmap_channels(bitmap, channels);
   for (int index = 0; index < 4; index++) {
     expect(channels[index] != NULL, "split_bitmap_channels writes every channel");
-    flight_free_bitmap(channels[index]);
+    flight_free_bitmap_ref(channels[index]);
   }
   flight_split_bitmap_channels(bitmap, NULL);
-  flight_free_bitmap(bitmap);
+  flight_free_bitmap_ref(bitmap);
 }
 
 static void check_outcome_results(void) {
@@ -439,7 +439,7 @@ static void check_enum_parameters(void) {
   for (int index = 0; index < 3; index++) {
     void *path = flight_create_path(windings[index]);
     expect(path != NULL, "create_path accepts -1 and each PathWinding discriminant");
-    flight_free_path(path);
+    flight_free_path_ref(path);
   }
 }
 static void check_optional_texture_variants(void) {
@@ -453,7 +453,7 @@ static void check_optional_texture_variants(void) {
   void *source = flight_get_texture_source__texture(texture);
   expect(source == NULL, "set_texture_source with a NULL source leaves no source");
   flight_free_texture_source_ref(source);
-  flight_free_texture(texture);
+  flight_free_texture_ref(texture);
 }
 
 static void check_optional_tuples(void) {
@@ -468,7 +468,7 @@ static void check_optional_tuples(void) {
   expect(flight_get_path_last_point(path, &x, &y), "a drawn path has a last point");
   expect(x == 3.0 && y == 4.0, "get_path_last_point writes both outputs");
   expect(flight_get_path_last_point(path, NULL, NULL), "NULL outputs are skipped");
-  flight_free_path(path);
+  flight_free_path_ref(path);
 }
 
 static void check_unit_signals(void) {

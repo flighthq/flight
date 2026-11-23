@@ -39,10 +39,16 @@ mod flight_create_bitmap_from_headless_screen_render_target {
             unsafe { flight_create_bitmap_from_headless_screen_render_target(target, 10_000) };
         assert!(!bitmap.is_null());
         assert_eq!(
-            count_mismatched_pixels(unsafe { &*bitmap }, &create_known_scene_pixels(), 0),
+            count_mismatched_pixels(
+                &unsafe { &*(bitmap as *const flight_sdk::Ref<flight_sdk::Bitmap>) }
+                    .read()
+                    .unwrap(),
+                &create_known_scene_pixels(),
+                0
+            ),
             0
         );
-        unsafe { flight_free_bitmap(bitmap) };
+        unsafe { flight_free_bitmap_ref(bitmap.cast()) };
         unsafe { flight_destroy_headless_host(host) };
     }
 
@@ -964,7 +970,7 @@ mod lent_carriers {
                                         100,
                                     )
                                 };
-                                unsafe { flight_free_bitmap(bitmap) };
+                                unsafe { flight_free_bitmap_ref(bitmap.cast()) };
                             }
                         }
                     })

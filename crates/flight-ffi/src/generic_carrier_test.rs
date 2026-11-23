@@ -1,6 +1,6 @@
 use std::collections::HashMap;
 use std::ffi::{CStr, CString};
-use std::sync::Arc;
+use std::sync::{Arc, RwLock};
 
 use crate::*;
 
@@ -434,7 +434,13 @@ mod flight_flatten_path {
     fn reads_each_flattened_contour() {
         let mut path = flight_sdk::create_path(None);
         flight_sdk::append_path_rectangle(&mut path, 0.0, 0.0, 4.0, 2.0);
-        let contours = unsafe { flight_flatten_path(&path, f64::NAN) };
+        let handle = Arc::new(RwLock::new(path.clone()));
+        let contours = unsafe {
+            flight_flatten_path(
+                &handle as *const flight_sdk::Ref<flight_sdk::Path> as *const std::ffi::c_void,
+                f64::NAN,
+            )
+        };
         assert_eq!(unsafe { flight_flatten_path_result_len(contours) }, 1);
         let length = unsafe { flight_flatten_path_result_get_len(contours, 0) };
         let points = unsafe { flight_flatten_path_result_get(contours, 0) };
@@ -791,21 +797,22 @@ mod flight_split_bitmap_channels {
         let source = unsafe { flight_create_bitmap(1, 1, 0x11223344) };
         let mut channels = [std::ptr::null_mut(); 4];
         unsafe { flight_split_bitmap_channels(source, channels.as_mut_ptr()) };
-        let expected = flight_sdk::split_bitmap_channels(unsafe { &*source });
+        let source_bitmap = unsafe { &*(source as *const flight_sdk::Ref<flight_sdk::Bitmap>) };
+        let expected = flight_sdk::split_bitmap_channels(&source_bitmap.read().unwrap());
         for (channel, expected) in channels.iter().zip(&expected) {
             assert!(!channel.is_null());
-            let bitmap = unsafe { &*(*channel as *const flight_sdk::Bitmap) };
-            assert_eq!(bitmap.data, expected.data);
-            unsafe { flight_free_bitmap(*channel as *mut flight_sdk::Bitmap) };
+            let bitmap = unsafe { &*(*channel as *const flight_sdk::Ref<flight_sdk::Bitmap>) };
+            assert_eq!(bitmap.read().unwrap().data, expected.data);
+            unsafe { flight_free_bitmap_ref((*channel).cast()) };
         }
-        unsafe { flight_free_bitmap(source) };
+        unsafe { flight_free_bitmap_ref(source.cast()) };
     }
 
     #[test]
     fn drops_the_channels_without_an_output_array() {
         let source = unsafe { flight_create_bitmap(1, 1, 0) };
         unsafe { flight_split_bitmap_channels(source, std::ptr::null_mut()) };
-        unsafe { flight_free_bitmap(source) };
+        unsafe { flight_free_bitmap_ref(source.cast()) };
     }
 }
 

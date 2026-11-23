@@ -1,6 +1,6 @@
 use std::ffi::{CStr, c_void};
 use std::future::ready;
-use std::sync::{Arc, Mutex};
+use std::sync::{Arc, Mutex, RwLock};
 
 struct AsyncResult {
     error: bool,
@@ -97,8 +97,9 @@ fn callback_collections_and_path_segments_execute_with_bounded_contexts() {
     let mut kinds = Vec::new();
     assert!(unsafe {
         crate::flight_for_each_path_segment(
-            &path,
-            z_collect_segment,
+            &Arc::new(RwLock::new(path)) as *const flight_sdk::Ref<flight_sdk::Path>
+                as *const c_void,
+            Some(z_collect_segment),
             (&mut kinds as *mut Vec<u32>).cast(),
         )
     });
